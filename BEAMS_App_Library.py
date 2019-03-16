@@ -1,4 +1,4 @@
-# Basic Efficient Analysis for Muon Spin-Spectroscopy (BEAMS)
+# Basic and Efficient Analysis for Muon Spin-Spectroscopy (BEAMS)
 
 
 # PyQt5 Libraries cover the main structure and function of the application
@@ -119,6 +119,9 @@ class FileManagerPanel(QtWidgets.QDockWidget):
         print("init Function :: FileManagerPanel Class")
         super(FileManagerPanel,self).__init__()
         self.setParent(parent)
+        self.initUI(parent)
+
+    def initUI(self,parent):
         self.setWindowTitle("File Manager")
 
         tempWidget = QtWidgets.QWidget()
@@ -128,7 +131,7 @@ class FileManagerPanel(QtWidgets.QDockWidget):
         writeButton.released.connect(lambda: self.Write_Button())
 
         addButton = QtWidgets.QPushButton()
-        addButton.setText("+")
+        addButton.setText("Import")
         addButton.released.connect(lambda: self.Add_Button())
 
         plotButton = QtWidgets.QPushButton()
@@ -184,6 +187,9 @@ class GraphAreaPanel(QtWidgets.QDockWidget):
         print("init Function :: GraphAreaPanel Class")
         super(GraphAreaPanel,self).__init__()
         self.setParent(parent)
+        self.initUI()
+
+    def initUI(self):
         self.setWindowTitle("Graphing Area")
         tempWidget = QtWidgets.QWidget()
         
@@ -236,9 +242,13 @@ class PlotCanvas(FigureCanvas):
 
 class GraphEditorPanel(QtWidgets.QDockWidget):
     def __init__(self,parent = None):
-        print("init Function :: GraphEditorPanel Class")
         super(GraphEditorPanel,self).__init__()
         self.setParent(parent)
+        self.initUI(parent)
+
+    def initUI(self, parent):
+        print("init Function :: GraphEditorPanel Class")
+        
         self.setWindowTitle("Graph Editor")
 
         slider_one_label = QtWidgets.QLabel()
@@ -253,7 +263,7 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
         self.slider_two.sliderReleased.connect(lambda: self.Slider_Released(parent, 2))
         self.slider_one.sliderMoved.connect(lambda: self.Slider_Moving(parent, 1))
         self.slider_two.sliderMoved.connect(lambda: self.Slider_Moving(parent, 2))
-        
+
         self.slider_one_text = QtWidgets.QLineEdit()
         self.slider_one_text.setText(str(self.slider_one.value()))
         self.slider_one_text.setFixedWidth(50)
@@ -373,10 +383,10 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         self.setWidget(QtWidgets.QWidget())
 
 
-class RunInfoBox(QtWidgets.QWidget):
+class RunData(QtWidgets.QWidget):
     def __init__(self,parent=None):
         print("init Function :: RunInfoBox Class")
-        super(RunInfoBox,self).__init__()
+        super(RunData,self).__init__()
         self.setParent(parent)
 
 
