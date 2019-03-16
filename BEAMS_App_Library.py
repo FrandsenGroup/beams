@@ -1,9 +1,19 @@
-# Basics for Efficient Analysis of Muon Spin-Spectroscopy
+# Basic Efficient Analysis for Muon Spin-Spectroscopy (BEAMS)
 
 
-
+# PyQt5 Libraries cover the main structure and function of the application
 from PyQt5 import QtWidgets, QtGui, QtCore
 
+# Matplotlib covers the plotting of the data, with necessary PyQt5 crossover libraries
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
+
+# Numpy for all our fun array shenanigans
+import numpy as np
+
+# Pandas for dealing with our biiiig arrays
+import pandas as pd
 
 
 class Window(QtWidgets.QMainWindow):
@@ -103,11 +113,6 @@ class Window(QtWidgets.QMainWindow):
         self.runInfo = RunInfoPanel(parent=self)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.runInfo)
 
-    def Plot_Data(self,graph_num):
-        print("Plot_Data Function :: Window Class")
-        return
-
-
 
 class FileManagerPanel(QtWidgets.QDockWidget):
     def __init__(self,parent = None):
@@ -161,10 +166,18 @@ class FileManagerPanel(QtWidgets.QDockWidget):
 
     def Plot_Button(self,parent):
         print("Plot_Button Function :: FileManagerPanel Class")
-        parent.Plot_Data(1)
+        parent.graphArea.canvas_one.Import_Data(parent)
+
+    def Get_Filenames(self):
+        print("Get_Filenames Function :: FileManagerPanel Class")
+        checked_items = []
+        for index in range(self.listWidget.count()):
+            print("Checking item at ", index) 
+            if self.listWidget.item(index).checkState() == QtCore.Qt.Checked:
+                checked_items.append(self.listWidget.item(index).text())
+                print(self.listWidget.item(index).text())
+        return checked_items
         
-
-
 
 class GraphAreaPanel(QtWidgets.QDockWidget):
     def __init__(self,parent=None):
@@ -172,8 +185,53 @@ class GraphAreaPanel(QtWidgets.QDockWidget):
         super(GraphAreaPanel,self).__init__()
         self.setParent(parent)
         self.setWindowTitle("Graphing Area")
-        self.setWidget(QtWidgets.QWidget())
+        tempWidget = QtWidgets.QWidget()
+        
+        self.canvas_one = self.Create_Canvas()
+        self.canvas_two = self.Create_Canvas()
 
+        hbox = QtWidgets.QHBoxLayout()
+        hbox.addWidget(self.canvas_one)
+        hbox.addWidget(self.canvas_two)
+        tempWidget.setLayout(hbox)
+
+        self.setWidget(tempWidget)
+
+    def Create_Canvas(self):
+        print("Create_Canvas Function :: GraphAreaPanel Class")
+        canvas = PlotCanvas(parent=self)
+        return canvas
+
+
+class PlotCanvas(FigureCanvas):
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        print("init Function :: PlotCanvas Class")
+        fig = plt.figure(dpi=dpi)
+        self.axes_time = fig.add_subplot(211,label="Time Domain")
+        self.axes_freq = fig.add_subplot(212,label="Frequency Domain")
+        FigureCanvas.__init__(self,fig)
+        self.muSRData = np.array([])
+
+        self.setParent(parent)
+        self.axes_time.clear()
+        self.axes_freq.clear()
+
+    def Import_Data(self,parent):
+        print("Import_Data Function :: PlotCanvas Class")
+        checked_items = parent.fileControl.Get_Filenames()
+        for index in range(len(checked_items)):
+            data = pd.read_csv(checked_items[index],sep=",",skiprows=2)
+            # times, asymmetry = np.loadtxt(checked_items[index], dtype=float,comments="%",delimiter=",",unpack=True, usecols=(0,1))
+            data.columns = ["Time","Asymmetry","Error","Theory"]
+            tarr = np.array(data.iloc[:,1].values)
+            print(tarr)
+            # print(times,asymmetry)
+
+    def Plot_Data(self, xmin, xmax, bin_size, graph_num, slider_state):
+        print("Plot_Data Function :: PlotCanvas Class")
+        print(xmin, xmax, bin_size, graph_num, slider_state)
+        self.axes_freq.clear()
+        self.axes_time.clear()
 
 
 class GraphEditorPanel(QtWidgets.QDockWidget):
@@ -191,18 +249,20 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
         self.slider_one = self.Create_Slider()
         self.slider_two = self.Create_Slider()
 
-        self.slider_one.sliderReleased.connect(lambda: self.Slider_Changed(self.slider_one_text, self.slider_one.value(),1))
-        self.slider_two.sliderReleased.connect(lambda: self.Slider_Changed(self.slider_two_text, self.slider_two.value(),2))
+        self.slider_one.sliderReleased.connect(lambda: self.Slider_Released(parent, 1))
+        self.slider_two.sliderReleased.connect(lambda: self.Slider_Released(parent, 2))
+        self.slider_one.sliderMoved.connect(lambda: self.Slider_Moving(parent, 1))
+        self.slider_two.sliderMoved.connect(lambda: self.Slider_Moving(parent, 2))
         
         self.slider_one_text = QtWidgets.QLineEdit()
         self.slider_one_text.setText(str(self.slider_one.value()))
         self.slider_one_text.setFixedWidth(50)
-        self.slider_one_text.returnPressed.connect(lambda: self.Slider_Text_Changed(self.slider_one,self.slider_one_text.text(),1))
+        self.slider_one_text.returnPressed.connect(lambda: self.Slider_Text_Changed(parent, 1))
 
         self.slider_two_text = QtWidgets.QLineEdit()
         self.slider_two_text.setText(str(self.slider_two.value()))
         self.slider_two_text.setFixedWidth(50)
-        self.slider_two_text.returnPressed.connect(lambda: self.Slider_Text_Changed(self.slider_two,self.slider_two_text.text(),2))
+        self.slider_two_text.returnPressed.connect(lambda: self.Slider_Text_Changed(parent, 2))
 
         xmin_one_label = self.Create_Input_Box_Label("Plot 1 - XMin ("+chr(956)+"s)")
         xmax_one_label = self.Create_Input_Box_Label("XMax ("+chr(956)+"s)")
@@ -275,12 +335,33 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
         tempWidget.setLayout(hbox)
         return tempWidget
 
-    def Slider_Changed(self, slider, slider_value, graph_num):
+    def Slider_Released(self, parent, graph_num):
         print("Slider_Changed Function :: GraphEditorPanel Class")
 
-    def Slider_Text_Changed(self, slider, slider_text, graph_num):
-        print("Slider_Text_Changed Function :: GraphEditorPanel Class")
+        if(graph_num == 1):
+            self.slider_one_text.setText(str(self.slider_one.value()))
+            parent.graphArea.canvas_one.Plot_Data(self.xmin_one.text(), self.xmax_one.text(), self.slider_one.value(), graph_num, "SLIDER_RELEASED")
+        else:
+            self.slider_two_text.setText(str(self.slider_two.value()))
+            parent.graphArea.canvas_two.Plot_Data(self.xmin_two.text(), self.xmax_two.text(), self.slider_two.value(), graph_num, "SLIDER_RELEASED")
+        
+    def Slider_Moving(self, parent, graph_num):
+        print("Slider_Moving Function :: GraphEditorPanel Class")
 
+        if(graph_num == 1):
+            parent.graphArea.canvas_one.Plot_Data(self.xmin_one.text(), self.xmax_one.text(), self.slider_one.value(), graph_num, "SLIDER_MOVING")
+        else:
+            parent.graphArea.canvas_two.Plot_Data(self.xmin_two.text(), self.xmax_two.text(), self.slider_two.value(), graph_num, "SLIDER_MOVING")
+
+    def Slider_Text_Changed(self, parent, graph_num):
+        print("Slider_Text_Changed Function :: GraphEditorPanel Class")
+        
+        if(graph_num == 1):
+            self.slider_one.setValue(int(self.slider_one_text.text()))
+            parent.graphArea.canvas_one.Plot_Data(self.xmin_one.text(), self.xmax_one.text(), self.slider_one.value(), graph_num, "SLIDER_RELEASED")
+        else:
+            self.slider_two.setValue(int(self.slider_two_text.text()))
+            parent.graphArea.canvas_two.Plot_Data(self.xmin_two.text(), self.xmax_two.text(), self.slider_two.value(), graph_num, "SLIDER_RELEASED")
 
 
 class RunInfoPanel(QtWidgets.QDockWidget):
@@ -290,5 +371,13 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         self.setParent(parent)
         self.setWindowTitle("Run Information")
         self.setWidget(QtWidgets.QWidget())
+
+
+class RunInfoBox(QtWidgets.QWidget):
+    def __init__(self,parent=None):
+        print("init Function :: RunInfoBox Class")
+        super(RunInfoBox,self).__init__()
+        self.setParent(parent)
+
 
 
