@@ -1,5 +1,4 @@
-# Basic and Efficient Analysis for Muon Spin-Spectroscopy (BEAMS)
-
+# Basic and Efficient Analysis for Muon Spin-Spectroscopy (BEAMS) muVision
 
 # PyQt5 Libraries cover the main structure and function of the application
 from PyQt5 import QtWidgets, QtGui, QtCore
@@ -14,6 +13,16 @@ import numpy as np
 
 # Pandas for dealing with our biiiig arrays
 import pandas as pd
+
+# OS for dealing with files
+import os
+
+# Ctypes to deal with our delightful MUD functions from TRIUMF
+# from ctypes import *
+
+# Custom MUD function for reading in files
+# import cython
+# import BEAMS_C_Library
 
 
 class Window(QtWidgets.QMainWindow):
@@ -54,8 +63,10 @@ class Window(QtWidgets.QMainWindow):
         self.show()
 
     def Create_MenuBar(self):
-        print("Create_MenuBar Function :: Window Class")
-        #MENUBAR ITEMS
+        # print("Create_MenuBar Function :: Window Class")
+        # Initializes the menubar across the top of the main window, still need to
+        # add functionality to these items.
+
         #Exit Menu Item
         exitAct = QtWidgets.QAction(QtGui.QIcon('exit.png'), '&Exit', self)        
         exitAct.setShortcut('Ctrl+Q')
@@ -118,7 +129,11 @@ class FileManagerPanel(QtWidgets.QDockWidget):
     def __init__(self,parent = None):
         print("init Function :: FileManagerPanel Class")
         super(FileManagerPanel,self).__init__()
+        # Set the Main Window as the parent class
         self.setParent(parent)
+        # Create the array where the filenames will be stored
+        self.filenames = []
+        # Initialize UI for the file manager panel
         self.initUI(parent)
 
     def initUI(self,parent):
@@ -160,12 +175,43 @@ class FileManagerPanel(QtWidgets.QDockWidget):
         print("Write_Button Function :: FileManagerPanel Class")
 
     def Add_Button(self):
-        print("Add_Button Function :: FileManagerPanel Class")
-        # FIXME Use getOpenFileNames to get multiple files at once.
+        # ADD_BUTTON Functionality : Prompt user for a file to import and add that file to
+        # the self.filenames array for the FileManagerPanel Object
+
+        # print("Add_Button Function :: FileManagerPanel Class") # DEBUGGING HELP 
+
+        # Use getOpenFileNames to get multiple files at once. FIXME 
+        # Open File-Dialog for user to select a file to import and add to filenames array
         filename = QtWidgets.QFileDialog.getOpenFileName(self,'Add file','/home')
-        file_item = QtWidgets.QListWidgetItem(filename[0],self.listWidget)
+        self.filenames.append(filename[0])
+        # print(self.filenames) # DEBUGGING HELP
+
+        # Using the OS Library break the file into the file_path, file_base, and file_ext
+        # i.e. "C:/Users/kalec/Documents/" and "006515" and ".msr" respectively
+        file_path, file_root = os.path.split(filename[0])
+        file_base, file_ext = os.path.splitext(os.path.basename(file_root))
+        # print(file_path," + ",file_base," + ",file_ext) # DEBUGGING HELP
+
+        # Display the file_base in the file manager on the left side, with a check
+        file_item = QtWidgets.QListWidgetItem(file_base,self.listWidget)
         file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsUserCheckable)
         file_item.setCheckState(QtCore.Qt.Unchecked)
+
+        # self.Import_MUD_File(filename[0]) # FIXME
+
+    def Read_DatFile(self, filename):
+        print("Read_DatFile Function :: FileManagerPanel Class")
+        file_name, file_ext = os.path.splitext(os.path.basename(filename))
+        file_name += ".dat"
+        # print(file_name,file_ext)
+
+    def Import_MUD_File(self, filename):
+        print("Import_MUD_File Function :: FileManagerPanel Class")
+        # FIXME This function will take the date from .msr and create a .dat with the same name
+        # then it will call Read_DatFile to read in the .dat file it just created.
+        # mud_lib = ctypes.CDLL(BEAMS_MUDlib.so)
+        # libMUD = CDLL(r"C:\Users\kalec\Documents\Research_Frandsen\Visualizing_uSR\BEAMS\mud\src\BEAMS_MUDlib.dll")
+        self.Read_DatFile(filename)
 
     def Plot_Button(self,parent):
         print("Plot_Button Function :: FileManagerPanel Class")
@@ -188,6 +234,7 @@ class GraphAreaPanel(QtWidgets.QDockWidget):
         super(GraphAreaPanel,self).__init__()
         self.setParent(parent)
         self.initUI()
+        plt.ion()
 
     def initUI(self):
         self.setWindowTitle("Graphing Area")
@@ -213,6 +260,7 @@ class PlotCanvas(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         print("init Function :: PlotCanvas Class")
         fig = plt.figure(dpi=dpi)
+        
         self.axes_time = fig.add_subplot(211,label="Time Domain")
         self.axes_freq = fig.add_subplot(212,label="Frequency Domain")
         FigureCanvas.__init__(self,fig)
@@ -225,8 +273,9 @@ class PlotCanvas(FigureCanvas):
     def Import_Data(self,parent):
         print("Import_Data Function :: PlotCanvas Class")
         checked_items = parent.fileControl.Get_Filenames()
+        print(checked_items)
         for index in range(len(checked_items)):
-            data = pd.read_csv(checked_items[index],sep=",",skiprows=2)
+            data = pd.read_csv(checked_items[index],sep=",",skiprows=6)
             # times, asymmetry = np.loadtxt(checked_items[index], dtype=float,comments="%",delimiter=",",unpack=True, usecols=(0,1))
             data.columns = ["Time","Asymmetry","Error","Theory"]
             tarr = np.array(data.iloc[:,1].values)
@@ -357,11 +406,15 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
         
     def Slider_Moving(self, parent, graph_num):
         print("Slider_Moving Function :: GraphEditorPanel Class")
-
+        # Since it is computationally intensive to rebin the asymmetry we will only
+        # do it while it is moving with every fifth tick. Then we will do it once it
+        # is released.
         if(graph_num == 1):
-            parent.graphArea.canvas_one.Plot_Data(self.xmin_one.text(), self.xmax_one.text(), self.slider_one.value(), graph_num, "SLIDER_MOVING")
+            if(self.slider_one.value() % 5 == 0):
+                parent.graphArea.canvas_one.Plot_Data(self.xmin_one.text(), self.xmax_one.text(), self.slider_one.value(), graph_num, "SLIDER_MOVING")
         else:
-            parent.graphArea.canvas_two.Plot_Data(self.xmin_two.text(), self.xmax_two.text(), self.slider_two.value(), graph_num, "SLIDER_MOVING")
+            if(self.slider_two.value() % 5 == 0):
+                parent.graphArea.canvas_two.Plot_Data(self.xmin_two.text(), self.xmax_two.text(), self.slider_two.value(), graph_num, "SLIDER_MOVING")
 
     def Slider_Text_Changed(self, parent, graph_num):
         print("Slider_Text_Changed Function :: GraphEditorPanel Class")
