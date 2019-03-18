@@ -20,6 +20,9 @@ import os
 # sys for some debugging
 import sys
 
+# scipy for the fourier transform
+from scipy.interpolate import spline
+
 # Ctypes to deal with our delightful MUD functions from TRIUMF
 # from ctypes import *
 
@@ -223,11 +226,11 @@ class FileManagerPanel(QtWidgets.QDockWidget):
     
         # Update canvas one (the two axes on the left of the graphing area)
         parent.graphArea.canvas_one.Plot_Data(parent.graphEditor.xmin_one.text(), parent.graphEditor.xmax_one.text(),
-            parent.graphEditor.slider_one.value(),1,"SLIDER_RELEASED", parent)
+            parent.graphEditor.slider_one.value(),"SLIDER_RELEASED", parent)
         
         # Update canvas two (the two axes on the right of the graphing area)
-        parent.graphArea.canvas_one.Plot_Data(parent.graphEditor.xmin_two.text(), parent.graphEditor.xmax_two.text(),
-            parent.graphEditor.slider_two.value(),2,"SLIDER_RELEASED", parent)
+        parent.graphArea.canvas_two.Plot_Data(parent.graphEditor.xmin_two.text(), parent.graphEditor.xmax_two.text(),
+            parent.graphEditor.slider_two.value(),"SLIDER_RELEASED", parent)
 
 
 
@@ -285,7 +288,9 @@ class PlotCanvas(FigureCanvas):
         self.axes_time = fig.add_subplot(211,label="Time Domain")
         self.axes_freq = fig.add_subplot(212,label="Frequency Domain")
         FigureCanvas.__init__(self,fig)
-        self.muSRData = np.array([])
+        
+        self.new_times = np.array([])
+        self.new_asymmetry = np.array([])
 
         self.setParent(parent)
 
@@ -299,14 +304,20 @@ class PlotCanvas(FigureCanvas):
         for index in range(len(checked_items)):
             print(index)
 
-    def Plot_Data(self, xmin, xmax, bin_size, graph_num, slider_state, parent):
+    def Plot_Data(self, xmin, xmax, bin_size, slider_state, parent):
         # print("Plot_Data Function :: PlotCanvas Class") # DEBUGGING HELP
-        print(xmin, xmax, bin_size, graph_num, slider_state)
-        self.axes_freq.clear()
         self.axes_time.clear()
-        self.Update_Asymmetry_Bins(xmin, xmax, bin_size, graph_num, slider_state, parent)
+        self.Update_Asymmetry_Bins(xmin, xmax, bin_size, slider_state, parent)
 
-    def Update_Asymmetry_Bins(self, xmin, xmax, bin_size, graph_num, slider_state, parent):
+        self.axes_time.set_xlim(float(xmin),float(xmax))
+        self.axes_time.set_ylim(-.2,.2)
+        self.axes_time.plot(self.new_times,self.new_asymmetry,'ro')
+        # FIXME Need to figure out how to assign colors
+
+        if(slider_state == "SLIDER_RELEASED"):
+            self.Update_Fourier_Transform(float(bin_size), float(xmin), float(xmax))
+
+    def Update_Asymmetry_Bins(self, xmin, xmax, bin_size, slider_state, parent):
         # Retrieve the asymmetry and times from the RunData objects stored in RunInfoPanel object
         asymmetry = np.array([])
         asymmetry = parent.runInfo.data_array[0].asymmetry
@@ -315,23 +326,27 @@ class PlotCanvas(FigureCanvas):
         
         # Determine the start and end indexes based on xmin and xmax and num of indexes
         start_size = int(parent.runInfo.data_array[0].run_num_bins)
-        start_index = int(np.floor((float(xmin)*1000/times[start_size-1])*start_size))
-        end_index = int(np.floor((float(xmax)*1000/times[start_size-1])*start_size))
+        print(float(xmin),times[start_size-1],start_size)
+        start_index = int(np.floor((float(xmin)/times[start_size-1])*start_size))
+        end_index = int(np.floor((float(xmax)/times[start_size-1])*start_size))
+        print(start_size,xmin,xmax,start_index,end_index,times[start_size-1])
 
-        # Split the array according to our start and end indexes found above FIXME Possibly not necessary
-        # times = np.split(times,[start_index,end_index])[1]
-        # asymmetry = np.split(asymmetry,[start_index,end_index])[1]
-
+        # Determine the initialial bin size and the new user specified bins size
         time_sep = parent.runInfo.data_array[0].run_bin_size
-        bin_size = float(bin_size)
+        bin_size = float(bin_size)/1000
 
+        # Based on the difference in time and binsize determine the size of the final asymmetry and time array
         final_size = int(np.ceil((times[end_index] - times[start_index]) / bin_size))
         print(final_size)
-        new_asymmetry = np.zeros(final_size)
-        new_times = np.zeros(final_size)
+        self.new_asymmetry = np.zeros(final_size)
+        self.new_times = np.zeros(final_size)
         
+        # Initialize asym_sum and time_sum and n (the number of iterations between resetting the sum) and i (the
+        # number of elements we have added to the new array)
         asym_sum, time_sum, n, i = 0,0,0,0
         for index in range(start_index,end_index,8):
+            # We do eight at a time instead of iterating one at a time as this is much less computationaly intensive (the
+            # conditions are checked every eighth time isntead of every time)
             asym_sum += asymmetry[index]
             asym_sum += asymmetry[index+1]
             asym_sum += asymmetry[index+2]
@@ -344,17 +359,38 @@ class PlotCanvas(FigureCanvas):
             time_sum += 8*time_sep
             # print(asym_sum,time_sum,n,i,bin_size,index) # DEBUGGING HELP
             if(time_sum > bin_size):
-                new_asymmetry[i] = asym_sum / n
-                new_times[i] = times[index+7]
+                self.new_asymmetry[i] = asym_sum / n
+                self.new_times[i] = times[index+7]
                 asym_sum, time_sum, n = 0,0,0
                 i += 1
-        new_times /= 1000
+        self.new_times
         np.set_printoptions(threshold=sys.maxsize) # DEBUGGING HELP
-        print(new_asymmetry, new_times) # DEBUGGING HELP
+        print(self.new_asymmetry, self.new_times) # DEBUGGING HELP
 
-        self.axes_time.set_xlim(float(xmin),float(xmax))
-        self.axes_time.set_ylim(-.2,.2)
-        self.axes_time.plot(new_times,new_asymmetry,'ro')
+    def Update_Fourier_Transform(self, bin_size, xmin, xmax):
+        # Clear the current fast fourier transform from the plot
+        self.axes_freq.clear()
+
+        # Calculate the new fft
+        period_s = bin_size / 1000
+        frequency_s = 1.0 / period_s
+        n = len(self.new_asymmetry)
+        k = np.arange(n)
+        period = n / frequency_s
+        frequencies = k / period
+        frequencies = frequencies[range(int(n/2))]
+        yValues = np.fft.fft([self.new_asymmetry,self.new_times]) / n
+        yValues = abs(yValues[0, range(int(n/2))])
+
+        # Calculate the spline for the graph
+        x_smooth = np.linspace(frequencies.min(), frequencies.max(), 300)
+        y_smooth = spline(frequencies, yValues, x_smooth)
+
+        # Plot! 
+        self.axes_freq.plot(x_smooth, y_smooth, 'r')
+        
+        return
+
 
 
 class GraphEditorPanel(QtWidgets.QDockWidget):
@@ -418,7 +454,7 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
         input_box = QtWidgets.QLineEdit()
         input_box.setText(box_value)
         input_box.setFixedWidth(50)
-        input_box.returnPressed.connect(lambda: self.parent.Plot_Data(graph_num))
+        # input_box.returnPressed.connect(lambda: self.parent.Plot_Data(graph_num)) # FIXME
         return input_box
 
     def Create_Input_Box_Label(self,box_label):
@@ -468,11 +504,11 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
         if(graph_num == 1):
             self.slider_one_text.setText(str(self.slider_one.value()))
             parent.graphArea.canvas_one.Plot_Data(self.xmin_one.text(), self.xmax_one.text(), self.slider_one.value(), 
-                graph_num, "SLIDER_RELEASED", parent)
+                "SLIDER_RELEASED", parent)
         else:
             self.slider_two_text.setText(str(self.slider_two.value()))
             parent.graphArea.canvas_two.Plot_Data(self.xmin_two.text(), self.xmax_two.text(), self.slider_two.value(), 
-                graph_num, "SLIDER_RELEASED", parent)
+                "SLIDER_RELEASED", parent)
         
     def Slider_Moving(self, parent, graph_num):
         print("Slider_Moving Function :: GraphEditorPanel Class")
@@ -482,11 +518,11 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
         if(graph_num == 1):
             if(self.slider_one.value() % 5 == 0):
                 parent.graphArea.canvas_one.Plot_Data(self.xmin_one.text(), self.xmax_one.text(), self.slider_one.value(), 
-                    graph_num, "SLIDER_MOVING", parent)
+                    "SLIDER_MOVING", parent)
         else:
             if(self.slider_two.value() % 5 == 0):
                 parent.graphArea.canvas_two.Plot_Data(self.xmin_two.text(), self.xmax_two.text(), self.slider_two.value(), 
-                graph_num, "SLIDER_MOVING", parent)
+                "SLIDER_MOVING", parent)
 
     def Slider_Text_Changed(self, parent, graph_num):
         print("Slider_Text_Changed Function :: GraphEditorPanel Class")
@@ -494,11 +530,11 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
         if(graph_num == 1):
             self.slider_one.setValue(int(self.slider_one_text.text()))
             parent.graphArea.canvas_one.Plot_Data(self.xmin_one.text(), self.xmax_one.text(), self.slider_one.value(), 
-                graph_num, "SLIDER_RELEASED", parent)
+                "SLIDER_RELEASED", parent)
         else:
             self.slider_two.setValue(int(self.slider_two_text.text()))
             parent.graphArea.canvas_two.Plot_Data(self.xmin_two.text(), self.xmax_two.text(), self.slider_two.value(), 
-                graph_num, "SLIDER_RELEASED", parent)
+                "SLIDER_RELEASED", parent)
 
 
 class RunInfoPanel(QtWidgets.QDockWidget):
@@ -544,6 +580,7 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         for index in range(len(filenames)):
             box_name = QtWidgets.QLabel(filenames[index])
             self.layout.addWidget(box_name)
+        # self.layout.addStretch(1)
 
         return filenames
 
@@ -559,7 +596,7 @@ class RunData:
         # basic information about the run and assign to appropriate class members. Then
         # read in the histograms and generate the assymetry and time arrays. Does not 
         # permanently store the histograms.
-
+        print(filename)
         data_line = pd.read_csv(filename,nrows=1)
 
         self.run_expt_number = data_line.iloc[0]['ExptNumber']
@@ -580,7 +617,7 @@ class RunData:
         self.run_temperature = data_line.iloc[0]['Temperature']
         self.run_field = data_line.iloc[0]['Field']
         self.run_num_hists = data_line.iloc[0]['NumHists']
-        self.run_bin_size = data_line.iloc[0]['binsize']
+        self.run_bin_size = float(data_line.iloc[0]['binsize']) / 1000
         self.run_num_bins = data_line.iloc[0]['numBins']
 
         run_data = pd.read_csv(filename,skiprows=2)
