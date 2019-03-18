@@ -482,36 +482,52 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         
 class RunData:
     def __init__(self,parent=None,filename=None):
-        print("init Function :: RunData Class ::", filename)
+        # print("init Function :: RunData Class ::", filename) # DEBUGGING HELP
         # Create the datamembers
-        self.initData()
-        # super(RunData,self).__init__()
-        # self.setParent(parent)
+        self.initData(filename)
 
-    def initData(self):
-        self.run_expt_number = 0
-        self.run_number = 0
-        self.run_elapsed_secs = 0
-        self.run_time_begin = 0
-        self.run_time_end = 0
-        self.run_title = "none"
-        self.run_lab = "none"
-        self.run_area = "none"
-        self.run_method = "none"
-        self.run_apparatus = "none"
-        self.run_insert = "none"
-        self.run_sample = "none"
-        self.run_orientation = "none"
-        self.run_das = "none"
-        self.run_experimenters = "none"
-        self.run_temperature = "none"
-        self.run_field = "none"
-        self.run_num_hists = 0
-        self.run_bin_size = 0
-        self.run_num_bins = 0
+    def initData(self,filename):
+        # INITDATA Functionality : First read in the header of the .dat file to get 
+        # basic information about the run and assign to appropriate class members. Then
+        # read in the histograms and generate the assymetry and time arrays. Does not 
+        # permanently store the histograms.
 
+        data_line = pd.read_csv(filename,nrows=1)
+
+        self.run_expt_number = data_line.iloc[0]['ExptNumber']
+        self.run_number = data_line.iloc[0]['RunNumber']
+        self.run_elapsed_secs = data_line.iloc[0]['ElapsedSecs']
+        self.run_time_begin = data_line.iloc[0]['TimeBegin']
+        self.run_time_end = data_line.iloc[0]['TimeEnd']
+        self.run_title = data_line.iloc[0]['Title']
+        self.run_lab = data_line.iloc[0]['Lab']
+        self.run_area = data_line.iloc[0]['Area']
+        self.run_method = data_line.iloc[0]['Method']
+        self.run_apparatus = data_line.iloc[0]['Apparatus']
+        self.run_insert = data_line.iloc[0]['Insert']
+        self.run_sample = data_line.iloc[0]['Sample']
+        self.run_orientation = data_line.iloc[0]['Orient']
+        self.run_das = data_line.iloc[0]['Das']
+        self.run_experimenters = data_line.iloc[0]['Experimenters']
+        self.run_temperature = data_line.iloc[0]['Temperature']
+        self.run_field = data_line.iloc[0]['Field']
+        self.run_num_hists = data_line.iloc[0]['NumHists']
+        self.run_bin_size = data_line.iloc[0]['binsize']
+        self.run_num_bins = data_line.iloc[0]['numBins']
+
+        run_data = pd.read_csv(filename,skiprows=2)
+
+        # FIXME This is only for generating front-back/front+back asymmetry, add functionality
+        # for the obvious other situations.
+        run_data['asymmetry'] = (run_data['front'] - run_data['back'])/(run_data['front'] + run_data['back'])
+        run_data['asymmetry'].fillna(0.0,inplace=True)
         self.asymmetry = np.array([])
-        self.times = np.array([])
+        self.asymmetry = run_data['asymmetry'].values
+
+        # Create a time array that is Num_Bins long with the actual time put in by multiplying
+        # the range by the bin size (usually about .4 ns)
+        self.times = np.arange(1,self.run_num_bins+1,dtype='float64')
+        self.times *= self.run_bin_size
 
 
 
