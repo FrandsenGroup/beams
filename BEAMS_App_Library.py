@@ -1,4 +1,4 @@
-# Basic and Efficient Analysis for Muon Spin-Spectroscopy (BEAMS) muVision
+# Basic and Efficient Analysis for Muon Spin-Spectroscopy (BEAMS)
 
 # PyQt5 Libraries cover the main structure and function of the application
 from PyQt5 import QtWidgets, QtGui, QtCore
@@ -126,7 +126,7 @@ class Window(QtWidgets.QMainWindow):
 
 
 class FileManagerPanel(QtWidgets.QDockWidget):
-    def __init__(self,parent = None):
+    def __init__(self,parent=None):
         print("init Function :: FileManagerPanel Class")
         super(FileManagerPanel,self).__init__()
         # Set the Main Window as the parent class
@@ -177,20 +177,23 @@ class FileManagerPanel(QtWidgets.QDockWidget):
     def Add_Button(self):
         # ADD_BUTTON Functionality : Prompt user for a file to import and add that file to
         # the self.filenames array for the FileManagerPanel Object
-
         # print("Add_Button Function :: FileManagerPanel Class") # DEBUGGING HELP 
 
         # Use getOpenFileNames to get multiple files at once. FIXME 
-        # Open File-Dialog for user to select a file to import and add to filenames array
+        # Open File-Dialog for user to select a file to import
         filename = QtWidgets.QFileDialog.getOpenFileName(self,'Add file','/home')
-        self.filenames.append(filename[0])
-        # print(self.filenames) # DEBUGGING HELP
 
         # Using the OS Library break the file into the file_path, file_base, and file_ext
         # i.e. "C:/Users/kalec/Documents/" and "006515" and ".msr" respectively
         file_path, file_root = os.path.split(filename[0])
         file_base, file_ext = os.path.splitext(os.path.basename(file_root))
         # print(file_path," + ",file_base," + ",file_ext) # DEBUGGING HELP
+
+        # If it is a MUD file it must be imported to a .dat file and then add file to object array
+        if(file_ext == ".msr"):
+            self.Import_MUD_File(filename[0])
+        self.filenames.append(file_path+"/"+file_base+".dat")
+        # print(self.filenames) # DEBUGGING HELP
 
         # Display the file_base in the file manager on the left side, with a check
         file_item = QtWidgets.QListWidgetItem(file_base,self.listWidget)
@@ -199,32 +202,35 @@ class FileManagerPanel(QtWidgets.QDockWidget):
 
         # self.Import_MUD_File(filename[0]) # FIXME
 
-    def Read_DatFile(self, filename):
-        print("Read_DatFile Function :: FileManagerPanel Class")
-        file_name, file_ext = os.path.splitext(os.path.basename(filename))
-        file_name += ".dat"
-        # print(file_name,file_ext)
-
     def Import_MUD_File(self, filename):
-        print("Import_MUD_File Function :: FileManagerPanel Class")
+        print("Import_MUD_File Function :: FileManagerPanel Class") # DEBUGGING HELP
         # FIXME This function will take the date from .msr and create a .dat with the same name
-        # then it will call Read_DatFile to read in the .dat file it just created.
+        # then it will call Read_DatFile to read in the .dat file it just created. Some day.
         # mud_lib = ctypes.CDLL(BEAMS_MUDlib.so)
         # libMUD = CDLL(r"C:\Users\kalec\Documents\Research_Frandsen\Visualizing_uSR\BEAMS\mud\src\BEAMS_MUDlib.dll")
-        self.Read_DatFile(filename)
 
     def Plot_Button(self,parent):
         print("Plot_Button Function :: FileManagerPanel Class")
-        parent.graphArea.canvas_one.Import_Data(parent)
+        # parent.graphArea.canvas_one.Import_Data(parent)
+        c = self.Get_Checked_Filenames()
+        print(c)
+        parent.runInfo.Read_Dat_Files(parent)
 
     def Get_Filenames(self):
-        print("Get_Filenames Function :: FileManagerPanel Class")
+        # GET_FILENAMES Functionality : ... do I really have to explain?
+        return self.filenames
+
+    def Get_Checked_Filenames(self):
+        # GET_CHECKED_FILENAMES Functionality : run through the file list on the GUI and 
+        # check which filenames are checked by the user. Those are the ones that will be
+        # returned. 
+        # print("Get_Filenames Function :: FileManagerPanel Class") # DEBUGGING HELP
         checked_items = []
         for index in range(self.listWidget.count()):
-            print("Checking item at ", index) 
+            # print("Checking item at ", index) # DEBUGGING HELP
             if self.listWidget.item(index).checkState() == QtCore.Qt.Checked:
-                checked_items.append(self.listWidget.item(index).text())
-                print(self.listWidget.item(index).text())
+                checked_items.append(self.filenames[index])
+                # print(self.listWidget.item(index).text()) # DEBUGGING HELP
         return checked_items
         
 
@@ -433,14 +439,80 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         super(RunInfoPanel,self).__init__()
         self.setParent(parent)
         self.setWindowTitle("Run Information")
-        self.setWidget(QtWidgets.QWidget())
+        self.layout = QtWidgets.QVBoxLayout()
+        self.tempWidget = QtWidgets.QWidget()
+        self.tempWidget.setLayout(self.layout)
+        self.setWidget(self.tempWidget)
+        self.data_array = []
+        
+    def Read_Dat_Files(self,parent):
+        # READ_DAT_FILE Functionality: Update the information on the panel and then read
+        # in the histograms and create the initial asymmetry and time arrays
 
+        # Call the Update_Run_Panel function to clear and update the panel on the right.
+        filenames = self.Update_Run_Panel(parent)
 
-class RunData(QtWidgets.QWidget):
-    def __init__(self,parent=None):
-        print("init Function :: RunInfoBox Class")
-        super(RunData,self).__init__()
-        self.setParent(parent)
+        for index in range(len(filenames)):
+            print("reading in file ", index)
+            self.data_array.append(RunData(filename=filenames[index]))
+
+    def Update_Run_Panel(self,parent):
+        # UPDATE_RUN_PANEL Functionality : Loop through layout of RunInfoPanel and clear
+        # all old widgets (old run info) then add the new. Returns filenames for creating the
+        # RunData objects back in the Read_Dat_Files function.
+        # print("Update_Run_Panel Function :: RunInfoPanel Class") # DEBUGGING HELP
+
+        # Delete old data_array that held the old run info
+        del self.data_array[:]
+
+        # This loop goes through the old layout and removes old run info boxes
+        for i in reversed(range(self.layout.count())):
+            self.layout.itemAt(i).widget().setParent(None)
+
+        # Get all the currently checked filenames
+        filenames = parent.fileControl.Get_Checked_Filenames()
+        
+        # Add all currently checked filenames and the relevant data to the run info panel.
+        for index in range(len(filenames)):
+            box_name = QtWidgets.QLabel(filenames[index])
+            self.layout.addWidget(box_name)
+
+        return filenames
+
+        
+class RunData:
+    def __init__(self,parent=None,filename=None):
+        print("init Function :: RunData Class ::", filename)
+        # Create the datamembers
+        self.initData()
+        # super(RunData,self).__init__()
+        # self.setParent(parent)
+
+    def initData(self):
+        self.run_expt_number = 0
+        self.run_number = 0
+        self.run_elapsed_secs = 0
+        self.run_time_begin = 0
+        self.run_time_end = 0
+        self.run_title = "none"
+        self.run_lab = "none"
+        self.run_area = "none"
+        self.run_method = "none"
+        self.run_apparatus = "none"
+        self.run_insert = "none"
+        self.run_sample = "none"
+        self.run_orientation = "none"
+        self.run_das = "none"
+        self.run_experimenters = "none"
+        self.run_temperature = "none"
+        self.run_field = "none"
+        self.run_num_hists = 0
+        self.run_bin_size = 0
+        self.run_num_bins = 0
+
+        self.asymmetry = np.array([])
+        self.times = np.array([])
+
 
 
 
