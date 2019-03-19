@@ -312,7 +312,7 @@ class PlotCanvas(FigureCanvas):
 
             self.axes_time.set_xlim(float(xmin),float(xmax))
             # self.axes_time.set_ylim(-.4,.4)
-            self.axes_time.plot(self.new_times,self.new_asymmetry)#,'o')
+            self.axes_time.plot(self.new_times,self.new_asymmetry,'o')
             # FIXME Need to figure out how to assign colors
 
             if(slider_state == "SLIDER_RELEASED"):
@@ -563,7 +563,7 @@ class RunInfoPanel(QtWidgets.QDockWidget):
             self.data_array.append(RunData(filename=filenames[index]))
 
             # run_data_box = QtWidgets.QLabel(self.data_array[index].run_title)
-            run_data_box = self.Create_Run_Box(self.data_array[index].run_title, parent)
+            run_data_box = self.Create_Run_Box(self.data_array[index].run_title, index, parent)
             self.layout.insertWidget(0, run_data_box)            
 
     def Update_Run_Panel(self, parent):
@@ -583,7 +583,7 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         filenames = parent.fileControl.Get_Checked_Filenames()
         return filenames
 
-    def Create_Run_Box(self, title, parent):
+    def Create_Run_Box(self, title, data_num, parent):
         run_box = QtWidgets.QWidget()
         vbox = QtWidgets.QVBoxLayout()
         hbox_one = QtWidgets.QHBoxLayout()
@@ -591,7 +591,7 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         hbox_three = QtWidgets.QHBoxLayout()
 
         color_options = QtWidgets.QComboBox()
-        color_options.currentIndexChanged.connect(lambda: self.test(color_options.currentText()))
+        color_options.currentIndexChanged.connect(lambda: self.Color_Changed(color_options.currentText(), data_num, parent))
         color_options.setFixedWidth(50)
         color_options.addItem("Blue")
         color_options.addItem("Orange")
@@ -616,11 +616,11 @@ class RunInfoPanel(QtWidgets.QDockWidget):
 
         inspect_button = QtWidgets.QPushButton()
         inspect_button.setText("Inspect")
-        inspect_button.pressed.connect(lambda: self.test("inspect"))
+        inspect_button.pressed.connect(lambda: self.Inspect_Histogram(inspect_button.text(), data_num, parent))
 
         isolate_button = QtWidgets.QPushButton()
         isolate_button.setText("Isolate")
-        isolate_button.pressed.connect(lambda: self.test("isolate"))
+        isolate_button.pressed.connect(lambda: self.Isolate_Plot(data_num, parent))
 
         box_title = QtWidgets.QLabel(title)
 
@@ -630,7 +630,8 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         data_display.setDisabled(True)
 
         data_options_box = QtWidgets.QComboBox()
-        data_options_box.currentIndexChanged.connect(lambda: self.test_combo(data_options_box.currentText(), data_display))
+        data_options_box.currentIndexChanged.connect(lambda: self.Run_Data_Query(data_options_box.currentText(), 
+            data_display, data_num, parent))
         data_options_box.setFixedWidth(100)
         data_options_box.addItem("Select ...")
         data_options_box.addItem("Experiment #")
@@ -675,25 +676,59 @@ class RunInfoPanel(QtWidgets.QDockWidget):
 
         return run_box
 
-    def test(self, string):
-        print("Testing ", string)
-
-    def test_combo(self, string, line_edit):
-        line_edit.setText(string)
-        print("Done")
+    def Inspect_Histogram(self, histogram, graph_num, parent):
+        print("Inspect_Histogram", graph_num)
         return
 
-    def Inspect_Histogram(self):
+    def Isolate_Plot(self, graph_num, parent):
+        print("Isoloate_Plot ", graph_num)
         return
 
-    def Isolate_Plot(self):
+    def Color_Changed(self, color, graph_num, parent):
+        print("Color_Changed ", graph_num, color)
         return
 
-    def Color_Changed(self):
-        return
-
-    def Run_Data_Query(self):
-        return 
+    def Run_Data_Query(self, data_member, line_edit, graph_num, parent):
+        if(data_member == "Experiment #"):
+            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_expt_number))
+        elif(data_member == "Run #"):
+            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_number))
+        elif(data_member == "Elapsed Seconds"):
+            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_elapsed_secs))
+        elif(data_member == "Start Time"):
+            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_time_begin))
+        elif(data_member == "End Time"):
+            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_time_end))
+        elif(data_member == "Lab"):
+            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_lab))
+        elif(data_member == "Area"):
+            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_area))
+        elif(data_member == "Method"):
+            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_method))
+        elif(data_member == "Apparatus"):
+            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_apparatus))
+        elif(data_member == "Insert"):
+            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_insert))
+        elif(data_member == "Sample"):
+            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_sample))
+        elif(data_member == "Orient"):
+            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_orientation))
+        elif(data_member == "Das"):
+            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_das))
+        elif(data_member == "Experimenters"):
+            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_experimenters))
+        elif(data_member == "Temperature"):
+            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_temperature))
+        elif(data_member == "Field"):
+            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_field))
+        elif(data_member == "# of Histograms"):
+            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_num_hists))
+        elif(data_member == "# of Bins"):
+            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_num_bins))
+        elif(data_member == "Bin Size"):
+            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_bin_size))
+        else:
+            line_edit.setText("n/a") 
 
 
 class RunData:
