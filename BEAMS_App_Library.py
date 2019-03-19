@@ -248,7 +248,7 @@ class FileManagerPanel(QtWidgets.QDockWidget):
                 checked_items.append(self.filenames[index])
                 # print(self.listWidget.item(index).text()) # DEBUGGING HELP
         return checked_items
-        
+
 
 class GraphAreaPanel(QtWidgets.QDockWidget):
     def __init__(self,parent=None):
@@ -388,6 +388,17 @@ class PlotCanvas(FigureCanvas):
         self.axes_freq.plot(x_smooth, y_smooth)
         
         return
+
+    def Plot_Single_Run(self, graph_index, graph_variables, parent):
+        self.axes_time.clear()
+        self.axes_freq.clear()
+        
+        self.Update_Asymmetry_Bins(graph_variables[0], graph_variables[1], graph_variables[2], 
+            "SLIDER_RELEASED", parent, graph_index)
+        
+        self.axes_time.set_xlim(float(graph_variables[0]),float(graph_variables[1]))
+        self.axes_time.plot(self.new_times,self.new_asymmetry,'o')
+        self.Update_Fourier_Transform(float(graph_variables[2]), float(graph_variables[0]), float(graph_variables[1]))
 
 
 class GraphEditorPanel(QtWidgets.QDockWidget):
@@ -537,6 +548,11 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
             parent.graphArea.canvas_two.Plot_Data(self.xmin_two.text(), self.xmax_two.text(), self.slider_two.value(), 
                 "SLIDER_RELEASED", parent)
 
+    def Get_Graphing_Variables(self):
+        variables = [[self.xmin_one.text(), self.xmax_one.text(), self.slider_one.value()],
+            [self.xmin_two.text(), self.xmax_two.text(), self.slider_two.value()]] 
+        return variables
+
 
 class RunInfoPanel(QtWidgets.QDockWidget):
     def __init__(self,parent=None):
@@ -557,14 +573,20 @@ class RunInfoPanel(QtWidgets.QDockWidget):
 
         # Call the Update_Run_Panel function to clear and update the panel on the right.
         filenames = self.Update_Run_Panel(parent)
-
+        index = 0
         for index in range(len(filenames)):
             print("reading in file ", index)
             self.data_array.append(RunData(filename=filenames[index]))
 
             # run_data_box = QtWidgets.QLabel(self.data_array[index].run_title)
             run_data_box = self.Create_Run_Box(self.data_array[index].run_title, index, parent)
-            self.layout.insertWidget(0, run_data_box)            
+            self.layout.insertWidget(index, run_data_box)       
+
+        plot_all_button = QtWidgets.QPushButton()
+        plot_all_button.setText("Plot All")
+        plot_all_button.pressed.connect(lambda: self.Plot_All(parent))
+
+        self.layout.insertWidget(index + 1, plot_all_button) 
 
     def Update_Run_Panel(self, parent):
         # UPDATE_RUN_PANEL Functionality : Loop through layout of RunInfoPanel and clear
@@ -591,8 +613,9 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         hbox_three = QtWidgets.QHBoxLayout()
 
         color_options = QtWidgets.QComboBox()
-        color_options.currentIndexChanged.connect(lambda: self.Color_Changed(color_options.currentText(), data_num, parent))
-        color_options.setFixedWidth(50)
+        color_options.currentIndexChanged.connect(lambda: self.Color_Changed(color_options.currentText(), 
+            data_num, parent))
+        color_options.setFixedWidth(75)
         color_options.addItem("Blue")
         color_options.addItem("Orange")
         color_options.addItem("Green")
@@ -604,6 +627,7 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         color_options.addItem("Olive")
         color_options.addItem("Cyan")
         color_options.addItem("Custom")
+        color_options.setCurrentText(color_options.itemText(data_num))
 
         hist_options = QtWidgets.QComboBox()
         hist_options.setFixedWidth(50)
@@ -681,11 +705,12 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         return
 
     def Isolate_Plot(self, graph_num, parent):
-        print("Isoloate_Plot ", graph_num)
-        return
+        graphing_variables = parent.graphEditor.Get_Graphing_Variables()
+        parent.graphArea.canvas_one.Plot_Single_Run(graph_num, graphing_variables[0], parent)
+        parent.graphArea.canvas_two.Plot_Single_Run(graph_num, graphing_variables[1], parent)
 
     def Color_Changed(self, color, graph_num, parent):
-        print("Color_Changed ", graph_num, color)
+        print("Changing color is not currently supported, try again later ...")
         return
 
     def Run_Data_Query(self, data_member, line_edit, graph_num, parent):
@@ -729,6 +754,9 @@ class RunInfoPanel(QtWidgets.QDockWidget):
             line_edit.setText(str(parent.runInfo.data_array[graph_num].run_bin_size))
         else:
             line_edit.setText("n/a") 
+
+    def Plot_All(self, parent):
+        return
 
 
 class RunData:
