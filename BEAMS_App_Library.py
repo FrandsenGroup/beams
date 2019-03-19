@@ -631,16 +631,16 @@ class RunInfoPanel(QtWidgets.QDockWidget):
 
         hist_options = QtWidgets.QComboBox()
         hist_options.setFixedWidth(50)
-        hist_options.addItem("Front")
-        hist_options.addItem("Back")
-        hist_options.addItem("Left")
-        hist_options.addItem("Right")
+        hist_options.addItem("front")
+        hist_options.addItem("back")
+        hist_options.addItem("left")
+        hist_options.addItem("right")
 
         hist_label = QtWidgets.QLabel("Histogram  ")
 
         inspect_button = QtWidgets.QPushButton()
         inspect_button.setText("Inspect")
-        inspect_button.pressed.connect(lambda: self.Inspect_Histogram(inspect_button.text(), data_num, parent))
+        inspect_button.pressed.connect(lambda: self.Inspect_Histogram(hist_options.currentText(), data_num, parent))
 
         isolate_button = QtWidgets.QPushButton()
         isolate_button.setText("Isolate")
@@ -701,8 +701,7 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         return run_box
 
     def Inspect_Histogram(self, histogram, graph_num, parent):
-        print("Inspect_Histogram", graph_num)
-        return
+        self.data_array[graph_num].Inspect_Histogram(histogram)
 
     def Isolate_Plot(self, graph_num, parent):
         graphing_variables = parent.graphEditor.Get_Graphing_Variables()
@@ -756,13 +755,18 @@ class RunInfoPanel(QtWidgets.QDockWidget):
             line_edit.setText("n/a") 
 
     def Plot_All(self, parent):
-        return
+        graphing_variables = parent.graphEditor.Get_Graphing_Variables()
+        parent.graphArea.canvas_one.Plot_Data(graphing_variables[0][0], graphing_variables[0][1],
+            graphing_variables[0][2], "SLIDER_RELEASED", parent)
+        parent.graphArea.canvas_two.Plot_Data(graphing_variables[1][0], graphing_variables[1][1],
+            graphing_variables[1][2], "SLIDER_RELEASED", parent)
 
 
 class RunData:
     def __init__(self,parent=None,filename=None):
         # print("init Function :: RunData Class ::", filename) # DEBUGGING HELP
         # Create the datamembers
+
         self.initData(filename)
 
     def initData(self,filename):
@@ -770,6 +774,8 @@ class RunData:
         # basic information about the run and assign to appropriate class members. Then
         # read in the histograms and generate the assymetry and time arrays. Does not 
         # permanently store the histograms.
+        self.filename = filename
+
         data_line = pd.read_csv(filename,nrows=1)
 
         self.run_expt_number = data_line.iloc[0]['ExptNumber']
@@ -808,6 +814,57 @@ class RunData:
         # the range by the bin size (usually about .4 ns)
         self.times = np.arange(1,self.run_num_bins+1,dtype='float64')
         self.times *= self.run_bin_size
+
+    def Get_Run_Data(self):
+        run_data = [self.run_expt_number, self.run_number, self.run_elapsed_secs, self.run_time_begin,
+            self.run_time_end, self.run_title, self.run_lab, self.run_area, self.run_method,
+            self.run_apparatus, self.run_insert, self.run_sample, self.run_orientation, self.run_das,
+            self.run_experimenters, self.run_temperature, self.run_field, self.run_num_hists,
+            self.run_bin_size, self.run_num_bins]
+        return run_data
+
+    def Inspect_Histogram(self, histogram):
+        run_data = pd.read_csv(self.filename,skiprows=2)
+        histogram_data = run_data[histogram].values
+        bins = np.arange(1,self.run_num_bins)
+        
+        
+        new_bins = int(np.floor(len(histogram_data)/20))
+        new_hist = np.zeros(new_bins)
+        new_times = np.arange(new_bins)
+        print(new_bins)
+        i = 0
+        sum = 0
+        n = 0
+        for i in range(0,new_bins*20,20):
+            sum += histogram_data[i]
+            sum += histogram_data[i+1]
+            sum += histogram_data[i+2]
+            sum += histogram_data[i+3]
+            sum += histogram_data[i+4]
+            sum += histogram_data[i+5]
+            sum += histogram_data[i+6]
+            sum += histogram_data[i+7]
+            sum += histogram_data[i+8]
+            sum += histogram_data[i+9]
+            sum += histogram_data[i+10]
+            sum += histogram_data[i+11]
+            sum += histogram_data[i+12]
+            sum += histogram_data[i+13]
+            sum += histogram_data[i+14]
+            sum += histogram_data[i+15]
+            sum += histogram_data[i+16]
+            sum += histogram_data[i+17]
+            sum += histogram_data[i+18]
+            sum += histogram_data[i+19]
+            new_hist[n] = sum / 20
+            n += 1
+            sum = 0
+        print(new_hist, new_times)
+
+        fig = plt.figure()
+        plt.bar(new_times,new_hist)
+        plt.ylim(0,150)
 
 
 
