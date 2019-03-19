@@ -185,29 +185,29 @@ class FileManagerPanel(QtWidgets.QDockWidget):
         # the self.filenames array for the FileManagerPanel Object
         # print("Add_Button Function :: FileManagerPanel Class") # DEBUGGING HELP 
 
-        # Use getOpenFileNames to get multiple files at once. FIXME 
-        # Open File-Dialog for user to select a file to import
-        filename = QtWidgets.QFileDialog.getOpenFileName(self,'Add file','/home')
+        # Open File-Dialog for user to select files to import
+        filename = QtWidgets.QFileDialog.getOpenFileNames(self,'Add file','/home')
 
-        # Using the OS Library break the file into the file_path, file_base, and file_ext
-        # i.e. "C:/Users/kalec/Documents/" and "006515" and ".msr" respectively
-        file_path, file_root = os.path.split(filename[0])
-        file_base, file_ext = os.path.splitext(os.path.basename(file_root))
-        # print(file_path," + ",file_base," + ",file_ext) # DEBUGGING HELP
+        for file_index in range(len(filename[0])):
+            # Using the OS Library break the file into the file_path, file_base, and file_ext
+            # i.e. "C:/Users/kalec/Documents/" and "006515" and ".msr" respectively
+            file_path, file_root = os.path.split(filename[0][file_index])
+            file_base, file_ext = os.path.splitext(os.path.basename(file_root))
+            # print(file_path," + ",file_base," + ",file_ext) # DEBUGGING HELP
 
-        # If it is a MUD file it must be imported to a .dat file and then add file to object array
-        if(file_ext == ".msr"):
-            self.Import_MUD_File(filename[0])
-        self.filenames.append(file_path+"/"+file_base+".dat")
-        # print(self.filenames) # DEBUGGING HELP
+            # If it is a MUD file it must be imported to a .dat file and then add file to object array
+            if(file_ext == ".msr"):
+                self.Import_MUD_File(filename[0][file_index])
+            self.filenames.append(file_path+"/"+file_base+".dat")
+            # print(self.filenames) # DEBUGGING HELP
 
-        # Display the file_base in the file manager on the left side, with a check
-        file_item = QtWidgets.QListWidgetItem(file_base,self.listWidget)
-        file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsUserCheckable)
-        file_item.setCheckState(QtCore.Qt.Unchecked)
+            # Display the file_base in the file manager on the left side, with a check
+            file_item = QtWidgets.QListWidgetItem(file_base,self.listWidget)
+            file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsUserCheckable)
+            file_item.setCheckState(QtCore.Qt.Unchecked)
 
-        # self.Import_MUD_File(filename[0]) # FIXME Eventually we will want to import the .msr
-        # to .dat files. Once we get this silly c code to run from python.
+            # self.Import_MUD_File(filename[0]) # FIXME Eventually we will want to import the .msr
+            # to .dat files. Once we get this silly c code to run from python.
 
     def Import_MUD_File(self, filename):
         print("Import_MUD_File Function :: FileManagerPanel Class") # DEBUGGING HELP
@@ -231,8 +231,6 @@ class FileManagerPanel(QtWidgets.QDockWidget):
         # Update canvas two (the two axes on the right of the graphing area)
         parent.graphArea.canvas_two.Plot_Data(parent.graphEditor.xmin_two.text(), parent.graphEditor.xmax_two.text(),
             parent.graphEditor.slider_two.value(),"SLIDER_RELEASED", parent)
-
-
 
     def Get_Filenames(self):
         # GET_FILENAMES Functionality : ... do I really have to explain?
@@ -307,36 +305,39 @@ class PlotCanvas(FigureCanvas):
     def Plot_Data(self, xmin, xmax, bin_size, slider_state, parent):
         # print("Plot_Data Function :: PlotCanvas Class") # DEBUGGING HELP
         self.axes_time.clear()
-        self.Update_Asymmetry_Bins(xmin, xmax, bin_size, slider_state, parent)
+        self.axes_freq.clear()
 
-        self.axes_time.set_xlim(float(xmin),float(xmax))
-        self.axes_time.set_ylim(-.2,.2)
-        self.axes_time.plot(self.new_times,self.new_asymmetry,'ro')
-        # FIXME Need to figure out how to assign colors
+        for graph_index in range(len(parent.runInfo.data_array)):
+            self.Update_Asymmetry_Bins(xmin, xmax, bin_size, slider_state, parent, graph_index)
 
-        if(slider_state == "SLIDER_RELEASED"):
-            self.Update_Fourier_Transform(float(bin_size), float(xmin), float(xmax))
+            self.axes_time.set_xlim(float(xmin),float(xmax))
+            # self.axes_time.set_ylim(-.4,.4)
+            self.axes_time.plot(self.new_times,self.new_asymmetry)#,'o')
+            # FIXME Need to figure out how to assign colors
 
-    def Update_Asymmetry_Bins(self, xmin, xmax, bin_size, slider_state, parent):
+            if(slider_state == "SLIDER_RELEASED"):
+                self.Update_Fourier_Transform(float(bin_size), float(xmin), float(xmax))
+
+    def Update_Asymmetry_Bins(self, xmin, xmax, bin_size, slider_state, parent, graph_index):
         # Retrieve the asymmetry and times from the RunData objects stored in RunInfoPanel object
         asymmetry = np.array([])
-        asymmetry = parent.runInfo.data_array[0].asymmetry
+        asymmetry = parent.runInfo.data_array[graph_index].asymmetry
         times = np.array([])
-        times = parent.runInfo.data_array[0].times #FIXME TIMES ARE STILL IN NANO, MUST FIX!!!
+        times = parent.runInfo.data_array[graph_index].times #FIXME TIMES ARE STILL IN NANO, MUST FIX!!!
         
         # Determine the start and end indexes based on xmin and xmax and num of indexes
-        start_size = int(parent.runInfo.data_array[0].run_num_bins)
+        start_size = int(parent.runInfo.data_array[graph_index].run_num_bins)
         print(float(xmin),times[start_size-1],start_size)
         start_index = int(np.floor((float(xmin)/times[start_size-1])*start_size))
         end_index = int(np.floor((float(xmax)/times[start_size-1])*start_size))
         print(start_size,xmin,xmax,start_index,end_index,times[start_size-1])
 
         # Determine the initialial bin size and the new user specified bins size
-        time_sep = parent.runInfo.data_array[0].run_bin_size
+        time_sep = parent.runInfo.data_array[graph_index].run_bin_size
         bin_size = float(bin_size)/1000
 
         # Based on the difference in time and binsize determine the size of the final asymmetry and time array
-        final_size = int(np.ceil((times[end_index] - times[start_index]) / bin_size))
+        final_size = int(np.floor((times[end_index] - times[start_index]) / bin_size))
         print(final_size)
         self.new_asymmetry = np.zeros(final_size)
         self.new_times = np.zeros(final_size)
@@ -364,13 +365,10 @@ class PlotCanvas(FigureCanvas):
                 asym_sum, time_sum, n = 0,0,0
                 i += 1
         self.new_times
-        np.set_printoptions(threshold=sys.maxsize) # DEBUGGING HELP
-        print(self.new_asymmetry, self.new_times) # DEBUGGING HELP
+        # np.set_printoptions(threshold=sys.maxsize) # DEBUGGING HELP
+        # print(self.new_asymmetry, self.new_times) # DEBUGGING HELP
 
     def Update_Fourier_Transform(self, bin_size, xmin, xmax):
-        # Clear the current fast fourier transform from the plot
-        self.axes_freq.clear()
-
         # Calculate the new fft
         period_s = bin_size / 1000
         frequency_s = 1.0 / period_s
@@ -387,10 +385,9 @@ class PlotCanvas(FigureCanvas):
         y_smooth = spline(frequencies, yValues, x_smooth)
 
         # Plot! 
-        self.axes_freq.plot(x_smooth, y_smooth, 'r')
+        self.axes_freq.plot(x_smooth, y_smooth)
         
         return
-
 
 
 class GraphEditorPanel(QtWidgets.QDockWidget):
@@ -433,9 +430,13 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
         xmax_two_label = self.Create_Input_Box_Label("XMax ("+chr(956)+"s)")
 
         self.xmin_one = self.Create_Input_Boxes("0",1)
+        self.xmin_one.returnPressed.connect(lambda: self.Slider_Released(parent, 1))
         self.xmax_one = self.Create_Input_Boxes("5",1)
+        self.xmax_one.returnPressed.connect(lambda: self.Slider_Released(parent, 1))
         self.xmin_two = self.Create_Input_Boxes("0",2)
+        self.xmin_two.returnPressed.connect(lambda: self.Slider_Released(parent, 2))
         self.xmax_two = self.Create_Input_Boxes("10",2)
+        self.xmax_two.returnPressed.connect(lambda: self.Slider_Released(parent, 2))
 
         self.setWidget(self.Create_Layout(xmin_one_label,xmin_two_label,xmax_one_label,xmax_two_label,slider_one_label,slider_two_label))
 
@@ -499,7 +500,7 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
         return tempWidget
 
     def Slider_Released(self, parent, graph_num):
-        print("Slider_Changed Function :: GraphEditorPanel Class")
+        # print("Slider_Changed Function :: GraphEditorPanel Class")
 
         if(graph_num == 1):
             self.slider_one_text.setText(str(self.slider_one.value()))
@@ -525,7 +526,7 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
                 "SLIDER_MOVING", parent)
 
     def Slider_Text_Changed(self, parent, graph_num):
-        print("Slider_Text_Changed Function :: GraphEditorPanel Class")
+        # print("Slider_Text_Changed Function :: GraphEditorPanel Class")
         
         if(graph_num == 1):
             self.slider_one.setValue(int(self.slider_one_text.text()))
@@ -548,6 +549,7 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         self.tempWidget.setLayout(self.layout)
         self.setWidget(self.tempWidget)
         self.data_array = []
+        self.layout.addStretch()
         
     def Read_Dat_Files(self,parent):
         # READ_DAT_FILE Functionality: Update the information on the panel and then read
@@ -560,7 +562,11 @@ class RunInfoPanel(QtWidgets.QDockWidget):
             print("reading in file ", index)
             self.data_array.append(RunData(filename=filenames[index]))
 
-    def Update_Run_Panel(self,parent):
+            # run_data_box = QtWidgets.QLabel(self.data_array[index].run_title)
+            run_data_box = self.Create_Run_Box(self.data_array[index].run_title, parent)
+            self.layout.insertWidget(0, run_data_box)            
+
+    def Update_Run_Panel(self, parent):
         # UPDATE_RUN_PANEL Functionality : Loop through layout of RunInfoPanel and clear
         # all old widgets (old run info) then add the new. Returns filenames for creating the
         # RunData objects back in the Read_Dat_Files function.
@@ -570,21 +576,126 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         del self.data_array[:]
 
         # This loop goes through the old layout and removes old run info boxes
-        for i in reversed(range(self.layout.count())):
+        for i in reversed(range(self.layout.count()-1)):
             self.layout.itemAt(i).widget().setParent(None)
 
         # Get all the currently checked filenames
         filenames = parent.fileControl.Get_Checked_Filenames()
-        
-        # Add all currently checked filenames and the relevant data to the run info panel.
-        for index in range(len(filenames)):
-            box_name = QtWidgets.QLabel(filenames[index])
-            self.layout.addWidget(box_name)
-        # self.layout.addStretch(1)
-
         return filenames
 
+    def Create_Run_Box(self, title, parent):
+        run_box = QtWidgets.QWidget()
+        vbox = QtWidgets.QVBoxLayout()
+        hbox_one = QtWidgets.QHBoxLayout()
+        hbox_two = QtWidgets.QHBoxLayout()
+        hbox_three = QtWidgets.QHBoxLayout()
+
+        color_options = QtWidgets.QComboBox()
+        color_options.currentIndexChanged.connect(lambda: self.test(color_options.currentText()))
+        color_options.setFixedWidth(50)
+        color_options.addItem("Blue")
+        color_options.addItem("Orange")
+        color_options.addItem("Green")
+        color_options.addItem("Red")
+        color_options.addItem("Purple")
+        color_options.addItem("Brown")
+        color_options.addItem("Pink")
+        color_options.addItem("Gray")
+        color_options.addItem("Olive")
+        color_options.addItem("Cyan")
+        color_options.addItem("Custom")
+
+        hist_options = QtWidgets.QComboBox()
+        hist_options.setFixedWidth(50)
+        hist_options.addItem("Front")
+        hist_options.addItem("Back")
+        hist_options.addItem("Left")
+        hist_options.addItem("Right")
+
+        hist_label = QtWidgets.QLabel("Histogram  ")
+
+        inspect_button = QtWidgets.QPushButton()
+        inspect_button.setText("Inspect")
+        inspect_button.pressed.connect(lambda: self.test("inspect"))
+
+        isolate_button = QtWidgets.QPushButton()
+        isolate_button.setText("Isolate")
+        isolate_button.pressed.connect(lambda: self.test("isolate"))
+
+        box_title = QtWidgets.QLabel(title)
+
+        data_options_label = QtWidgets.QLabel("Other Data")
+
+        data_display = QtWidgets.QLineEdit("None Selected")
+        data_display.setDisabled(True)
+
+        data_options_box = QtWidgets.QComboBox()
+        data_options_box.currentIndexChanged.connect(lambda: self.test_combo(data_options_box.currentText(), data_display))
+        data_options_box.setFixedWidth(100)
+        data_options_box.addItem("Select ...")
+        data_options_box.addItem("Experiment #")
+        data_options_box.addItem("Run #")
+        data_options_box.addItem("Elapsed Seconds")
+        data_options_box.addItem("Start Time")
+        data_options_box.addItem("End Time")
+        data_options_box.addItem("Lab")
+        data_options_box.addItem("Area")
+        data_options_box.addItem("Method")
+        data_options_box.addItem("Apparatus")
+        data_options_box.addItem("Insert")
+        data_options_box.addItem("Sample")
+        data_options_box.addItem("Orient")
+        data_options_box.addItem("Das")
+        data_options_box.addItem("Experimenters")
+        data_options_box.addItem("Temperature")
+        data_options_box.addItem("Field")
+        data_options_box.addItem("# of Histograms")
+        data_options_box.addItem("# of Bins")
+        data_options_box.addItem("Bin Size")
+
+        hbox_one.addWidget(color_options)
+        hbox_one.addWidget(isolate_button)
+        hbox_one.addWidget(box_title)
+        hbox_one.addStretch()
+    
+        hbox_three.addWidget(hist_label)
+        hbox_three.addWidget(hist_options)
+        hbox_three.addWidget(inspect_button)
+        hbox_three.addStretch()
+
+        hbox_two.addWidget(data_options_label)
+        hbox_two.addWidget(data_options_box)
+        hbox_two.addWidget(data_display)
         
+        vbox.addLayout(hbox_one)
+        vbox.addLayout(hbox_two)
+        vbox.addLayout(hbox_three)
+
+        run_box.setLayout(vbox)
+
+        return run_box
+
+    def test(self, string):
+        print("Testing ", string)
+
+    def test_combo(self, string, line_edit):
+        line_edit.setText(string)
+        print("Done")
+        return
+
+    def Inspect_Histogram(self):
+        return
+
+    def Isolate_Plot(self):
+        return
+
+    def Color_Changed(self):
+        return
+
+    def Run_Data_Query(self):
+        return 
+
+
 class RunData:
     def __init__(self,parent=None,filename=None):
         # print("init Function :: RunData Class ::", filename) # DEBUGGING HELP
@@ -596,7 +707,6 @@ class RunData:
         # basic information about the run and assign to appropriate class members. Then
         # read in the histograms and generate the assymetry and time arrays. Does not 
         # permanently store the histograms.
-        print(filename)
         data_line = pd.read_csv(filename,nrows=1)
 
         self.run_expt_number = data_line.iloc[0]['ExptNumber']
@@ -625,6 +735,8 @@ class RunData:
         # FIXME This is only for generating front-back/front+back asymmetry, add functionality
         # for the obvious other situations. (Good enough for testing)
         run_data['asymmetry'] = (run_data['left'] - run_data['right'])/(run_data['left'] + run_data['right'])
+        # run_data['asymmetry'] = (run_data['front'] - run_data['left'])/(run_data['front'] + run_data['left'])
+
         run_data['asymmetry'].fillna(0.0,inplace=True)
         self.asymmetry = np.array([])
         self.asymmetry = run_data['asymmetry'].values
