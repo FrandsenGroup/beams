@@ -23,16 +23,13 @@ import sys
 # scipy for the fourier transform
 from scipy.interpolate import spline
 
-# Ctypes to deal with our delightful MUD functions from TRIUMF
-# from ctypes import *
-
-# Custom MUD function for reading in files
-# import cython
-# import BEAMS_C_Library
-
 
 class Window(QtWidgets.QMainWindow):
     def __init__(self):
+        # CLASS OVERVIEW
+        # Serves as the parent class that will hold all the panel objects you see on the left, bottom and
+        # right sides. All of the panels are docking widgets so that the user can remove them if they want
+        # to enlarge the plotting area.
         super(Window,self).__init__()
         self.initUI()
 
@@ -69,9 +66,9 @@ class Window(QtWidgets.QMainWindow):
         self.show()
 
     def Create_MenuBar(self):
-        # print("Create_MenuBar Function :: Window Class")
-        # Initializes the menubar across the top of the main window, still need to
-        # add functionality to these items.
+        # FUNCTION OVERVIEW
+        # Initializes the menubar across the top of the main window, as well as the status
+        # bar on the bottom of the window. Still need to add functionality to these items.
 
         #Exit Menu Item
         exitAct = QtWidgets.QAction(QtGui.QIcon('exit.png'), '&Exit', self)        
@@ -95,10 +92,9 @@ class Window(QtWidgets.QMainWindow):
         #Add Data Files
         addDataAct = QtWidgets.QAction(QtGui.QIcon('addDada.png'), '&Add Data File', self) 
         addDataAct.setStatusTip('Add a data file to current session')
-        addDataAct.triggered.connect(lambda: self.AddDataFile())
 
         #Menubar layout setup
-        # self.statusBar()
+        self.statusBar()
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(newSesAct)
@@ -111,38 +107,51 @@ class Window(QtWidgets.QMainWindow):
         fileMenu = menubar.addMenu('&Help')        
 
     def Create_FileManager(self):
-        # print("Create_FileManager Function :: Window Class") # DEBUGGING HELP
+        # FUNCTION OVERVIEW
+        # Creates an object of the FileManagerPanel class (this is the panel that opens on the left side
+        #  of the window). Assign the parent as self (Window) and dock on the left side.
         self.fileControl = FileManagerPanel(parent=self)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.fileControl)
 
     def Create_GraphEditor(self):
-        # print("Create_GraphEditor Function :: Window Class") # DEBUGGING HELP
+        # FUNCTION OVERVIEW
+        # Creates an object of the GraphEditorPanel class (this is the panel that opens on the bottom of 
+        # the window). Assign the parent as self (Window) and dock on the bottom.
         self.graphEditor = GraphEditorPanel(parent=self)
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.graphEditor)
 
     def Create_GraphArea(self):
-        # print("Create_GraphArea Function :: Window Class") # DEBUGGING HELP
+        # FUNCTION OVERVIEW
+        # Creates an object of the GraphAreaPanel class (this is the panel takes up the center of the window
+        # and holds the graphs). Assign the parent as self (Window) and set as central widget.
         self.graphArea = GraphAreaPanel(parent=self)
         self.setCentralWidget(self.graphArea)
 
     def Create_RunInfoPanel(self):
-        # print("Create_RunInfoPanel Function :: Window Class") # DEBUGGING HELP
+        # FUNCTION OVERVIEW
+        # Creates an object of the RunInfoPanel class (this is the panel that opens on the right side of
+        # the window). Assign the parent as self (Window) and dock on the right side.
         self.runInfo = RunInfoPanel(parent=self)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.runInfo)
 
 
 class FileManagerPanel(QtWidgets.QDockWidget):
     def __init__(self,parent=None):
-        # print("init Function :: FileManagerPanel Class") # DEBUGGING HELP
+        # CLASS OVERVIEW
+        # The FileManagerPanel is a DockWidget, whos main component is a ListWidget and bar of buttons along
+        # the top allowing the user to import files, and plot and export runs. The ListWidget holds a list of
+        # checkboxes and run names.
+
         super(FileManagerPanel,self).__init__()
-        # Set the Main Window as the parent class
         self.setParent(parent)
-        # Create the array where the filenames will be stored
         self.filenames = []
-        # Initialize UI for the file manager panel
         self.initUI(parent)
 
     def initUI(self,parent):
+        # FUNCTION OVERVIEW
+        # Creates and brings together all the pieces that make up the panel. Note on Layout: QVBoxLayout 
+        # and QHBoxLayout are used here and in the other classes to set up the grid for the panels and 
+        # the widgets on them.
         self.setWindowTitle("File Manager")
 
         tempWidget = QtWidgets.QWidget()
@@ -178,12 +187,15 @@ class FileManagerPanel(QtWidgets.QDockWidget):
         self.setFloating(False)
 
     def Write_Button(self):
-        print("Write_Button Function :: FileManagerPanel Class") # DEBUGGING HELP
+        # FUNCTION OVERVIEW
+        # This will allow you to export the calculated time, asymmetry, error and uncertainty arrays; once I 
+        # figure out how to calculate those.
+        return
 
     def Add_Button(self):
-        # ADD_BUTTON Functionality : Prompt user for a file to import and add that file to
-        # the self.filenames array for the FileManagerPanel Object
-        # print("Add_Button Function :: FileManagerPanel Class") # DEBUGGING HELP 
+        # FUNCTION OVERVIEW 
+        # Prompt user for files to import and add those files to the self.filenames array for the 
+        # FileManagerPanel Object
 
         # Open File-Dialog for user to select files to import
         filename = QtWidgets.QFileDialog.getOpenFileNames(self,'Add file','/home')
@@ -193,13 +205,11 @@ class FileManagerPanel(QtWidgets.QDockWidget):
             # i.e. "C:/Users/kalec/Documents/" and "006515" and ".msr" respectively
             file_path, file_root = os.path.split(filename[0][file_index])
             file_base, file_ext = os.path.splitext(os.path.basename(file_root))
-            # print(file_path," + ",file_base," + ",file_ext) # DEBUGGING HELP
 
             # If it is a MUD file it must be imported to a .dat file and then add file to object array
             if(file_ext == ".msr"):
                 self.Import_MUD_File(filename[0][file_index])
             self.filenames.append(file_path+"/"+file_base+".dat")
-            # print(self.filenames) # DEBUGGING HELP
 
             # Display the file_base in the file manager on the left side, with a check
             file_item = QtWidgets.QListWidgetItem(file_base,self.listWidget)
@@ -208,20 +218,22 @@ class FileManagerPanel(QtWidgets.QDockWidget):
 
             # self.Import_MUD_File(filename[0]) # FIXME Eventually we will want to import the .msr
             # to .dat files. Once we get this silly c code to run from python.
+            # FIXME Instead of showing the filename we should change it to show the run title.
 
     def Import_MUD_File(self, filename):
-        print("Import_MUD_File Function :: FileManagerPanel Class") # DEBUGGING HELP
+        # FUNCTION OVERVIEW
         # FIXME This function will take the date from .msr and create a .dat with the same name
         # then it will call Read_DatFile to read in the .dat file it just created. Some day.
         # mud_lib = ctypes.CDLL(BEAMS_MUDlib.so)
         # libMUD = CDLL(r"C:\Users\kalec\Documents\Research_Frandsen\Visualizing_uSR\BEAMS\mud\src\BEAMS_MUDlib.dll")
+        return
 
     def Plot_Button(self,parent):
-        # print("Plot_Button Function :: FileManagerPanel Class") # DEBUGGING HELP
-        # PLOT_BUTTON Functionality : This button will call the Read_Dat_Files on the RunInfoPanel
-        # object to get the basic run info and initial asymmetry and time arrays.
+        # FUNCTION OVERVIEW 
+        # This button will call the Read_Dat_Files on the RunInfoPanel object to get the basic run info 
+        # and initial asymmetry and time arrays.
 
-        # Read in .dat files
+        # Read in .dat files (see Read_Dat_Files in the RuInfoPanel Class for more info)
         parent.runInfo.Read_Dat_Files(parent)
     
         # Update canvas one (the two axes on the left of the graphing area)
@@ -233,37 +245,39 @@ class FileManagerPanel(QtWidgets.QDockWidget):
             parent.graphEditor.slider_two.value(),"SLIDER_RELEASED", parent)
 
     def Get_Filenames(self):
-        # GET_FILENAMES Functionality : ... do I really have to explain?
+        # FUNCTION OVERVIEW
+        # See below ...
         return self.filenames
 
     def Get_Checked_Filenames(self):
-        # GET_CHECKED_FILENAMES Functionality : run through the file list on the GUI and 
-        # check which filenames are checked by the user. Those are the ones that will be
-        # returned. 
-        # print("Get_Filenames Function :: FileManagerPanel Class") # DEBUGGING HELP
+        # FUNCTION OVERVIEW 
+        # Run through the file list on the GUI and check which filenames are checked by the user. Those are 
+        # the ones that will be returned. 
         checked_items = []
         for index in range(self.listWidget.count()):
-            # print("Checking item at ", index) # DEBUGGING HELP
             if self.listWidget.item(index).checkState() == QtCore.Qt.Checked:
                 checked_items.append(self.filenames[index])
-                # print(self.listWidget.item(index).text()) # DEBUGGING HELP
         return checked_items
 
 
 class GraphAreaPanel(QtWidgets.QDockWidget):
     def __init__(self,parent=None):
-        # print("init Function :: GraphAreaPanel Class") # DEBUGGING HELP
+        # CLASS OVERVIEW 
+        # This DockWidget holds all the the figures that the runs will be plotted on.
         super(GraphAreaPanel,self).__init__()
         self.setParent(parent)
         self.initUI()
-        plt.ion()
+        plt.ion() # Interative mode on so the figures can be updated.
 
     def initUI(self):
+        # FUNCTION OVERVIEW
+        # Creates the two figures (two axes each) that the runs will be plotted on and stores them on the 
+        # main DockWidget.
         self.setWindowTitle("Graphing Area")
         tempWidget = QtWidgets.QWidget()
 
-        self.canvas_one = self.Create_Canvas()
-        self.canvas_two = self.Create_Canvas()
+        self.canvas_one = PlotCanvas(parent=self)
+        self.canvas_two = PlotCanvas(parent=self)
 
         hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.canvas_one)
@@ -272,28 +286,33 @@ class GraphAreaPanel(QtWidgets.QDockWidget):
 
         self.setWidget(tempWidget)
 
-    def Create_Canvas(self):
-        # print("Create_Canvas Function :: GraphAreaPanel Class") # DEBUGGING HELP
-        canvas = PlotCanvas(parent=self)
-        return canvas
-
 
 class PlotCanvas(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
-        # print("init Function :: PlotCanvas Class") # DEBUGGING HELP
+        # CLASS OVERVIEW
         fig = plt.figure(dpi=dpi)
         
         self.axes_time = fig.add_subplot(211,label="Time Domain")
         self.axes_freq = fig.add_subplot(212,label="Frequency Domain")
+
+        self.axes_time.spines['right'].set_visible(False)
+        self.axes_time.spines['top'].set_visible(False)
+        self.axes_time.tick_params(bottom=False, left=False)
+        self.axes_time.set_xlabel("Time ("+chr(956)+"s)")
+        self.axes_time.set_ylabel("Asymmetry")
+
+        self.axes_freq.spines['right'].set_visible(False)
+        self.axes_freq.spines['top'].set_visible(False)
+        self.axes_freq.tick_params(bottom=False, left=False)
+        self.axes_freq.set_xlabel("Frequence (MHz)")
+        self.axes_freq.set_ylabel("Amplitude")
+        
         FigureCanvas.__init__(self,fig)
         
         self.new_times = np.array([])
         self.new_asymmetry = np.array([])
 
         self.setParent(parent)
-
-        self.axes_time.clear()
-        self.axes_freq.clear()
 
     def Import_Data(self,parent):
         # print("Import_Data Function :: PlotCanvas Class") # DEBUGGING HELP
@@ -318,6 +337,9 @@ class PlotCanvas(FigureCanvas):
             if(slider_state == "SLIDER_RELEASED"):
                 self.Update_Fourier_Transform(float(bin_size), float(xmin), float(xmax))
 
+        self.axes_time.set_xlabel("Time ("+chr(956)+"s)")
+        self.axes_time.set_ylabel("Asymmetry")
+
     def Update_Asymmetry_Bins(self, xmin, xmax, bin_size, slider_state, parent, graph_index):
         # Retrieve the asymmetry and times from the RunData objects stored in RunInfoPanel object
         asymmetry = np.array([])
@@ -337,7 +359,7 @@ class PlotCanvas(FigureCanvas):
         bin_size = float(bin_size)/1000
 
         # Based on the difference in time and binsize determine the size of the final asymmetry and time array
-        final_size = int(np.floor((times[end_index] - times[start_index]) / bin_size))
+        final_size = int(np.ceil((times[end_index] - times[start_index]) / bin_size))
         print(final_size)
         self.new_asymmetry = np.zeros(final_size)
         self.new_times = np.zeros(final_size)
@@ -347,7 +369,7 @@ class PlotCanvas(FigureCanvas):
         asym_sum, time_sum, n, i = 0,0,0,0
         for index in range(start_index,end_index,8):
             # We do eight at a time instead of iterating one at a time as this is much less computationaly intensive (the
-            # conditions are checked every eighth time isntead of every time)
+            # conditions are checked every eighth time instead of every time)
             asym_sum += asymmetry[index]
             asym_sum += asymmetry[index+1]
             asym_sum += asymmetry[index+2]
@@ -386,7 +408,9 @@ class PlotCanvas(FigureCanvas):
 
         # Plot! 
         self.axes_freq.plot(x_smooth, y_smooth)
-        
+
+        self.axes_freq.set_xlabel("Frequence (MHz)")
+        self.axes_freq.set_ylabel("Amplitude")
         return
 
     def Plot_Single_Run(self, graph_index, graph_variables, parent):
@@ -398,6 +422,9 @@ class PlotCanvas(FigureCanvas):
         
         self.axes_time.set_xlim(float(graph_variables[0]),float(graph_variables[1]))
         self.axes_time.plot(self.new_times,self.new_asymmetry,'o')
+        self.axes_time.set_xlabel("Time ("+chr(956)+"s)")
+        self.axes_time.set_ylabel("Asymmetry")
+
         self.Update_Fourier_Transform(float(graph_variables[2]), float(graph_variables[0]), float(graph_variables[1]))
 
 
@@ -598,6 +625,8 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         del self.data_array[:]
 
         # This loop goes through the old layout and removes old run info boxes
+        # FIXME add an if statement so it only does this if there are already runs in the plot. Otherwise 
+        # we get an error. Not sure how to get rid of the plot button yet.
         for i in reversed(range(self.layout.count()-1)):
             self.layout.itemAt(i).widget().setParent(None)
 
@@ -803,8 +832,10 @@ class RunData:
 
         # FIXME This is only for generating front-back/front+back asymmetry, add functionality
         # for the obvious other situations. (Good enough for testing)
-        run_data['asymmetry'] = (run_data['left'] - run_data['right'])/(run_data['left'] + run_data['right'])
+        # run_data['asymmetry'] = (run_data['left'] - run_data['right'])/(run_data['left'] + run_data['right'])
+        run_data['asymmetry'] = (run_data['back'] - run_data['front'])/(run_data['front'] + run_data['back'])
         # run_data['asymmetry'] = (run_data['front'] - run_data['left'])/(run_data['front'] + run_data['left'])
+        # run_data['asymmetry'] = (run_data['front'] - run_data['right'])/(run_data['front'] + run_data['right'])
 
         run_data['asymmetry'].fillna(0.0,inplace=True)
         self.asymmetry = np.array([])
@@ -825,14 +856,12 @@ class RunData:
 
     def Inspect_Histogram(self, histogram):
         run_data = pd.read_csv(self.filename,skiprows=2)
-        histogram_data = run_data[histogram].values
-        bins = np.arange(1,self.run_num_bins)
-        
+        histogram_data = run_data[histogram].values      
         
         new_bins = int(np.floor(len(histogram_data)/20))
         new_hist = np.zeros(new_bins)
         new_times = np.arange(new_bins)
-        print(new_bins)
+
         i = 0
         sum = 0
         n = 0
@@ -860,12 +889,10 @@ class RunData:
             new_hist[n] = sum / 20
             n += 1
             sum = 0
-        print(new_hist, new_times)
 
         fig = plt.figure()
         plt.bar(new_times,new_hist)
-        plt.ylim(0,150)
-
+        # FIXME Figure out dynamic way to set y limits
 
 
 
