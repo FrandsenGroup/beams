@@ -34,7 +34,7 @@ class Window(QtWidgets.QMainWindow):
         self.initUI()
 
     def initUI(self):
-        # print("initUI Function :: Window Class") # DEBUGGING HELP
+        # FUNCTION OVERVIEW
         # First off, the reason why we want to inherit from the QtWidgets.QMainWindow 
         # class is so that we can utilize all of the GUI aspects that QT gives us 
         # out of the gate, but we still want to wind up creating our own class for 
