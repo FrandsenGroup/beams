@@ -290,6 +290,8 @@ class GraphAreaPanel(QtWidgets.QDockWidget):
 class PlotCanvas(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         # CLASS OVERVIEW
+        # There are two objects of the PlotCanvas class, each holds two axis (one from the time domain and one for the frequency domain
+        # of the asymmetry) with the specified xmin and xmax and bin_size chosen by the user in the GraphEditorPanel
         fig = plt.figure(dpi=dpi)
         
         self.axes_time = fig.add_subplot(211,label="Time Domain")
@@ -315,14 +317,19 @@ class PlotCanvas(FigureCanvas):
         self.setParent(parent)
 
     def Import_Data(self,parent):
-        # print("Import_Data Function :: PlotCanvas Class") # DEBUGGING HELP
+        # FUNCTION OVERVIEW
+        # FIXME This function may be deleted, I was originally going to do the import from the .msr files from here but I may do that 
+        # when the user adds the files instead.
         checked_items = parent.fileControl.Get_Filenames()
         print(checked_items)
         for index in range(len(checked_items)):
             print(index)
 
     def Plot_Data(self, xmin, xmax, bin_size, slider_state, parent):
-        # print("Plot_Data Function :: PlotCanvas Class") # DEBUGGING HELP
+        # FUNCTION OVERVIEW
+        # This function clears the current plots from the graph, if any, and plots the currently selected files in the FileManagerPanel
+        # on the axes. The fourier transform is not updated while the user is moving the slider for the bin size due to the lag, so it will
+        # only be updated when the user releases the slider.
         self.axes_time.clear()
         self.axes_freq.clear()
 
@@ -341,6 +348,12 @@ class PlotCanvas(FigureCanvas):
         self.axes_time.set_ylabel("Asymmetry")
 
     def Update_Asymmetry_Bins(self, xmin, xmax, bin_size, slider_state, parent, graph_index):
+        # FUNCTION OVERVIEW
+        # This function takes the un-altered asymmetry for the stored runs and calculates the new asymmetry based on the user specified
+        # bin size for the times.
+        # FIXME We should be calling "Getter" functions to get data members from other classes, not accessing the class data members
+        # themselves (good practice), I'll start doing that then come back and fix it everywhere else.
+        
         # Retrieve the asymmetry and times from the RunData objects stored in RunInfoPanel object
         asymmetry = np.array([])
         asymmetry = parent.runInfo.data_array[graph_index].asymmetry
@@ -369,7 +382,7 @@ class PlotCanvas(FigureCanvas):
         asym_sum, time_sum, n, i = 0,0,0,0
         for index in range(start_index,end_index,8):
             # We do eight at a time instead of iterating one at a time as this is much less computationaly intensive (the
-            # conditions are checked every eighth time instead of every time)
+            # conditions are checked every eighth time instead of every time, this is called "Loop Unrolling")
             asym_sum += asymmetry[index]
             asym_sum += asymmetry[index+1]
             asym_sum += asymmetry[index+2]
@@ -380,7 +393,6 @@ class PlotCanvas(FigureCanvas):
             asym_sum += asymmetry[index+7]
             n += 8
             time_sum += 8*time_sep
-            # print(asym_sum,time_sum,n,i,bin_size,index) # DEBUGGING HELP
             if(time_sum > bin_size):
                 self.new_asymmetry[i] = asym_sum / n
                 self.new_times[i] = times[index+7]
@@ -391,6 +403,9 @@ class PlotCanvas(FigureCanvas):
         # print(self.new_asymmetry, self.new_times) # DEBUGGING HELP
 
     def Update_Fourier_Transform(self, bin_size, xmin, xmax):
+        # FUNCTION OVERVIEW
+        # This function takes the newly calculated asymmetry and time arrays and calculates the fast fourier transform of that data, and 
+        # then plots it on the lower axes. 
         # Calculate the new fft
         period_s = bin_size / 1000
         frequency_s = 1.0 / period_s
@@ -416,6 +431,9 @@ class PlotCanvas(FigureCanvas):
         return
 
     def Plot_Single_Run(self, graph_index, graph_variables, parent):
+        # FUNCTION OVERVIEW
+        # If the user presses the "Isolate" button, wishing to plot that run alone, this function will clear the axes and plot that run,
+        # ignoring any other runs that are currently plotted or selected in the FileManagerPanel
         self.axes_time.clear()
         self.axes_freq.clear()
         
@@ -432,12 +450,17 @@ class PlotCanvas(FigureCanvas):
 
 class GraphEditorPanel(QtWidgets.QDockWidget):
     def __init__(self,parent = None):
+        # CLASS OVERVIEW
+        # This is the panel that opens on the bottom of the window, it contains LineEdit and Slider objects that allow the user to alter
+        # the graphs appearance (the max and min times for each axes as well as how the asymmetry is binned timewise)
         super(GraphEditorPanel,self).__init__()
         self.setParent(parent)
         self.initUI(parent)
 
     def initUI(self, parent):
-        # print("init Function :: GraphEditorPanel Class") # DEBUGGING HELP
+        # FUNCTION OVERVIEW
+        # Lots of setup in this function but it is simple code. We create all the user input objects and determine how they will be 
+        # placed physically on the actual GraphEditorPanel object.
         
         self.setWindowTitle("Graph Editor")
 
@@ -481,7 +504,8 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
         self.setWidget(self.Create_Layout(xmin_one_label,xmin_two_label,xmax_one_label,xmax_two_label,slider_one_label,slider_two_label))
 
     def Create_Slider(self):
-        # print("Create_Slider Function :: GraphEditorPanel Class") # DEBUGGING HELP
+        # FUNCTION OVERVIEW
+        # Creates one of sliders used to determine the bin size for time. 
         slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
         slider.setMinimum(1)
         slider.setMaximum(500)
@@ -491,21 +515,23 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
         return slider
 
     def Create_Input_Boxes(self,box_value,graph_num):
-        # print("Create_Input_Boxes Function :: GraphEditorPanel Class") # DEBUGGING HELP
+        # FUNCTION OVERVIEW
+        # Creates one of the input boxes (so we don't have to repeat this code 6 times)
         input_box = QtWidgets.QLineEdit()
         input_box.setText(box_value)
         input_box.setFixedWidth(50)
-        # input_box.returnPressed.connect(lambda: self.parent.Plot_Data(graph_num)) # FIXME
         return input_box
 
     def Create_Input_Box_Label(self,box_label):
-        # print("Create_Input_Box_Label Function :: GraphEditorPanel Class") # DEBUGGING HELP
+        # FUNCTION OVERVIEW
+        # Creates one of the labels for the input boxes (so we don't have to repeat this code 6 times)
         input_box_label = QtWidgets.QLabel()
         input_box_label.setText(box_label)
         return input_box_label
 
     def Create_Layout(self, label_x_one, label_x_two, label_x_three, label_x_four, label_s_one, label_s_two):
-        # print("Create_Layout Function :: GraphEditorPanel Class") # DEBUGGING HELP
+        # FUNCTION OVERVIEW
+        # Takes all the objects we created and organizes them on a widget, which it returns to be set as the central widget.
         tempWidget = QtWidgets.QWidget()
         vbox_one = QtWidgets.QVBoxLayout()
         vbox_one.addWidget(self.xmin_one)
@@ -540,7 +566,8 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
         return tempWidget
 
     def Slider_Released(self, parent, graph_num):
-        # print("Slider_Changed Function :: GraphEditorPanel Class")
+        # FUNCTION OVERVIEW
+        # FIXME Combine this with Slider_Moving, just include an if-else branch.
 
         if(graph_num == 1):
             self.slider_one_text.setText(str(self.slider_one.value()))
@@ -552,7 +579,8 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
                 "SLIDER_RELEASED", parent)
         
     def Slider_Moving(self, parent, graph_num):
-        print("Slider_Moving Function :: GraphEditorPanel Class")
+        # FUNCTION OVERVIEW
+        # FIXME Combine this with Slider_Released, just include an if-else branch.
         # Since it is computationally intensive to rebin the asymmetry we will only
         # do it while it is moving with every fifth tick. Then we will do it once it
         # is released.
@@ -566,8 +594,9 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
                 "SLIDER_MOVING", parent)
 
     def Slider_Text_Changed(self, parent, graph_num):
-        # print("Slider_Text_Changed Function :: GraphEditorPanel Class")
-        
+        # FUNCTION OVERVIEW
+        # When the input box for the bin size is changed this will call the plot function as well as move the slider to the
+        # appropriate position
         if(graph_num == 1):
             self.slider_one.setValue(int(self.slider_one_text.text()))
             parent.graphArea.canvas_one.Plot_Data(self.xmin_one.text(), self.xmax_one.text(), self.slider_one.value(), 
@@ -578,6 +607,8 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
                 "SLIDER_RELEASED", parent)
 
     def Get_Graphing_Variables(self):
+        # FUNCTION OVERVIEW
+        # Returns all the user-changeable graphing variables stored in this class
         variables = [[self.xmin_one.text(), self.xmax_one.text(), self.slider_one.value()],
             [self.xmin_two.text(), self.xmax_two.text(), self.slider_two.value()]] 
         return variables
@@ -585,7 +616,10 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
 
 class RunInfoPanel(QtWidgets.QDockWidget):
     def __init__(self,parent=None):
-        # print("init Function :: RunInfoPanel Class") # DEBUGGING HELP
+        # CLASS OVERVIEW
+        # This is the panel that opens on the right side, it will hold a RunBox (see below) for each run that is currently selected and 
+        # plotted by the user. The RunBox holds extra information on that run and allows the user to isolate a single run when multiple
+        # are plotted or inspect invdividual histograms as well. Holds an array of RunData objects to access this information.
         super(RunInfoPanel,self).__init__()
         self.setParent(parent)
         self.setWindowTitle("Run Information")
@@ -597,17 +631,13 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         self.layout.addStretch()
         
     def Read_Dat_Files(self,parent):
-        # READ_DAT_FILE Functionality: Update the information on the panel and then read
-        # in the histograms and create the initial asymmetry and time arrays
-
-        # Call the Update_Run_Panel function to clear and update the panel on the right.
+        # FUNTION OVERVIEW
+        # Calls Update_Run_Panel to delete old run boxes (even if some would normally be kept) and then creates a box for all
+        # currently selected runs.
         filenames = self.Update_Run_Panel(parent)
         index = 0
         for index in range(len(filenames)):
-            print("reading in file ", index)
             self.data_array.append(RunData(filename=filenames[index]))
-
-            # run_data_box = QtWidgets.QLabel(self.data_array[index].run_title)
             run_data_box = self.Create_Run_Box(self.data_array[index].run_title, index, parent)
             self.layout.insertWidget(index, run_data_box)       
 
@@ -618,25 +648,26 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         self.layout.insertWidget(index + 1, plot_all_button) 
 
     def Update_Run_Panel(self, parent):
-        # UPDATE_RUN_PANEL Functionality : Loop through layout of RunInfoPanel and clear
-        # all old widgets (old run info) then add the new. Returns filenames for creating the
-        # RunData objects back in the Read_Dat_Files function.
-        # print("Update_Run_Panel Function :: RunInfoPanel Class") # DEBUGGING HELP
-
-        # Delete old data_array that held the old run info
+        # FUNCTION OVERVIEW
+        # Loop through layout of RunInfoPanel and clear all old widgets (old run info) then add the new. Returns filenames for 
+        # creating the RunData objects back in the Read_Dat_Files function.
+        
         del self.data_array[:]
 
         # This loop goes through the old layout and removes old run info boxes
         # FIXME add an if statement so it only does this if there are already runs in the plot. Otherwise 
-        # we get an error. Not sure how to get rid of the plot button yet.
+        # we get an error. Not sure how to get rid of the plot button yet; when in doubt, call it a feature.
         for i in reversed(range(self.layout.count()-1)):
             self.layout.itemAt(i).widget().setParent(None)
 
-        # Get all the currently checked filenames
+        # Get all the currently checked filenames # FIXME Just move this up Read_Dat_Files 
         filenames = parent.fileControl.Get_Checked_Filenames()
         return filenames
 
     def Create_Run_Box(self, title, data_num, parent):
+        # FUNCTION OVERVIEW
+        # The RunBoxes for each run contain a lot of Widgets for user input, this function creates them and lays them out appropriately.
+        # One box is returned with each function call.
         run_box = QtWidgets.QWidget()
         vbox = QtWidgets.QVBoxLayout()
         hbox_one = QtWidgets.QHBoxLayout()
@@ -713,16 +744,16 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         hbox_one.addWidget(isolate_button)
         hbox_one.addWidget(box_title)
         hbox_one.addStretch()
+        
+        hbox_two.addWidget(data_options_label)
+        hbox_two.addWidget(data_options_box)
+        hbox_two.addWidget(data_display)
     
         hbox_three.addWidget(hist_label)
         hbox_three.addWidget(hist_options)
         hbox_three.addWidget(inspect_button)
         hbox_three.addStretch()
 
-        hbox_two.addWidget(data_options_label)
-        hbox_two.addWidget(data_options_box)
-        hbox_two.addWidget(data_display)
-        
         vbox.addLayout(hbox_one)
         vbox.addLayout(hbox_two)
         vbox.addLayout(hbox_three)
@@ -732,18 +763,27 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         return run_box
 
     def Inspect_Histogram(self, histogram, graph_num, parent):
+        # FUNCTION OVERVIEW
+        # Function call for the "Inspect" button, see Inspect_Histogram in RunData class for more information.
         self.data_array[graph_num].Inspect_Histogram(histogram)
 
     def Isolate_Plot(self, graph_num, parent):
+        # FUNCTION OVERVIEW
+        # Function call for the "Isolate" button, gets the graphing variables the GraphEditorPanel and calls the Plot_Single_Run 
+        # function from the PlotCanvas class.
         graphing_variables = parent.graphEditor.Get_Graphing_Variables()
         parent.graphArea.canvas_one.Plot_Single_Run(graph_num, graphing_variables[0], parent)
         parent.graphArea.canvas_two.Plot_Single_Run(graph_num, graphing_variables[1], parent)
 
     def Color_Changed(self, color, graph_num, parent):
-        print("Changing color is not currently supported, try again later ...")
+        # FUNCTION OVERVIEW
+        # Will allow the user to change the color of any individual run on the plot.
         return
 
     def Run_Data_Query(self, data_member, line_edit, graph_num, parent):
+        # FUNCTION OVERVIEW
+        # FIXME This function is a sin, first off, call "getter" functions and second there has to be a better way to do this then
+        # a long elif section. Of course, make a dictionary of the info. *Face palm*
         if(data_member == "Experiment #"):
             line_edit.setText(str(parent.runInfo.data_array[graph_num].run_expt_number))
         elif(data_member == "Run #"):
@@ -786,6 +826,9 @@ class RunInfoPanel(QtWidgets.QDockWidget):
             line_edit.setText("n/a") 
 
     def Plot_All(self, parent):
+        # FUNCTION OVERVIEW
+        # Function call for the "Plot All" button, does exactly what it says. Gets the graphing variables then calls the Plot_Data
+        # function in the PlotCanvas class to replot all the runs currently shown in the RunInfoPanel.
         graphing_variables = parent.graphEditor.Get_Graphing_Variables()
         parent.graphArea.canvas_one.Plot_Data(graphing_variables[0][0], graphing_variables[0][1],
             graphing_variables[0][2], "SLIDER_RELEASED", parent)
@@ -795,16 +838,15 @@ class RunInfoPanel(QtWidgets.QDockWidget):
 
 class RunData:
     def __init__(self,parent=None,filename=None):
-        # print("init Function :: RunData Class ::", filename) # DEBUGGING HELP
-        # Create the datamembers
-
+        # CLASS OVERVIEW
+        # Stores the required data for each run. All the data in the header is stored permanently in the object, the histograms are only
+        # stored temporarily to create the Asymmetry and Time arrays which are stored permanently.
         self.initData(filename)
 
     def initData(self,filename):
-        # INITDATA Functionality : First read in the header of the .dat file to get 
-        # basic information about the run and assign to appropriate class members. Then
-        # read in the histograms and generate the assymetry and time arrays. Does not 
-        # permanently store the histograms.
+        # FUNCTION OVERVIEW
+        # First read in the header of the .dat file to get basic information about the run and assign to appropriate class members. Then
+        # read in the histograms and generate the assymetry and time arrays. Does not permanently store the histograms.
         self.filename = filename
 
         data_line = pd.read_csv(filename,nrows=1)
@@ -833,10 +875,11 @@ class RunData:
         run_data = pd.read_csv(filename,skiprows=2)
 
         # FIXME This is only for generating front-back/front+back asymmetry, add functionality
-        # for the obvious other situations. (Good enough for testing)
+        # for the obvious other situations. (Good enough for testing).
+        # FIXME We need to figure out which is front,back,left,right because the dang MUD functions don't tell us.
         # run_data['asymmetry'] = (run_data['left'] - run_data['right'])/(run_data['left'] + run_data['right'])
-        # run_data['asymmetry'] = (run_data['back'] - run_data['front'])/(run_data['front'] + run_data['back'])
-        run_data['asymmetry'] = (run_data['front'] - run_data['left'])/(run_data['front'] + run_data['left'])
+        run_data['asymmetry'] = (run_data['back'] - run_data['front'])/(run_data['front'] + run_data['back'])
+        # run_data['asymmetry'] = (run_data['front'] - run_data['left'])/(run_data['front'] + run_data['left'])
         # run_data['asymmetry'] = (run_data['front'] - run_data['right'])/(run_data['front'] + run_data['right'])
 
         run_data['asymmetry'].fillna(0.0,inplace=True)
@@ -849,6 +892,8 @@ class RunData:
         self.times *= self.run_bin_size
 
     def Get_Run_Data(self):
+        # FUNCTION OVERVIEW
+        # Returns all the header data for the run
         run_data = [self.run_expt_number, self.run_number, self.run_elapsed_secs, self.run_time_begin,
             self.run_time_end, self.run_title, self.run_lab, self.run_area, self.run_method,
             self.run_apparatus, self.run_insert, self.run_sample, self.run_orientation, self.run_das,
@@ -857,6 +902,11 @@ class RunData:
         return run_data
 
     def Inspect_Histogram(self, histogram):
+        # FUNCTION OVERVIEW
+        # Plots the user-specified histogram for this run and shows it in a pop-up window. Built-in MatPlotLib functionality
+        # allows the user to zoom in on specified sections as well so we don't need to add that ourselves. This function takes
+        # advantage of loop unrolling to create a smaller histogram (the plot had trouble plotting the whole histogram). We'll
+        # have to figure out how to dynamically allow the user to see the whole histogram. # FIXME
         run_data = pd.read_csv(self.filename,skiprows=2)
         histogram_data = run_data[histogram].values      
         
@@ -895,6 +945,3 @@ class RunData:
         fig = plt.figure()
         plt.bar(new_times,new_hist)
         # FIXME Figure out dynamic way to set y limits
-
-
-
