@@ -337,7 +337,6 @@ class PlotCanvas(FigureCanvas):
             self.Update_Asymmetry_Bins(xmin, xmax, bin_size, slider_state, parent, graph_index)
 
             self.axes_time.set_xlim(float(xmin),float(xmax))
-            # self.axes_time.set_ylim(-.4,.4)
             self.axes_time.plot(self.new_times,self.new_asymmetry,'o')
             # FIXME Need to figure out how to assign colors
 
@@ -361,14 +360,14 @@ class PlotCanvas(FigureCanvas):
         times = parent.runInfo.data_array[graph_index].times #FIXME TIMES ARE STILL IN NANO, MUST FIX!!!
         
         # Determine the start and end indexes based on xmin and xmax and num of indexes
-        start_size = int(parent.runInfo.data_array[graph_index].run_num_bins)
+        start_size = int(parent.runInfo.data_array[graph_index].Get_Single_Header_Data('numBins'))
         print(float(xmin),times[start_size-1],start_size)
         start_index = int(np.floor((float(xmin)/times[start_size-1])*start_size))
         end_index = int(np.floor((float(xmax)/times[start_size-1])*start_size))
         print(start_size,xmin,xmax,start_index,end_index,times[start_size-1])
 
         # Determine the initialial bin size and the new user specified bins size
-        time_sep = parent.runInfo.data_array[graph_index].run_bin_size
+        time_sep = parent.runInfo.data_array[graph_index].Get_Single_Header_Data('binsize')
         bin_size = float(bin_size)/1000
 
         # Based on the difference in time and binsize determine the size of the final asymmetry and time array
@@ -609,9 +608,15 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
     def Get_Graphing_Variables(self):
         # FUNCTION OVERVIEW
         # Returns all the user-changeable graphing variables stored in this class
-        variables = [[self.xmin_one.text(), self.xmax_one.text(), self.slider_one.value()],
-            [self.xmin_two.text(), self.xmax_two.text(), self.slider_two.value()]] 
-        return variables
+        graphing_variables = {
+            'xmin_one' : float(self.xmin_one.text()),
+            'xmax_one' : float(self.xmax_one.text()),
+            'slider_one' : self.slider_one.value(),
+            'xmin_two' : float(self.xmin_two.text()),
+            'xmax_two' : float(self.xmax_two.text()),
+            'slider_two' : self.slider_two.value()
+        }
+        return graphing_variables
 
 
 class RunInfoPanel(QtWidgets.QDockWidget):
@@ -638,7 +643,7 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         index = 0
         for index in range(len(filenames)):
             self.data_array.append(RunData(filename=filenames[index]))
-            run_data_box = self.Create_Run_Box(self.data_array[index].run_title, index, parent)
+            run_data_box = self.Create_Run_Box(self.data_array[index].Get_Single_Header_Data("Title"), index, parent)
             self.layout.insertWidget(index, run_data_box)       
 
         plot_all_button = QtWidgets.QPushButton()
@@ -651,7 +656,6 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         # FUNCTION OVERVIEW
         # Loop through layout of RunInfoPanel and clear all old widgets (old run info) then add the new. Returns filenames for 
         # creating the RunData objects back in the Read_Dat_Files function.
-        
         del self.data_array[:]
 
         # This loop goes through the old layout and removes old run info boxes
@@ -716,29 +720,11 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         data_display.setDisabled(True)
 
         data_options_box = QtWidgets.QComboBox()
-        data_options_box.currentIndexChanged.connect(lambda: self.Run_Data_Query(data_options_box.currentText(), 
-            data_display, data_num, parent))
+        data_options_box.currentIndexChanged.connect(lambda: self.Run_Data_Query(data_options_box.currentText(), data_display, data_num, parent))
         data_options_box.setFixedWidth(100)
-        data_options_box.addItem("Select ...")
-        data_options_box.addItem("Experiment #")
-        data_options_box.addItem("Run #")
-        data_options_box.addItem("Elapsed Seconds")
-        data_options_box.addItem("Start Time")
-        data_options_box.addItem("End Time")
-        data_options_box.addItem("Lab")
-        data_options_box.addItem("Area")
-        data_options_box.addItem("Method")
-        data_options_box.addItem("Apparatus")
-        data_options_box.addItem("Insert")
-        data_options_box.addItem("Sample")
-        data_options_box.addItem("Orient")
-        data_options_box.addItem("Das")
-        data_options_box.addItem("Experimenters")
-        data_options_box.addItem("Temperature")
-        data_options_box.addItem("Field")
-        data_options_box.addItem("# of Histograms")
-        data_options_box.addItem("# of Bins")
-        data_options_box.addItem("Bin Size")
+        header_data = self.data_array[data_num].Get_Header_Data()
+        for data_title in header_data:
+            data_options_box.addItem(data_title)        
 
         hbox_one.addWidget(color_options)
         hbox_one.addWidget(isolate_button)
@@ -772,8 +758,10 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         # Function call for the "Isolate" button, gets the graphing variables the GraphEditorPanel and calls the Plot_Single_Run 
         # function from the PlotCanvas class.
         graphing_variables = parent.graphEditor.Get_Graphing_Variables()
-        parent.graphArea.canvas_one.Plot_Single_Run(graph_num, graphing_variables[0], parent)
-        parent.graphArea.canvas_two.Plot_Single_Run(graph_num, graphing_variables[1], parent)
+        parent.graphArea.canvas_one.Plot_Single_Run(graph_num, [graphing_variables['xmin_one'], graphing_variables['xmax_one'],
+            graphing_variables['slider_one']], parent)
+        parent.graphArea.canvas_two.Plot_Single_Run(graph_num, [graphing_variables['xmin_two'], graphing_variables['xmax_two'],
+            graphing_variables['slider_two']], parent)
 
     def Color_Changed(self, color, graph_num, parent):
         # FUNCTION OVERVIEW
@@ -782,58 +770,18 @@ class RunInfoPanel(QtWidgets.QDockWidget):
 
     def Run_Data_Query(self, data_member, line_edit, graph_num, parent):
         # FUNCTION OVERVIEW
-        # FIXME This function is a sin, first off, call "getter" functions and second there has to be a better way to do this then
-        # a long elif section. Of course, make a dictionary of the info. *Face palm*
-        if(data_member == "Experiment #"):
-            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_expt_number))
-        elif(data_member == "Run #"):
-            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_number))
-        elif(data_member == "Elapsed Seconds"):
-            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_elapsed_secs))
-        elif(data_member == "Start Time"):
-            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_time_begin))
-        elif(data_member == "End Time"):
-            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_time_end))
-        elif(data_member == "Lab"):
-            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_lab))
-        elif(data_member == "Area"):
-            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_area))
-        elif(data_member == "Method"):
-            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_method))
-        elif(data_member == "Apparatus"):
-            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_apparatus))
-        elif(data_member == "Insert"):
-            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_insert))
-        elif(data_member == "Sample"):
-            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_sample))
-        elif(data_member == "Orient"):
-            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_orientation))
-        elif(data_member == "Das"):
-            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_das))
-        elif(data_member == "Experimenters"):
-            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_experimenters))
-        elif(data_member == "Temperature"):
-            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_temperature))
-        elif(data_member == "Field"):
-            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_field))
-        elif(data_member == "# of Histograms"):
-            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_num_hists))
-        elif(data_member == "# of Bins"):
-            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_num_bins))
-        elif(data_member == "Bin Size"):
-            line_edit.setText(str(parent.runInfo.data_array[graph_num].run_bin_size))
-        else:
-            line_edit.setText("n/a") 
+        # This is linked to the ComboBox where the user can choose other header titles and retrieve the appropriate data for that run.
+        line_edit.setText(str(parent.runInfo.data_array[graph_num].Get_Single_Header_Data(data_member)))       
 
     def Plot_All(self, parent):
         # FUNCTION OVERVIEW
         # Function call for the "Plot All" button, does exactly what it says. Gets the graphing variables then calls the Plot_Data
         # function in the PlotCanvas class to replot all the runs currently shown in the RunInfoPanel.
         graphing_variables = parent.graphEditor.Get_Graphing_Variables()
-        parent.graphArea.canvas_one.Plot_Data(graphing_variables[0][0], graphing_variables[0][1],
-            graphing_variables[0][2], "SLIDER_RELEASED", parent)
-        parent.graphArea.canvas_two.Plot_Data(graphing_variables[1][0], graphing_variables[1][1],
-            graphing_variables[1][2], "SLIDER_RELEASED", parent)
+        parent.graphArea.canvas_one.Plot_Data(graphing_variables['xmin_one'], graphing_variables['xmax_one'],
+            graphing_variables['slider_one'], "SLIDER_RELEASED", parent)
+        parent.graphArea.canvas_two.Plot_Data(graphing_variables['xmin_two'], graphing_variables['xmax_two'],
+            graphing_variables['slider_two'], "SLIDER_RELEASED", parent)
 
 
 class RunData:
@@ -851,26 +799,12 @@ class RunData:
 
         data_line = pd.read_csv(filename,nrows=1)
 
-        self.run_expt_number = data_line.iloc[0]['ExptNumber']
-        self.run_number = data_line.iloc[0]['RunNumber']
-        self.run_elapsed_secs = data_line.iloc[0]['ElapsedSecs']
-        self.run_time_begin = data_line.iloc[0]['TimeBegin']
-        self.run_time_end = data_line.iloc[0]['TimeEnd']
-        self.run_title = data_line.iloc[0]['Title']
-        self.run_lab = data_line.iloc[0]['Lab']
-        self.run_area = data_line.iloc[0]['Area']
-        self.run_method = data_line.iloc[0]['Method']
-        self.run_apparatus = data_line.iloc[0]['Apparatus']
-        self.run_insert = data_line.iloc[0]['Insert']
-        self.run_sample = data_line.iloc[0]['Sample']
-        self.run_orientation = data_line.iloc[0]['Orient']
-        self.run_das = data_line.iloc[0]['Das']
-        self.run_experimenters = data_line.iloc[0]['Experimenters']
-        self.run_temperature = data_line.iloc[0]['Temperature']
-        self.run_field = data_line.iloc[0]['Field']
-        self.run_num_hists = data_line.iloc[0]['NumHists']
-        self.run_bin_size = float(data_line.iloc[0]['binsize']) / 1000
-        self.run_num_bins = data_line.iloc[0]['numBins']
+        self.header_data = {}
+        header_titles = data_line.columns
+        for title in header_titles:
+            self.header_data[title] = data_line.iloc[0][title]
+        
+        self.header_data['binsize'] = float(self.header_data['binsize'])/1000
 
         run_data = pd.read_csv(filename,skiprows=2)
 
@@ -878,9 +812,9 @@ class RunData:
         # for the obvious other situations. (Good enough for testing).
         # FIXME We need to figure out which is front,back,left,right because the dang MUD functions don't tell us.
         # run_data['asymmetry'] = (run_data['left'] - run_data['right'])/(run_data['left'] + run_data['right'])
-        run_data['asymmetry'] = (run_data['back'] - run_data['front'])/(run_data['front'] + run_data['back'])
+        # run_data['asymmetry'] = (run_data['back'] - run_data['front'])/(run_data['front'] + run_data['back'])
         # run_data['asymmetry'] = (run_data['front'] - run_data['left'])/(run_data['front'] + run_data['left'])
-        # run_data['asymmetry'] = (run_data['front'] - run_data['right'])/(run_data['front'] + run_data['right'])
+        run_data['asymmetry'] = (run_data['back'] - run_data['right'])/(run_data['back'] + run_data['right'])
 
         run_data['asymmetry'].fillna(0.0,inplace=True)
         self.asymmetry = np.array([])
@@ -888,21 +822,31 @@ class RunData:
 
         # Create a time array that is Num_Bins long with the actual time put in by multiplying
         # the range by the bin size (usually about .4 ns)
-        self.times = np.arange(1,self.run_num_bins+1,dtype='float64')
-        self.times *= self.run_bin_size
+        self.times = np.arange(1,self.header_data['numBins']+1,dtype='float64')
+        self.times *= self.header_data['binsize']
+    
+    def Get_Single_Header_Data(self, title):
+        # FUNCTION OVERVIEW
+        # Returns specific value from the header for the run
+        return self.header_data[title]
 
-    def Get_Run_Data(self):
+    def Get_Header_Data(self):
         # FUNCTION OVERVIEW
         # Returns all the header data for the run
-        run_data = [self.run_expt_number, self.run_number, self.run_elapsed_secs, self.run_time_begin,
-            self.run_time_end, self.run_title, self.run_lab, self.run_area, self.run_method,
-            self.run_apparatus, self.run_insert, self.run_sample, self.run_orientation, self.run_das,
-            self.run_experimenters, self.run_temperature, self.run_field, self.run_num_hists,
-            self.run_bin_size, self.run_num_bins]
-        return run_data
+        return self.header_data
+
+    def Get_Asymmetry(self):
+        # FUNCTION OVERVIEW
+        # Returns the asymmetry for the run
+        return self.asymmetry
+
+    def Get_Times(self):
+        # FUNCTION OVERVIEW
+        # Returns the initital times for the run
+        return self.times
 
     def Inspect_Histogram(self, histogram):
-        # FUNCTION OVERVIEW
+        # FUNCTION OVERVIEW FIXME FIXME FIXME FIXME FIXME FIXME (hint, this function is broke, very sensitive -- not pretty)
         # Plots the user-specified histogram for this run and shows it in a pop-up window. Built-in MatPlotLib functionality
         # allows the user to zoom in on specified sections as well so we don't need to add that ourselves. This function takes
         # advantage of loop unrolling to create a smaller histogram (the plot had trouble plotting the whole histogram). We'll
