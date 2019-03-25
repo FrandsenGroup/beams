@@ -51,7 +51,7 @@ class Window(QtWidgets.QMainWindow):
         # QtWidgets.QMainWindow, as well as any methods we write ourselves in this 
         # class.
 
-        self.setGeometry(200, 100, 1500, 900)
+        self.setGeometry(100, 100, 1700, 900)
         self.setWindowTitle("BEAMS | Basic and Effective Analysis for Muon Spin-Spectroscopy")
         self.setWindowIcon(QtGui.QIcon('pythonlogo.png'))
 
@@ -349,6 +349,7 @@ class PlotCanvas(FigureCanvas):
                 self.axes_freq.plot(self.x_smooth, self.y_smooth**3,marker=graph_styles[1],mfc=graph_styles[0],mec=graph_styles[0]) # Option to increase contrast?
                 self.axes_freq.set_xlim(0,2.5)
                 self.axes_freq.set_yticklabels([])
+                self.axes_freq.set_ylim(0,0.0005)
                 self.axes_freq.set_xlabel("Frequence (MHz)")
                 self.axes_freq.set_ylabel("Magnitude")
 
@@ -423,29 +424,12 @@ class PlotCanvas(FigureCanvas):
         yValues = abs(yValues[0, range(int(n/2))])
         yValues[0] = 0 # A bit hard coded but for some reason we get high frequencies at zero.
         yValues[1] = 0
-        # FIXME Try to pad the frequency array, more values inbetween frequencies set at 0. Make the graph look a little better. Cubing works too..
-
-        # length = len(self.new_asymmetry)
-        # x = self.new_times
-        # FFT = sy.fft(self.new_asymmetry)
-        # FFT[0] = 0
-        # FFT[1] = 0
-        # freqs = syfp.fftfreq(self.new_asymmetry.size, d=(x[1]-x[0]))
-        # self.axes_freq.plot(abs(freqs), abs(FFT))
-        # print(freqs, '\n', abs(FFT))
 
         # Calculate the spline for the graph
         self.x_smooth = np.linspace(frequencies.min(), frequencies.max(), 300)
         np.insert(self.x_smooth,0,0)
         self.y_smooth = spline(frequencies, yValues, self.x_smooth)
         np.insert(self.y_smooth,0,0)
-
-        # Plot! 
-        # self.axes_freq.plot(self.x_smooth, self.y_smooth**3) # Option to increase contrast?
-        # self.axes_freq.set_xlim(0,2.5)
-        # self.axes_freq.set_yticklabels([])
-        # self.axes_freq.set_xlabel("Frequence (MHz)")
-        # self.axes_freq.set_ylabel("Magnitude")
 
     def Plot_Single_Run(self, graph_index, graph_variables, parent):
         # FUNCTION OVERVIEW
@@ -458,7 +442,7 @@ class PlotCanvas(FigureCanvas):
             "SLIDER_RELEASED", parent, graph_index)
         
         self.axes_time.set_xlim(float(graph_variables[0]),float(graph_variables[1]))
-        self.axes_time.plot(self.new_times,self.new_asymmetry,marker=graph_styles[1],mfc=graph_styles[0],mec=graph_styles[0])
+        self.axes_time.plot(self.new_times,self.new_asymmetry,marker=graph_styles[1],mfc=graph_styles[0],mec=graph_styles[0],linestyle='None')
         self.axes_time.set_xlabel("Time ("+chr(956)+"s)")
         self.axes_time.set_ylabel("Asymmetry")
 
@@ -467,6 +451,7 @@ class PlotCanvas(FigureCanvas):
         self.axes_freq.plot(self.x_smooth, self.y_smooth**3,marker=graph_styles[1],mfc=graph_styles[0],mec=graph_styles[0]) # Option to increase contrast?
         self.axes_freq.set_xlim(0,2.5)
         self.axes_freq.set_yticklabels([])
+        self.axes_freq.set_ylim(0,0.0005)
         self.axes_freq.set_xlabel("Frequence (MHz)")
         self.axes_freq.set_ylabel("Magnitude")
 
@@ -728,12 +713,13 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         color_options.addItem("custom") # Not supported yet.
         color_options.setCurrentText(color_options.itemText(data_num))
 
+        # Back,Forw,Right,Left
         hist_options = QtWidgets.QComboBox()
         hist_options.setFixedWidth(50)
-        hist_options.addItem("front")
-        hist_options.addItem("back")
-        hist_options.addItem("left")
-        hist_options.addItem("right")
+        hist_options.addItem("Back")
+        hist_options.addItem("Forw")
+        hist_options.addItem("Right")
+        hist_options.addItem("Left")
 
         hist_label = QtWidgets.QLabel("Histogram  ")
 
@@ -851,10 +837,21 @@ class RunData:
         # FIXME This is only for generating front-back/front+back asymmetry, add functionality
         # for the obvious other situations. (Good enough for testing).
         # FIXME We need to figure out which is front,back,left,right because the dang MUD functions don't tell us.
-        # run_data['asymmetry'] = (run_data['left'] - run_data['right'])/(run_data['left'] + run_data['right'])
-        # run_data['asymmetry'] = (run_data['back'] - run_data['front'])/(run_data['front'] + run_data['back'])
+        # Back, Forw, Right, Left
+        # Front, Back, Left, Right
+        # run_data['asymmetry'] = (run_data['front'] - run_data['back'])/(run_data['front'] + run_data['back'])
         # run_data['asymmetry'] = (run_data['front'] - run_data['left'])/(run_data['front'] + run_data['left'])
-        run_data['asymmetry'] = (run_data['back'] - run_data['right'])/(run_data['back'] + run_data['right'])
+        # run_data['asymmetry'] = (run_data['front'] - run_data['right'])/(run_data['front'] + run_data['right'])
+        # run_data['asymmetry'] = (run_data['back'] - run_data['front'])/(run_data['back'] + run_data['front']) 
+        # run_data['asymmetry'] = (run_data['back'] - run_data['right'])/(run_data['back'] + run_data['right'])
+        # run_data['asymmetry'] = (run_data['back'] - run_data['left'])/(run_data['back'] + run_data['left']) 
+        # run_data['asymmetry'] = (run_data['left'] - run_data['front'])/(run_data['left'] + run_data['front'])
+        # run_data['asymmetry'] = (run_data['left'] - run_data['right'])/(run_data['left'] + run_data['right']) # Good TF, Scattered LF
+        # run_data['asymmetry'] = (run_data['left'] - run_data['back'])/(run_data['left'] + run_data['back'])
+        # run_data['asymmetry'] = (run_data['right'] - run_data['front'])/(run_data['right'] + run_data['front'])
+        # run_data['asymmetry'] = (run_data['right'] - run_data['back'])/(run_data['right'] + run_data['back'])
+        run_data['asymmetry'] = (run_data['Left'] - run_data['Right'])/(run_data['Left'] + run_data['Right']) # Better TF (Starts positive)
+        # Maybe I am not getting all the histograms? All the asymmetries are backwards or scattered (as in they were flipped so the far right is now on far left of the graph)
 
         run_data['asymmetry'].fillna(0.0,inplace=True)
         self.asymmetry = np.array([])
