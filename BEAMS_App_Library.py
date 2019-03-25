@@ -22,6 +22,8 @@ import sys
 
 # scipy for the fourier transform
 from scipy.interpolate import spline
+import scipy.fftpack as syfp
+import scipy as sy
 
 
 class Window(QtWidgets.QMainWindow):
@@ -307,7 +309,8 @@ class PlotCanvas(FigureCanvas):
         self.axes_freq.spines['top'].set_visible(False)
         self.axes_freq.tick_params(bottom=False, left=False)
         self.axes_freq.set_xlabel("Frequence (MHz)")
-        self.axes_freq.set_ylabel("Amplitude")
+        self.axes_freq.set_ylabel("Magnitude")
+        self.axes_freq.set_yticklabels([])
         
         FigureCanvas.__init__(self,fig)
         
@@ -335,13 +338,19 @@ class PlotCanvas(FigureCanvas):
 
         for graph_index in range(len(parent.runInfo.data_array)):
             self.Update_Asymmetry_Bins(xmin, xmax, bin_size, slider_state, parent, graph_index)
-
+            graph_styles = parent.runInfo.data_array[graph_index].Get_Graphing_Styles()
+            # Put an if else statement for whether or not the color is specified. (It should be initialized to none, so this goes down the usual path)
             self.axes_time.set_xlim(float(xmin),float(xmax))
-            self.axes_time.plot(self.new_times,self.new_asymmetry,'o')
+            self.axes_time.plot(self.new_times,self.new_asymmetry,marker=graph_styles[1],mfc=graph_styles[0],mec=graph_styles[0],linestyle='None')
             # FIXME Need to figure out how to assign colors
 
             if(slider_state == "SLIDER_RELEASED"):
                 self.Update_Fourier_Transform(float(bin_size), float(xmin), float(xmax))
+                self.axes_freq.plot(self.x_smooth, self.y_smooth**3,marker=graph_styles[1],mfc=graph_styles[0],mec=graph_styles[0]) # Option to increase contrast?
+                self.axes_freq.set_xlim(0,2.5)
+                self.axes_freq.set_yticklabels([])
+                self.axes_freq.set_xlabel("Frequence (MHz)")
+                self.axes_freq.set_ylabel("Magnitude")
 
         self.axes_time.set_xlabel("Time ("+chr(956)+"s)")
         self.axes_time.set_ylabel("Asymmetry")
@@ -361,10 +370,8 @@ class PlotCanvas(FigureCanvas):
         
         # Determine the start and end indexes based on xmin and xmax and num of indexes
         start_size = int(parent.runInfo.data_array[graph_index].Get_Single_Header_Data('numBins'))
-        print(float(xmin),times[start_size-1],start_size)
         start_index = int(np.floor((float(xmin)/times[start_size-1])*start_size))
         end_index = int(np.floor((float(xmax)/times[start_size-1])*start_size))
-        print(start_size,xmin,xmax,start_index,end_index,times[start_size-1])
 
         # Determine the initialial bin size and the new user specified bins size
         time_sep = parent.runInfo.data_array[graph_index].Get_Single_Header_Data('binsize')
@@ -372,7 +379,6 @@ class PlotCanvas(FigureCanvas):
 
         # Based on the difference in time and binsize determine the size of the final asymmetry and time array
         final_size = int(np.ceil((times[end_index] - times[start_index]) / bin_size))
-        print(final_size)
         self.new_asymmetry = np.zeros(final_size)
         self.new_times = np.zeros(final_size)
         
@@ -415,19 +421,31 @@ class PlotCanvas(FigureCanvas):
         frequencies = frequencies[range(int(n/2))]
         yValues = np.fft.fft([self.new_asymmetry,self.new_times]) / n
         yValues = abs(yValues[0, range(int(n/2))])
+        yValues[0] = 0 # A bit hard coded but for some reason we get high frequencies at zero.
+        yValues[1] = 0
+        # FIXME Try to pad the frequency array, more values inbetween frequencies set at 0. Make the graph look a little better. Cubing works too..
+
+        # length = len(self.new_asymmetry)
+        # x = self.new_times
+        # FFT = sy.fft(self.new_asymmetry)
+        # FFT[0] = 0
+        # FFT[1] = 0
+        # freqs = syfp.fftfreq(self.new_asymmetry.size, d=(x[1]-x[0]))
+        # self.axes_freq.plot(abs(freqs), abs(FFT))
+        # print(freqs, '\n', abs(FFT))
 
         # Calculate the spline for the graph
-        x_smooth = np.linspace(frequencies.min(), frequencies.max(), 300)
-        np.insert(x_smooth,0,0)
-        y_smooth = spline(frequencies, yValues, x_smooth)
-        np.insert(y_smooth,0,0)
+        self.x_smooth = np.linspace(frequencies.min(), frequencies.max(), 300)
+        np.insert(self.x_smooth,0,0)
+        self.y_smooth = spline(frequencies, yValues, self.x_smooth)
+        np.insert(self.y_smooth,0,0)
 
         # Plot! 
-        self.axes_freq.plot(x_smooth, y_smooth)
-        self.axes_freq.set_xlim(0,2.5)
-        self.axes_freq.set_xlabel("Frequence (MHz)")
-        self.axes_freq.set_ylabel("Amplitude")
-        return
+        # self.axes_freq.plot(self.x_smooth, self.y_smooth**3) # Option to increase contrast?
+        # self.axes_freq.set_xlim(0,2.5)
+        # self.axes_freq.set_yticklabels([])
+        # self.axes_freq.set_xlabel("Frequence (MHz)")
+        # self.axes_freq.set_ylabel("Magnitude")
 
     def Plot_Single_Run(self, graph_index, graph_variables, parent):
         # FUNCTION OVERVIEW
@@ -435,16 +453,22 @@ class PlotCanvas(FigureCanvas):
         # ignoring any other runs that are currently plotted or selected in the FileManagerPanel
         self.axes_time.clear()
         self.axes_freq.clear()
-        
+        graph_styles = parent.runInfo.data_array[graph_index].Get_Graphing_Styles()
         self.Update_Asymmetry_Bins(graph_variables[0], graph_variables[1], graph_variables[2], 
             "SLIDER_RELEASED", parent, graph_index)
         
         self.axes_time.set_xlim(float(graph_variables[0]),float(graph_variables[1]))
-        self.axes_time.plot(self.new_times,self.new_asymmetry,'o')
+        self.axes_time.plot(self.new_times,self.new_asymmetry,marker=graph_styles[1],mfc=graph_styles[0],mec=graph_styles[0])
         self.axes_time.set_xlabel("Time ("+chr(956)+"s)")
         self.axes_time.set_ylabel("Asymmetry")
 
         self.Update_Fourier_Transform(float(graph_variables[2]), float(graph_variables[0]), float(graph_variables[1]))
+
+        self.axes_freq.plot(self.x_smooth, self.y_smooth**3,marker=graph_styles[1],mfc=graph_styles[0],mec=graph_styles[0]) # Option to increase contrast?
+        self.axes_freq.set_xlim(0,2.5)
+        self.axes_freq.set_yticklabels([])
+        self.axes_freq.set_xlabel("Frequence (MHz)")
+        self.axes_freq.set_ylabel("Magnitude")
 
 
 class GraphEditorPanel(QtWidgets.QDockWidget):
@@ -634,6 +658,15 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         self.setWidget(self.tempWidget)
         self.data_array = []
         self.layout.addStretch()
+        # self.marker_colors = {
+        #     "Blue" : "b",
+        #     "Green" : "g",
+        #     "Red" : "r",
+        #     "Cyan" : "c",
+        #     "Magenta" : "m",
+        #     "Yellow" : "y",
+        #     "Black" : "k",
+        # }
         
     def Read_Dat_Files(self,parent):
         # FUNTION OVERVIEW
@@ -682,17 +715,17 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         color_options.currentIndexChanged.connect(lambda: self.Color_Changed(color_options.currentText(), 
             data_num, parent))
         color_options.setFixedWidth(75)
-        color_options.addItem("Blue")
-        color_options.addItem("Orange")
-        color_options.addItem("Green")
-        color_options.addItem("Red")
-        color_options.addItem("Purple")
-        color_options.addItem("Brown")
-        color_options.addItem("Pink")
-        color_options.addItem("Gray")
-        color_options.addItem("Olive")
-        color_options.addItem("Cyan")
-        color_options.addItem("Custom")
+        color_options.addItem("blue")
+        color_options.addItem("orange")
+        color_options.addItem("green")
+        color_options.addItem("red")
+        color_options.addItem("purple")
+        color_options.addItem("brown")
+        color_options.addItem("pink")
+        color_options.addItem("gray")
+        color_options.addItem("olive")
+        color_options.addItem("cyan")
+        color_options.addItem("custom") # Not supported yet.
         color_options.setCurrentText(color_options.itemText(data_num))
 
         hist_options = QtWidgets.QComboBox()
@@ -766,7 +799,12 @@ class RunInfoPanel(QtWidgets.QDockWidget):
     def Color_Changed(self, color, graph_num, parent):
         # FUNCTION OVERVIEW
         # Will allow the user to change the color of any individual run on the plot.
-        return
+        graphing_variables = parent.graphEditor.Get_Graphing_Variables()
+        parent.runInfo.data_array[graph_num].Set_Graphing_Styles(color=color)
+        parent.graphArea.canvas_one.Plot_Data(graphing_variables['xmin_one'], graphing_variables['xmax_one'], graphing_variables['slider_one'], 
+            "SLIDER_RELEASED", parent) 
+        parent.graphArea.canvas_two.Plot_Data(graphing_variables['xmin_two'], graphing_variables['xmax_two'], graphing_variables['slider_two'], 
+            "SLIDER_RELEASED", parent)    
 
     def Run_Data_Query(self, data_member, line_edit, graph_num, parent):
         # FUNCTION OVERVIEW
@@ -804,7 +842,9 @@ class RunData:
         for title in header_titles:
             self.header_data[title] = data_line.iloc[0][title]
         
-        self.header_data['binsize'] = float(self.header_data['binsize'])/1000
+        self.header_data['binsize'] = float(self.header_data['binsize'])/1000 # ns to µs
+        self.marker_style = '.'
+        self.marker_color = 'blue'
 
         run_data = pd.read_csv(filename,skiprows=2)
 
@@ -844,6 +884,19 @@ class RunData:
         # FUNCTION OVERVIEW
         # Returns the initital times for the run
         return self.times
+
+    def Get_Graphing_Styles(self):
+        # FUNCTION OVERVIEW
+        # Returns the marking styles for the run
+        return [self.marker_color, self.marker_style]
+
+    def Set_Graphing_Styles(self,color='na',style='na'):
+        # FUNCTION OVERVIEW
+        # Set the marking styles for this run
+        if(color != 'na'):
+            self.marker_color = color
+        if(style != 'na'):
+            self.marker_style = style
 
     def Inspect_Histogram(self, histogram):
         # FUNCTION OVERVIEW FIXME FIXME FIXME FIXME FIXME FIXME (hint, this function is broke, very sensitive -- not pretty)
