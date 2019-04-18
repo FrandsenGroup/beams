@@ -1,3 +1,7 @@
+# NOTE I am going to be reorganizing all this code again to fit in a more
+# Model-View-Controller format. Should be easier to follow and change in 
+# the future that way. 
+
 # Basic and Efficient Analysis for Muon Spin-Spectroscopy (BEAMS)
 
 # PyQt5 Libraries cover the main structure and function of the application
@@ -19,11 +23,14 @@ import os
 
 # sys for some debugging
 import sys
+import time
 
 # scipy for the fourier transform
 from scipy.interpolate import spline
 import scipy.fftpack as syfp
 import scipy as sy
+
+# NOTE 
 
 
 class Window(QtWidgets.QMainWindow):
@@ -341,15 +348,15 @@ class PlotCanvas(FigureCanvas):
             graph_styles = parent.runInfo.data_array[graph_index].Get_Graphing_Styles()
             # Put an if else statement for whether or not the color is specified. (It should be initialized to none, so this goes down the usual path)
             self.axes_time.set_xlim(float(xmin),float(xmax))
-            self.axes_time.plot(self.new_times,self.new_asymmetry,marker=graph_styles[1],mfc=graph_styles[0],mec=graph_styles[0],linestyle='None')
+            self.axes_time.errorbar(self.new_times,self.new_asymmetry,yerr=self.new_error,marker=graph_styles[1],mfc=graph_styles[0],mec=graph_styles[0],linestyle='None')
             # FIXME Need to figure out how to assign colors
 
             if(slider_state == "SLIDER_RELEASED"):
                 self.Update_Fourier_Transform(float(bin_size), float(xmin), float(xmax))
-                self.axes_freq.plot(self.x_smooth, self.y_smooth**3,marker=graph_styles[1],mfc=graph_styles[0],mec=graph_styles[0]) # Option to increase contrast?
+                self.axes_freq.plot(self.x_smooth, self.y_smooth,marker=graph_styles[1],mfc=graph_styles[0],mec=graph_styles[0],color=graph_styles[0]) # Option to increase contrast?
                 self.axes_freq.set_xlim(0,2.5)
                 self.axes_freq.set_yticklabels([])
-                self.axes_freq.set_ylim(0,0.0005)
+                self.axes_freq.set_ylim(0,None)
                 self.axes_freq.set_xlabel("Frequence (MHz)")
                 self.axes_freq.set_ylabel("Magnitude")
 
@@ -367,7 +374,9 @@ class PlotCanvas(FigureCanvas):
         asymmetry = np.array([])
         asymmetry = parent.runInfo.data_array[graph_index].asymmetry
         times = np.array([])
-        times = parent.runInfo.data_array[graph_index].times #FIXME TIMES ARE STILL IN NANO, MUST FIX!!!
+        times = parent.runInfo.data_array[graph_index].times 
+        error = np.array([])
+        error = parent.runInfo.data_array[graph_index].d_total
         
         # Determine the start and end indexes based on xmin and xmax and num of indexes
         start_size = int(parent.runInfo.data_array[graph_index].Get_Single_Header_Data('numBins'))
@@ -382,31 +391,56 @@ class PlotCanvas(FigureCanvas):
         final_size = int(np.ceil((times[end_index] - times[start_index]) / bin_size))
         self.new_asymmetry = np.zeros(final_size)
         self.new_times = np.zeros(final_size)
+        self.new_error = np.zeros(final_size)
         
         # Initialize asym_sum and time_sum and n (the number of iterations between resetting the sum) and i (the
         # number of elements we have added to the new array)
-        asym_sum, time_sum, n, i = 0,0,0,0
-        for index in range(start_index,end_index,8):
-            # We do eight at a time instead of iterating one at a time as this is much less computationaly intensive (the
-            # conditions are checked every eighth time instead of every time, this is called "Loop Unrolling")
-            asym_sum += asymmetry[index]
-            asym_sum += asymmetry[index+1]
-            asym_sum += asymmetry[index+2]
-            asym_sum += asymmetry[index+3]
-            asym_sum += asymmetry[index+4]
-            asym_sum += asymmetry[index+5]
-            asym_sum += asymmetry[index+6]
-            asym_sum += asymmetry[index+7]
-            n += 8
-            time_sum += 8*time_sep
-            if(time_sum > bin_size):
-                self.new_asymmetry[i] = asym_sum / n
-                self.new_times[i] = times[index+7]
-                asym_sum, time_sum, n = 0,0,0
-                i += 1
-        self.new_times
-        # np.set_printoptions(threshold=sys.maxsize) # DEBUGGING HELP
-        # print(self.new_asymmetry, self.new_times) # DEBUGGING HELP
+        # self.errArray.append(((errSum/count)**.5)/count**.5)
+        asym_sum, time_sum, error_sum, n, i = 0,0,0,0,0
+        # start = time.time()
+        if(slider_state == "SLIDER_MOVING"):
+            for index in range(start_index,end_index,8):
+                # We do eight at a time instead of iterating one at a time as this is much less computationaly intensive (the
+                # conditions are checked every eighth time instead of every time, this is called "Loop Unrolling"). A little bit less
+                # accurate so we do a proper loop when the slider is released.
+                asym_sum += asymmetry[index]
+                asym_sum += asymmetry[index+1]
+                asym_sum += asymmetry[index+2]
+                asym_sum += asymmetry[index+3]
+                asym_sum += asymmetry[index+4]
+                asym_sum += asymmetry[index+5]
+                asym_sum += asymmetry[index+6]
+                asym_sum += asymmetry[index+7]
+                error_sum += error[index]**2
+                error_sum += error[index+1]**2
+                error_sum += error[index+2]**2
+                error_sum += error[index+3]**2
+                error_sum += error[index+4]**2
+                error_sum += error[index+5]**2
+                error_sum += error[index+6]**2
+                error_sum += error[index+7]**2
+                n += 8
+                time_sum += 8*time_sep
+                if(time_sum > bin_size):
+                    self.new_asymmetry[i] = asym_sum / n
+                    self.new_times[i] = times[index+7]
+                    self.new_error[i] = np.sqrt(error_sum/n)/np.sqrt(n)
+                    asym_sum, time_sum, error_sum, n = 0,0,0,0
+                    i += 1
+        else:
+            for index in range(start_index,end_index):
+                asym_sum += asymmetry[index]
+                error_sum += error[index]**2
+                time_sum += time_sep
+                n += 1
+                if(time_sum > bin_size):
+                    self.new_asymmetry[i] = asym_sum / n
+                    self.new_times[i] = times[index]
+                    self.new_error[i] = np.sqrt(error_sum)/n
+                    asym_sum, time_sum, error_sum, n = 0,0,0,0
+                    i += 1
+        # end = time.time()
+        # print(end-start)
 
     def Update_Fourier_Transform(self, bin_size, xmin, xmax):
         # FUNCTION OVERVIEW
@@ -424,6 +458,8 @@ class PlotCanvas(FigureCanvas):
         yValues = abs(yValues[0, range(int(n/2))])
         yValues[0] = 0 # A bit hard coded but for some reason we get high frequencies at zero.
         yValues[1] = 0
+        yValues[yValues<0.01] = 0
+
 
         # Calculate the spline for the graph
         self.x_smooth = np.linspace(frequencies.min(), frequencies.max(), 300)
@@ -442,16 +478,16 @@ class PlotCanvas(FigureCanvas):
             "SLIDER_RELEASED", parent, graph_index)
         
         self.axes_time.set_xlim(float(graph_variables[0]),float(graph_variables[1]))
-        self.axes_time.plot(self.new_times,self.new_asymmetry,marker=graph_styles[1],mfc=graph_styles[0],mec=graph_styles[0],linestyle='None')
+        self.axes_time.plot(self.new_times,self.new_asymmetry,yerr=self.new_error,marker=graph_styles[1],mfc=graph_styles[0],mec=graph_styles[0],linestyle='None')
         self.axes_time.set_xlabel("Time ("+chr(956)+"s)")
         self.axes_time.set_ylabel("Asymmetry")
 
         self.Update_Fourier_Transform(float(graph_variables[2]), float(graph_variables[0]), float(graph_variables[1]))
 
-        self.axes_freq.plot(self.x_smooth, self.y_smooth**3,marker=graph_styles[1],mfc=graph_styles[0],mec=graph_styles[0]) # Option to increase contrast?
+        self.axes_freq.plot(self.x_smooth, self.y_smooth**3,marker=graph_styles[1],mfc=graph_styles[0],mec=graph_styles[0],color=graph_styles[0]) # Option to increase contrast?
         self.axes_freq.set_xlim(0,2.5)
         self.axes_freq.set_yticklabels([])
-        self.axes_freq.set_ylim(0,0.0005)
+        self.axes_freq.set_ylim(0,None)
         self.axes_freq.set_xlabel("Frequence (MHz)")
         self.axes_freq.set_ylabel("Magnitude")
 
@@ -500,11 +536,11 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
         xmin_two_label = self.Create_Input_Box_Label("Plot 2 - XMin ("+chr(956)+"s)")
         xmax_two_label = self.Create_Input_Box_Label("XMax ("+chr(956)+"s)")
 
-        self.xmin_one = self.Create_Input_Boxes("0",1)
+        self.xmin_one = self.Create_Input_Boxes("1",1)
         self.xmin_one.returnPressed.connect(lambda: self.Slider_Released(parent, 1))
         self.xmax_one = self.Create_Input_Boxes("5",1)
         self.xmax_one.returnPressed.connect(lambda: self.Slider_Released(parent, 1))
-        self.xmin_two = self.Create_Input_Boxes("0",2)
+        self.xmin_two = self.Create_Input_Boxes("1",2)
         self.xmin_two.returnPressed.connect(lambda: self.Slider_Released(parent, 2))
         self.xmax_two = self.Create_Input_Boxes("10",2)
         self.xmax_two.returnPressed.connect(lambda: self.Slider_Released(parent, 2))
@@ -515,7 +551,7 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
         # FUNCTION OVERVIEW
         # Creates one of sliders used to determine the bin size for time. 
         slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        slider.setMinimum(1)
+        slider.setMinimum(5)
         slider.setMaximum(500)
         slider.setValue(150)
         slider.setTickPosition(QtWidgets.QSlider.TicksBothSides)
@@ -629,7 +665,7 @@ class GraphEditorPanel(QtWidgets.QDockWidget):
 
 
 class RunInfoPanel(QtWidgets.QDockWidget):
-    def __init__(self,parent=None):
+    def __init__(self,parent = None):
         # CLASS OVERVIEW
         # This is the panel that opens on the right side, it will hold a RunBox (see below) for each run that is currently selected and 
         # plotted by the user. The RunBox holds extra information on that run and allows the user to isolate a single run when multiple
@@ -643,32 +679,36 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         self.setWidget(self.tempWidget)
         self.data_array = []
         self.layout.addStretch()
-        # self.marker_colors = {
-        #     "Blue" : "b",
-        #     "Green" : "g",
-        #     "Red" : "r",
-        #     "Cyan" : "c",
-        #     "Magenta" : "m",
-        #     "Yellow" : "y",
-        #     "Black" : "k",
-        # }
         
     def Read_Dat_Files(self,parent):
         # FUNTION OVERVIEW
         # Calls Update_Run_Panel to delete old run boxes (even if some would normally be kept) and then creates a box for all
         # currently selected runs.
-        filenames = self.Update_Run_Panel(parent)
-        index = 0
-        for index in range(len(filenames)):
-            self.data_array.append(RunData(filename=filenames[index]))
-            run_data_box = self.Create_Run_Box(self.data_array[index].Get_Single_Header_Data("Title"), index, parent)
-            self.layout.insertWidget(index, run_data_box)       
+
+        del self.data_array[:]
+        filenames = parent.fileControl.Get_Checked_Filenames()
+
+        run_list = QtWidgets.QComboBox()
+        run_list.setFixedWidth(350)
+
+        for i in range(len(filenames)):
+            self.data_array.append(RunData(filename=filenames[i], index=i))
+            run_list.addItem(self.data_array[i].Get_Single_Header_Data("Title"))
+
+        self.layout.insertWidget(0, run_list)
+        run_data_box = self.Create_Run_Box(self.data_array[0].Get_Single_Header_Data("Title"), run_list.currentIndex(), parent)
+        self.layout.insertWidget(1, run_data_box)
 
         plot_all_button = QtWidgets.QPushButton()
         plot_all_button.setText("Plot All")
         plot_all_button.pressed.connect(lambda: self.Plot_All(parent))
 
-        self.layout.insertWidget(index + 1, plot_all_button) 
+        run_list.currentIndexChanged.connect(lambda: self.Update_Run_Box(parent, run_list.currentIndex()))
+        self.layout.insertWidget(2, plot_all_button) 
+
+    def Update_Run_Box(self, parent, index):
+        self.layout.itemAt(1).widget().setParent(None)
+        self.layout.insertWidget(1, self.Create_Run_Box(self.data_array[index].Get_Single_Header_Data("Title"), index, parent))
 
     def Update_Run_Panel(self, parent):
         # FUNCTION OVERVIEW
@@ -679,8 +719,7 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         # This loop goes through the old layout and removes old run info boxes
         # FIXME add an if statement so it only does this if there are already runs in the plot. Otherwise 
         # we get an error. Not sure how to get rid of the plot button yet; when in doubt, call it a feature.
-        for i in reversed(range(self.layout.count()-1)):
-            self.layout.itemAt(i).widget().setParent(None)
+        self.layout.itemAt(1).widget().setParent(None)
 
         # Get all the currently checked filenames # FIXME Just move this up Read_Dat_Files 
         filenames = parent.fileControl.Get_Checked_Filenames()
@@ -710,7 +749,7 @@ class RunInfoPanel(QtWidgets.QDockWidget):
         color_options.addItem("gray")
         color_options.addItem("olive")
         color_options.addItem("cyan")
-        color_options.addItem("custom") # Not supported yet.
+        color_options.addItem("custom")
         color_options.setCurrentText(color_options.itemText(data_num))
 
         # Back,Forw,Right,Left
@@ -785,6 +824,9 @@ class RunInfoPanel(QtWidgets.QDockWidget):
     def Color_Changed(self, color, graph_num, parent):
         # FUNCTION OVERVIEW
         # Will allow the user to change the color of any individual run on the plot.
+        if(color == "custom"):
+            color = QtWidgets.QColorDialog.getColor().name()
+
         graphing_variables = parent.graphEditor.Get_Graphing_Variables()
         parent.runInfo.data_array[graph_num].Set_Graphing_Styles(color=color)
         parent.graphArea.canvas_one.Plot_Data(graphing_variables['xmin_one'], graphing_variables['xmax_one'], graphing_variables['slider_one'], 
@@ -809,13 +851,13 @@ class RunInfoPanel(QtWidgets.QDockWidget):
 
 
 class RunData:
-    def __init__(self,parent=None,filename=None):
+    def __init__(self,parent = None,filename=None, index=0):
         # CLASS OVERVIEW
         # Stores the required data for each run. All the data in the header is stored permanently in the object, the histograms are only
         # stored temporarily to create the Asymmetry and Time arrays which are stored permanently.
-        self.initData(filename)
+        self.initData(index, filename)
 
-    def initData(self,filename):
+    def initData(self, index, filename):
         # FUNCTION OVERVIEW
         # First read in the header of the .dat file to get basic information about the run and assign to appropriate class members. Then
         # read in the histograms and generate the assymetry and time arrays. Does not permanently store the histograms.
@@ -830,29 +872,26 @@ class RunData:
         
         self.header_data['binsize'] = float(self.header_data['binsize'])/1000 # ns to µs
         self.marker_style = '.'
-        self.marker_color = 'blue'
+
+        color_options = ["blue", "orange", "green", "red", "purple", "brown", "pink", "gray", "olive", "cyan"]
+
+        self.marker_color = color_options[index]
 
         run_data = pd.read_csv(filename,skiprows=2)
+        run_data.columns = ['Back','Front','Right','Left']
+ 
+        # Calculate error for front and back detectors
+        d_front = np.sqrt(run_data['Front'])
+        d_back = np.sqrt(run_data['Back'])
+        self.d_total = np.sqrt(np.power((2*run_data['Back']/np.power(run_data['Front'] + run_data['Back'],2)*d_front),2) + np.power((2*run_data['Front']/np.power(run_data['Front'] + run_data['Back'],2)*d_back),2))
 
-        # FIXME This is only for generating front-back/front+back asymmetry, add functionality
-        # for the obvious other situations. (Good enough for testing).
-        # FIXME We need to figure out which is front,back,left,right because the dang MUD functions don't tell us.
-        # Back, Forw, Right, Left
-        # Front, Back, Left, Right
-        # run_data['asymmetry'] = (run_data['front'] - run_data['back'])/(run_data['front'] + run_data['back'])
-        # run_data['asymmetry'] = (run_data['front'] - run_data['left'])/(run_data['front'] + run_data['left'])
-        # run_data['asymmetry'] = (run_data['front'] - run_data['right'])/(run_data['front'] + run_data['right'])
-        # run_data['asymmetry'] = (run_data['back'] - run_data['front'])/(run_data['back'] + run_data['front']) 
-        # run_data['asymmetry'] = (run_data['back'] - run_data['right'])/(run_data['back'] + run_data['right'])
-        # run_data['asymmetry'] = (run_data['back'] - run_data['left'])/(run_data['back'] + run_data['left']) 
-        # run_data['asymmetry'] = (run_data['left'] - run_data['front'])/(run_data['left'] + run_data['front'])
-        # run_data['asymmetry'] = (run_data['left'] - run_data['right'])/(run_data['left'] + run_data['right']) # Good TF, Scattered LF
-        # run_data['asymmetry'] = (run_data['left'] - run_data['back'])/(run_data['left'] + run_data['back'])
-        # run_data['asymmetry'] = (run_data['right'] - run_data['front'])/(run_data['right'] + run_data['front'])
-        # run_data['asymmetry'] = (run_data['right'] - run_data['back'])/(run_data['right'] + run_data['back'])
-        run_data['asymmetry'] = (run_data['Left'] - run_data['Right'])/(run_data['Left'] + run_data['Right']) # Better TF (Starts positive)
-        # Maybe I am not getting all the histograms? All the asymmetries are backwards or scattered (as in they were flipped so the far right is now on far left of the graph)
+        # Calculate background radiation for front and back detectors
+        bkg_back = np.mean(run_data.iloc[70:800,0].values)
+        bkg_front = np.mean(run_data.iloc[70:800,1].values)
 
+        # Calculate asymmetry based on front and back histograms and background radiation
+        run_data['asymmetry'] = ((run_data['Back'] - bkg_back) - (run_data['Front'] - bkg_front))/((run_data['Front'] - bkg_front) + (run_data['Back'] - bkg_back))
+        
         run_data['asymmetry'].fillna(0.0,inplace=True)
         self.asymmetry = np.array([])
         self.asymmetry = run_data['asymmetry'].values
@@ -902,6 +941,7 @@ class RunData:
         # advantage of loop unrolling to create a smaller histogram (the plot had trouble plotting the whole histogram). We'll
         # have to figure out how to dynamically allow the user to see the whole histogram. # FIXME
         run_data = pd.read_csv(self.filename,skiprows=2)
+        run_data.columns = ['Back','Front','Right','Left']
         histogram_data = run_data[histogram].values      
         
         new_bins = int(np.floor(len(histogram_data)/20))
