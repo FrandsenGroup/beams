@@ -1,2 +1,2 @@
 Notes for Dr. Frandsen - 
-Changing to MVC Design, should have it up and running completely within a couple days. I also think I am going to lose all references to pandas if the performance isn't affected; it made the code a bit easier but I don't want to unnecessarily import another library.
+Changing to MVC Design, should have it up and running completely within a couple days. I've done tests with pandas vs numpy on reading in data from files and numpy takes on average about 8 times longer so I think it's a good idea to keep using pandas as well.
