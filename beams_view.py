@@ -221,10 +221,12 @@ class PlotPanel(QtWidgets.QDockWidget):
 class RunPlot(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=100):        
         fig = plt.figure(dpi=dpi)
-    
         self.axes_time = fig.add_subplot(211,label="Time Domain")
         self.axes_freq = fig.add_subplot(212,label="Frequency Domain")
+        self.set_style()
+        FigureCanvas.__init__(self,fig)
 
+    def set_style(self):
         self.axes_time.spines['right'].set_visible(False)
         self.axes_time.spines['top'].set_visible(False)
         self.axes_time.tick_params(bottom=False, left=False)
@@ -237,10 +239,10 @@ class RunPlot(FigureCanvas):
         self.axes_freq.set_xlabel("Frequence (MHz)")
         self.axes_freq.set_ylabel("Magnitude")
         self.axes_freq.set_yticklabels([])
+        self.axes_freq.set_xlim(0,2.5)
+        self.axes_freq.set_ylim(0,None)
 
-        FigureCanvas.__init__(self,fig)
-
-
+        
 class FileFormatterUI(QtWidgets.QDialog):
         def __init__(self,filenames=None):
             super(FileFormatterUI,self).__init__()
@@ -259,6 +261,7 @@ class FileFormatterUI(QtWidgets.QDialog):
             self.apply_button = QtWidgets.QPushButton("Apply")
             self.done_button = QtWidgets.QPushButton("Done")
             self.advanced_button = QtWidgets.QPushButton("Advanced")
+            self.skip_button = QtWidgets.QPushButton("Skip File")
             self.file_display = QtWidgets.QPlainTextEdit()
             self.file_display.setWordWrapMode(False)
             self.input_other = QtWidgets.QLineEdit()
@@ -371,6 +374,7 @@ class FileFormatterUI(QtWidgets.QDialog):
             row_twelve.addWidget(self.apply_button)
             row_twelve.addWidget(self.apply_all_button)
             row_thirteen.addWidget(self.done_button)
+            row_thirteen.addWidget(self.skip_button)
 
             row_one.setAlignment(QtCore.Qt.AlignLeft)
             row_two.setAlignment(QtCore.Qt.AlignLeft)

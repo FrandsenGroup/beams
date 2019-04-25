@@ -5,50 +5,63 @@ import pandas as pd
 import numpy as np
 import time
 
-class RunDataBase():
+class BEAMSModel():
     def __init__(self):
-        super(RunDataBase,self).__init__()
+        super(BEAMSModel,self).__init__()
         self.filenames = set()
+        self.failed_files = set()
         self.run_list = []
         self.current_read_files = set()
 
-    def read_all_files(self, filenames):
+    def read_files(self, filenames):
+        # Remove old runs that are no longer checked
         remove_files = self.current_read_files.difference(filenames)
-        new_files = filenames.difference(self.current_read_files)
         self.remove_runs(remove_files)
-        corrupt_dat_files = self.add_runs(new_files)
-        return corrupt_dat_files
 
-    def remove_runs(self,remove_files):
-        for filename in remove_files:
-            for data in self.run_list:
-                if(os.path.split(data.filename)[1] == filename):
-                    print("Removing",filename,"...")
-                    self.current_read_files.remove(filename)
-                    self.run_list.remove(data)
+        # Add runs that are newly checked by user
+        new_files = filenames.difference(self.current_read_files)
+        self.add_runs(new_files)
 
-    def add_runs(self,new_files):
+    def check_files(self, filenames):
+        # Check files for:
+        # 1) '.dat' extension
+        # 2) BEAMS format (otherwise the user will need to specify the format for now)
+        # Return both the BEAMS and non-BEAMS formatted dat files.
+        beams_files = set()
         non_beams_files = []
-        for filename in new_files:
+        for filename in filenames:
             file_ext = os.path.splitext(os.path.basename(filename))[1]
             if(file_ext == ".dat"):
                 full_file = self.find_full_file(filename)
                 if self.is_BEAMS(full_file):
-                    print("Reading",filename,"...")
-                    self.current_read_files.add(filename)
-                    self.run_list.append(RunData(filename=full_file))
+                    beams_files.add(full_file)
                 else:
                     non_beams_files.append(full_file)
-            else:
-                print(filename,"::",file_ext," is unsupported file type")
-        return non_beams_files
+        return [beams_files,non_beams_files]
+
+    def remove_runs(self,remove_files):
+        # Goes through the array of runs and removes the ones whose filename is no longer checked.
+        for filename in remove_files:
+            for data in self.run_list:
+                if(data.filename == filename):
+                    self.current_read_files.remove(filename)
+                    self.run_list.remove(data)
+
+    def add_runs(self,run_files):
+        # Adds any newly user-specified runs to the array of runs by filename
+        for filename in run_files:
+            self.run_list.append(RunData(filename=filename))
+            self.current_read_files.add(filename)
 
     def find_full_file(self,file_root):
+        # Only the root of the filepath is given from the file manager, here we find the full file
+        # path from the stored array of full file paths (stored when the user imports a file)
         for full_file in self.filenames:
             if(os.path.split(full_file)[1] == file_root):
                 return full_file
 
     def is_BEAMS(self,filename):
+        # Checks if dat file is in BEAMS format (basically whether we converted it with BEAMS)
         with open(filename) as file:
             first_line = file.readline()
         if first_line.split(None, 1)[0] == "BEAMS":
@@ -61,33 +74,31 @@ class RunDataBase():
 
 
 class RunData():
-    def __init__(self,filename=None,header_rows=1,hist_file=True):
+    def __init__(self,filename=None,header_rows=1,isBEAMS=True,sections=None):
         super(RunData,self).__init__()
         self.asymmetry = np.array([])
-        self.time = np.array([])
         self.uncertainty = np.array([])
         self.header_data = {}
         self.filename = filename
 
-        if filename:
+        if isBEAMS:
             self.read_dat_file(filename=self.filename)
+        else:
+            self.read_formatted_file(filename=self.filename,sections=sections)
 
     def read_dat_file(self,filename=None):
-        print("   Retrieving header data ...")
         self.retrieve_header_data()
-        print("   Retrieving histogram data ...")
         self.retrieve_histogram_data()
-        print("   Calculating Uncertainty ...")
         self.calculate_uncertainty()
-        print("   Calculating Background Radiation ...")
         self.calculate_background_radiation()
-        print("   Calculating Asymmetry ...")
         self.calculate_asymmetry()
-        print("   Clearing Memory")
+        self.time = np.arange(0,self.header_data['numBins']*self.header_data['binsize']/1000,self.header_data['binsize']/1000)
         del self.histogram_data
-        print("Sucessfully read",filename)
-     
-    def retrieve_header_data(self):
+
+    def read_formatted_file(self,filename=None,sections=None):
+        return
+
+    def retrieve_header_data(self): 
         header = pd.read_csv(self.filename,nrows=1,skiprows=1)
         for title in header.columns:
             self.header_data[title] = header.iloc[0][title]
@@ -101,7 +112,7 @@ class RunData():
             self.histogram_data.columns = ['Back','Front','Right','Left']
         else:
             self.histogram_data = pd.read_csv(self.filename,skiprows=index,usecols=hist)
-          
+        
     def calculate_uncertainty(self):
         d_front = np.sqrt(self.histogram_data['Front'])
         d_back = np.sqrt(self.histogram_data['Back'])
@@ -118,6 +129,47 @@ class RunData():
     def calculate_asymmetry(self):
         self.asymmetry = ((self.histogram_data['Back'] - self.bkg_back) - (self.histogram_data['Front'] - self.bkg_front))\
             /((self.histogram_data['Front'] - self.bkg_front) + (self.histogram_data['Back'] - self.bkg_back))
+        self.asymmetry.fillna(0.0,inplace=True)
 
-    def bin_data(self):
+    def calculate_fft(self):
         return
+
+    def bin_data(self,bin_size=150,xmin=0,xmax=10,slider_moving=False):
+        start = time.time()
+
+        time_sep = float(self.header_data['binsize'])/1000
+        bin_size = float(bin_size)/1000
+
+        indices_per_bin = int(np.floor(bin_size/time_sep))
+
+        indices_total = int(np.floor((float(xmax)-float(xmin))/time_sep))
+
+        indices_new_total = int(np.floor(indices_total / indices_per_bin))
+
+        indices_counted = int(np.floor(float(xmin)/time_sep))
+
+        self.new_asymmetry = np.empty(indices_new_total)
+        self.new_uncertainty = np.zeros(indices_new_total)
+        
+        mean = np.mean
+
+        if slider_moving:
+            for new_index in range(indices_new_total):
+                self.new_asymmetry[new_index] = mean(self.asymmetry[indices_counted:(indices_counted+indices_per_bin)])
+                indices_counted += indices_per_bin
+        else:
+            uncertainty_sum = 0
+            for new_index in range(indices_new_total):
+                self.new_asymmetry[new_index] = mean(self.asymmetry[indices_counted:(indices_counted+indices_per_bin)])
+                indices_counted += indices_per_bin
+                for unc in self.uncertainty[indices_counted:indices_counted+indices_per_bin]:
+                    uncertainty_sum += unc**2
+                self.new_uncertainty[new_index] = np.sqrt(uncertainty_sum) / (indices_per_bin)# - (indices_per_bin%8))
+                uncertainty_sum = 0
+
+        self.new_times = np.arange(float(xmin),float(xmax),bin_size)
+        if len(self.new_times) != len(self.new_asymmetry):
+            self.new_times = self.new_times[0:len(self.new_asymmetry)]
+
+        end = time.time()
+        print("Computation Time:",end-start,"\n")
