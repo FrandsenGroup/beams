@@ -1,2 +1,2 @@
 Notes for Dr. Frandsen - 
-Changing to MVC Design, should have it up and running completely within a couple days. I've done tests with pandas vs numpy on reading in data from files and numpy takes on average about 8 times longer so I think it's a good idea to keep using pandas as well.
+MVC is up and running now for the most part, I'm going to work on allowing differently formatted dat files tonight so you don't have to use dat files imported by my C function specifically, hopefully have the done by 4/27. See committ description for other comments.
