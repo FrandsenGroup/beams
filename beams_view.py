@@ -185,36 +185,90 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.init_UI()
 
     def init_UI(self):
+        self.create_widgets()
+        self.layout_widgets()
+
+    def create_widgets(self):
+        self.display_label = QtWidgets.QLabel("Choose a currently plotted run below.")
         self.run_titles = QtWidgets.QComboBox()
+        self.run_titles.addItem("No Runs Plotted")
         self.color_choices = QtWidgets.QComboBox()
-        self.isolate_button = QtWidgets.QPushButton()
-        self.current_run_title = QtWidgets.QLabel()
+        self.color_choices.setEnabled(False)
+        self.color_choices.addItem("None")
+        self.isolate_button = QtWidgets.QPushButton("Isolate")
+        self.isolate_button.setEnabled(False)
         self.header_data = QtWidgets.QComboBox()
+        self.header_data.setEnabled(False)
+        self.header_display = QtWidgets.QLineEdit()
+        self.header_display.setEnabled(False)
         self.histograms = QtWidgets.QComboBox()
-        self.inspect_button = QtWidgets.QPushButton()
-        self.plot_all_button = QtWidgets.QPushButton()
-        header_data_label = QtWidgets.QLabel()
-        histogram_label = QtWidgets.QLabel()
+        self.histograms.addItem("None")
+        self.histograms.setEnabled(False)
+        self.inspect_hist_button = QtWidgets.QPushButton("Inspect Hist")
+        self.inspect_hist_button.setEnabled(False)
+        self.inspect_file_button = QtWidgets.QPushButton("Inspect File")
+        self.inspect_file_button.setEnabled(False)
+        self.plot_all_button = QtWidgets.QPushButton("Plot All Runs")
+        self.plot_all_button.setEnabled(False)
+        self.header_data_label = QtWidgets.QLabel()
+        self.histogram_label = QtWidgets.QLabel()
+
+    def layout_widgets(self):
+        tempWidget = QtWidgets.QWidget()
+        main_layout = QtWidgets.QVBoxLayout()
+        main_layout.addWidget(self.display_label)
+        main_layout.addWidget(self.run_titles)
+
+        row_one = QtWidgets.QHBoxLayout()
+        row_one.addWidget(self.isolate_button)
+        row_one.addWidget(self.color_choices)
+        row_two = QtWidgets.QHBoxLayout()
+        row_two.addWidget(self.histograms)
+        row_two.addWidget(self.inspect_hist_button)
+        row_two.addWidget(self.inspect_file_button)
+        row_thr = QtWidgets.QHBoxLayout()
+        row_thr.addWidget(self.header_data) #Disable if not BEAMS
+        row_thr.addWidget(self.header_display) #Disable if not BEAMS
+
+        main_layout.addLayout(row_one)
+        main_layout.addLayout(row_two)
+        main_layout.addLayout(row_thr)
+        main_layout.addWidget(self.plot_all_button)
+
+        main_layout.addStretch(1)
+        tempWidget.setLayout(main_layout)
+        self.setWidget(tempWidget)
 
 
 class PlotPanel(QtWidgets.QDockWidget):
-    def __init__(self):
+    def __init__(self,center=True):
         super(PlotPanel,self).__init__()
-        self. init_UI()
+        if center:
+            self.init_center_UI()
+        else:
+            self.init_hist_UI()
         plt.ion()
 
-    def init_UI(self):
+    def init_center_UI(self):
         self.setWindowTitle("Graphing Area")
         tempWidget = QtWidgets.QWidget()
 
-        self.canvas_one = RunPlot(parent=self)
-        self.canvas_two = RunPlot(parent=self)
+        self.canvas_one = RunPlot()
+        self.canvas_two = RunPlot()
 
         hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.canvas_one)
         hbox.addWidget(self.canvas_two)
         tempWidget.setLayout(hbox)
 
+        self.setWidget(tempWidget)
+
+    def init_hist_UI(self):
+        tempWidget = QtWidgets.QWidget()
+        self.canvas_hist = HistogramDisplayUI()
+        hbox = QtWidgets.QHBoxLayout()
+        hbox.addWidget(self.canvas_hist)
+        tempWidget.setLayout(hbox)
         self.setWidget(tempWidget)
 
 
@@ -414,5 +468,21 @@ class FileFormatterUI(QtWidgets.QDialog):
             self.setLayout(main_vertical)
 
 
+class FileDisplayUI(QtWidgets.QPlainTextEdit):
+    def __init__(self,filename=None):
+        super(FileDisplayUI,self).__init__()
+        if filename:
+            self.filename = filename
+            self.setGeometry(500,300,400,400)
+            self.setPlainText(open(self.filename).read())
+            self.setWordWrapMode(False)
+
+
+class HistogramDisplayUI(FigureCanvas):
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        fig = plt.figure(dpi=dpi)
+        self.axes_hist = fig.add_subplot(111)
+        self._draw_pending = True
+        FigureCanvas.__init__(self,fig)
 
 

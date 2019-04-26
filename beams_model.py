@@ -3,15 +3,21 @@
 import os
 import pandas as pd 
 import numpy as np
+from scipy.interpolate import spline
 import time
+
+color_options = ["blue", "orange", "green", "red", "purple", \
+    "brown", "pink", "gray", "olive", "cyan","custom"]
 
 class BEAMSModel():
     def __init__(self):
-        super(BEAMSModel,self).__init__()
+        super(BEAMSModel,self).__init__()  
         self.filenames = set()
         self.failed_files = set()
         self.run_list = []
         self.current_read_files = set()
+        self.color_options = ["blue", "orange", "green", "red", "purple", \
+            "brown", "pink", "gray", "olive", "cyan","custom"]
 
     def read_files(self, filenames):
         # Remove old runs that are no longer checked
@@ -50,7 +56,7 @@ class BEAMSModel():
     def add_runs(self,run_files):
         # Adds any newly user-specified runs to the array of runs by filename
         for filename in run_files:
-            self.run_list.append(RunData(filename=filename))
+            self.run_list.append(RunData(filename=filename,color=self.color_options[len(self.run_list)]))
             self.current_read_files.add(filename)
 
     def find_full_file(self,file_root):
@@ -72,14 +78,21 @@ class BEAMSModel():
         print(sections)
         print(filename)
 
+    def index_from_filename(self,filename=None):
+        for index in range(len(self.run_list)):
+            if self.run_list[index].filename == filename:
+                return index
+        return -1
+
 
 class RunData():
-    def __init__(self,filename=None,header_rows=1,isBEAMS=True,sections=None):
+    def __init__(self,filename=None,header_rows=1,isBEAMS=True,sections=None,color="blue"):
         super(RunData,self).__init__()
         self.asymmetry = np.array([])
         self.uncertainty = np.array([])
         self.header_data = {}
         self.filename = filename
+        self.color = color
 
         if isBEAMS:
             self.read_dat_file(filename=self.filename)
@@ -103,15 +116,14 @@ class RunData():
         for title in header.columns:
             self.header_data[title] = header.iloc[0][title]
     
-    def retrieve_histogram_data(self,hist=None):
+    def retrieve_histogram_data(self):
         index = 1
         while(pd.read_csv(self.filename,nrows=1,skiprows=index).size > 4): # Determines what line histogram data starts.
             index += 1
-        if not hist: # If no specific histogram is specified
-            self.histogram_data = pd.read_csv(self.filename,skiprows=index)
-            self.histogram_data.columns = ['Back','Front','Right','Left']
-        else:
-            self.histogram_data = pd.read_csv(self.filename,skiprows=index,usecols=hist)
+       
+        self.histogram_data = pd.read_csv(self.filename,skiprows=index)
+        self.histogram_data.columns = ['Back','Front','Right','Left']
+        
         
     def calculate_uncertainty(self):
         d_front = np.sqrt(self.histogram_data['Front'])
@@ -131,32 +143,43 @@ class RunData():
             /((self.histogram_data['Front'] - self.bkg_front) + (self.histogram_data['Back'] - self.bkg_back))
         self.asymmetry.fillna(0.0,inplace=True)
 
-    def calculate_fft(self):
-        return
+    def calculate_fft(self,bin_size):
+        period_s = bin_size
+        frequency_s = 1.0 / period_s
+        n = len(self.new_asymmetry)
+        k = np.arange(n)
+        period = n / frequency_s
+        frequencies = k / period
+        frequencies = frequencies[range(int(n/2))]
+        yValues = np.fft.fft([self.new_asymmetry,self.new_times]) / n
+        yValues = abs(yValues[0, range(int(n/2))])
+
+        # Calculate the spline for the graph
+        self.x_smooth = np.linspace(frequencies.min(), frequencies.max(), 300)
+        np.insert(self.x_smooth,0,0)
+        self.y_smooth = spline(frequencies, yValues, self.x_smooth)
+        np.insert(self.y_smooth,0,0)
 
     def bin_data(self,bin_size=150,xmin=0,xmax=10,slider_moving=False):
-        start = time.time()
+        # start = time.time()
 
         time_sep = float(self.header_data['binsize'])/1000
         bin_size = float(bin_size)/1000
-
         indices_per_bin = int(np.floor(bin_size/time_sep))
-
         indices_total = int(np.floor((float(xmax)-float(xmin))/time_sep))
-
         indices_new_total = int(np.floor(indices_total / indices_per_bin))
-
         indices_counted = int(np.floor(float(xmin)/time_sep))
 
         self.new_asymmetry = np.empty(indices_new_total)
         self.new_uncertainty = np.zeros(indices_new_total)
-        
-        mean = np.mean
+        self.new_times = np.arange(float(xmin),float(xmax)+bin_size,bin_size)
 
+        mean = np.mean
         if slider_moving:
             for new_index in range(indices_new_total):
                 self.new_asymmetry[new_index] = mean(self.asymmetry[indices_counted:(indices_counted+indices_per_bin)])
                 indices_counted += indices_per_bin
+            self.match_arrays()
         else:
             uncertainty_sum = 0
             for new_index in range(indices_new_total):
@@ -164,12 +187,16 @@ class RunData():
                 indices_counted += indices_per_bin
                 for unc in self.uncertainty[indices_counted:indices_counted+indices_per_bin]:
                     uncertainty_sum += unc**2
-                self.new_uncertainty[new_index] = np.sqrt(uncertainty_sum) / (indices_per_bin)# - (indices_per_bin%8))
+                self.new_uncertainty[new_index] = np.sqrt(uncertainty_sum) / (indices_per_bin)
                 uncertainty_sum = 0
+            self.match_arrays()
+            self.calculate_fft(bin_size=bin_size)
 
-        self.new_times = np.arange(float(xmin),float(xmax),bin_size)
+    def match_arrays(self):
         if len(self.new_times) != len(self.new_asymmetry):
-            self.new_times = self.new_times[0:len(self.new_asymmetry)]
+            if len(self.new_asymmetry) > len(self.new_times):
+                self.new_asymmetry = self.new_asymmetry[0:len(self.new_times)]
+                self.new_uncertainty = self.new_uncertainty[0:len(self.new_times)]
+            else:
+                self.new_times = self.new_times[0:len(self.new_asymmetry)]
 
-        end = time.time()
-        print("Computation Time:",end-start,"\n")
