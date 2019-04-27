@@ -6,9 +6,6 @@ import numpy as np
 from scipy.interpolate import spline
 import time
 
-color_options = ["blue", "orange", "green", "red", "purple", \
-    "brown", "pink", "gray", "olive", "cyan","custom"]
-
 class BEAMSModel():
     def __init__(self):
         super(BEAMSModel,self).__init__()  
@@ -18,7 +15,8 @@ class BEAMSModel():
         self.current_read_files = set()
         self.color_options = ["blue", "orange", "green", "red", "purple", \
             "brown", "pink", "gray", "olive", "cyan","custom"]
-
+        self.used_colors = []
+        
     def read_files(self, filenames):
         # Remove old runs that are no longer checked
         remove_files = self.current_read_files.difference(filenames)
@@ -50,14 +48,19 @@ class BEAMSModel():
         for filename in remove_files:
             for data in self.run_list:
                 if(data.filename == filename):
+                    self.used_colors.remove(data.color)
+                    self.color_options.append(data.color)
                     self.current_read_files.remove(filename)
                     self.run_list.remove(data)
 
     def add_runs(self,run_files):
         # Adds any newly user-specified runs to the array of runs by filename
         for filename in run_files:
-            self.run_list.append(RunData(filename=filename,color=self.color_options[len(self.run_list)]))
+            self.run_list.append(RunData(filename=filename,color=self.color_options[0]))
+            self.used_colors.append(self.color_options[0])
+            self.color_options.remove(self.color_options[0])
             self.current_read_files.add(filename)
+            print(self.used_colors,"\n",self.color_options)
 
     def find_full_file(self,file_root):
         # Only the root of the filepath is given from the file manager, here we find the full file
@@ -74,9 +77,57 @@ class BEAMSModel():
             return True
         return False
 
-    def read_unrecognized_files(self,sections=None,filename=None):
-        print(sections)
-        print(filename)
+    def check_unrecognized_format(self,sections=None):
+        '''Checks user specified format to ensure it can be properly handled'''
+        if sections:
+            if 'Front' in sections and 'Back' in sections:
+                if 'Time' in sections:
+                    if (sections['Front'] == sections['Back']) or (sections['Front'] == sections['Time']) \
+                        or (sections['Back'] == sections['Time']):
+                        return False
+                    return "fbt"
+                else:
+                    if (sections['Front'] == sections['Back']):
+                        return False
+                    return "fb"
+            elif 'Left' in sections and 'Right' in sections:
+                if 'Time' in sections:
+                    if (sections['Left'] == sections['Right']) or (sections['Left'] == sections['Time']) \
+                        or (sections['Right'] == sections['Time']):
+                        return False
+                    return "lrt"
+                else:
+                    if (sections['Left'] == sections['Right']):
+                        return False
+                    return "lr"
+            elif 'Asymmetry' in sections:
+                if 'Time' in sections:
+                    if 'Uncertainty' in sections:
+                        if (sections['Asymmetry'] == sections['Time']) or (sections['Asymmetry'] == sections['Uncertainty']) \
+                            or (sections['Uncertainty'] == sections['Time']):
+                            return False    
+                        return 'atu'
+                    else:
+                        if (sections['Asymmetry'] == sections['Time']):
+                            return False
+                        return 'at'
+                else:
+                    return False
+            else:
+                return False
+        else:
+            print("Processing Error :: m.beams_model.py -> c.BEAMSModel -> f.check_unrecognized_format")
+            return False
+        return False
+
+    def read_unrecognized_format(self,sections=None,filenames=None,header_rows=None,fformat=None):
+        for filename in filenames:
+            self.run_list.append(RunData(filename=filename,header_rows=header_rows,isBEAMS=False,sections=sections,fformat=fformat))
+
+    def inspect_unrecognized_column(self,filename=None,column=None,header_rows=None):
+        print(filename,"\n",column,"\n",header_rows)
+        self.column_data = pd.read_csv(filename,skiprows=header_rows,usecols=[column])
+        print(self.column_data)
 
     def index_from_filename(self,filename=None):
         for index in range(len(self.run_list)):
@@ -86,18 +137,21 @@ class BEAMSModel():
 
 
 class RunData():
-    def __init__(self,filename=None,header_rows=1,isBEAMS=True,sections=None,color="blue"):
+    def __init__(self,filename=None,header_rows=1,isBEAMS=True,sections=None,color="blue",fformat='fb',t0=800,binsize=0.396025):
         super(RunData,self).__init__()
         self.asymmetry = np.array([])
         self.uncertainty = np.array([])
         self.header_data = {}
         self.filename = filename
         self.color = color
+        self.header_rows = header_rows
 
         if isBEAMS:
             self.read_dat_file(filename=self.filename)
         else:
-            self.read_formatted_file(filename=self.filename,sections=sections)
+            self.sections = sections
+            self.fformat= fformat
+            self.read_formatted_file()
 
     def read_dat_file(self,filename=None):
         self.retrieve_header_data()
@@ -108,11 +162,59 @@ class RunData():
         self.time = np.arange(0,self.header_data['numBins']*self.header_data['binsize']/1000,self.header_data['binsize']/1000)
         del self.histogram_data
 
-    def read_formatted_file(self,filename=None,sections=None):
-        return
+    def read_formatted_file(self):
+        def invert_dict():
+            self.sections = {v: k for k, v in self.sections.items()}
+
+        def read_fb_format():
+            self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=[self.sections['Front'],self.sections['Back']])
+            invert_dict()
+            self.histogram_data.columns = [self.sections[0],self.sections[1]]
+
+        def read_fbt_format():
+            self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=[self.sections['Front'],self.sections['Back'],self.sections['Time']])
+            invert_dict()
+            self.histogram_data.columns = [self.sections[0],self.sections[1],self.sections[2]]
+
+        def read_lr_format():
+            self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=[self.sections['Left'],self.sections['Right']])
+            invert_dict()
+            self.histogram_data.columns = [self.sections[0],self.sections[1]]
+
+        def read_lrt_format():
+            self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=[self.sections['Left'],self.sections['Right'],self.sections['Time']])
+            invert_dict()
+            self.histogram_data.columns = [self.sections[0],self.sections[1],self.sections[2]]
+
+        def read_at_format():
+            self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=[self.sections['Asymmetry'],self.sections['Time']])
+            invert_dict()
+            self.histogram_data.columns = [self.sections[0],self.sections[1]]
+
+        def read_atu_format():
+            self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=[self.sections['Asymmetry'],self.sections['Time'],self.sections['Uncertainty']])
+            invert_dict()
+            self.histogram_data.columns = [self.sections[0],self.sections[1],self.sections[2]]
+
+        if self.fformat == "fb":
+            read_fb_format()
+        elif self.fformat == "fbt":
+            read_fbt_format()
+        elif self.fformat == "lr":
+            read_lr_format()
+        elif self.fformat == "lrt":
+            read_lrt_format()
+        elif self.fformat == "at":
+            read_at_format()
+        elif self.fformat == "atu":
+            read_atu_format()
+        else:
+            print("Unrecognized format:")
+
+        del self.histogram_data
 
     def retrieve_header_data(self): 
-        header = pd.read_csv(self.filename,nrows=1,skiprows=1)
+        header = pd.read_csv(self.filename,nrows=self.header_rows,skiprows=1)
         for title in header.columns:
             self.header_data[title] = header.iloc[0][title]
     
@@ -124,7 +226,6 @@ class RunData():
         self.histogram_data = pd.read_csv(self.filename,skiprows=index)
         self.histogram_data.columns = ['Back','Front','Right','Left']
         
-        
     def calculate_uncertainty(self):
         d_front = np.sqrt(self.histogram_data['Front'])
         d_back = np.sqrt(self.histogram_data['Back'])
@@ -134,9 +235,9 @@ class RunData():
         del d_front
         del d_back
 
-    def calculate_background_radiation(self):
-        self.bkg_back = np.mean(self.histogram_data.iloc[70:800,0].values)
-        self.bkg_front = np.mean(self.histogram_data.iloc[70:800,1].values)
+    def calculate_background_radiation(self,front=0,back=1):
+        self.bkg_back = np.mean(self.histogram_data.iloc[70:800,front].values)
+        self.bkg_front = np.mean(self.histogram_data.iloc[70:800,back].values)
 
     def calculate_asymmetry(self):
         self.asymmetry = ((self.histogram_data['Back'] - self.bkg_back) - (self.histogram_data['Front'] - self.bkg_front))\

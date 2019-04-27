@@ -117,25 +117,29 @@ class BEAMSController():
                         xmin=self.BEAMS_view.plot_editor.input_xmin_one.text(),xmax=self.BEAMS_view.plot_editor.input_xmax_one.text())
                     self.BEAMS_view.plot_panel.canvas_one.axes_time.set_xlim(float(self.BEAMS_view.plot_editor.input_xmin_one.text()),\
                         float(self.BEAMS_view.plot_editor.input_xmax_one.text()))
-                    self.BEAMS_view.plot_panel.canvas_one.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,linestyle='None',marker='.',mfc=run.color,mec=run.color)
-                    self.BEAMS_view.plot_panel.canvas_one.axes_freq.plot(run.x_smooth,run.y_smooth**2,mfc=run.color,mec=run.color,marker='.')
+                    self.BEAMS_view.plot_panel.canvas_one.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,linestyle='None',\
+                        marker='.',mfc=run.color,mec=run.color,ecolor=run.color)
+                    self.BEAMS_view.plot_panel.canvas_one.axes_freq.plot(run.x_smooth,run.y_smooth**2,mfc=run.color,mec=run.color,color=run.color,marker='.')
                 if plot == 2 or plot == 3:
                     run.bin_data(slider_moving=slider_moving,bin_size=self.BEAMS_view.plot_editor.slider_two.value(),\
                         xmin=self.BEAMS_view.plot_editor.input_xmin_two.text(),xmax=self.BEAMS_view.plot_editor.input_xmax_two.text())
                     self.BEAMS_view.plot_panel.canvas_two.axes_time.set_xlim(float(self.BEAMS_view.plot_editor.input_xmin_two.text()),\
                         float(self.BEAMS_view.plot_editor.input_xmax_two.text()))
-                    self.BEAMS_view.plot_panel.canvas_two.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,linestyle='None',marker='.',mfc=run.color,mec=run.color)
-                    self.BEAMS_view.plot_panel.canvas_two.axes_freq.plot(run.x_smooth,run.y_smooth**2,mfc=run.color,mec=run.color,marker='.')
+                    self.BEAMS_view.plot_panel.canvas_two.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,linestyle='None',\
+                        marker='.',mfc=run.color,mec=run.color,ecolor=run.color)
+                    self.BEAMS_view.plot_panel.canvas_two.axes_freq.plot(run.x_smooth,run.y_smooth**2,mfc=run.color,mec=run.color,color=run.color,marker='.')
         else: 
             run = self.BEAMS_model.run_list[self.BEAMS_model.index_from_filename(filename=filename)]
             self.BEAMS_view.plot_panel.canvas_one.axes_time.set_xlim(float(self.BEAMS_view.plot_editor.input_xmin_one.text()),\
                 float(self.BEAMS_view.plot_editor.input_xmax_one.text()))
-            self.BEAMS_view.plot_panel.canvas_one.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,linestyle='None',marker='.',mfc=run.color,mec=run.color)
-            self.BEAMS_view.plot_panel.canvas_one.axes_freq.plot(run.x_smooth,run.y_smooth**2,mfc=run.color,mec=run.color,marker='.')
+            self.BEAMS_view.plot_panel.canvas_one.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,linestyle='None',marker='.',\
+                mfc=run.color,mec=run.color,ecolor=run.color)
+            self.BEAMS_view.plot_panel.canvas_one.axes_freq.plot(run.x_smooth,run.y_smooth**2,mfc=run.color,mec=run.color,color=run.color,marker='.')
             self.BEAMS_view.plot_panel.canvas_two.axes_time.set_xlim(float(self.BEAMS_view.plot_editor.input_xmin_two.text()),\
                 float(self.BEAMS_view.plot_editor.input_xmax_two.text()))
-            self.BEAMS_view.plot_panel.canvas_two.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,linestyle='None',marker='.',mfc=run.color,mec=run.color)
-            self.BEAMS_view.plot_panel.canvas_two.axes_freq.plot(run.x_smooth,run.y_smooth**2,mfc=run.color,mec=run.color,marker='.')
+            self.BEAMS_view.plot_panel.canvas_two.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,linestyle='None',marker='.',\
+                mfc=run.color,mec=run.color,ecolor=run.color)
+            self.BEAMS_view.plot_panel.canvas_two.axes_freq.plot(run.x_smooth,run.y_smooth**2,mfc=run.color,mec=run.color,color=run.color,marker='.')
 
         self.BEAMS_view.plot_panel.canvas_one.set_style()
         self.BEAMS_view.plot_panel.canvas_two.set_style()
@@ -165,6 +169,7 @@ class BEAMSController():
         if len(filenames) > 0:
             self.BEAMS_view.run_display.run_titles.clear()
             self.BEAMS_view.run_display.run_titles.addItems(filenames)
+            self.BEAMS_view.run_display.color_choices.addItems(self.BEAMS_model.used_colors)
             self.BEAMS_view.run_display.color_choices.addItems(self.BEAMS_model.color_options)
             self.update_run_display()
             self.enable_run_display(isEnabled=True)
@@ -187,6 +192,7 @@ class BEAMSController():
         run_index = self.BEAMS_model.index_from_filename(self.BEAMS_view.run_display.run_titles.currentText())
         if run_index != -1:
             self.BEAMS_view.run_display.color_choices.setCurrentText(self.BEAMS_model.run_list[run_index].color)
+            print(self.BEAMS_model.run_list[run_index].color)
             if self.BEAMS_model.is_BEAMS(self.BEAMS_view.run_display.run_titles.currentText()):
                 self.BEAMS_view.run_display.histograms.clear()
                 self.BEAMS_view.run_display.histograms.addItems(['Front','Back','Right','Left'])
@@ -231,7 +237,6 @@ class BEAMSController():
         self.file_formatter.check_error.stateChanged.connect(lambda: self.formatter_checkbox(dtype="error"))
         self.file_formatter.check_fhist.stateChanged.connect(lambda: self.formatter_checkbox(dtype="fhist"))
         self.file_formatter.check_lhist.stateChanged.connect(lambda: self.formatter_checkbox(dtype="lhist"))
-        self.file_formatter.check_other.stateChanged.connect(lambda: self.formatter_checkbox(dtype="other"))
         self.file_formatter.check_rhist.stateChanged.connect(lambda: self.formatter_checkbox(dtype="rhist"))
         self.file_formatter.check_time.stateChanged.connect(lambda: self.formatter_checkbox(dtype="time"))
         self.file_formatter.check_uncertain.stateChanged.connect(lambda: self.formatter_checkbox(dtype="uncertain"))
@@ -241,69 +246,124 @@ class BEAMSController():
         self.file_formatter.done_button.released.connect(lambda: self.formatter_done_click())
         self.file_formatter.file_list.currentIndexChanged.connect(lambda: self.formatter_file_changed())
         self.file_formatter.skip_button.released.connect(lambda: self.formatter_skip_click())
+        self.file_formatter.inspect_column.released.connect(lambda: self.formatter_inspect_column())
 
     def formatter_checkbox(self,dtype=None):
         if dtype == "asym":
-            self.file_formatter.spin_asym.setEnabled(False) if self.file_formatter.spin_asym.isEnabled() \
-                else self.file_formatter.spin_asym.setEnabled(True)
+            if self.file_formatter.spin_asym.isEnabled():
+                self.file_formatter.spin_asym.setEnabled(False)
+                self.file_formatter.selected_columns.remove('Asymmetry')
+            else:
+                self.file_formatter.spin_asym.setEnabled(True)
+                self.file_formatter.selected_columns.append('Asymmetry')
+                
         elif dtype == "bhist":
-            self.file_formatter.spin_bhist.setEnabled(False) if self.file_formatter.spin_bhist.isEnabled() \
-                else self.file_formatter.spin_bhist.setEnabled(True)
-        elif dtype == "error":
-            self.file_formatter.spin_error.setEnabled(False) if self.file_formatter.spin_error.isEnabled() \
-                else self.file_formatter.spin_error.setEnabled(True)
+            if self.file_formatter.spin_bhist.isEnabled():
+                self.file_formatter.spin_bhist.setEnabled(False)
+                self.file_formatter.selected_columns.remove('Back')
+            else:
+                self.file_formatter.spin_bhist.setEnabled(True)
+                self.file_formatter.selected_columns.append('Back')
+                
         elif dtype == "fhist":
-            self.file_formatter.spin_fhist.setEnabled(False) if self.file_formatter.spin_fhist.isEnabled() \
-                else self.file_formatter.spin_fhist.setEnabled(True)
+            if self.file_formatter.spin_fhist.isEnabled():
+                self.file_formatter.spin_fhist.setEnabled(False)
+                self.file_formatter.selected_columns.remove('Front')
+            else:
+                self.file_formatter.spin_fhist.setEnabled(True)
+                self.file_formatter.selected_columns.append('Front')
+                
         elif dtype == "lhist":
-            self.file_formatter.spin_lhist.setEnabled(False) if self.file_formatter.spin_lhist.isEnabled() \
-                else self.file_formatter.spin_lhist.setEnabled(True)
-        elif dtype == "other":
-            self.file_formatter.spin_other.setEnabled(False) if self.file_formatter.spin_other.isEnabled() \
-                else self.file_formatter.spin_other.setEnabled(True)
+            if self.file_formatter.spin_lhist.isEnabled():
+                self.file_formatter.spin_lhist.setEnabled(False)
+                self.file_formatter.selected_columns.remove('Left')
+            else:
+                self.file_formatter.spin_lhist.setEnabled(True)
+                self.file_formatter.selected_columns.append('Left')
+                
         elif dtype == "rhist":
-            self.file_formatter.spin_rhist.setEnabled(False) if self.file_formatter.spin_rhist.isEnabled() \
-                else self.file_formatter.spin_rhist.setEnabled(True)
+            if self.file_formatter.spin_rhist.isEnabled():
+                self.file_formatter.spin_rhist.setEnabled(False)
+                self.file_formatter.selected_columns.remove('Right')
+            else:
+                self.file_formatter.spin_rhist.setEnabled(True)
+                self.file_formatter.selected_columns.append('Right')
+                
         elif dtype == "time":
-            self.file_formatter.spin_time.setEnabled(False) if self.file_formatter.spin_time.isEnabled() \
-                else self.file_formatter.spin_time.setEnabled(True)
+            if self.file_formatter.spin_time.isEnabled():
+                self.file_formatter.spin_time.setEnabled(False)
+                self.file_formatter.selected_columns.remove('Time')
+            else:
+                self.file_formatter.spin_time.setEnabled(True)
+                self.file_formatter.selected_columns.append('Time')
+                
         else:
-            self.file_formatter.spin_uncertain.setEnabled(False) if self.file_formatter.spin_uncertain.isEnabled() \
-                else self.file_formatter.spin_uncertain.setEnabled(True)
+            if self.file_formatter.spin_uncertain.isEnabled():
+                self.file_formatter.spin_uncertain.setEnabled(False)
+                self.file_formatter.selected_columns.remove('Uncertainty')
+            else:
+                self.file_formatter.spin_uncertain.setEnabled(True)
+                self.file_formatter.selected_columns.append('Uncertainty')
+                
+        
+        self.file_formatter.columns.clear()
+        self.file_formatter.columns.addItems(self.file_formatter.selected_columns)
+
+        if(self.file_formatter.check_fhist.isChecked() and self.file_formatter.check_bhist.isChecked()) or \
+            (self.file_formatter.check_lhist.isChecked() and self.file_formatter.check_rhist.isChecked()):
+            self.file_formatter.bin_input.setEnabled(True)
+            self.file_formatter.initial_t.setEnabled(True)
+        else:
+            self.file_formatter.bin_input.setEnabled(False)
+            self.file_formatter.initial_t.setEnabled(False)
 
     def formatter_apply_click(self,apply_all=False):
-        data_sections = dict()
-        if self.file_formatter.check_asym.isChecked():
-            data_sections['asym'] = self.file_formatter.spin_asym.value() 
-        if self.file_formatter.check_bhist.isChecked():
-            data_sections['bhist'] = self.file_formatter.spin_bhist.value()
-        if self.file_formatter.check_error.isChecked(): 
-            data_sections['error'] = self.file_formatter.spin_error.value()
-        if self.file_formatter.check_fhist.isChecked(): 
-            data_sections['fhist'] = self.file_formatter.spin_fhist.value() 
-        if self.file_formatter.check_lhist.isChecked():
-            data_sections['lhist'] = self.file_formatter.spin_lhist.value() 
-        if self.file_formatter.check_other.isChecked():
-            data_sections['other'] = self.file_formatter.spin_other.value() 
-        if self.file_formatter.check_rhist.isChecked():
-            data_sections['rhist'] = self.file_formatter.spin_rhist.value() 
-        if self.file_formatter.check_time.isChecked():
-            data_sections['time'] = self.file_formatter.spin_time.value() 
-        if self.file_formatter.check_uncertain.isChecked():
-            data_sections['uncertain'] = self.file_formatter.spin_uncertain.value() 
-
+        self.formatter_create_section_dict()
         if not apply_all:
-            self.BEAMS_model.read_unrecognized_files(sections=data_sections,\
-                filename=self.file_formatter.file_list.currentText())
+            fformat = self.BEAMS_model.check_unrecognized_format(sections=self.data_sections)
+            if fformat:
+                self.BEAMS_model.read_unrecognized_format(sections=self.data_sections,filenames=[self.file_formatter.file_list.currentText()],\
+                    header_rows=self.file_formatter.spin_header.value(),fformat=fformat)
+            else:
+                print("Invalid format bro.")
+
+    def formatter_create_section_dict(self):
+        self.data_sections = dict()
+        if self.file_formatter.check_asym.isChecked():
+            self.data_sections['Asymmetry'] = self.file_formatter.spin_asym.value() 
+        if self.file_formatter.check_bhist.isChecked():
+            self.data_sections['Back'] = self.file_formatter.spin_bhist.value()
+        if self.file_formatter.check_error.isChecked(): 
+            self.data_sections['Error'] = self.file_formatter.spin_error.value()
+        if self.file_formatter.check_fhist.isChecked(): 
+            self.data_sections['Front'] = self.file_formatter.spin_fhist.value() 
+        if self.file_formatter.check_lhist.isChecked():
+            self.data_sections['Left'] = self.file_formatter.spin_lhist.value() 
+        if self.file_formatter.check_rhist.isChecked():
+            self.data_sections['Right'] = self.file_formatter.spin_rhist.value() 
+        if self.file_formatter.check_time.isChecked():
+            self.data_sections['Time'] = self.file_formatter.spin_time.value() 
+        if self.file_formatter.check_uncertain.isChecked():
+            self.data_sections['Uncertainty'] = self.file_formatter.spin_uncertain.value() 
 
     def formatter_done_click(self):
         self.file_formatter.close()
 
     def formatter_file_changed(self):
-        return
+        self.file_formatter.set_intitial_states()
+        if self.file_formatter.file_list.currentText():
+            self.file_formatter.file_display.setPlainText(open(self.file_formatter.file_list.currentText()).read())
 
     def formatter_skip_click(self):
-        return
+        self.file_formatter.file_list.removeItem(self.file_formatter.file_list.currentIndex())
 
-    def test(self,output=True):
+    def formatter_inspect_column(self):
+        self.formatter_create_section_dict()
+        self.BEAMS_model.inspect_unrecognized_column(filename=self.file_formatter.file_list.currentText(),\
+            column=self.data_sections[self.file_formatter.columns.currentText()],header_rows=self.file_formatter.spin_header.value())
+        hist_display = beams_view.PlotPanel(center=False)
+        hist_display.canvas_hist.axes_hist.plot(self.BEAMS_model.column_data.values,linestyle='None',marker="s")
+        del self.BEAMS_model.column_data
+
+    def test(self,output=True,GUI=False):
         return
