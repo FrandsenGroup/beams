@@ -322,7 +322,8 @@ class FileFormatterUI(QtWidgets.QDialog):
             self.columns = QtWidgets.QComboBox()
             self.inspect_column = QtWidgets.QPushButton("Inspect Column")
             self.bin_input = QtWidgets.QLineEdit()
-            self.initial_t = QtWidgets.QLineEdit()      
+            self.initial_t = QtWidgets.QLineEdit()  
+            # self.start_t = QtWidgets.QLineEdit()    
             
             self.label_info = QtWidgets.QLabel("Some of the files you wanted to plot were in an unrecognized format, specify the proper format in this app and press 'Apply'\n")
             self.label_header = QtWidgets.QLabel("Header Data (# Rows)")
@@ -375,9 +376,11 @@ class FileFormatterUI(QtWidgets.QDialog):
             self.check_time.setChecked(False)
             self.bin_input.clear()
             self.initial_t.clear()
+            # self.start_t.clear()
             self.file_display.clear()
             self.bin_input.setEnabled(False)
             self.initial_t.setEnabled(False)
+            # self.start_t.setEnabled(False)
             self.spin_fhist.setEnabled(False)
             self.spin_bhist.setEnabled(False)
             self.spin_rhist.setEnabled(False)
@@ -396,9 +399,11 @@ class FileFormatterUI(QtWidgets.QDialog):
             self.inspect_column.setFixedWidth(85)
             self.bin_input.setFixedWidth(85)
             self.initial_t.setFixedWidth(85)  
+            # self.start_t.setFixedWidth(40)
             self.file_display.setWordWrapMode(False)
             self.bin_input.setPlaceholderText("Time Bin Size")
-            self.initial_t.setPlaceholderText("Initial Time")  
+            self.initial_t.setPlaceholderText("Initial Bin")  
+            # self.start_t.setPlaceholderText("Start Bin")
             
         def layout_widgets(self):
             main_layout = QtWidgets.QHBoxLayout()
@@ -472,6 +477,7 @@ class FileFormatterUI(QtWidgets.QDialog):
             row_ten.addSpacing(50)
             row_eleven.addWidget(self.bin_input)
             row_eleven.addWidget(self.initial_t)
+            # row_eleven.addWidget(self.start_t)
             row_eleven.addSpacing(50)
             
             row_twelve.addWidget(self.apply_button)
@@ -534,5 +540,29 @@ class HistogramDisplayUI(FigureCanvas):
         self.axes_hist = fig.add_subplot(111)
         self._draw_pending = True
         FigureCanvas.__init__(self,fig)
+
+
+class ErrorMessageUI(QtWidgets.QMessageBox):
+    def __init__(self,sections=None,error_type=None):
+        super(ErrorMessageUI,self).__init__()
+        self.setIcon(QtWidgets.QMessageBox.Critical)
+        self.sections = sections
+        self.setWindowTitle('Error')
+        self.label_error(error_type)
+        self.exec_()
+        
+    def label_error(self,error_type=None):
+        if error_type == 'EB':
+            self.setText('Invalid Format :: Check the initial time bin specified. \n This is the bin where we see the first of the emitted positrons.')
+        elif error_type == 'EH':
+            self.setText('Invalid Format :: Check number of header rows specified.')
+        elif error_type == 'EC':
+            self.setText('Invalid Format :: '+str(self.sections))
+        elif error_type == 'EF':
+            self.setText('Invalid File Path :: The one of the files you attempted to apply\n this format to could not be opened. ')
+            pass
+        
+
+
 
 

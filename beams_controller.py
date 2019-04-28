@@ -30,16 +30,16 @@ class BEAMSController():
 
     def set_main_events(self):
         '''Sets functions for event handling with the View'''
-        self.BEAMS_view.run_display.isolate_button.released.connect(lambda: self.isolate_click())
-        self.BEAMS_view.run_display.plot_all_button.released.connect(lambda: self.plot_all_click())
-        self.BEAMS_view.run_display.inspect_file_button.released.connect(lambda: self.inspect_file())
-        self.BEAMS_view.run_display.inspect_hist_button.released.connect(lambda: self.inspect_hist())
-        self.BEAMS_view.run_display.run_titles.currentTextChanged.connect(lambda: self.update_run_display())
-        self.BEAMS_view.run_display.color_choices.currentIndexChanged.connect(lambda: self.color_changed())
+        self.BEAMS_view.run_display.isolate_button.released.connect(lambda: self.run_display_isolate())
+        self.BEAMS_view.run_display.plot_all_button.released.connect(lambda: self.run_display_plot_all())
+        self.BEAMS_view.run_display.inspect_file_button.released.connect(lambda: self.run_display_inspect_file())
+        self.BEAMS_view.run_display.inspect_hist_button.released.connect(lambda: self.run_display_inspect_hist())
+        self.BEAMS_view.run_display.run_titles.currentTextChanged.connect(lambda: self.run_display_update())
+        self.BEAMS_view.run_display.color_choices.currentIndexChanged.connect(lambda: self.run_display_color_change())
 
-        self.BEAMS_view.file_manager.import_button.released.connect(lambda: self.import_click())
-        self.BEAMS_view.file_manager.write_button.released.connect(lambda: self.write_click())
-        self.BEAMS_view.file_manager.plot_button.released.connect(lambda: self.plot_click())
+        self.BEAMS_view.file_manager.import_button.released.connect(lambda: self.file_manager_import())
+        self.BEAMS_view.file_manager.write_button.released.connect(lambda: self.file_manager_write())
+        self.BEAMS_view.file_manager.plot_button.released.connect(lambda: self.file_manager_plot())
 
         self.BEAMS_view.plot_editor.input_xmax_one.returnPressed.connect(lambda: self.plot_parameter_change(plot=1,slider_moving=False,xlims_changed=True))
         self.BEAMS_view.plot_editor.input_xmax_two.returnPressed.connect(lambda: self.plot_parameter_change(plot=2,slider_moving=False,xlims_changed=True))
@@ -53,15 +53,75 @@ class BEAMSController():
         self.BEAMS_view.plot_editor.slider_two.sliderReleased.connect(lambda: self.plot_parameter_change(plot=2,slider_moving=False))
 
         self.BEAMS_view.exit_act.triggered.connect(QtWidgets.qApp.quit)
-        self.BEAMS_view.add_data_act.triggered.connect(lambda: self.import_click())
+        self.BEAMS_view.add_data_act.triggered.connect(lambda: self.file_manager_import())
         self.BEAMS_view.format_act.triggered.connect(lambda: self.launch_formatter())
 
-    def isolate_click(self):
+    def run_display_isolate(self):
         '''Handles the user clicking the "Isolate" button'''
-        self.clear_plots()
-        self.plot_runs(filename=self.BEAMS_view.run_display.run_titles.currentText())
+        self.plot_panel_clear()
+        self.plot_panel_plot_runs(filename=self.BEAMS_view.run_display.run_titles.currentText())
 
-    def import_click(self):
+    def run_display_plot_all(self):
+        self.plot_panel_clear(plot=3)
+        self.plot_panel_plot_runs(filename=None,plot=3,slider_moving=False)
+
+    def run_display_inspect_file(self):
+        self.file_display = beams_view.FileDisplayUI(filename=self.BEAMS_view.run_display.run_titles.currentText())
+        self.file_display.show()
+
+    def run_display_inspect_hist(self):
+        hist_display = beams_view.PlotPanel(center=False)
+
+        histogram = self.BEAMS_view.run_display.histograms.currentText()
+        run_index = self.BEAMS_model.index_from_filename(self.BEAMS_view.run_display.run_titles.currentText())
+        self.BEAMS_model.run_list[run_index].retrieve_histogram_data()
+
+        # Why is a bar chart so much slower then just plotting???
+        hist_display.canvas_hist.axes_hist.plot(self.BEAMS_model.run_list[run_index].histogram_data[histogram].values,linestyle='None',marker="s")
+
+        # self.hist_display.show()
+        del self.BEAMS_model.run_list[run_index].histogram_data
+
+    def run_display_update(self):
+        run_index = self.BEAMS_model.index_from_filename(self.BEAMS_view.run_display.run_titles.currentText())
+        if run_index != -1:
+            self.BEAMS_view.run_display.color_choices.setCurrentText(self.BEAMS_model.run_list[run_index].color)
+            if self.BEAMS_model.is_BEAMS(self.BEAMS_view.run_display.run_titles.currentText()):
+                self.BEAMS_view.run_display.histograms.clear()
+                self.BEAMS_view.run_display.histograms.addItems(['Front','Back','Right','Left'])
+                self.BEAMS_view.run_display.histograms.setEnabled(True)
+                self.BEAMS_view.run_display.inspect_hist_button.setEnabled(True)
+
+    def run_display_populate(self,filenames=None):
+        if len(filenames) > 0:
+            self.BEAMS_view.run_display.run_titles.clear()
+            self.BEAMS_view.run_display.run_titles.addItems(filenames)
+            self.BEAMS_view.run_display.color_choices.addItems(self.BEAMS_model.used_colors)
+            self.BEAMS_view.run_display.color_choices.addItems(self.BEAMS_model.color_options)
+            self.run_display_update()
+            self.run_display_enable(isEnabled=True)
+        else:
+            self.BEAMS_view.run_display.run_titles.clear()
+            self.run_display_enable(isEnabled=False)
+
+    def run_display_enable(self,isEnabled=False):
+        if not isEnabled:
+            self.BEAMS_view.run_display.run_titles.addItem("No Runs Plotted")
+            self.BEAMS_view.run_display.histograms.addItem("None")
+            self.BEAMS_view.run_display.histograms.setEnabled(False)
+            self.BEAMS_view.run_display.inspect_hist_button.setEnabled(False)
+        self.BEAMS_view.run_display.color_choices.setEnabled(isEnabled)
+        self.BEAMS_view.run_display.isolate_button.setEnabled(isEnabled)
+        self.BEAMS_view.run_display.inspect_file_button.setEnabled(isEnabled)
+        self.BEAMS_view.run_display.plot_all_button.setEnabled(isEnabled)
+
+    def run_display_color_change(self):
+        run_index = self.BEAMS_model.index_from_filename(self.BEAMS_view.run_display.run_titles.currentText())
+        self.BEAMS_model.run_list[run_index].color = self.BEAMS_view.run_display.color_choices.currentText()
+        self.plot_panel_clear()
+        self.plot_panel_plot_runs()
+
+    def file_manager_import(self):
         filenames = QtWidgets.QFileDialog.getOpenFileNames(self.BEAMS_view,'Add file','/home')[0]
         self.BEAMS_model.filenames.update(filenames) 
         for filename in filenames:
@@ -70,10 +130,10 @@ class BEAMSController():
             file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsUserCheckable)
             file_item.setCheckState(QtCore.Qt.Unchecked)
 
-    def write_click(self):
+    def file_manager_write(self):
         print("Write button currently has no functionality ... ")
 
-    def plot_click(self):
+    def file_manager_plot(self):
         # Create a set of the checked filenames from the file manager panel.
         beams_checked_items = set()
         for index in range(self.BEAMS_view.file_manager.file_list.count()):
@@ -84,18 +144,14 @@ class BEAMSController():
         beams_files,non_beams_files = self.BEAMS_model.check_files(beams_checked_items)
         self.BEAMS_model.read_files(beams_files)
         if non_beams_files:
-            self.invalid_file_format(filenames=non_beams_files)
+            self.launch_formatter(filenames=non_beams_files)
         
         # Plot the runs
-        self.clear_plots(plot=3)
-        self.plot_runs(filename=None,plot=3,slider_moving=False) # FIXME I think there is some intricacy with default paramaters. Test this.
-        self.populate_run_display(filenames=self.BEAMS_model.current_read_files) # FIXME
+        self.plot_panel_clear(plot=3)
+        self.plot_panel_plot_runs(filename=None,plot=3,slider_moving=False) # FIXME I think there is some intricacy with default paramaters. Test this.
+        self.run_display_populate(filenames=self.BEAMS_model.current_read_files) # FIXME
 
-    def plot_all_click(self):
-        self.clear_plots(plot=3)
-        self.plot_runs(filename=None,plot=3,slider_moving=False)
-
-    def clear_plots(self,plot=3):
+    def plot_panel_clear(self,plot=3):
         # Only clears the plot that needs to be updated
         if plot == 1:
             self.BEAMS_view.plot_panel.canvas_one.axes_time.clear()
@@ -109,7 +165,7 @@ class BEAMSController():
             self.BEAMS_view.plot_panel.canvas_two.axes_time.clear()
             self.BEAMS_view.plot_panel.canvas_two.axes_freq.clear()
             
-    def plot_runs(self,filename=None,plot=3,slider_moving=False):
+    def plot_panel_plot_runs(self,filename=None,plot=3,slider_moving=False):
         if not filename: # If no specific plot specified
             for run in self.BEAMS_model.run_list:
                 if plot == 1 or plot == 3:
@@ -153,77 +209,17 @@ class BEAMSController():
                 else self.BEAMS_view.plot_editor.input_slider_two.setText(str(self.BEAMS_view.plot_editor.slider_two.value()))
             mod_value = self.BEAMS_view.plot_editor.slider_one.value()%5 if plot == 1 else self.BEAMS_view.plot_editor.slider_two.value()%5  
             if mod_value == 0:
-                self.clear_plots(plot=plot)
-                self.plot_runs(plot=plot,slider_moving=slider_moving)
+                self.plot_panel_clear(plot=plot)
+                self.plot_panel_plot_runs(plot=plot,slider_moving=slider_moving)
         else:
-            self.clear_plots(plot=plot)
-            self.plot_runs(plot=plot,slider_moving=slider_moving)
+            self.plot_panel_clear(plot=plot)
+            self.plot_panel_plot_runs(plot=plot,slider_moving=slider_moving)
 
             if xlims_changed:
                 self.BEAMS_view.plot_panel.canvas_one.axes_time.set_xlim(float(self.BEAMS_view.plot_editor.input_xmin_one.text()),\
                     float(self.BEAMS_view.plot_editor.input_xmax_one.text()))
                 self.BEAMS_view.plot_panel.canvas_two.axes_time.set_xlim(float(self.BEAMS_view.plot_editor.input_xmin_two.text()),\
                     float(self.BEAMS_view.plot_editor.input_xmax_two.text()))
-
-    def populate_run_display(self,filenames=None):
-        if len(filenames) > 0:
-            self.BEAMS_view.run_display.run_titles.clear()
-            self.BEAMS_view.run_display.run_titles.addItems(filenames)
-            self.BEAMS_view.run_display.color_choices.addItems(self.BEAMS_model.used_colors)
-            self.BEAMS_view.run_display.color_choices.addItems(self.BEAMS_model.color_options)
-            self.update_run_display()
-            self.enable_run_display(isEnabled=True)
-        else:
-            self.BEAMS_view.run_display.run_titles.clear()
-            self.enable_run_display(isEnabled=False)
-
-    def enable_run_display(self,isEnabled=False):
-        if not isEnabled:
-            self.BEAMS_view.run_display.run_titles.addItem("No Runs Plotted")
-            self.BEAMS_view.run_display.histograms.addItem("None")
-            self.BEAMS_view.run_display.histograms.setEnabled(False)
-            self.BEAMS_view.run_display.inspect_hist_button.setEnabled(False)
-        self.BEAMS_view.run_display.color_choices.setEnabled(isEnabled)
-        self.BEAMS_view.run_display.isolate_button.setEnabled(isEnabled)
-        self.BEAMS_view.run_display.inspect_file_button.setEnabled(isEnabled)
-        self.BEAMS_view.run_display.plot_all_button.setEnabled(isEnabled)
-
-    def update_run_display(self):
-        run_index = self.BEAMS_model.index_from_filename(self.BEAMS_view.run_display.run_titles.currentText())
-        if run_index != -1:
-            self.BEAMS_view.run_display.color_choices.setCurrentText(self.BEAMS_model.run_list[run_index].color)
-            print(self.BEAMS_model.run_list[run_index].color)
-            if self.BEAMS_model.is_BEAMS(self.BEAMS_view.run_display.run_titles.currentText()):
-                self.BEAMS_view.run_display.histograms.clear()
-                self.BEAMS_view.run_display.histograms.addItems(['Front','Back','Right','Left'])
-                self.BEAMS_view.run_display.histograms.setEnabled(True)
-                self.BEAMS_view.run_display.inspect_hist_button.setEnabled(True)
-
-    def color_changed(self):
-        run_index = self.BEAMS_model.index_from_filename(self.BEAMS_view.run_display.run_titles.currentText())
-        self.BEAMS_model.run_list[run_index].color = self.BEAMS_view.run_display.color_choices.currentText()
-        self.clear_plots()
-        self.plot_runs()
-
-    def inspect_file(self):
-        self.file_display = beams_view.FileDisplayUI(filename=self.BEAMS_view.run_display.run_titles.currentText())
-        self.file_display.show()
-
-    def inspect_hist(self):
-        hist_display = beams_view.PlotPanel(center=False)
-
-        histogram = self.BEAMS_view.run_display.histograms.currentText()
-        run_index = self.BEAMS_model.index_from_filename(self.BEAMS_view.run_display.run_titles.currentText())
-        self.BEAMS_model.run_list[run_index].retrieve_histogram_data()
-
-        # Why is a bar chart so much slower then just plotting???
-        hist_display.canvas_hist.axes_hist.plot(self.BEAMS_model.run_list[run_index].histogram_data[histogram].values,linestyle='None',marker="s")
-
-        # self.hist_display.show()
-        del self.BEAMS_model.run_list[run_index].histogram_data
-
-    def invalid_file_format(self,filenames=None):
-        self.launch_formatter(filenames)
 
     def launch_formatter(self,filenames=None):
         self.file_formatter = beams_view.FileFormatterUI(filenames=filenames)
@@ -320,12 +316,30 @@ class BEAMSController():
     def formatter_apply_click(self,apply_all=False):
         self.formatter_create_section_dict()
         if not apply_all:
-            fformat = self.BEAMS_model.check_unrecognized_format(sections=self.data_sections)
-            if fformat:
+            fformat = self.BEAMS_model.check_unrecognized_format(sections=self.data_sections,filenames=[self.file_formatter.file_list.currentText()],\
+                t0=self.file_formatter.initial_t.text(),header_rows=self.file_formatter.spin_header.value())
+        else:
+            fformat = self.BEAMS_model.check_unrecognized_format(sections=self.data_sections,filenames=self.file_formatter.filenames,\
+                t0=self.file_formatter.initial_t.text(),header_rows=self.file_formatter.spin_header.value())
+
+        if fformat == 'EB':
+            self.error_message(error_type='EB')
+        elif fformat == 'EH':
+            self.error_message(error_type='EH')
+        elif fformat == 'EC':
+            self.error_message(error_type='EC',sections=self.data_sections)
+        elif fformat == 'EF':
+            self.error_message(error_type='EF')
+        else:
+            if not apply_all:
                 self.BEAMS_model.read_unrecognized_format(sections=self.data_sections,filenames=[self.file_formatter.file_list.currentText()],\
                     header_rows=self.file_formatter.spin_header.value(),fformat=fformat)
+                self.BEAMS_model.current_read_files.add(self.file_formatter.file_list.currentText())
             else:
-                print("Invalid format bro.")
+                self.BEAMS_model.read_unrecognized_format(sections=self.data_sections,filenames=self.file_formatter.filenames,\
+                    header_rows=self.file_formatter.spin_header.value(),fformat=fformat)
+                self.BEAMS_model.current_read_files.update(self.file_formatter.filenames)
+
 
     def formatter_create_section_dict(self):
         self.data_sections = dict()
@@ -348,6 +362,7 @@ class BEAMSController():
 
     def formatter_done_click(self):
         self.file_formatter.close()
+        self.plot_panel_plot_runs()
 
     def formatter_file_changed(self):
         self.file_formatter.set_intitial_states()
@@ -365,5 +380,11 @@ class BEAMSController():
         hist_display.canvas_hist.axes_hist.plot(self.BEAMS_model.column_data.values,linestyle='None',marker="s")
         del self.BEAMS_model.column_data
 
+    def error_message(self,error_type=None,sections=None):
+        error_dialog = beams_view.ErrorMessageUI(error_type=error_type,sections=sections)
+        error_dialog.show()
+
     def test(self,output=True,GUI=False):
+        # FORMATTER TEST CASES
+        # Inspect a column that doesn't exist
         return
