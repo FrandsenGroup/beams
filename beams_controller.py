@@ -42,16 +42,19 @@ class BEAMSController():
         self.BEAMS_view.file_manager.write_button.released.connect(lambda: self.file_manager_write())
         self.BEAMS_view.file_manager.plot_button.released.connect(lambda: self.file_manager_plot())
 
-        self.BEAMS_view.plot_editor.input_xmax_one.returnPressed.connect(lambda: self.plot_parameter_change(plot=1,slider_moving=False,xlims_changed=True))
-        self.BEAMS_view.plot_editor.input_xmax_two.returnPressed.connect(lambda: self.plot_parameter_change(plot=2,slider_moving=False,xlims_changed=True))
-        self.BEAMS_view.plot_editor.input_xmin_one.returnPressed.connect(lambda: self.plot_parameter_change(plot=1,slider_moving=False,xlims_changed=True))
-        self.BEAMS_view.plot_editor.input_xmin_two.returnPressed.connect(lambda: self.plot_parameter_change(plot=2,slider_moving=False,xlims_changed=True))
-        self.BEAMS_view.plot_editor.input_slider_one.returnPressed.connect(lambda: self.plot_parameter_change(plot=1,slider_moving=False,bin_changed=True))
-        self.BEAMS_view.plot_editor.input_slider_two.returnPressed.connect(lambda: self.plot_parameter_change(plot=2,slider_moving=False,bin_changed=True))
-        self.BEAMS_view.plot_editor.slider_one.sliderMoved.connect(lambda: self.plot_parameter_change(plot=1,slider_moving=True))
-        self.BEAMS_view.plot_editor.slider_two.sliderMoved.connect(lambda: self.plot_parameter_change(plot=2,slider_moving=True))
-        self.BEAMS_view.plot_editor.slider_one.sliderReleased.connect(lambda: self.plot_parameter_change(plot=1,slider_moving=False))
-        self.BEAMS_view.plot_editor.slider_two.sliderReleased.connect(lambda: self.plot_parameter_change(plot=2,slider_moving=False))
+        self.BEAMS_view.plot_editor.input_xmax_one.returnPressed.connect(lambda: self.editor_paramter_change(plot=1,slider_moving=False,xlims_changed=True))
+        self.BEAMS_view.plot_editor.input_xmax_two.returnPressed.connect(lambda: self.editor_paramter_change(plot=2,slider_moving=False,xlims_changed=True))
+        self.BEAMS_view.plot_editor.input_xmin_one.returnPressed.connect(lambda: self.editor_paramter_change(plot=1,slider_moving=False,xlims_changed=True))
+        self.BEAMS_view.plot_editor.input_xmin_two.returnPressed.connect(lambda: self.editor_paramter_change(plot=2,slider_moving=False,xlims_changed=True))
+        self.BEAMS_view.plot_editor.input_slider_one.returnPressed.connect(lambda: self.editor_paramter_change(plot=1,slider_moving=False,bin_changed=True))
+        self.BEAMS_view.plot_editor.input_slider_two.returnPressed.connect(lambda: self.editor_paramter_change(plot=2,slider_moving=False,bin_changed=True))
+        self.BEAMS_view.plot_editor.slider_one.sliderMoved.connect(lambda: self.editor_paramter_change(plot=1,slider_moving=True))
+        self.BEAMS_view.plot_editor.slider_two.sliderMoved.connect(lambda: self.editor_paramter_change(plot=2,slider_moving=True))
+        self.BEAMS_view.plot_editor.slider_one.sliderReleased.connect(lambda: self.editor_paramter_change(plot=1,slider_moving=False))
+        self.BEAMS_view.plot_editor.slider_two.sliderReleased.connect(lambda: self.editor_paramter_change(plot=2,slider_moving=False))
+        self.BEAMS_view.plot_editor.check_uncertain.stateChanged.connect(lambda: self.editor_show_uncertainty())
+        self.BEAMS_view.plot_editor.check_annotation.stateChanged.connect(lambda: self.editor_show_annotations())
+        self.BEAMS_view.plot_editor.check_plot_lines.stateChanged.connect(lambda: self.editor_show_plot_lines())
 
         self.BEAMS_view.exit_act.triggered.connect(QtWidgets.qApp.quit)
         self.BEAMS_view.add_data_act.triggered.connect(lambda: self.file_manager_import())
@@ -188,8 +191,8 @@ class BEAMSController():
                     self.BEAMS_view.plot_panel.canvas_one.axes_time.set_xlim(float(self.BEAMS_view.plot_editor.input_xmin_one.text()),\
                         float(self.BEAMS_view.plot_editor.input_xmax_one.text()))
                     # Plot on the time domain
-                    self.BEAMS_view.plot_panel.canvas_one.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,linestyle='None',\
-                        marker='.',mfc=run.color,mec=run.color,ecolor=run.color)
+                    self.BEAMS_view.plot_panel.canvas_one.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,\
+                        linestyle=self.BEAMS_view.plot_panel.linestyle,marker='.',color=run.color)
                     # Plot on the frequency domain
                     self.BEAMS_view.plot_panel.canvas_one.axes_freq.plot(run.x_smooth,run.y_smooth**2,mfc=run.color,mec=run.color,color=run.color,marker='.')
 
@@ -199,8 +202,8 @@ class BEAMSController():
                         xmin=self.BEAMS_view.plot_editor.input_xmin_two.text(),xmax=self.BEAMS_view.plot_editor.input_xmax_two.text())
                     self.BEAMS_view.plot_panel.canvas_two.axes_time.set_xlim(float(self.BEAMS_view.plot_editor.input_xmin_two.text()),\
                         float(self.BEAMS_view.plot_editor.input_xmax_two.text()))
-                    self.BEAMS_view.plot_panel.canvas_two.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,linestyle='None',\
-                        marker='.',mfc=run.color,mec=run.color,ecolor=run.color)
+                    self.BEAMS_view.plot_panel.canvas_two.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,\
+                        linestyle=self.BEAMS_view.plot_panel.linestyle,marker='.',color=run.color)
                     self.BEAMS_view.plot_panel.canvas_two.axes_freq.plot(run.x_smooth,run.y_smooth**2,mfc=run.color,mec=run.color,color=run.color,marker='.')
 
         else: 
@@ -208,20 +211,48 @@ class BEAMSController():
             run = self.BEAMS_model.run_list[self.BEAMS_model.index_from_filename(filename=filename)]
             self.BEAMS_view.plot_panel.canvas_one.axes_time.set_xlim(float(self.BEAMS_view.plot_editor.input_xmin_one.text()),\
                 float(self.BEAMS_view.plot_editor.input_xmax_one.text()))
-            self.BEAMS_view.plot_panel.canvas_one.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,linestyle='None',marker='.',\
-                mfc=run.color,mec=run.color,ecolor=run.color)
+            self.BEAMS_view.plot_panel.canvas_one.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,linestyle=self.BEAMS_view.plot_panel.linestyle,\
+                marker='.',color=run.color)
             self.BEAMS_view.plot_panel.canvas_one.axes_freq.plot(run.x_smooth,run.y_smooth**2,mfc=run.color,mec=run.color,color=run.color,marker='.')
             self.BEAMS_view.plot_panel.canvas_two.axes_time.set_xlim(float(self.BEAMS_view.plot_editor.input_xmin_two.text()),\
                 float(self.BEAMS_view.plot_editor.input_xmax_two.text()))
-            self.BEAMS_view.plot_panel.canvas_two.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,linestyle='None',marker='.',\
-                mfc=run.color,mec=run.color,ecolor=run.color)
+            self.BEAMS_view.plot_panel.canvas_two.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,linestyle=self.BEAMS_view.plot_panel.linestyle,\
+                marker='.',color=run.color)
             self.BEAMS_view.plot_panel.canvas_two.axes_freq.plot(run.x_smooth,run.y_smooth**2,mfc=run.color,mec=run.color,color=run.color,marker='.')
 
         # Resets the styles on the plots (they are lost when they are cleared)
         self.BEAMS_view.plot_panel.canvas_one.set_style()
         self.BEAMS_view.plot_panel.canvas_two.set_style()
 
-    def plot_parameter_change(self,plot=3,slider_moving=False,xlims_changed=False,bin_changed=False):
+    def editor_show_uncertainty(self):
+        '''Toggles the errorbars on the plots'''
+        if not self.BEAMS_view.plot_editor.check_uncertain.isChecked():
+            for run in self.BEAMS_model.run_list:
+                run.uncertainty.fill(0)
+            self.plot_panel_clear()
+            self.plot_panel_plot_runs()
+        else:
+            for run in self.BEAMS_model.run_list:
+                run.re_calculate_uncertainty()
+            self.plot_panel_clear()
+            self.plot_panel_plot_runs()
+
+    def editor_show_annotations(self):
+        '''Toggles the annotations on the plots'''
+        return
+
+    def editor_show_plot_lines(self):
+        '''Toggles the lines connecting datapoints on plots on and off'''
+        if self.BEAMS_view.plot_editor.check_plot_lines.isChecked():
+            self.BEAMS_view.plot_panel.linestyle = '-'
+            self.plot_panel_clear()
+            self.plot_panel_plot_runs()
+        else:
+            self.BEAMS_view.plot_panel.linestyle = 'None'
+            self.plot_panel_clear()
+            self.plot_panel_plot_runs()
+
+    def editor_paramter_change(self,plot=3,slider_moving=False,xlims_changed=False,bin_changed=False):
         '''Updates the plots when the user changes a parameter relevant to graphing (i.e. bin size)'''
         if bin_changed: # Re-bin data if the bin size was changed
             self.BEAMS_view.plot_editor.slider_one.setValue(float(self.BEAMS_view.plot_editor.input_slider_one.text())) if plot == 1 \

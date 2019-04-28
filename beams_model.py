@@ -206,6 +206,7 @@ class RunData():
         self.filename = filename
         self.color = color
         self.header_rows = header_rows
+        self.isBEAMS = isBEAMS
         self.t0 = t0
         self.t1 = t1
 
@@ -336,11 +337,20 @@ class RunData():
         '''Calculates the uncertainty based on histograms'''
         d_front = np.sqrt(self.histogram_data[hist_two])
         d_back = np.sqrt(self.histogram_data[hist_one])
-        self.uncertainty = np.sqrt(np.power((2*self.histogram_data[hist_one]/np.power(self.histogram_data[hist_two] \
+        self.uncertainty = np.array(np.sqrt(np.power((2*self.histogram_data[hist_one]/np.power(self.histogram_data[hist_two] \
              + self.histogram_data[hist_one],2)*d_front),2) + np.power((2*self.histogram_data[hist_two] \
-                 /np.power(self.histogram_data[hist_two] + self.histogram_data[hist_one],2)*d_back),2))
+                 /np.power(self.histogram_data[hist_two] + self.histogram_data[hist_one],2)*d_back),2)))
         del d_front
         del d_back
+    
+    def re_calculate_uncertainty(self):
+        if self.isBEAMS:
+            self.retrieve_histogram_data()
+            self.calculate_uncertainty()
+        else:
+            self.read_formatted_file()
+        
+        del self.histogram_data
 
     def calculate_background_radiation(self,hist_one='Back',hist_two='Front'):
         '''Calculates the background radiation based on histogram data before positrons are being detected'''

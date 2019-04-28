@@ -96,9 +96,19 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
 
     def init_UI(self):
         self.setWindowTitle("Graph Editor")
+        self.init_check_options()
         self.init_sliders()
         self.init_input_boxes()
         self.setWidget(self.layout_UI())
+
+    def init_check_options(self):
+        self.check_uncertain = QtWidgets.QCheckBox()
+        self.check_annotation = QtWidgets.QCheckBox()
+        self.check_plot_lines = QtWidgets.QCheckBox()
+        self.check_uncertain.setChecked(True)
+        self.label_uncertain = QtWidgets.QLabel('Show Uncertainty')
+        self.label_annotation = QtWidgets.QLabel('Show Annotations')
+        self.label_plot_lines = QtWidgets.QLabel('Show Plot Lines')
 
     def init_sliders(self):
         self.slider_one = QtWidgets.QSlider(QtCore.Qt.Horizontal)
@@ -175,7 +185,30 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
         col_one.addLayout(row_one)
         col_one.addLayout(row_two)
 
-        temp_widget.setLayout(col_one)
+        col_two = QtWidgets.QVBoxLayout()
+
+        row_unc = QtWidgets.QHBoxLayout()
+        row_unc.addWidget(self.check_uncertain)
+        row_unc.addWidget(self.label_uncertain)
+        row_unc.setAlignment(QtCore.Qt.AlignLeft)
+        row_ann = QtWidgets.QHBoxLayout()
+        row_ann.addWidget(self.check_annotation)
+        row_ann.addWidget(self.label_annotation)
+        row_ann.setAlignment(QtCore.Qt.AlignLeft)
+        row_lns = QtWidgets.QHBoxLayout()
+        row_lns.addWidget(self.check_plot_lines)
+        row_lns.addWidget(self.label_plot_lines)
+        row_lns.setAlignment(QtCore.Qt.AlignLeft)
+
+        col_two.addLayout(row_unc)
+        col_two.addLayout(row_ann)
+        col_two.addLayout(row_lns)
+
+        main_layout = QtWidgets.QHBoxLayout()
+        main_layout.addLayout(col_one)
+        main_layout.addLayout(col_two)
+
+        temp_widget.setLayout(main_layout)
         return temp_widget
 
 
@@ -187,6 +220,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
     def init_UI(self):
         self.create_widgets()
         self.layout_widgets()
+        self.setWindowTitle('Run Display')
 
     def create_widgets(self):
         self.display_label = QtWidgets.QLabel("Choose a currently plotted run below.\n")
@@ -255,6 +289,7 @@ class PlotPanel(QtWidgets.QDockWidget):
 
         self.canvas_one = RunPlot()
         self.canvas_two = RunPlot()
+        self.linestyle = 'None'
 
         hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.canvas_one)
@@ -281,6 +316,7 @@ class RunPlot(FigureCanvas):
         FigureCanvas.__init__(self,fig)
 
     def set_style(self):
+        
         self.axes_time.spines['right'].set_visible(False)
         self.axes_time.spines['top'].set_visible(False)
         self.axes_time.tick_params(bottom=False, left=False)
