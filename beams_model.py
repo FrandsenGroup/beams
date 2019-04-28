@@ -7,7 +7,9 @@ from scipy.interpolate import spline
 import time
 
 class BEAMSModel():
+    '''Manages the data, logic and rules of the application.'''
     def __init__(self):
+        '''Initializes the empty model'''
         super(BEAMSModel,self).__init__()  
         self.filenames = set()
         self.failed_files = set()
@@ -18,6 +20,7 @@ class BEAMSModel():
         self.used_colors = []
         
     def read_files(self, filenames):
+        '''Separates user specified files into files to remove (files no longer checked) and files to add (files newly checked)'''
         # Remove old runs that are no longer checked
         remove_files = self.current_read_files.difference(filenames)
         self.remove_runs(remove_files)
@@ -27,10 +30,12 @@ class BEAMSModel():
         self.add_runs(new_files)
 
     def check_files(self, filenames):
-        # Check files for:
-        # 1) '.dat' extension
-        # 2) BEAMS format (otherwise the user will need to specify the format for now)
-        # Return both the BEAMS and non-BEAMS formatted dat files.
+        ''' Checks files for BEAMS format and dat extension
+         
+            Check files for:
+            1) '.dat' extension
+            2) BEAMS format (otherwise the user will need to specify the format for now)
+            Return both the BEAMS and non-BEAMS formatted dat files.'''
         beams_files = set()
         non_beams_files = []
         for filename in filenames:
@@ -41,11 +46,10 @@ class BEAMSModel():
                     beams_files.add(full_file)
                 else:
                     non_beams_files.append(full_file)
-        print(beams_files,non_beams_files)
         return [beams_files,non_beams_files]
 
     def remove_runs(self,remove_files):
-        # Goes through the array of runs and removes the ones whose filename is no longer checked.
+        '''Goes through the array of runs and removes the ones whose filename is no longer checked.'''
         for filename in remove_files:
             for data in self.run_list:
                 if(data.filename == filename):
@@ -55,7 +59,7 @@ class BEAMSModel():
                     self.run_list.remove(data)
 
     def add_runs(self,run_files):
-        # Adds any newly user-specified runs to the array of runs by filename
+        '''Adds any newly user-specified runs to the array of runs by filename'''
         for filename in run_files:
             self.run_list.append(RunData(filename=filename,color=self.color_options[0]))
             self.used_colors.append(self.color_options[0])
@@ -63,14 +67,13 @@ class BEAMSModel():
             self.current_read_files.add(filename)
 
     def find_full_file(self,file_root):
-        # Only the root of the filepath is given from the file manager, here we find the full file
-        # path from the stored array of full file paths (stored when the user imports a file)
+        '''Finds full file path from a file root (i.e. 006515.dat)'''
         for full_file in self.filenames:
             if(os.path.split(full_file)[1] == file_root):
                 return full_file
 
     def is_BEAMS(self,filename):
-        # Checks if dat file is in BEAMS format (basically whether we converted it with BEAMS)
+        '''Checks if dat file is in BEAMS format (basically whether we converted it with BEAMS)'''
         with open(filename) as file:
             first_line = file.readline()
         if first_line.split(None, 1)[0] == "BEAMS":
@@ -173,6 +176,7 @@ class BEAMSModel():
         return fformat
 
     def read_unrecognized_format(self,sections=None,filenames=None,header_rows=None,fformat=None,binsize=0.390625,start_bins=None):
+        '''Creates RunData objects from files with unrecognized but user specified formats (checked beforehand)'''
         for filename in filenames:
             self.run_list.append(RunData(filename=filename,header_rows=header_rows,isBEAMS=False,sections=sections,fformat=fformat,\
                 binsize=binsize,color=self.color_options[0]))
@@ -180,9 +184,11 @@ class BEAMSModel():
             self.color_options.remove(self.color_options[0])
             
     def inspect_unrecognized_column(self,filename=None,column=None,header_rows=None):
+        '''Reads in the data from a column from a file with an unrecognized format'''
         self.column_data = pd.read_csv(filename,skiprows=header_rows,usecols=[column])
 
     def index_from_filename(self,filename=None):
+        '''Retrieves a run's index in the model based on filename'''
         for index in range(len(self.run_list)):
             if self.run_list[index].filename == filename:
                 return index
@@ -190,7 +196,9 @@ class BEAMSModel():
 
 
 class RunData():
-    def __init__(self,filename=None,header_rows=1,isBEAMS=True,sections=None,color="blue",fformat='fb',t0=70,t1=800,binsize=0.390625):
+    '''Stores all data relevant to a run, both calculated quantities and graphing variables'''
+    def __init__(self,filename=None,header_rows=1,isBEAMS=True,sections=None,color="blue",fformat='fb',t0=0,t1=800,binsize=0.390625):
+        '''Initialize a RunData object based on filename and format'''
         super(RunData,self).__init__()
         self.asymmetry = np.array([])
         self.uncertainty = np.array([])
@@ -210,6 +218,7 @@ class RunData():
             self.read_formatted_file()
 
     def read_dat_file(self,filename=None):
+        '''Reads in data from a BEAMS formatted file'''
         self.retrieve_header_data()
         self.retrieve_histogram_data()
         self.calculate_uncertainty()
@@ -219,13 +228,17 @@ class RunData():
         del self.histogram_data
 
     def check_formatted_input(self):
+        '''Checks data we read in from the file'''
         return
 
     def read_formatted_file(self):
+        '''Reads in non-BEAMS formatted files based on user input'''
         def invert_dict():
+            '''Inverts section dictionary so column values are keys and column names are values'''
             self.sections = {v: k for k, v in self.sections.items()}
 
         def read_fb_format():
+            '''Reads in file where Front and Back Histograms are given'''
             self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=[self.sections['Front'],self.sections['Back']])
             invert_dict()
             self.histogram_data.columns = [self.sections[0],self.sections[1]]
@@ -235,6 +248,7 @@ class RunData():
             self.calculate_time(num_bins=len(self.asymmetry),binsize=self.binsize)
 
         def read_fbt_format():
+            '''Reads in file where Front and Back Histograms and Time are given'''
             self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=[self.sections['Front'],self.sections['Back'],self.sections['Time']])
             invert_dict()
             self.histogram_data.columns = [self.sections[0],self.sections[1],self.sections[2]]
@@ -244,6 +258,7 @@ class RunData():
             self.time = self.histogram_data['Time'].values
 
         def read_lr_format():
+            '''Reads in file where Left and Right Histograms are given'''
             self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=[self.sections['Left'],self.sections['Right']])
             invert_dict()
             self.histogram_data.columns = [self.sections[0],self.sections[1]]
@@ -253,6 +268,7 @@ class RunData():
             self.calculate_time(num_bins=len(self.asymmetry),binsize=self.binsize)
 
         def read_lrt_format():
+            '''Reads in file where Left and Right Histograms and Time are given'''
             self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=[self.sections['Left'],self.sections['Right'],self.sections['Time']])
             invert_dict()
             self.histogram_data.columns = [self.sections[0],self.sections[1],self.sections[2]]
@@ -262,6 +278,7 @@ class RunData():
             self.time = self.histogram_data['Time'].values
 
         def read_at_format():
+            '''Reads in file where Asymmetry and Time are given'''
             self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=[self.sections['Asymmetry'],self.sections['Time']])
             invert_dict()
             self.histogram_data.columns = [self.sections[0],self.sections[1]]
@@ -270,6 +287,7 @@ class RunData():
             self.uncertainty = np.zeros(len(self.asymmetry))
 
         def read_atu_format():
+            '''Reads in file where Asymmetry, Time and Uncertainty are given'''
             self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=[self.sections['Asymmetry'],self.sections['Time'],self.sections['Uncertainty']])
             invert_dict()
             self.histogram_data.columns = [self.sections[0],self.sections[1],self.sections[2]]
@@ -295,11 +313,13 @@ class RunData():
         del self.histogram_data
 
     def retrieve_header_data(self): 
+        '''Retrieves header data from a BEAMS formatted file'''
         header = pd.read_csv(self.filename,nrows=self.header_rows,skiprows=1)
         for title in header.columns:
             self.header_data[title] = header.iloc[0][title]
     
     def retrieve_histogram_data(self):
+        '''Retrieves histogram data from a BEAMS formatted file'''
         index = 1
         while(pd.read_csv(self.filename,nrows=1,skiprows=index).size > 4): # Determines what line histogram data starts.
             index += 1
@@ -308,9 +328,12 @@ class RunData():
         self.histogram_data.columns = ['Back','Front','Right','Left']
         
     def calculate_time(self,num_bins=None,binsize=0.390625):
+        '''Calculates the time array based on bin size and number of bins'''
+        # FIXME I'm just realizing we don't really need this array. Try working to delete it.
         self.time = np.arange(0,num_bins*binsize/1000,binsize/1000)
 
     def calculate_uncertainty(self,hist_one='Back',hist_two='Front'):
+        '''Calculates the uncertainty based on histograms'''
         d_front = np.sqrt(self.histogram_data[hist_two])
         d_back = np.sqrt(self.histogram_data[hist_one])
         self.uncertainty = np.sqrt(np.power((2*self.histogram_data[hist_one]/np.power(self.histogram_data[hist_two] \
@@ -320,15 +343,27 @@ class RunData():
         del d_back
 
     def calculate_background_radiation(self,hist_one='Back',hist_two='Front'):
-        self.bkg_back = np.mean(self.histogram_data.loc[int(self.t0):int(self.t1),hist_one].values)
-        self.bkg_front = np.mean(self.histogram_data.loc[int(self.t0):int(self.t1),hist_two].values)
+        '''Calculates the background radiation based on histogram data before positrons are being detected'''
+        background = self.histogram_data.loc[int(self.t0):int(self.t1),hist_one].values
+        mean_b = np.mean(background) # Find mean based on histogram area
+        background = np.clip(background,0,mean_b*4) # Clips outlier values
+        self.bkg_back = np.mean(background) # Find mean on new array
+
+        background = self.histogram_data.loc[int(self.t0):int(self.t1),hist_two].values
+        mean_b = np.mean(background)
+        background = np.clip(background,0,mean_b*4)
+        self.bkg_front = np.mean(background)
+
+        del background
 
     def calculate_asymmetry(self,hist_one='Back',hist_two='Front'):
+        '''Calculate asymmetry based on histograms'''
         self.asymmetry = ((self.histogram_data[hist_one] - self.bkg_back) - (self.histogram_data[hist_two] - self.bkg_front))\
             /((self.histogram_data[hist_two] - self.bkg_front) + (self.histogram_data[hist_one] - self.bkg_back))
         self.asymmetry.fillna(0.0,inplace=True)
 
     def calculate_fft(self,bin_size):
+        '''Calculates fast fourier transform on asymmetry'''
         period_s = bin_size
         frequency_s = 1.0 / period_s
         n = len(self.new_asymmetry)
@@ -346,6 +381,7 @@ class RunData():
         np.insert(self.y_smooth,0,0)
 
     def bin_data(self,bin_size=150,xmin=0,xmax=10,slider_moving=False,initial_binsize=0.390625):
+        '''Re-bins the asymmetry based on user specified bin size'''
         # start = time.time()
 
         time_sep = float(initial_binsize)/1000
@@ -378,6 +414,7 @@ class RunData():
             self.calculate_fft(bin_size=bin_size)
 
     def match_arrays(self):
+        '''Ensures the time array doesn't become larger or smaller by one value based on errors in calculation'''
         if len(self.new_times) != len(self.new_asymmetry):
             if len(self.new_asymmetry) > len(self.new_times):
                 self.new_asymmetry = self.new_asymmetry[0:len(self.new_times)]
