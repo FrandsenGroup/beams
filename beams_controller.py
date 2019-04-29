@@ -3,6 +3,7 @@
 import beams_view
 import beams_model
 
+
 import numpy as np
 from PyQt5 import QtWidgets, QtCore
 import sys
@@ -42,16 +43,22 @@ class BEAMSController():
         self.BEAMS_view.file_manager.write_button.released.connect(lambda: self.file_manager_write())
         self.BEAMS_view.file_manager.plot_button.released.connect(lambda: self.file_manager_plot())
 
-        self.BEAMS_view.plot_editor.input_xmax_one.returnPressed.connect(lambda: self.editor_paramter_change(plot=1,slider_moving=False,xlims_changed=True))
-        self.BEAMS_view.plot_editor.input_xmax_two.returnPressed.connect(lambda: self.editor_paramter_change(plot=2,slider_moving=False,xlims_changed=True))
-        self.BEAMS_view.plot_editor.input_xmin_one.returnPressed.connect(lambda: self.editor_paramter_change(plot=1,slider_moving=False,xlims_changed=True))
-        self.BEAMS_view.plot_editor.input_xmin_two.returnPressed.connect(lambda: self.editor_paramter_change(plot=2,slider_moving=False,xlims_changed=True))
-        self.BEAMS_view.plot_editor.input_slider_one.returnPressed.connect(lambda: self.editor_paramter_change(plot=1,slider_moving=False,bin_changed=True))
-        self.BEAMS_view.plot_editor.input_slider_two.returnPressed.connect(lambda: self.editor_paramter_change(plot=2,slider_moving=False,bin_changed=True))
-        self.BEAMS_view.plot_editor.slider_one.sliderMoved.connect(lambda: self.editor_paramter_change(plot=1,slider_moving=True))
-        self.BEAMS_view.plot_editor.slider_two.sliderMoved.connect(lambda: self.editor_paramter_change(plot=2,slider_moving=True))
-        self.BEAMS_view.plot_editor.slider_one.sliderReleased.connect(lambda: self.editor_paramter_change(plot=1,slider_moving=False))
-        self.BEAMS_view.plot_editor.slider_two.sliderReleased.connect(lambda: self.editor_paramter_change(plot=2,slider_moving=False))
+        self.BEAMS_view.plot_editor.input_xmax_one.returnPressed.connect(lambda: self.editor_xlim_changed(plot=1))
+        self.BEAMS_view.plot_editor.input_xmax_two.returnPressed.connect(lambda: self.editor_xlim_changed(plot=2))
+        self.BEAMS_view.plot_editor.input_xmin_one.returnPressed.connect(lambda: self.editor_xlim_changed(plot=1))
+        self.BEAMS_view.plot_editor.input_xmin_two.returnPressed.connect(lambda: self.editor_xlim_changed(plot=2))
+        self.BEAMS_view.plot_editor.input_ymin_one.returnPressed.connect(lambda: self.editor_ylim_changed(plot=1))
+        self.BEAMS_view.plot_editor.input_ymin_two.returnPressed.connect(lambda: self.editor_ylim_changed(plot=2))
+        self.BEAMS_view.plot_editor.input_ymax_one.returnPressed.connect(lambda: self.editor_ylim_changed(plot=1))
+        self.BEAMS_view.plot_editor.input_ymax_two.returnPressed.connect(lambda: self.editor_ylim_changed(plot=2))
+        self.BEAMS_view.plot_editor.input_slider_one.returnPressed.connect(lambda: self.editor_bin_changed(plot=1,slider_moving=False))
+        self.BEAMS_view.plot_editor.input_slider_two.returnPressed.connect(lambda: self.editor_bin_changed(plot=2,slider_moving=False))
+        self.BEAMS_view.plot_editor.slider_one.sliderMoved.connect(lambda: self.editor_bin_changed(plot=1,slider_moving=True))
+        self.BEAMS_view.plot_editor.slider_two.sliderMoved.connect(lambda: self.editor_bin_changed(plot=2,slider_moving=True))
+        self.BEAMS_view.plot_editor.slider_one.sliderReleased.connect(lambda: self.editor_bin_changed(plot=1,slider_moving=False))
+        self.BEAMS_view.plot_editor.slider_two.sliderReleased.connect(lambda: self.editor_bin_changed(plot=2,slider_moving=False))
+        self.BEAMS_view.plot_editor.check_autoscale_one.stateChanged.connect(lambda: self.editor_ylim_autocheck(plot=1))
+        self.BEAMS_view.plot_editor.check_autoscale_two.stateChanged.connect(lambda: self.editor_ylim_autocheck(plot=2))
         self.BEAMS_view.plot_editor.check_uncertain.stateChanged.connect(lambda: self.editor_show_uncertainty())
         self.BEAMS_view.plot_editor.check_annotation.stateChanged.connect(lambda: self.editor_show_annotations())
         self.BEAMS_view.plot_editor.check_plot_lines.stateChanged.connect(lambda: self.editor_show_plot_lines())
@@ -93,11 +100,10 @@ class BEAMSController():
         run_index = self.BEAMS_model.index_from_filename(self.BEAMS_view.run_display.run_titles.currentText())
         if run_index != -1:
             self.BEAMS_view.run_display.color_choices.setCurrentText(self.BEAMS_model.run_list[run_index].color)
-            if self.BEAMS_model.is_BEAMS(self.BEAMS_view.run_display.run_titles.currentText()):
-                self.BEAMS_view.run_display.histograms.clear()
-                self.BEAMS_view.run_display.histograms.addItems(['Front','Back','Right','Left']) 
-                self.BEAMS_view.run_display.histograms.setEnabled(True)
-                self.BEAMS_view.run_display.inspect_hist_button.setEnabled(True)
+            self.BEAMS_view.run_display.histograms.clear()
+            self.BEAMS_view.run_display.histograms.addItems(self.BEAMS_model.run_list[run_index].columns)
+            self.BEAMS_view.run_display.histograms.setEnabled(True)
+            self.BEAMS_view.run_display.inspect_hist_button.setEnabled(True)
 
     def run_display_populate(self,filenames=None):
         '''Populates the Run Display with all the filenames and relevent data for each currently plotted run'''
@@ -127,7 +133,16 @@ class BEAMSController():
     def run_display_color_change(self):
         '''Updates the object for that run with correct color and re-plots the runs'''
         run_index = self.BEAMS_model.index_from_filename(self.BEAMS_view.run_display.run_titles.currentText())
-        self.BEAMS_model.run_list[run_index].color = self.BEAMS_view.run_display.color_choices.currentText()
+
+        self.BEAMS_model.used_colors.discard(self.BEAMS_model.run_list[run_index].color)
+        self.BEAMS_model.color_options.add(self.BEAMS_model.run_list[run_index].color)
+
+        if self.BEAMS_view.run_display.color_choices.currentText() == 'custom':
+            self.BEAMS_model.run_list[run_index].color = QtWidgets.QColorDialog.getColor().name()
+            self.BEAMS_model.color_options.discard(self.BEAMS_model.run_list[run_index].color)
+        else:
+            self.BEAMS_model.color_options.discard(self.BEAMS_view.run_display.color_choices.currentText())
+            self.BEAMS_model.run_list[run_index].color = self.BEAMS_view.run_display.color_choices.currentText()
 
         self.plot_panel_clear()
         self.plot_panel_plot_runs()
@@ -179,50 +194,47 @@ class BEAMSController():
             self.BEAMS_view.plot_panel.canvas_two.axes_time.clear()
             self.BEAMS_view.plot_panel.canvas_two.axes_freq.clear()
             
-    def plot_panel_plot_runs(self,filename=None,plot=3,slider_moving=False):
+    def plot_panel_plot_runs(self,filename=None,plot=3,slider_moving=False,ylim_one=[None,None],ylim_two=[None,None],autoscale=True):
         '''Plots all the runs that are currently stored in the model'''
+        self.editor_set_xlim(plot=plot)
+        self.editor_set_ylim(plot=plot)
+
         if not filename: # If no specific plot specified
             for run in self.BEAMS_model.run_list:
                 if plot == 1 or plot == 3:
-                    # Bin the data
                     run.bin_data(slider_moving=slider_moving,bin_size=self.BEAMS_view.plot_editor.slider_one.value(),\
                         xmin=self.BEAMS_view.plot_editor.input_xmin_one.text(),xmax=self.BEAMS_view.plot_editor.input_xmax_one.text())
-                    # Plot set x limits on axes
-                    self.BEAMS_view.plot_panel.canvas_one.axes_time.set_xlim(float(self.BEAMS_view.plot_editor.input_xmin_one.text()),\
-                        float(self.BEAMS_view.plot_editor.input_xmax_one.text()))
-                    # Plot on the time domain
+
                     self.BEAMS_view.plot_panel.canvas_one.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,\
                         linestyle=self.BEAMS_view.plot_panel.linestyle,marker='.',color=run.color)
-                    # Plot on the frequency domain
-                    self.BEAMS_view.plot_panel.canvas_one.axes_freq.plot(run.x_smooth,run.y_smooth**2,mfc=run.color,mec=run.color,color=run.color,marker='.')
+
+                    self.BEAMS_view.plot_panel.canvas_one.axes_freq.plot(run.x_smooth,run.y_smooth,mfc=run.color,mec=run.color,color=run.color,marker='.')
 
                 if plot == 2 or plot == 3:
-                    # Same process as above.
                     run.bin_data(slider_moving=slider_moving,bin_size=self.BEAMS_view.plot_editor.slider_two.value(),\
                         xmin=self.BEAMS_view.plot_editor.input_xmin_two.text(),xmax=self.BEAMS_view.plot_editor.input_xmax_two.text())
-                    self.BEAMS_view.plot_panel.canvas_two.axes_time.set_xlim(float(self.BEAMS_view.plot_editor.input_xmin_two.text()),\
-                        float(self.BEAMS_view.plot_editor.input_xmax_two.text()))
+
                     self.BEAMS_view.plot_panel.canvas_two.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,\
                         linestyle=self.BEAMS_view.plot_panel.linestyle,marker='.',color=run.color)
-                    self.BEAMS_view.plot_panel.canvas_two.axes_freq.plot(run.x_smooth,run.y_smooth**2,mfc=run.color,mec=run.color,color=run.color,marker='.')
+
+                    self.BEAMS_view.plot_panel.canvas_two.axes_freq.plot(run.x_smooth,run.y_smooth,mfc=run.color,mec=run.color,color=run.color,marker='.')
 
         else: 
             # Same process as above but for only the file specified
             run = self.BEAMS_model.run_list[self.BEAMS_model.index_from_filename(filename=filename)]
-            self.BEAMS_view.plot_panel.canvas_one.axes_time.set_xlim(float(self.BEAMS_view.plot_editor.input_xmin_one.text()),\
-                float(self.BEAMS_view.plot_editor.input_xmax_one.text()))
+
             self.BEAMS_view.plot_panel.canvas_one.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,linestyle=self.BEAMS_view.plot_panel.linestyle,\
                 marker='.',color=run.color)
-            self.BEAMS_view.plot_panel.canvas_one.axes_freq.plot(run.x_smooth,run.y_smooth**2,mfc=run.color,mec=run.color,color=run.color,marker='.')
-            self.BEAMS_view.plot_panel.canvas_two.axes_time.set_xlim(float(self.BEAMS_view.plot_editor.input_xmin_two.text()),\
-                float(self.BEAMS_view.plot_editor.input_xmax_two.text()))
+            self.BEAMS_view.plot_panel.canvas_one.axes_freq.plot(run.x_smooth,run.y_smooth,mfc=run.color,mec=run.color,color=run.color,marker='.')
+
             self.BEAMS_view.plot_panel.canvas_two.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,linestyle=self.BEAMS_view.plot_panel.linestyle,\
                 marker='.',color=run.color)
-            self.BEAMS_view.plot_panel.canvas_two.axes_freq.plot(run.x_smooth,run.y_smooth**2,mfc=run.color,mec=run.color,color=run.color,marker='.')
+            self.BEAMS_view.plot_panel.canvas_two.axes_freq.plot(run.x_smooth,run.y_smooth,mfc=run.color,mec=run.color,color=run.color,marker='.')
 
         # Resets the styles on the plots (they are lost when they are cleared)
         self.BEAMS_view.plot_panel.canvas_one.set_style()
         self.BEAMS_view.plot_panel.canvas_two.set_style()
+        self.editor_display_ylim()
 
     def editor_show_uncertainty(self):
         '''Toggles the errorbars on the plots'''
@@ -252,8 +264,149 @@ class BEAMSController():
             self.plot_panel_clear()
             self.plot_panel_plot_runs()
 
+    def editor_set_ylim(self,plot=None):
+        if (plot == 1 or plot == 3) and not self.BEAMS_view.plot_editor.check_autoscale_one.isChecked():
+            self.BEAMS_view.plot_panel.canvas_one.axes_time.set_ylim(float(self.BEAMS_view.plot_editor.input_ymin_one.text()),\
+                float(self.BEAMS_view.plot_editor.input_ymax_one.text()))
+        else:
+            self.BEAMS_view.plot_panel.canvas_one.axes_time.set_ylim(auto=True)
+
+        if (plot == 2 or plot == 3) and not self.BEAMS_view.plot_editor.check_autoscale_two.isChecked():
+            self.BEAMS_view.plot_panel.canvas_two.axes_time.set_ylim(float(self.BEAMS_view.plot_editor.input_ymin_two.text()),\
+                float(self.BEAMS_view.plot_editor.input_ymax_two.text()))
+        else:
+            self.BEAMS_view.plot_panel.canvas_two.axes_time.set_ylim(auto=True)
+
+    def editor_display_ylim(self):
+        ymin,ymax = self.BEAMS_view.plot_panel.canvas_one.axes_time.get_ylim()
+        self.BEAMS_view.plot_editor.input_ymax_one.setText('{0:.3f}'.format(ymax))
+        self.BEAMS_view.plot_editor.input_ymin_one.setText('{0:.3f}'.format(ymin))
+
+        ymin,ymax = self.BEAMS_view.plot_panel.canvas_two.axes_time.get_ylim()
+        self.BEAMS_view.plot_editor.input_ymax_two.setText('{0:.3f}'.format(ymax))
+        self.BEAMS_view.plot_editor.input_ymin_two.setText('{0:.3f}'.format(ymin))
+
+        return True
+
+    def editor_ylim_changed(self,plot=None):
+        def check_input():
+            try:
+                if plot == 1:
+                    ymin = float(self.BEAMS_view.plot_editor.input_ymin_one.text())
+                    ymax = float(self.BEAMS_view.plot_editor.input_ymax_one.text())
+                    
+                else:
+                    ymin = float(self.BEAMS_view.plot_editor.input_ymin_two.text())
+                    ymax = float(self.BEAMS_view.plot_editor.input_ymax_two.text())
+                    
+            except ValueError:
+                self.error_message(error_type='IV')
+                return False
+
+            if ymin >= ymax:
+                self.error_message(error_type='IV')
+                return False
+
+            return True
+        
+        if check_input():
+            self.plot_panel_clear(plot=plot)
+            self.plot_panel_plot_runs(plot=plot)
+        else:
+            return False
+
+        return True
+
+    def editor_ylim_autocheck(self,plot=None):
+        check_state = False
+        if plot == 1:
+            check_state = self.BEAMS_view.plot_editor.check_autoscale_one.isChecked()
+            self.BEAMS_view.plot_editor.input_ymax_one.setEnabled(not check_state)
+            self.BEAMS_view.plot_editor.input_ymin_one.setEnabled(not check_state)  
+        else:
+            check_state = self.BEAMS_view.plot_editor.check_autoscale_two.isChecked()
+            self.BEAMS_view.plot_editor.input_ymax_two.setEnabled(not check_state)
+            self.BEAMS_view.plot_editor.input_ymin_two.setEnabled(not check_state)
+
+        if check_state:
+            self.plot_panel_clear(plot=plot)
+            self.plot_panel_plot_runs(plot=plot)
+            # self.editor_display_ylim()
+
+        return True
+
+    def editor_set_xlim(self,plot=None):
+        if plot == 1 or plot == 3:
+            self.BEAMS_view.plot_panel.canvas_one.axes_time.set_xlim(float(self.BEAMS_view.plot_editor.input_xmin_one.text()),\
+                    float(self.BEAMS_view.plot_editor.input_xmax_one.text()))
+        if plot == 2 or plot == 3:
+            self.BEAMS_view.plot_panel.canvas_two.axes_time.set_xlim(float(self.BEAMS_view.plot_editor.input_xmin_two.text()),\
+                    float(self.BEAMS_view.plot_editor.input_xmax_two.text()))
+
+    def editor_xlim_changed(self,plot=None):
+        def check_input():
+            try:
+                if plot == 1:
+                    xmin = float(self.BEAMS_view.plot_editor.input_xmin_one.text())
+                    xmax = float(self.BEAMS_view.plot_editor.input_xmax_one.text())
+                else:
+                    xmin = float(self.BEAMS_view.plot_editor.input_xmin_two.text())
+                    xmax = float(self.BEAMS_view.plot_editor.input_xmax_two.text())
+            except ValueError:
+                self.error_message(error_type='IV')
+                return False
+            if xmin >= xmax:
+                self.error_message(error_type='IV')
+                return False
+            return True
+
+        if check_input():
+            self.plot_panel_clear(plot=plot)
+            self.plot_panel_plot_runs(plot=plot)
+        else:
+            return False
+        return True
+
+    def editor_bin_changed(self,plot=3,slider_moving=False):
+        def check_input():
+            try:
+                int(self.BEAMS_view.plot_editor.input_slider_one.text())
+                int(self.BEAMS_view.plot_editor.input_slider_two.text())
+            except ValueError:
+                self.error_message(error_type='IV')
+                return False
+            return True
+
+        if slider_moving:
+            if plot == 1:
+                self.BEAMS_view.plot_editor.input_slider_one.setText(str(self.BEAMS_view.plot_editor.slider_one.value()))
+                if (self.BEAMS_view.plot_editor.slider_one.value()%5) != 0:
+                    return True
+            else:
+                self.BEAMS_view.plot_editor.input_slider_two.setText(str(self.BEAMS_view.plot_editor.slider_two.value()))
+                if (self.BEAMS_view.plot_editor.slider_two.value()%5) != 0:
+                    return True
+
+        if check_input() and not slider_moving:
+            if plot == 1:
+                self.BEAMS_view.plot_editor.slider_one.setValue(int(self.BEAMS_view.plot_editor.input_slider_one.text()))
+            else:
+                self.BEAMS_view.plot_editor.slider_two.setValue(int(self.BEAMS_view.plot_editor.input_slider_two.text()))
+            self.plot_panel_clear(plot=plot)
+            self.plot_panel_plot_runs(plot=plot,slider_moving=slider_moving)
+        elif slider_moving:
+            self.plot_panel_clear(plot=plot)
+            self.plot_panel_plot_runs(plot=plot,slider_moving=slider_moving)
+        else:
+            return False
+
+        return True
+
     def editor_paramter_change(self,plot=3,slider_moving=False,xlims_changed=False,bin_changed=False):
         '''Updates the plots when the user changes a parameter relevant to graphing (i.e. bin size)'''
+        def check_xlims():
+            pass
+
         if bin_changed: # Re-bin data if the bin size was changed
             self.BEAMS_view.plot_editor.slider_one.setValue(float(self.BEAMS_view.plot_editor.input_slider_one.text())) if plot == 1 \
                 else self.BEAMS_view.plot_editor.slider_two.setValue(float(self.BEAMS_view.plot_editor.input_slider_two.text()))
@@ -269,6 +422,7 @@ class BEAMSController():
             self.plot_panel_plot_runs(plot=plot,slider_moving=slider_moving)
 
             if xlims_changed:
+                check_xlims()
                 self.BEAMS_view.plot_panel.canvas_one.axes_time.set_xlim(float(self.BEAMS_view.plot_editor.input_xmin_one.text()),\
                     float(self.BEAMS_view.plot_editor.input_xmax_one.text()))
                 self.BEAMS_view.plot_panel.canvas_two.axes_time.set_xlim(float(self.BEAMS_view.plot_editor.input_xmin_two.text()),\
@@ -276,10 +430,11 @@ class BEAMSController():
 
     def launch_formatter(self,filenames=None):
         '''Creates an instance of the formatter user interface for unfamiliar file formats'''
-        self.file_formatter = beams_view.FileFormatterUI(filenames=filenames)
-        self.set_formatter_events()
-        self.file_formatter.file_display.setPlainText(open(filenames[0]).read())
-        self.file_formatter.show()
+        if filenames:
+            self.file_formatter = beams_view.FileFormatterUI(filenames=filenames)
+            self.set_formatter_events()
+            self.file_formatter.file_display.setPlainText(open(filenames[0]).read())
+            self.file_formatter.show()
 
     def set_formatter_events(self):
         '''Sets events for the FileFormatterUI'''
@@ -384,14 +539,8 @@ class BEAMSController():
                 t0=self.file_formatter.initial_t.text(),header_rows=self.file_formatter.spin_header.value())
 
         # Launches the appropriate error window or plots the runs with the user specified format.
-        if fformat == 'EB':
-            self.error_message(error_type='EB')
-        elif fformat == 'EH':
-            self.error_message(error_type='EH')
-        elif fformat == 'EC':
-            self.error_message(error_type='EC',sections=self.data_sections)
-        elif fformat == 'EF':
-            self.error_message(error_type='EF')
+        if fformat == 'EB' or fformat == 'EH' or fformat == 'EC' or fformat == 'EF':
+            self.error_message(error_type=fformat)
         else:
             if not apply_all:
                 self.BEAMS_model.read_unrecognized_format(sections=self.data_sections,filenames=[self.file_formatter.file_list.currentText()],\

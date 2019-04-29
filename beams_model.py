@@ -15,9 +15,9 @@ class BEAMSModel():
         self.failed_files = set()
         self.run_list = []
         self.current_read_files = set()
-        self.color_options = ["blue", "orange", "green", "red", "purple", \
-            "brown", "pink", "gray", "olive", "cyan","custom"]
-        self.used_colors = []
+        self.color_options = {"blue", "orange", "green", "red", "purple", \
+            "brown", "pink", "gray", "olive", "cyan","custom"}
+        self.used_colors = set()
         
     def read_files(self, filenames):
         '''Separates user specified files into files to remove (files no longer checked) and files to add (files newly checked)'''
@@ -53,18 +53,20 @@ class BEAMSModel():
         for filename in remove_files:
             for data in self.run_list:
                 if(data.filename == filename):
-                    self.used_colors.remove(data.color)
-                    self.color_options.append(data.color)
+                    self.used_colors.discard(data.color)
+                    self.color_options.add(data.color)
                     self.current_read_files.remove(filename)
                     self.run_list.remove(data)
 
     def add_runs(self,run_files):
         '''Adds any newly user-specified runs to the array of runs by filename'''
         for filename in run_files:
-            self.run_list.append(RunData(filename=filename,color=self.color_options[0]))
-            self.used_colors.append(self.color_options[0])
-            self.color_options.remove(self.color_options[0])
-            self.current_read_files.add(filename)
+            for color in self.color_options:
+                self.run_list.append(RunData(filename=filename,color=color))
+                self.used_colors.add(color)
+                self.color_options.discard(color)
+                self.current_read_files.add(filename)
+                break
 
     def find_full_file(self,file_root):
         '''Finds full file path from a file root (i.e. 006515.dat)'''
@@ -81,7 +83,7 @@ class BEAMSModel():
         return False
 
     def check_unrecognized_format(self,sections=None,t0=None,header_rows=None,filenames=None):
-        '''Checks user specified format to ensure it can be properly handled, gives appropriate error if not proper format'''
+        '''Checks user specified format to ensure it can be properly handled, gives appropriate error if not properly formatted'''
         def check_filenames():
             try:
                 for filename in filenames:
@@ -119,7 +121,14 @@ class BEAMSModel():
                     return False    
             return True        
 
-        def check_columns():
+        def check_column_values():
+            for k1, v1 in sections.items():
+                for k2, v2 in sections.items():
+                    if v1 == v2 and k1 != k2:
+                        return False
+            return True
+
+        def check_columns_setup():
             '''Checks specified sections to ensure needed attributes can be calculated and none have the same column'''
             if sections:
                 if 'Front' in sections and 'Back' in sections:
@@ -168,8 +177,10 @@ class BEAMSModel():
             return 'EB'
         if not check_header():
             return 'EH'
-            
-        fformat = check_columns()
+        if not check_column_values():
+            return 'EC'
+
+        fformat = check_columns_setup()
         if not fformat:
             return 'EC'
 
@@ -178,10 +189,12 @@ class BEAMSModel():
     def read_unrecognized_format(self,sections=None,filenames=None,header_rows=None,fformat=None,binsize=0.390625,start_bins=None):
         '''Creates RunData objects from files with unrecognized but user specified formats (checked beforehand)'''
         for filename in filenames:
-            self.run_list.append(RunData(filename=filename,header_rows=header_rows,isBEAMS=False,sections=sections,fformat=fformat,\
-                binsize=binsize,color=self.color_options[0]))
-            self.used_colors.append(self.color_options[0])
-            self.color_options.remove(self.color_options[0])
+            for color in self.color_options:
+                self.run_list.append(RunData(filename=filename,header_rows=header_rows,isBEAMS=False,sections=sections,fformat=fformat,\
+                    binsize=binsize,color=color))
+                self.used_colors.add(color)
+                self.color_options.discard(color)
+                break
             
     def inspect_unrecognized_column(self,filename=None,column=None,header_rows=None):
         '''Reads in the data from a column from a file with an unrecognized format'''
@@ -209,10 +222,14 @@ class RunData():
         self.isBEAMS = isBEAMS
         self.t0 = t0
         self.t1 = t1
+        self.columns = []
 
         if isBEAMS:
             self.read_dat_file(filename=self.filename)
+            self.columns = ['Front','Back','Right','Left']
         else:
+            for key,value in sections.items():
+                self.columns.append(key)
             self.sections = sections
             self.fformat= fformat
             self.binsize = float(binsize)
@@ -232,7 +249,7 @@ class RunData():
         '''Checks data we read in from the file'''
         return
 
-    def read_formatted_file(self):
+    def read_formatted_file(self,recalc=False):
         '''Reads in non-BEAMS formatted files based on user input'''
         def invert_dict():
             '''Inverts section dictionary so column values are keys and column names are values'''
@@ -296,6 +313,9 @@ class RunData():
             self.time = self.histogram_data['Time'].values
             self.uncertainty = self.histogram_data['Uncertainty']
 
+        if recalc:
+            invert_dict()
+
         if self.fformat == "fb":
             read_fb_format()
         elif self.fformat == "fbt":
@@ -348,9 +368,7 @@ class RunData():
             self.retrieve_histogram_data()
             self.calculate_uncertainty()
         else:
-            self.read_formatted_file()
-        
-        del self.histogram_data
+            self.read_formatted_file(recalc=True)
 
     def calculate_background_radiation(self,hist_one='Back',hist_two='Front'):
         '''Calculates the background radiation based on histogram data before positrons are being detected'''
@@ -383,6 +401,7 @@ class RunData():
         frequencies = frequencies[range(int(n/2))]
         yValues = np.fft.fft([self.new_asymmetry,self.new_times]) / n
         yValues = abs(yValues[0, range(int(n/2))])
+        yValues[0] = 0
 
         # Calculate the spline for the graph
         self.x_smooth = np.linspace(frequencies.min(), frequencies.max(), 300)
