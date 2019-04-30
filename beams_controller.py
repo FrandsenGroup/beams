@@ -3,7 +3,6 @@
 import beams_view
 import beams_model
 
-
 import numpy as np
 from PyQt5 import QtWidgets, QtCore
 import sys
@@ -69,6 +68,8 @@ class BEAMSController():
 
     def run_display_isolate(self):
         '''Plots only the user specified run'''
+        # Add functionality in here so the isolated plot stays isolated when user changes color
+        # or in any other way changes the plot. Right now it resets every time to plotting all runs.
         self.plot_panel_clear()
         self.plot_panel_plot_runs(filename=self.BEAMS_view.run_display.run_titles.currentText())
 
@@ -88,19 +89,24 @@ class BEAMSController():
 
         histogram = self.BEAMS_view.run_display.histograms.currentText()
         run_index = self.BEAMS_model.index_from_filename(self.BEAMS_view.run_display.run_titles.currentText())
-        self.BEAMS_model.run_list[run_index].retrieve_histogram_data()
 
-        # Why is a bar chart so much slower then just plotting??? Working on figuring out how to do a faster bar chart.
-        hist_display.canvas_hist.axes_hist.plot(self.BEAMS_model.run_list[run_index].histogram_data[histogram].values,linestyle='None',marker="s")
+        if self.BEAMS_model.run_list[run_index].isBEAMS:
+            self.BEAMS_model.run_list[run_index].retrieve_histogram_data()
 
-        del self.BEAMS_model.run_list[run_index].histogram_data
+            # Why is a bar chart so much slower then just plotting??? Working on figuring out how to do a faster bar chart.
+            hist_display.canvas_hist.axes_hist.plot(self.BEAMS_model.run_list[run_index].histogram_data[histogram].values,linestyle='None',marker="s")
+
+            del self.BEAMS_model.run_list[run_index].histogram_data
+        else:
+            self.BEAMS_model.inspect_unrecognized_column(column=histogram,run_index=run_index,in_runs=True)
+            hist_display.canvas_hist.axes_hist.plot(self.BEAMS_model.column_data.values,linestyle='None',marker="s")
 
     def run_display_update(self):
         '''Updates the data displayed on Run Display when user chooses a different file'''
         run_index = self.BEAMS_model.index_from_filename(self.BEAMS_view.run_display.run_titles.currentText())
         if run_index != -1:
             self.BEAMS_view.run_display.color_choices.setCurrentText(self.BEAMS_model.run_list[run_index].color)
-            self.BEAMS_view.run_display.histograms.clear()
+            self.BEAMS_view.run_display.histograms.clear() 
             self.BEAMS_view.run_display.histograms.addItems(self.BEAMS_model.run_list[run_index].columns)
             self.BEAMS_view.run_display.histograms.setEnabled(True)
             self.BEAMS_view.run_display.inspect_hist_button.setEnabled(True)
@@ -257,6 +263,11 @@ class BEAMSController():
 
     def editor_show_annotations(self):
         '''Toggles the annotations on the plots'''
+        # Not running yet
+        # Useful sites for reference
+        # https://matplotlib.org/gallery/recipes/placing_text_boxes.html
+        # https://matplotlib.org/gallery/text_labels_and_annotations/annotation_demo.html
+        # https://jakevdp.github.io/PythonDataScienceHandbook/04.09-text-and-annotation.html
         return
 
     def editor_show_plot_lines(self):
@@ -577,10 +588,15 @@ class BEAMSController():
     def formatter_inspect_column(self):
         '''Opens up a figure displaying the user specified histogram'''
         self.formatter_create_section_dict()
-        self.BEAMS_model.inspect_unrecognized_column(filename=self.file_formatter.file_list.currentText(),\
-            column=self.data_sections[self.file_formatter.columns.currentText()],header_rows=self.file_formatter.spin_header.value())
+        self.BEAMS_model.inspect_unrecognized_column(column=self.data_sections[self.file_formatter.columns.currentText()],\
+            filename=self.file_formatter.file_list.currentText(),header_rows=self.file_formatter.spin_header.value())
         hist_display = beams_view.PlotPanel(center=False)
-        hist_display.canvas_hist.axes_hist.plot(self.BEAMS_model.column_data.values,linestyle='None',marker="s")
+        
+        try:
+            hist_display.canvas_hist.axes_hist.plot(self.BEAMS_model.column_data.values,linestyle='None',marker="s")
+        except TypeError:
+            self.error_message(error_type='EH')
+        
         del self.BEAMS_model.column_data
 
     def launch_writer(self,filenames=None):

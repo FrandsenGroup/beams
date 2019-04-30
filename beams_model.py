@@ -104,7 +104,8 @@ class BEAMSModel():
                             first_values = line.split(',')
                             try:
                                 for value in first_values:
-                                    int(value)
+                                    if value != 'nan':
+                                        float(value)
                             except ValueError:
                                 return False
                             break
@@ -196,9 +197,16 @@ class BEAMSModel():
             self.update_colors(color=self.color_options[0],used=True)
         return True
                   
-    def inspect_unrecognized_column(self,filename=None,column=None,header_rows=None):
+    def inspect_unrecognized_column(self,in_runs=False,column=None,run_index=None,filename=None,header_rows=None):
         '''Reads in the data from a column from a file with an unrecognized format'''
-        self.column_data = pd.read_csv(filename,skiprows=header_rows,usecols=[column])
+        if in_runs:
+            self.run_list[run_index].read_formatted_file(recalc=True)
+            self.column_data = self.run_list[run_index].histogram_data[column]
+            del self.run_list[run_index].histogram_data
+        else:
+            if filename:
+                self.column_data = pd.read_csv(filename,usecols=[column],skiprows=header_rows)
+        
 
     def index_from_filename(self,filename=None):
         '''Retrieves a run's index in the model based on filename'''
@@ -225,6 +233,7 @@ class BEAMSModel():
         if old_filename:
             index = self.index_from_filename(filename=old_filename)
             if index != -1:
+                self.run_list[index].match_arrays(new=False)
                 if checked_items[0] and checked_items[1] and checked_items[2]:
                     np.savetxt(new_filename, np.c_[self.run_list[index].asymmetry,self.run_list[index].time,self.run_list[index].uncertainty],\
                         fmt='%2.4f,%2.9f,%2.4f',header='Asymmetry, Time, Uncertainty')
@@ -273,6 +282,7 @@ class RunData():
             self.fformat= fformat
             self.binsize = float(binsize)
             self.read_formatted_file()
+            del self.histogram_data
 
     def read_dat_file(self,filename=None):
         '''Reads in data from a BEAMS formatted file'''
@@ -296,9 +306,12 @@ class RunData():
 
         def read_fb_format():
             '''Reads in file where Front and Back Histograms are given'''
-            self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=[self.sections['Front'],self.sections['Back']])
+            self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=list(self.sections.values()))
             invert_dict()
-            self.histogram_data.columns = [self.sections[0],self.sections[1]]
+            column_names = list(self.sections.values())
+            for key,value in self.sections.items():
+                column_names[key] = value
+            self.histogram_data.columns = column_names
             self.calculate_uncertainty(hist_one='Back',hist_two='Front')
             self.calculate_background_radiation(hist_one='Back',hist_two='Front')
             self.calculate_asymmetry(hist_one='Back',hist_two='Front')
@@ -306,9 +319,12 @@ class RunData():
 
         def read_fbt_format():
             '''Reads in file where Front and Back Histograms and Time are given'''
-            self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=[self.sections['Front'],self.sections['Back'],self.sections['Time']])
+            self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=list(self.sections.values()))
             invert_dict()
-            self.histogram_data.columns = [self.sections[0],self.sections[1],self.sections[2]]
+            column_names = list(self.sections.values())
+            for key,value in self.sections.items():
+                column_names[key] = value
+            self.histogram_data.columns = column_names
             self.calculate_uncertainty(hist_one='Back',hist_two='Front')
             self.calculate_background_radiation(hist_one='Back',hist_two='Front')
             self.calculate_asymmetry(hist_one='Back',hist_two='Front')
@@ -316,9 +332,12 @@ class RunData():
 
         def read_lr_format():
             '''Reads in file where Left and Right Histograms are given'''
-            self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=[self.sections['Left'],self.sections['Right']])
+            self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=list(self.sections.values()))
             invert_dict()
-            self.histogram_data.columns = [self.sections[0],self.sections[1]]
+            column_names = list(self.sections.values())
+            for key,value in self.sections.items():
+                column_names[key] = value
+            self.histogram_data.columns = column_names
             self.calculate_uncertainty(hist_one='Left',hist_two='Right')
             self.calculate_background_radiation(hist_one='Left',hist_two='Right')
             self.calculate_asymmetry(hist_one='Left',hist_two='Right')
@@ -326,9 +345,12 @@ class RunData():
 
         def read_lrt_format():
             '''Reads in file where Left and Right Histograms and Time are given'''
-            self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=[self.sections['Left'],self.sections['Right'],self.sections['Time']])
+            self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=list(self.sections.values()))
             invert_dict()
-            self.histogram_data.columns = [self.sections[0],self.sections[1],self.sections[2]]
+            column_names = list(self.sections.values())
+            for key,value in self.sections.items():
+                column_names[key] = value
+            self.histogram_data.columns = column_names
             self.calculate_uncertainty(hist_one='Left',hist_two='Right')
             self.calculate_background_radiation(hist_one='Left',hist_two='Right')
             self.calculate_asymmetry(hist_one='Left',hist_two='Right')
@@ -336,21 +358,27 @@ class RunData():
 
         def read_at_format():
             '''Reads in file where Asymmetry and Time are given'''
-            self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=[self.sections['Asymmetry'],self.sections['Time']])
+            self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=list(self.sections.values()))
             invert_dict()
-            self.histogram_data.columns = [self.sections[0],self.sections[1]]
+            column_names = list(self.sections.values())
+            for key,value in self.sections.items():
+                column_names[key] = value
+            self.histogram_data.columns = column_names
             self.asymmetry = self.histogram_data['Asymmetry'].values
             self.time = self.histogram_data['Time'].values
             self.uncertainty = np.zeros(len(self.asymmetry))
 
         def read_atu_format():
             '''Reads in file where Asymmetry, Time and Uncertainty are given'''
-            self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=[self.sections['Asymmetry'],self.sections['Time'],self.sections['Uncertainty']])
+            self.histogram_data = pd.read_csv(self.filename,skiprows=self.header_rows,usecols=list(self.sections.values()))
             invert_dict()
-            self.histogram_data.columns = [self.sections[0],self.sections[1],self.sections[2]]
+            column_names = list(self.sections.values())
+            for key,value in self.sections.items():
+                column_names[key] = value
+            self.histogram_data.columns = column_names
             self.asymmetry = self.histogram_data['Asymmetry'].values
             self.time = self.histogram_data['Time'].values
-            self.uncertainty = self.histogram_data['Uncertainty']
+            self.uncertainty = np.array(self.histogram_data['Uncertainty'])
 
         if recalc:
             invert_dict()
@@ -370,8 +398,6 @@ class RunData():
         else:
             print("Unrecognized format:")
 
-        del self.histogram_data
-
     def retrieve_header_data(self): 
         '''Retrieves header data from a BEAMS formatted file'''
         header = pd.read_csv(self.filename,nrows=self.header_rows,skiprows=1)
@@ -386,7 +412,7 @@ class RunData():
        
         self.histogram_data = pd.read_csv(self.filename,skiprows=index)
         self.histogram_data.columns = ['Back','Front','Right','Left']
-        
+    
     def calculate_time(self,num_bins=None,binsize=0.390625):
         '''Calculates the time array based on bin size and number of bins'''
         # FIXME I'm just realizing we don't really need this array. Try working to delete it.
@@ -480,12 +506,20 @@ class RunData():
             self.match_arrays()
             self.calculate_fft(bin_size=bin_size)
 
-    def match_arrays(self):
+    def match_arrays(self,new=True):
         '''Ensures the time array doesn't become larger or smaller by one value based on errors in calculation'''
-        if len(self.new_times) != len(self.new_asymmetry):
-            if len(self.new_asymmetry) > len(self.new_times):
-                self.new_asymmetry = self.new_asymmetry[0:len(self.new_times)]
-                self.new_uncertainty = self.new_uncertainty[0:len(self.new_times)]
-            else:
-                self.new_times = self.new_times[0:len(self.new_asymmetry)]
+        if new:
+            if len(self.new_times) != len(self.new_asymmetry):
+                if len(self.new_asymmetry) > len(self.new_times):
+                    self.new_asymmetry = self.new_asymmetry[0:len(self.new_times)]
+                    self.new_uncertainty = self.new_uncertainty[0:len(self.new_times)]
+                else:
+                    self.new_times = self.new_times[0:len(self.new_asymmetry)]
+        else:
+            if len(self.time) != len(self.asymmetry):
+                if len(self.asymmetry) > len(self.time):
+                    self.asymmetry = self.asymmetry[0:len(self.time)]
+                    self.uncertainty = self.uncertainty[0:len(self.time)]
+                else:
+                    self.time = self.time[0:len(self.asymmetry)]
 
