@@ -3,6 +3,7 @@
 import os
 import pandas as pd 
 import numpy as np
+import csv
 from scipy.interpolate import spline
 import time
 
@@ -15,6 +16,7 @@ class BEAMSModel():
         self.failed_files = set()
         self.run_list = []
         self.current_read_files = set()
+
         self.color_options = ["blue", "red", "green", "orange", "purple", \
             "brown", "yellow", "gray", "olive", "cyan","pink"]
         self.used_colors = []
@@ -56,6 +58,7 @@ class BEAMSModel():
                     self.update_colors(color=data.color,used=False)
                     self.current_read_files.remove(filename)
                     self.run_list.remove(data)
+                    del data
         return True
 
     def add_runs(self,run_files):
@@ -76,7 +79,7 @@ class BEAMSModel():
         '''Checks if dat file is in BEAMS format (basically whether we converted it with BEAMS)'''
         with open(filename) as file:
             first_line = file.readline()
-        if first_line.split(None, 1)[0] == "BEAMS":
+        if (first_line.split(None, 1)[0] == "BEAMS"):
             return True
         return False
 
@@ -171,8 +174,6 @@ class BEAMSModel():
         
         if not check_filenames():
             return 'EF'
-        if not check_binning():
-            return 'EB'
         if not check_header():
             return 'EH'
         if not check_column_values():
@@ -181,6 +182,9 @@ class BEAMSModel():
         fformat = check_columns_setup()
         if not fformat:
             return 'EC'
+        elif fformat == 'fbt' or fformat == 'fb' or fformat == 'lrt' or fformat == 'lr':
+            if not check_binning():
+                return 'EB'
 
         return fformat
 
@@ -216,6 +220,31 @@ class BEAMSModel():
                 if color not in self.color_options:
                     self.color_options.append(color)
         return True
+
+    def write_file(self,old_filename=None,new_filename=None,checked_items=None):
+        if old_filename:
+            index = self.index_from_filename(filename=old_filename)
+            if index != -1:
+                if checked_items[0] and checked_items[1] and checked_items[2]:
+                    np.savetxt(new_filename, np.c_[self.run_list[index].asymmetry,self.run_list[index].time,self.run_list[index].uncertainty],\
+                        fmt='%2.4f,%2.9f,%2.4f',header='Asymmetry, Time, Uncertainty')
+                elif checked_items[0] and checked_items[1]:
+                    np.savetxt(new_filename, np.c_[self.run_list[index].asymmetry,self.run_list[index].time],\
+                        fmt='%2.4f,%2.9f',header='Asymmetry, Time')
+                elif checked_items[0] and checked_items[2]:
+                    np.savetxt(new_filename, np.c_[self.run_list[index].asymmetry,self.run_list[index].uncertainty],\
+                        fmt='%2.4f,%2.4f',header='Asymmetry, Uncertainty')
+                elif checked_items[0]:
+                    np.savetxt(new_filename, np.c_[self.run_list[index].asymmetry],fmt='%2.4f',header='Asymmetry')
+                elif checked_items[1] and checked_items[2]:
+                    np.savetxt(new_filename, np.c_[self.run_list[index].time,self.run_list[index].uncertainty],\
+                        fmt='%2.9f,%2.4f',header='Time, Uncertainty')
+                elif checked_items[1]:
+                    np.savetxt(new_filename, np.c_[self.run_list[index].time],fmt='%2.9f',header='Time')
+                elif checked_items[2]:
+                    np.savetxt(new_filename, np.c_[self.run_list[index].uncertainty],fmt='%2.4f',header='Uncertainty')
+                return True
+        return False
 
 
 class RunData():
@@ -361,7 +390,7 @@ class RunData():
     def calculate_time(self,num_bins=None,binsize=0.390625):
         '''Calculates the time array based on bin size and number of bins'''
         # FIXME I'm just realizing we don't really need this array. Try working to delete it.
-        self.time = np.arange(0,num_bins*binsize/1000,binsize/1000)
+        self.time = np.arange(0,(num_bins-1)*binsize/1000,binsize/1000)
 
     def calculate_uncertainty(self,hist_one='Back',hist_two='Front'):
         '''Calculates the uncertainty based on histograms'''
@@ -370,6 +399,8 @@ class RunData():
         self.uncertainty = np.array(np.sqrt(np.power((2*self.histogram_data[hist_one]/np.power(self.histogram_data[hist_two] \
              + self.histogram_data[hist_one],2)*d_front),2) + np.power((2*self.histogram_data[hist_two] \
                  /np.power(self.histogram_data[hist_two] + self.histogram_data[hist_one],2)*d_back),2)))
+        np.nan_to_num(self.uncertainty,copy=False)
+
         del d_front
         del d_back
     

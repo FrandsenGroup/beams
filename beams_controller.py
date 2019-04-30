@@ -155,8 +155,18 @@ class BEAMSController():
 
     def file_manager_write(self):
         '''Allows user to export currently binned data to a .dat file'''
-        print("Write button currently has no functionality ... ")
+        beams_checked_items = set()
+        for index in range(self.BEAMS_view.file_manager.file_list.count()):
+            if self.BEAMS_view.file_manager.file_list.item(index).checkState() == QtCore.Qt.Checked:
+                beams_checked_items.add(self.BEAMS_view.file_manager.file_list.item(index).text())
 
+        beams_files,non_beams_files = self.BEAMS_model.check_files(beams_checked_items)
+        self.BEAMS_model.read_files(beams_files)
+        if non_beams_files:
+            self.launch_formatter(filenames=non_beams_files)
+
+        self.launch_writer(filenames=self.BEAMS_model.current_read_files)
+        
     def file_manager_plot(self):
         '''Reads in runs from specified files, plots those runs, and updates the run display'''
         # Create a set of the checked filenames from the file manager panel.
@@ -190,7 +200,7 @@ class BEAMSController():
             self.BEAMS_view.plot_panel.canvas_two.axes_time.clear()
             self.BEAMS_view.plot_panel.canvas_two.axes_freq.clear()
             
-    def plot_panel_plot_runs(self,filename=None,plot=3,slider_moving=False,ylim_one=[None,None],ylim_two=[None,None],autoscale=True):
+    def plot_panel_plot_runs(self,filename=None,plot=3,slider_moving=False):
         '''Plots all the runs that are currently stored in the model'''
         self.editor_set_xlim(plot=plot)
         self.editor_set_ylim(plot=plot)
@@ -366,11 +376,16 @@ class BEAMSController():
     def editor_bin_changed(self,plot=3,slider_moving=False):
         def check_input():
             try:
-                int(self.BEAMS_view.plot_editor.input_slider_one.text())
-                int(self.BEAMS_view.plot_editor.input_slider_two.text())
+                bin_one = int(self.BEAMS_view.plot_editor.input_slider_one.text())
+                bin_two = int(self.BEAMS_view.plot_editor.input_slider_two.text())
             except ValueError:
                 self.error_message(error_type='IV')
                 return False
+
+            if (bin_one < 1 or bin_one > 500) or (bin_two < 1 or bin_two > 500):
+                self.error_message(error_type='IV')
+                return False
+            
             return True
 
         if slider_moving:
@@ -397,32 +412,6 @@ class BEAMSController():
             return False
 
         return True
-
-    def editor_paramter_change(self,plot=3,slider_moving=False,xlims_changed=False,bin_changed=False):
-        '''Updates the plots when the user changes a parameter relevant to graphing (i.e. bin size)'''
-        def check_xlims():
-            pass
-
-        if bin_changed: # Re-bin data if the bin size was changed
-            self.BEAMS_view.plot_editor.slider_one.setValue(float(self.BEAMS_view.plot_editor.input_slider_one.text())) if plot == 1 \
-                else self.BEAMS_view.plot_editor.slider_two.setValue(float(self.BEAMS_view.plot_editor.input_slider_two.text()))
-        if slider_moving: # Only shows changes in the time domain while the slider is moving
-            self.BEAMS_view.plot_editor.input_slider_one.setText(str(self.BEAMS_view.plot_editor.slider_one.value())) if plot == 1 \
-                else self.BEAMS_view.plot_editor.input_slider_two.setText(str(self.BEAMS_view.plot_editor.slider_two.value()))
-            mod_value = self.BEAMS_view.plot_editor.slider_one.value()%5 if plot == 1 else self.BEAMS_view.plot_editor.slider_two.value()%5  
-            if mod_value == 0:
-                self.plot_panel_clear(plot=plot)
-                self.plot_panel_plot_runs(plot=plot,slider_moving=slider_moving)
-        else: # Recalculate and plot in both the time and frequency domain
-            self.plot_panel_clear(plot=plot)
-            self.plot_panel_plot_runs(plot=plot,slider_moving=slider_moving)
-
-            if xlims_changed:
-                check_xlims()
-                self.BEAMS_view.plot_panel.canvas_one.axes_time.set_xlim(float(self.BEAMS_view.plot_editor.input_xmin_one.text()),\
-                    float(self.BEAMS_view.plot_editor.input_xmax_one.text()))
-                self.BEAMS_view.plot_panel.canvas_two.axes_time.set_xlim(float(self.BEAMS_view.plot_editor.input_xmin_two.text()),\
-                    float(self.BEAMS_view.plot_editor.input_xmax_two.text()))
 
     def launch_formatter(self,filenames=None):
         '''Creates an instance of the formatter user interface for unfamiliar file formats'''
@@ -593,6 +582,51 @@ class BEAMSController():
         hist_display = beams_view.PlotPanel(center=False)
         hist_display.canvas_hist.axes_hist.plot(self.BEAMS_model.column_data.values,linestyle='None',marker="s")
         del self.BEAMS_model.column_data
+
+    def launch_writer(self,filenames=None):
+        self.write_message = beams_view.WriteDataUI()
+        self.write_message.file_list.addItems(filenames)
+        self.folder_choice = os.getcwd()
+        self.set_writer_events()
+        self.write_message.show()
+
+    def set_writer_events(self):
+        self.write_message.write_file.released.connect(lambda: self.writer_write_files(all_files=False))
+        self.write_message.write_all.released.connect(lambda: self.writer_write_files(all_files=True))
+        self.write_message.select_folder.released.connect(lambda: self.writer_select_folder())
+        self.write_message.skip_file.released.connect(lambda: self.writer_skip())
+        self.write_message.done.released.connect(lambda: self.writer_done())
+
+    def writer_select_folder(self):
+        self.folder_choice = QtWidgets.QFileDialog.getExistingDirectory(self.write_message,'Choose Directory')
+
+    def writer_file_changed(self):
+        file_name_ext = os.path.split(self.write_message.file_list.currentText())[1]
+        file_name = os.path.splitext(os.path.basename(file_name_ext))[0]
+        file_name = file_name + "_data.dat"
+        self.write_message.input_filename.setText(file_name)
+
+    def writer_write_files(self,all_files=False):
+        if all_files:
+            filenames = [self.write_message.file_list.itemText(i) for i in range(self.write_message.file_list.count())]
+        else:
+            filenames = [self.write_message.file_list.currentText()]
+
+        checked_items = [self.write_message.check_asymmetry.isChecked(),self.write_message.check_time.isChecked(),\
+            self.write_message.check_uncertainty.isChecked()]
+
+        for filename in filenames:
+            file_name_ext = os.path.split(filename)[1]
+            file_name = os.path.splitext(os.path.basename(file_name_ext))[0]
+            file_name = file_name + "_data.dat"
+            full_path = self.folder_choice + "/" + file_name
+            self.BEAMS_model.write_file(old_filename=filename,new_filename=full_path,checked_items=checked_items)
+
+    def writer_skip(self):
+        self.write_message.file_list.removeItem(self.write_message.file_list.currentText())
+
+    def writer_done(self):
+        self.write_message.close()
 
     def error_message(self,error_type=None,sections=None):
         '''Opens up an error message based on error type from program'''
