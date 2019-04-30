@@ -272,7 +272,8 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.run_titles.addItem("No Runs Plotted")
         self.color_choices = QtWidgets.QComboBox()
         self.color_choices.setEnabled(False)
-        self.color_choices.addItem("None")
+        self.color_choices.addItems(["None", "blue", "red", "green", "orange", "purple", \
+            "brown", "yellow", "gray", "olive", "cyan","pink","custom"])
         self.isolate_button = QtWidgets.QPushButton("Isolate")
         self.isolate_button.setEnabled(False)
         self.header_data = QtWidgets.QComboBox()

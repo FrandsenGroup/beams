@@ -110,8 +110,6 @@ class BEAMSController():
         if len(filenames) > 0:
             self.BEAMS_view.run_display.run_titles.clear()
             self.BEAMS_view.run_display.run_titles.addItems(filenames)
-            self.BEAMS_view.run_display.color_choices.addItems(self.BEAMS_model.used_colors)
-            self.BEAMS_view.run_display.color_choices.addItems(self.BEAMS_model.color_options)
             self.run_display_update()
             self.run_display_enable(isEnabled=True)
         else: # If no runs are plotted we want to disable the Run Display.
@@ -134,16 +132,14 @@ class BEAMSController():
         '''Updates the object for that run with correct color and re-plots the runs'''
         run_index = self.BEAMS_model.index_from_filename(self.BEAMS_view.run_display.run_titles.currentText())
 
-        self.BEAMS_model.used_colors.discard(self.BEAMS_model.run_list[run_index].color)
-        self.BEAMS_model.color_options.add(self.BEAMS_model.run_list[run_index].color)
+        self.BEAMS_model.update_colors(color=self.BEAMS_model.run_list[run_index].color,used=False)
 
         if self.BEAMS_view.run_display.color_choices.currentText() == 'custom':
             self.BEAMS_model.run_list[run_index].color = QtWidgets.QColorDialog.getColor().name()
-            self.BEAMS_model.color_options.discard(self.BEAMS_model.run_list[run_index].color)
         else:
-            self.BEAMS_model.color_options.discard(self.BEAMS_view.run_display.color_choices.currentText())
+            self.BEAMS_model.update_colors(color=self.BEAMS_view.run_display.color_choices.currentText(),used=True)
             self.BEAMS_model.run_list[run_index].color = self.BEAMS_view.run_display.color_choices.currentText()
-
+            
         self.plot_panel_clear()
         self.plot_panel_plot_runs()
 
@@ -208,7 +204,7 @@ class BEAMSController():
                     self.BEAMS_view.plot_panel.canvas_one.axes_time.errorbar(run.new_times,run.new_asymmetry,run.new_uncertainty,\
                         linestyle=self.BEAMS_view.plot_panel.linestyle,marker='.',color=run.color)
 
-                    self.BEAMS_view.plot_panel.canvas_one.axes_freq.plot(run.x_smooth,run.y_smooth,mfc=run.color,mec=run.color,color=run.color,marker='.')
+                    self.BEAMS_view.plot_panel.canvas_one.axes_freq.plot(run.x_smooth,run.y_smooth,color=run.color,marker='.')
 
                 if plot == 2 or plot == 3:
                     run.bin_data(slider_moving=slider_moving,bin_size=self.BEAMS_view.plot_editor.slider_two.value(),\
@@ -298,7 +294,7 @@ class BEAMSController():
                 else:
                     ymin = float(self.BEAMS_view.plot_editor.input_ymin_two.text())
                     ymax = float(self.BEAMS_view.plot_editor.input_ymax_two.text())
-                    
+
             except ValueError:
                 self.error_message(error_type='IV')
                 return False

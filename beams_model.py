@@ -15,9 +15,9 @@ class BEAMSModel():
         self.failed_files = set()
         self.run_list = []
         self.current_read_files = set()
-        self.color_options = {"blue", "orange", "green", "red", "purple", \
-            "brown", "pink", "gray", "olive", "cyan","custom"}
-        self.used_colors = set()
+        self.color_options = ["blue", "red", "green", "orange", "purple", \
+            "brown", "yellow", "gray", "olive", "cyan","pink"]
+        self.used_colors = []
         
     def read_files(self, filenames):
         '''Separates user specified files into files to remove (files no longer checked) and files to add (files newly checked)'''
@@ -53,21 +53,19 @@ class BEAMSModel():
         for filename in remove_files:
             for data in self.run_list:
                 if(data.filename == filename):
-                    self.used_colors.discard(data.color)
-                    self.color_options.add(data.color)
+                    self.update_colors(color=data.color,used=False)
                     self.current_read_files.remove(filename)
                     self.run_list.remove(data)
+        return True
 
     def add_runs(self,run_files):
         '''Adds any newly user-specified runs to the array of runs by filename'''
         for filename in run_files:
-            for color in self.color_options:
-                self.run_list.append(RunData(filename=filename,color=color))
-                self.used_colors.add(color)
-                self.color_options.discard(color)
-                self.current_read_files.add(filename)
-                break
-
+            self.run_list.append(RunData(filename=filename,color=self.color_options[0]))
+            self.update_colors(color=self.color_options[0],used=True)
+            self.current_read_files.add(filename)
+        return True
+                
     def find_full_file(self,file_root):
         '''Finds full file path from a file root (i.e. 006515.dat)'''
         for full_file in self.filenames:
@@ -189,13 +187,11 @@ class BEAMSModel():
     def read_unrecognized_format(self,sections=None,filenames=None,header_rows=None,fformat=None,binsize=0.390625,start_bins=None):
         '''Creates RunData objects from files with unrecognized but user specified formats (checked beforehand)'''
         for filename in filenames:
-            for color in self.color_options:
-                self.run_list.append(RunData(filename=filename,header_rows=header_rows,isBEAMS=False,sections=sections,fformat=fformat,\
-                    binsize=binsize,color=color))
-                self.used_colors.add(color)
-                self.color_options.discard(color)
-                break
-            
+            self.run_list.append(RunData(filename=filename,header_rows=header_rows,isBEAMS=False,sections=sections,fformat=fformat,\
+                binsize=binsize,color=self.color_options[0]))
+            self.update_colors(color=self.color_options[0],used=True)
+        return True
+                  
     def inspect_unrecognized_column(self,filename=None,column=None,header_rows=None):
         '''Reads in the data from a column from a file with an unrecognized format'''
         self.column_data = pd.read_csv(filename,skiprows=header_rows,usecols=[column])
@@ -206,6 +202,20 @@ class BEAMSModel():
             if self.run_list[index].filename == filename:
                 return index
         return -1
+
+    def update_colors(self,color=None,used=False,custom=False):
+        if not custom:
+            if used:
+                if color in self.color_options:
+                    self.color_options.remove(color)
+                if color not in self.used_colors:
+                    self.used_colors.append(color)
+            else:
+                if color in self.used_colors:
+                    self.used_colors.remove(color)
+                if color not in self.color_options:
+                    self.color_options.append(color)
+        return True
 
 
 class RunData():
@@ -392,12 +402,9 @@ class RunData():
 
     def calculate_fft(self,bin_size):
         '''Calculates fast fourier transform on asymmetry'''
-        period_s = bin_size
-        frequency_s = 1.0 / period_s
         n = len(self.new_asymmetry)
         k = np.arange(n)
-        period = n / frequency_s
-        frequencies = k / period
+        frequencies = k / (n * bin_size)
         frequencies = frequencies[range(int(n/2))]
         yValues = np.fft.fft([self.new_asymmetry,self.new_times]) / n
         yValues = abs(yValues[0, range(int(n/2))])
