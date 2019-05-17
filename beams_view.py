@@ -371,7 +371,7 @@ class RunPlot(FigureCanvas):
         self.axes_freq.spines['right'].set_visible(False)
         self.axes_freq.spines['top'].set_visible(False)
         self.axes_freq.tick_params(bottom=False, left=False)
-        self.axes_freq.set_xlabel("Frequence (MHz)")
+        self.axes_freq.set_xlabel("Frequency (MHz)")
         self.axes_freq.set_ylabel("Magnitude")
         self.axes_freq.set_yticklabels([])
         self.axes_freq.set_xlim(0,2.5)
