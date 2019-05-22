@@ -11,13 +11,13 @@ readingMuSRFiles(int argc, char* argv[])
 	
 	for(int i = 0; i < argc; i++)
 	{
-		if(strcmp(argv[i],"-hist"))
-		{
-			read_header = false;
-		}
-		else if(strcmp(argv[i],"-head"))
+		if(strcmp(argv[i],"-hist") == 0)
 		{
 			read_histogram = false;
+		}
+		else if(strcmp(argv[i],"-head") == 0)
+		{
+			read_header = false;
 		}
 	}	
 
@@ -31,8 +31,8 @@ readingMuSRFiles(int argc, char* argv[])
 	printf("Opening %s to write ... \n\n",argv[2]);
 	fp = fopen(argv[2],"w");
 	
-
-	if(read_header)
+	
+	if(read_header == true)
 	{
 		printf("Retrieving header data ... \n");
 
@@ -105,6 +105,18 @@ readingMuSRFiles(int argc, char* argv[])
 		char field[16];
 		MUD_getField(fh, field, 16);
 		fprintf(fp, "%s,",field);
+
+		UINT32 histsNum[1];
+		MUD_getHists(fh, pType, histsNum);
+		fprintf(fp,"%d,",histsNum);
+
+		UINT32 binsNum[1];
+		MUD_getHistNumBins(fh, 1, binsNum);
+		fprintf(fp,"%d",binsNum[0]);
+
+		REAL64 secsPerBin[1];
+		MUD_getHistSecondsPerBin(fh, 1, secsPerBin);
+		fprintf(fp,"%.16lf\n",secsPerBin[0]*1000000000);
 	}
 
 
@@ -112,7 +124,6 @@ readingMuSRFiles(int argc, char* argv[])
 	{
 		UINT32 num_hists[1];
 		MUD_getHists(fh, pType, num_hists);
-		fprintf(fp, "%d,",num_hists[0]);
 	
 		printf("Retrieving histogram data ...\n");
 
@@ -176,19 +187,7 @@ readingMuSRFiles(int argc, char* argv[])
 		}
 
 		memset(all_histograms, 0, sizeof all_histograms);
-	}	
-
-	/*
-	char app_lampf[16] = "LAMPF";
-	if(strcmp(apparatus,app_lampf) == 0){
-		printf("%s : %s\nLAMPF Method\n",apparatus,app_lampf);
-	}
-	
-	REAL64 pSecondsPerBin[1];
-	MUD_getHistSecondsPerBin(fh, histogramNumber, pSecondsPerBin);
-	fprintf(fp, "%u,%.16lf\n", pNumBins[0],pSecondsPerBin[0]*1000000000);
-	*/
-	
+	}		
 
 	printf("Done. \n\nClosing %s ...\n",argv[2]);
 
