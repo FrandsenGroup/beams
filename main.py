@@ -1,6 +1,7 @@
 # Basic and Efficient Analysis for Muon Spin-Spectroscopy (BEAMS)
 
-import beams_controller
+import BeamsControllers
 
-controller = beams_controller.BEAMSController()
-controller.start_program()
+program = BeamsControllers.ProgramController()
+
+
