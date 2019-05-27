@@ -4,10 +4,9 @@
 import BeamsUtility
 
 # Standard Library modules
-import os
+# import time
 
 # Installed modules
-import pandas as pd
 import numpy as np
 import scipy.interpolate as sp
 
@@ -19,16 +18,16 @@ RUN_DATA_CHANGED = 4
 
 
 class BEAMSModel:
-    """Manages the data, logic and rules of the application."""
+    """ Manages the data, logic and rules of the application. """
     def __init__(self):
         """Initializes the empty model"""
         self.all_full_filepaths = {}
-        self.current_read_files = set()
         self.plot_parameters = {}
         self.used_colors = []
         self.run_list = []
         self.current_formats = {}
 
+        # The controllers will register themselves in this dictionary to the signals they need to be notified of.
         self.observers = {FILE_CHANGED: [],
                           PARAMETER_CHANGED: [],
                           RUN_LIST_CHANGED: [],
@@ -37,10 +36,7 @@ class BEAMSModel:
         self.color_options = ["blue", "red", "green", "orange", "purple",
                               "brown", "yellow", "gray", "olive", "cyan", "pink"]
 
-    def attach(self, observers=None):
-        self.observers.update(observers)
-
-    def update_colors(self, color=None, used=False, custom=False, file=None):
+    def update_colors(self, color=None, used=False, custom=False):
         """ Updates the used and un-used color lists so as to keep track of which colors are available
                 when plotting new runs without having two runs of identical color."""
         if not custom:  # Don't want to save custom colors in the library
@@ -57,6 +53,7 @@ class BEAMSModel:
         return True
 
     def update_run_color(self, file=None, color=None):
+        """ Updates the color of a specific run. Calls update_colors() to update the used and available color lists. """
         if color in self.color_options:
             self.update_colors(color=color, used=True)
 
@@ -75,8 +72,8 @@ class BEAMSModel:
             if filename not in formats.keys():
                 for run in self.run_list:
                     if run.filename == filename:
-                        self.update_colors(color=run.color, used=False)
-                        self.run_list.remove(run)
+                        self.update_colors(color=run.color, used=False)  # Update color availability
+                        self.run_list.remove(run)  # Remove the no longer selected run.
                 self.current_formats.pop(filename)
 
         for filename in formats.keys():  # Second checks if any filenames in the new list are not in the old
@@ -100,56 +97,56 @@ class BEAMSModel:
 
     def update_visibilities(self, file=None, isolate=False):
         """ Updates the visibility of specified plot. """
-        if isolate:
+        if isolate:  # If a run is isolated, set visibility of all other runs to False
             for run in self.run_list:
                 if run.filename == file:
                     run.visibility = True
                 else:
                     run.visibility = False
-        else:
+        else:  # If no runs are isolated set all visibilities to True
             for run in self.run_list:
                 run.visibility = True
 
         self.notify(RUN_DATA_CHANGED)
 
     def notify(self, signal):
+        """ Calls the update() function in any controller registered with the passed in signal. """
         for controller in self.observers[signal]:
             if 'update' in dir(controller):
                 controller.update(signal)
 
     def write_file(self, old_filename=None, new_filename=None, checked_items=None):
-        if old_filename:
-            index = self.index_from_filename(filename=old_filename)
-            if index != -1:
-                self.run_list[index].match_arrays(new=False)
-                if checked_items[0] and checked_items[1] and checked_items[2]:
-                    np.savetxt(new_filename, np.c_[self.run_list[index].asymmetry,self.run_list[index].time,self.run_list[index].uncertainty],\
-                        fmt='%2.4f,%2.9f,%2.4f',header='Asymmetry, Time, Uncertainty')
-                elif checked_items[0] and checked_items[1]:
-                    np.savetxt(new_filename, np.c_[self.run_list[index].asymmetry,self.run_list[index].time],\
-                        fmt='%2.4f,%2.9f',header='Asymmetry, Time')
-                elif checked_items[0] and checked_items[2]:
-                    np.savetxt(new_filename, np.c_[self.run_list[index].asymmetry,self.run_list[index].uncertainty],\
-                        fmt='%2.4f,%2.4f',header='Asymmetry, Uncertainty')
-                elif checked_items[0]:
-                    np.savetxt(new_filename, np.c_[self.run_list[index].asymmetry],fmt='%2.4f',header='Asymmetry')
-                elif checked_items[1] and checked_items[2]:
-                    np.savetxt(new_filename, np.c_[self.run_list[index].time,self.run_list[index].uncertainty],\
-                        fmt='%2.9f,%2.4f',header='Time, Uncertainty')
-                elif checked_items[1]:
-                    np.savetxt(new_filename, np.c_[self.run_list[index].time],fmt='%2.9f',header='Time')
-                elif checked_items[2]:
-                    np.savetxt(new_filename, np.c_[self.run_list[index].uncertainty],fmt='%2.4f',header='Uncertainty')
-                return True
-        return False
+        pass
+        # if old_filename:
+        #     index = self.index_from_filename(filename=old_filename)
+        #     if index != -1:
+        #         self.run_list[index].match_arrays(new=False)
+        #         if checked_items[0] and checked_items[1] and checked_items[2]:
+        #             np.savetxt(new_filename, np.c_[self.run_list[index].asymmetry,self.run_list[index].time,self.
+        #             run_list[index].uncertainty],\
+        #                 fmt='%2.4f,%2.9f,%2.4f',header='Asymmetry, Time, Uncertainty')
+        #         elif checked_items[0] and checked_items[1]:
+        #             np.savetxt(new_filename, np.c_[self.run_list[index].asymmetry,self.run_list[index].time],\
+        #                 fmt='%2.4f,%2.9f',header='Asymmetry, Time')
+        #         elif checked_items[0] and checked_items[2]:
+        #             np.savetxt(new_filename, np.c_[self.run_list[index].asymmetry,self.run_list[index].uncertainty],\
+        #                 fmt='%2.4f,%2.4f',header='Asymmetry, Uncertainty')
+        #         elif checked_items[0]:
+        #             np.savetxt(new_filename, np.c_[self.run_list[index].asymmetry],fmt='%2.4f',header='Asymmetry')
+        #         elif checked_items[1] and checked_items[2]:
+        #             np.savetxt(new_filename, np.c_[self.run_list[index].time,self.run_list[index].uncertainty],\
+        #                 fmt='%2.9f,%2.4f',header='Time, Uncertainty')
+        #         elif checked_items[1]:
+        #             np.savetxt(new_filename, np.c_[self.run_list[index].time],fmt='%2.9f',header='Time')
+        #         elif checked_items[2]:
+        #             np.savetxt(new_filename, np.c_[self.run_list[index].uncertainty],fmt='%2.4f',header='Uncertainty')
+        #         return True
+        # return False
 
 
 class RunData:
-    """Stores all data relevant to a run, both calculated quantities and graphing variables"""
+    """ Stores all data relevant to a run. """
     def __init__(self, filename=None, f_format=None, visibility=True, color=None):
-        # def __init__(self, filename=None, format=None, color=None)
-        # format = {'header_rows': 3, 'bin_size': .39, 'T0': 800, 'Back': 0, 'Front': 1}
-        # First three are necessary little data objects and the rest are histogram information.
         """Initialize a RunData object based on filename and format"""
         self.f_formats = f_format
         self.visibility = visibility
@@ -171,7 +168,7 @@ class RunData:
         return self.visibility
 
     def retrieve_histogram_data(self, specific_hist=None):
-        """Retrieves histogram data from a BEAMS formatted file"""
+        """ Retrieves histogram data from a BEAMS formatted file. """
         histogram_data = BeamsUtility.get_histograms(self.filename, int(self.f_formats['HeaderRows']))
         histogram_data.columns = self.f_formats['HistTitles']
 
@@ -194,7 +191,7 @@ class RunData:
         return uncertainty
 
     def calculate_background_radiation(self, hist_one=None, hist_two=None):
-        """Calculates the background radiation based on histogram data before positrons are being detected"""
+        """ Calculates the background radiation based on histogram data before positrons are being detected. """
         # Get the portion of histogram before positrons from muon decay are being detected
         background = self.histogram_data.loc[0:int(self.f_formats['T0Bin']), hist_one].values
         mean_b = np.mean(background)  # Find mean based on histogram area
@@ -210,7 +207,7 @@ class RunData:
         return [bkg_one, bkg_two]
 
     def calculate_asymmetry(self, hist_one=None, hist_two=None, bkg_one=None, bkg_two=None):
-        """Calculate asymmetry based on histograms"""
+        """ Calculate asymmetry based on histograms. """
         asymmetry = ((self.histogram_data[hist_one] - bkg_one) - (self.histogram_data[hist_two] - bkg_two)) / \
                     ((self.histogram_data[hist_two] - bkg_two) + (self.histogram_data[hist_one] - bkg_one))
         asymmetry.fillna(0.0, inplace=True)
@@ -218,7 +215,7 @@ class RunData:
 
     @staticmethod
     def calculate_fft(bin_size, asymmetry, times):
-        """Calculates fast fourier transform on asymmetry"""
+        """ Calculates fast fourier transform on asymmetry. """
         n = len(asymmetry)
         k = np.arange(n)
         frequencies = k / (n * bin_size / 1000)
@@ -268,5 +265,3 @@ class RunData:
                 binned_bins += binned_indices_per_bin
 
         return [binned_asymmetry, binned_time, binned_uncertainty]
-
-

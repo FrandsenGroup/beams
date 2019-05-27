@@ -1,3 +1,4 @@
+
 import pandas as pd
 import os
 import subprocess
@@ -14,7 +15,6 @@ def convert_msr(in_file=None, out_file=None, flags=None):
         system_args = {'win32': ['MUD', in_file, out_file],  # Windows Syntax
                        'linux': ['./MUD.exe', in_file, out_file],  # Linux Syntax
                        'darwin': ['./MUD.exe', in_file, out_file]}  # Mac Syntax
-        # FIXME Check if Mac is the same as Linux, MUD.exe was compiled on Ubuntu so Mac shouldn't need a VM to run it.
 
         if sys.platform in system_args.keys():
             args = system_args[sys.platform]
@@ -260,5 +260,3 @@ def is_valid_format(sections=None, t0=None, header_rows=None, file_names=None):
             return 'EB'
 
     return f_format
-
-

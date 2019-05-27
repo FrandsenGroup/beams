@@ -1,11 +1,8 @@
 # View for BEAMS Application
 
-# PyQt5 Libraries cover the main structure and function of the application
+# Installed modules
 from PyQt5 import QtWidgets, QtGui, QtCore
-
-# Matplotlib covers the plotting of the data, with necessary PyQt5 crossover libraries
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 
 
@@ -31,7 +28,7 @@ class MainGUIWindow(QtWidgets.QMainWindow):
         self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.plot_editor)
 
         self.run_display = RunDisplayPanel()
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.run_display)
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.run_display)
 
         self.plot_panel = PlotPanel()
         self.setCentralWidget(self.plot_panel)
@@ -328,12 +325,11 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
 
 
 class PlotPanel(QtWidgets.QDockWidget):
-    def __init__(self, center=True):
+    def __init__(self):
         super(PlotPanel, self).__init__()
-        if center:
-            self.init_center_UI()
-        else:
-            self.init_hist_UI()
+
+        self.init_center_UI()
+
         plt.ion()
 
     def init_center_UI(self):
@@ -351,17 +347,33 @@ class PlotPanel(QtWidgets.QDockWidget):
 
         self.setWidget(tempWidget)
 
-    def init_hist_UI(self):
-        tempWidget = QtWidgets.QWidget()
-        self.canvas_hist = HistogramDisplayUI()
-        hbox = QtWidgets.QHBoxLayout()
-        hbox.addWidget(self.canvas_hist)
-        tempWidget.setLayout(hbox)
-        self.setWidget(tempWidget)
+
+class HistogramDisplay(QtWidgets.QDockWidget):
+    def __init__(self, histogram=None):
+        super(HistogramDisplay, self).__init__()
+        temp_widget = QtWidgets.QWidget()
+        self.canvas = CanvasUI()
+
+        layout_hist = QtWidgets.QHBoxLayout()
+        layout_hist.addWidget(self.canvas)
+        temp_widget.setLayout(layout_hist)
+        self.setWidget(temp_widget)
+        plt.ion()
+
+        self.canvas.canvas_axes.plot(histogram, linestyle='None', marker='s')
+        # self.exec_()
+
+
+class CanvasUI(FigureCanvas):
+    def __init__(self):
+        fig = plt.figure(dpi=100)
+        self.canvas_axes = fig.add_subplot(111, label='Canvas')
+        self._draw_pending = True
+        FigureCanvas.__init__(self, fig)
 
 
 class RunPlot(FigureCanvas):
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
+    def __init__(self, dpi=100):
         fig = plt.figure(dpi=dpi)
         self.axes_time = fig.add_subplot(211, label="Time Domain")
         self.axes_freq = fig.add_subplot(212, label="Frequency Domain")
@@ -386,6 +398,7 @@ class RunPlot(FigureCanvas):
 
 
 # Miscellaneous GUIs
+
 class FileFormatterUI(QtWidgets.QDialog):
     def __init__(self, filenames=None):
         super(FileFormatterUI, self).__init__()
@@ -622,14 +635,6 @@ class FileDisplayUI(QtWidgets.QPlainTextEdit):
             self.setGeometry(500, 300, 400, 400)
             self.setPlainText(open(self.filename).read())
             self.setWordWrapMode(False)
-
-
-class HistogramDisplayUI(FigureCanvas):
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = plt.figure(dpi=dpi)
-        self.axes_hist = fig.add_subplot(111)
-        self._draw_pending = True
-        FigureCanvas.__init__(self, fig)
 
 
 class WriteDataUI(QtWidgets.QDialog):

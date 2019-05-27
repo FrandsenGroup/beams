@@ -11,6 +11,8 @@ import time
 
 # Installed modules
 from PyQt5 import QtWidgets, QtCore
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 class ProgramController:
@@ -396,10 +398,14 @@ class RunDisplayController:
         self.popup.show()
 
     def inspect_hist(self):
-        # self.popup = BeamsViews.PlotPanel(center=False)
         for run in self.model.run_list:
             if run.filename == self.run_display.run_titles.currentText():
-                print(run.retrieve_histogram_data(specific_hist=self.run_display.histograms.currentText()))
+                histogram = run.retrieve_histogram_data(specific_hist=self.run_display.histograms.currentText()).values
+                print(histogram)
+                plt.ioff()
+                self.popup = BeamsViews.HistogramDisplay(histogram=histogram)
+                self.popup.show()
+                break
 
     def change_color(self):
         self.model.update_run_color(file=self.run_display.run_titles.currentText(),
@@ -415,7 +421,7 @@ class RunDisplayController:
             self.run_display.run_titles.clear()
             self.run_display.run_titles.addItems([run.filename for run in self.model.run_list])
             self.run_display.color_choices.setCurrentText(self.model.run_list[0].color)
-            self.run_display.histograms.addItems(self.model.run_list[0].f_formats['HistTitles'])
+            # self.run_display.histograms.addItems(self.model.run_list[0].f_formats['HistTitles'])
             self.run_display.color_choices.setEnabled(True)
             self.run_display.isolate_button.setEnabled(True)
             self.run_display.histograms.setEnabled(True)
@@ -443,7 +449,6 @@ class FormatterController:
             specify the formats for each file.
 
             Instantiated by FileManagerController class only."""
-
     def __init__(self, files=None, parent=None):
         if not parent or type(parent) is not FileManagerController:
             raise AttributeError('Parameter parent=FileManagerController not passed.')
@@ -486,7 +491,6 @@ class PlotDataController:
             will be used to calculate the asymmetry for each file.
 
             Instantiated by FileManagerController class only."""
-
     def __init__(self, formats=None, parent=None):
         """ Instantiates an object of the PlotDataController class, connects it to the PlotDataGUI
                 and its calling class (FileManagerController). """
