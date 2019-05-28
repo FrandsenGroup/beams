@@ -45,7 +45,7 @@ readingMuSRFiles(int argc, char* argv[])
 		if (verbose)
 			printf("Retrieving header data ... \n\n");
 
-		fprintf(fp, "BEAMS\nExptNumber,RunNumber,ElapsedSecs,TimeBegin,TimeEnd,Title,Lab,Area,Method,Apparatus,Insert,Sample,Orient,Das,Experimenters,Temperature,Field,NumHists,numBins,binsize\n");
+		fprintf(fp, "BEAMS\nExptNumber,RunNumber,ElapsedSecs,TimeBegin,TimeEnd,Title,Lab,Area,Method,Apparatus,Insert,Sample,Orient,Das,Experimenters,Temperature,Field,NumHists,numBins,binsize,T0Bin,HeaderRows\n");
 		UINT32 pExptNumber[1];
 		MUD_getExptNumber(fh, pExptNumber);
 		fprintf(fp, "%d,",pExptNumber[0]);
@@ -168,25 +168,44 @@ readingMuSRFiles(int argc, char* argv[])
 
 		UINT32 histsNum[1];
 		MUD_getHists(fh, pType, histsNum);
-		fprintf(fp,"%d,",histsNum);
+		fprintf(fp,"%d,",histsNum[0]);
 
 		if(verbose)
 			printf("\t# of Histograms : %d\n", histsNum[0]);
 
 		UINT32 binsNum[1];
 		MUD_getHistNumBins(fh, 1, binsNum);
-		fprintf(fp,"%d",binsNum[0]);
+		fprintf(fp,"%d,",binsNum[0]);
 
 		if(verbose)
 			printf("\t# of Bins : %d\n", binsNum[0]);
 
 		REAL64 secsPerBin[1];
 		MUD_getHistSecondsPerBin(fh, 1, secsPerBin);
-		fprintf(fp,"%.16lf\n",secsPerBin[0]*1000000000);
+		fprintf(fp,"%.16lf,",secsPerBin[0]*1000000000);
 
 		if(verbose)
-			printf("\tBin Size : %.16lf\n\n", secsPerBin[0]); 
+			printf("\tBin Size : %.16lf\n", secsPerBin[0]); 
 		
+		UINT32 T0_bin[1];
+		MUD_getHistT0_Bin(fh, 1, T0_bin);
+		fprintf(fp,"%d,",T0_bin[0]);
+
+		if(verbose)
+			printf("\tT0 Bin : %d\n", T0_bin[0]);
+
+		fprintf(fp, "%d\n", 3);
+		if(verbose)
+			printf("\tHeader Rows : %d\n", 3);
+
+		/*
+		UINT32 Bkgd[1];
+		MUD_getHistBkgd1(fh, 1, Bkgd);
+		fprintf(fp, "%d\n",Bkgd[0]);
+
+		if(verbose)
+			printf("\tBackground : %d\n\n",Bkgd[0]);	
+		*/
 	}
 
 
@@ -236,7 +255,7 @@ readingMuSRFiles(int argc, char* argv[])
 			
 			if(i < num_hists[0]-1)
 			{
-				fprintf(fp,", ");
+				fprintf(fp,",");
 			}
 			else
 			{
