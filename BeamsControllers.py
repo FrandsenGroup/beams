@@ -62,6 +62,9 @@ class FileManagerController:
         return 'FileManagerController(file_manager_panel={}, model={}, parent={})'\
             .format(self.file_manager, self.model, self.program_controller)
 
+    def __str__(self):
+        return 'File Manager Controller'
+
     def set_callbacks(self):
         """ Sets the callbacks for events in the File Manager Panel. """
         self.file_manager.import_button.released.connect(lambda: self.b_add())
@@ -198,7 +201,7 @@ class PlotController:
         self.model = model
         self.program_controller = parent
 
-        self.model.observers[BeamsModel.RUN_LIST_CHANGED].append(self)
+        # self.model.observers[BeamsModel.RUN_LIST_CHANGED].append(self)
         self.model.observers[BeamsModel.RUN_DATA_CHANGED].append(self)
 
         self.plot_parameters = {'XMinOne': self.plot_editor.input_xmin_one.text,
@@ -225,6 +228,9 @@ class PlotController:
     def __repr__(self):
         return 'PlotEditorController(plot_editor_panel={}, model={}, parent={})'\
             .format(self.plot_editor, self.model, self.program_controller)
+
+    def __str__(self):
+        return 'Plot Controller'
 
     def set_callbacks(self):
         """ Sets callbacks for events in the Plot Editor Panel. """
@@ -268,6 +274,7 @@ class PlotController:
 
     def visual_data_change(self, plot=None, moving=False):
         """ Handles the changes made to Plot Editor widgets that necessitate recalculation of the Run Data. """
+        start = time.time()
         if plot:
             if plot == 1:
                 self.update_canvas_one(moving)
@@ -277,9 +284,9 @@ class PlotController:
             self.update_canvas_one(moving)
             self.update_canvas_two(moving)
         self.display_y_limits()
+        print('Plotted in {} seconds'.format(time.time()-start))
 
     def update_canvas_one(self, moving=False):
-        start = time.time()
         self.plot_panel.canvas_one.axes_time.clear()
         self.plot_panel.canvas_one.axes_freq.clear()
 
@@ -307,10 +314,8 @@ class PlotController:
                     self.plot_panel.canvas_one.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.')
 
         self.plot_panel.canvas_one.set_style()
-        print('Calculation time for binning and plotting:', time.time() - start)
 
     def update_canvas_two(self, moving=False):
-        start = time.time()
         self.plot_panel.canvas_two.axes_time.clear()
         self.plot_panel.canvas_two.axes_freq.clear()
 
@@ -338,7 +343,6 @@ class PlotController:
                     self.plot_panel.canvas_two.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.')
 
         self.plot_panel.canvas_two.set_style()
-        print('Calculation time for binning and plotting:', time.time() - start)
 
     def display_plot_lines(self):
         return '-' if self.plot_parameters['PlotLines']() else 'None'
@@ -378,6 +382,9 @@ class RunDisplayController:
         self.model.observers[BeamsModel.RUN_LIST_CHANGED].append(self)
 
         self.set_callbacks()
+
+    def __str__(self):
+        return 'Run Display Controller'
 
     def set_callbacks(self):
         self.run_display.isolate_button.released.connect(lambda: self.isolate_plot())
@@ -420,7 +427,7 @@ class RunDisplayController:
         if self.model.run_list:
             self.run_display.run_titles.clear()
             self.run_display.run_titles.addItems([run.filename for run in self.model.run_list])
-            self.run_display.color_choices.setCurrentText(self.model.run_list[0].color)
+            # self.run_display.color_choices.setCurrentText(self.model.run_list[0].color)
             # self.run_display.histograms.addItems(self.model.run_list[0].f_formats['HistTitles'])
             self.run_display.color_choices.setEnabled(True)
             self.run_display.isolate_button.setEnabled(True)

@@ -5,6 +5,14 @@ import subprocess
 import sys
 
 
+class InvalidFileFormat(Exception):
+    pass
+
+
+class InvalidData(Exception):
+    pass
+
+
 def convert_msr(in_file=None, out_file=None, flags=None):
     """ Takes an 'in_file' with a .msr extension and then converts and writes the data to
         an 'out_file' with a .dat extension. Tested on Ubuntu and Windows 10 successfully.
@@ -82,7 +90,7 @@ def get_histograms(filename=None, skiprows=3, histogram=None):
         try:
             histograms = pd.read_csv(filename, skiprows=skiprows, usecols=[histogram])
         except ValueError:
-            return None
+            raise InvalidFileFormat
     else:
         histograms = pd.read_csv(filename, skiprows=skiprows)
     return histograms

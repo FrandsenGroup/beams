@@ -113,6 +113,7 @@ class BEAMSModel:
         """ Calls the update() function in any controller registered with the passed in signal. """
         for controller in self.observers[signal]:
             if 'update' in dir(controller):
+                print('Notifying {} of {}'.format(str(controller), signal))
                 controller.update(signal)
 
     def write_file(self, old_filename=None, new_filename=None, checked_items=None):
@@ -235,29 +236,36 @@ class RunData:
 
     def bin_data(self, final_bin_size=None, begin_time=None, end_time=None, slider_moving=False):
         """ Bins the asymmetry based on user specified bin size. """
-        bin_full = float(self.f_formats['binsize'])/1000  # Binned array bin size in µs
-        bin_binned = float(final_bin_size)/1000  # Full array bin size in µs
+        # Get the initial and new bin sizes in micro-seconds
+        bin_full = float(self.f_formats['binsize'])/1000
+        bin_binned = float(final_bin_size)/1000
 
+        # Based on the chosen x values we can single out an area of the data we are going to bin
         # Section of full array that is of interest [initial_bin:final_bin]
         initial_bin = int(np.floor(begin_time / bin_full))
 
+        # Determine how large the bins and binned arrays will be so we can pre-allocate them (much faster).
         binned_indices_per_bin = int(np.floor(bin_binned/bin_full))
         binned_indices_total = int(np.floor((float(end_time)-float(begin_time))/bin_binned))
 
+        # Pre-allocate Asymmetry
         binned_asymmetry = np.empty(binned_indices_total)
+
+        # Create the Time Array
         binned_time = [begin_time + (index * bin_binned) for index in np.arange(binned_indices_total)]
 
         binned_bins = initial_bin
-        # print(bin_full, bin_binned, initial_bin, binned_indices_per_bin, binned_indices_total)
-        # print(self.asymmetry, self.uncertainty)
-        if slider_moving:
+        if slider_moving:  # If slider is moving we won't calculate the uncertainty
             binned_uncertainty = []
+            
             for new_index in range(binned_indices_total):
+                # Takes the mean of one full section of the area and stores it in one bin.
                 binned_asymmetry[new_index] = np.mean(self.asymmetry[binned_bins:(binned_bins+binned_indices_per_bin)])
                 binned_bins += binned_indices_per_bin
 
-        else:
+        else:  # If slider is moving we will pre-allocate it here with np.empty()
             binned_uncertainty = np.empty(binned_indices_total)
+            
             for new_index in range(binned_indices_total):
                 binned_asymmetry[new_index] = np.mean(self.asymmetry[binned_bins:(binned_bins+binned_indices_per_bin)])
                 binned_uncertainty[new_index] = np.sqrt(np.sum([u**2 for u in self.uncertainty[binned_bins:(binned_bins
