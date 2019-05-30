@@ -173,10 +173,23 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
         self.input_ymin_two.setEnabled(False)
 
     def layout_UI(self):
-        label_xmin_one = QtWidgets.QLabel("XMin (" + chr(956) + "s)")
-        label_xmin_two = QtWidgets.QLabel("XMin (" + chr(956) + "s)")
-        label_xmax_one = QtWidgets.QLabel("XMax (" + chr(956) + "s)")
-        label_xmax_two = QtWidgets.QLabel("XMax (" + chr(956) + "s)")
+        try:  # Deals with issues with mu symbol
+            label_xmin_one = QtWidgets.QLabel("XMin (" + chr(956) + "s)")
+            label_xmin_two = QtWidgets.QLabel("XMin (" + chr(956) + "s)")
+            label_xmax_one = QtWidgets.QLabel("XMax (" + chr(956) + "s)")
+            label_xmax_two = QtWidgets.QLabel("XMax (" + chr(956) + "s)")
+        except ValueError:
+            try:
+                label_xmin_one = QtWidgets.QLabel("XMin (\u03BCs)")
+                label_xmin_two = QtWidgets.QLabel("XMin (\u03BCs)")
+                label_xmax_one = QtWidgets.QLabel("XMax (\u03BCs)")
+                label_xmax_two = QtWidgets.QLabel("XMax (\u03BCs)")
+            except ValueError:
+                label_xmin_one = QtWidgets.QLabel("XMin (micro-sec)")
+                label_xmin_two = QtWidgets.QLabel("XMin (micro-sec)")
+                label_xmax_one = QtWidgets.QLabel("XMax (micro-sec)")
+                label_xmax_two = QtWidgets.QLabel("XMax (micro-sec)")
+                
         label_ymin_one = QtWidgets.QLabel("YMin")
         label_ymin_two = QtWidgets.QLabel("YMin")
         label_ymax_one = QtWidgets.QLabel("YMax")
