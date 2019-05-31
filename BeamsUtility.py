@@ -62,7 +62,7 @@ def get_header(filename=None, header_rows=None):
     """ Gets the header from a .dat file. If BEAMS formatted, it creates a dictionary with
         the header data, otherwise it stores the first user-specified number of lines in a
         list of strings. """
-    if is_beams(filename):
+    if is_beams(filename):  # We are basically praying if it is BEAMS, it has the proper format. #fixthis, call errors
         with open(filename) as file:
             file.readline()
             keys = file.readline().rstrip('\n').rsplit(',')
@@ -70,11 +70,15 @@ def get_header(filename=None, header_rows=None):
             hist_titles = file.readline().rstrip('\n').rsplit(',')
             background_one = file.readline().rstrip('\n').rsplit(',')
             background_two = file.readline().rstrip('\n').rsplit(',')
+            good_bins_one = file.readline().rstrip('\n').rsplit(',')
+            good_bins_two = file.readline().rstrip('\n').rsplit(',')
         header_data = {k: v for k, v in zip(keys, values)}
         header_data['HistTitles'] = hist_titles
         header_data['HeaderRows'] = 3
         header_data['BkgdOne'] = {k: v for k, v in zip(hist_titles, background_one)}
         header_data['BkgdTwo'] = {k: v for k, v in zip(hist_titles, background_two)}
+        header_data['GoodBinOne'] = {k: v for k, v in zip(hist_titles, good_bins_one)}
+        header_data['GoodBinTwo'] = {k: v for k, v in zip(hist_titles, good_bins_two)}
 
     elif check_ext(filename, '.dat'):
         header_data = []

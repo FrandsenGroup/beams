@@ -146,7 +146,29 @@ class BEAMSModel:
 
 
 class RunData:
-    """ Stores all data relevant to a run. """
+    """ Stores all data relevant to a run.
+        Required Parameters:
+            filename : file path for the data to be used for this run.
+            f_format : dictionary containing (at least):
+                - Histogram titles for the file
+                - Number of header rows for the file
+                - Histograms to be used in calculating asymmetry [hist_one, hist_two]
+                - Good bins 1 and 2, the initial and final bins for calculating asymmetry
+                - Background 1 and 2, the initial and final bins for calculating background
+                - Size of the time bins in the file (in µs)
+            visibility : bool that will determine if this run is plotted
+            color : color of the run on the plots
+
+        Instance Variables (self.):
+            [Parameters passed in]
+            asymmetry : the full asymmetry calculated from the user specified histograms
+            uncertainty : the full uncertainty array calculated from user specified histograms
+
+        Public Methods:
+            bin_data(self, final_bin_size, begin_time, end_time, slider_moving) : Returns binned asymmetry, time and
+                uncertainty arrays.
+            calculate_fft(bin_size, asymmetry, times) : Returns smoothed frequencies and magnitudes for plotting.
+    """
     def __init__(self, filename=None, f_format=None, visibility=True, color=None):
         """Initialize a RunData object based on filename and format"""
         self.f_formats = f_format
@@ -194,10 +216,12 @@ class RunData:
     def calculate_background_radiation(self, hist_one=None, hist_two=None):
         """ Calculates the background radiation based on histogram data before positrons are being detected. """
         # Get the portion of histogram before positrons from muon decay are being detected
-        background = self.histogram_data.loc[int(self.f_formats['BkgdOne'][hist_one]):int(self.f_formats['BkgdTwo'][hist_one]), hist_one].values
+        background = self.histogram_data.loc[
+                     int(self.f_formats['BkgdOne'][hist_one]):int(self.f_formats['BkgdTwo'][hist_one]), hist_one].values
         bkg_one = np.mean(background)  # Find mean on new array
 
-        background = self.histogram_data.loc[int(self.f_formats['BkgdOne'][hist_two]):int(self.f_formats['BkgdTwo'][hist_two]), hist_two].values
+        background = self.histogram_data.loc[
+                     int(self.f_formats['BkgdOne'][hist_two]):int(self.f_formats['BkgdTwo'][hist_two]), hist_two].values
         bkg_two = np.mean(background)
 
         del background
@@ -205,8 +229,19 @@ class RunData:
 
     def calculate_asymmetry(self, hist_one=None, hist_two=None, bkg_one=None, bkg_two=None):
         """ Calculate asymmetry based on histograms. """
-        asymmetry = ((self.histogram_data[hist_one] - bkg_one) - (self.histogram_data[hist_two] - bkg_two)) / \
-                    ((self.histogram_data[hist_two] - bkg_two) + (self.histogram_data[hist_one] - bkg_one))
+        # We want to ensure the start and ends of the arrays match, while staying in 'Good' area.
+        start_bin = int(self.f_formats['GoodBinOne'][hist_one])
+        if start_bin < int(self.f_formats['GoodBinOne'][hist_two]):
+            start_bin = int(self.f_formats['GoodBinOne'][hist_two])
+
+        end_bin = int(self.f_formats['GoodBinTwo'][hist_one])
+        if end_bin > int(self.f_formats['GoodBinTwo'][hist_two]):
+            end_bin = int(self.f_formats['GoodBinTwo'][hist_two])
+
+        asymmetry = ((self.histogram_data.loc[start_bin:end_bin, hist_one] - bkg_one) -
+                     (self.histogram_data.loc[start_bin:end_bin, hist_two] - bkg_two)) / \
+                    ((self.histogram_data.loc[start_bin:end_bin, hist_two] - bkg_two) +
+                     (self.histogram_data.loc[start_bin:end_bin, hist_one] - bkg_one))
         asymmetry.fillna(0.0, inplace=True)
         return asymmetry
 
