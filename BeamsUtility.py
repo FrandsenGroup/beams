@@ -68,9 +68,13 @@ def get_header(filename=None, header_rows=None):
             keys = file.readline().rstrip('\n').rsplit(',')
             values = file.readline().rstrip('\n').rsplit(',')
             hist_titles = file.readline().rstrip('\n').rsplit(',')
+            background_one = file.readline().rstrip('\n').rsplit(',')
+            background_two = file.readline().rstrip('\n').rsplit(',')
         header_data = {k: v for k, v in zip(keys, values)}
         header_data['HistTitles'] = hist_titles
         header_data['HeaderRows'] = 3
+        header_data['BkgdOne'] = {k: v for k, v in zip(hist_titles, background_one)}
+        header_data['BkgdTwo'] = {k: v for k, v in zip(hist_titles, background_two)}
 
     elif check_ext(filename, '.dat'):
         header_data = []
