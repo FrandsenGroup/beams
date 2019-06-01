@@ -4,7 +4,7 @@
 import BeamsUtility
 
 # Standard Library modules
-# import time
+import os
 
 # Installed modules
 import numpy as np
@@ -92,6 +92,7 @@ class BEAMSModel:
 
     def update_file_list(self, file_name=None, file_path=None):
         """ Adds full filepaths to model file dictionary. """
+        print(file_name, file_path)
         self.all_full_filepaths[file_name] = file_path
         self.notify(FILE_CHANGED)  # Notifies the File Manager Panel
 
@@ -109,6 +110,13 @@ class BEAMSModel:
 
         self.notify(RUN_DATA_CHANGED)
 
+    def open_save_session(self, run_list):
+        self.run_list = run_list
+        self.all_full_filepaths = {}
+        for run in run_list:
+            self.update_file_list(os.path.split(run.filename)[1], run.filename)
+        self.notify(RUN_LIST_CHANGED)
+
     def notify(self, signal):
         """ Calls the update() function in any controller registered with the passed in signal. """
         for controller in self.observers[signal]:
@@ -118,31 +126,6 @@ class BEAMSModel:
 
     def write_file(self, old_filename=None, new_filename=None, checked_items=None):
         pass
-        # if old_filename:
-        #     index = self.index_from_filename(filename=old_filename)
-        #     if index != -1:
-        #         self.run_list[index].match_arrays(new=False)
-        #         if checked_items[0] and checked_items[1] and checked_items[2]:
-        #             np.savetxt(new_filename, np.c_[self.run_list[index].asymmetry,self.run_list[index].time,self.
-        #             run_list[index].uncertainty],\
-        #                 fmt='%2.4f,%2.9f,%2.4f',header='Asymmetry, Time, Uncertainty')
-        #         elif checked_items[0] and checked_items[1]:
-        #             np.savetxt(new_filename, np.c_[self.run_list[index].asymmetry,self.run_list[index].time],\
-        #                 fmt='%2.4f,%2.9f',header='Asymmetry, Time')
-        #         elif checked_items[0] and checked_items[2]:
-        #             np.savetxt(new_filename, np.c_[self.run_list[index].asymmetry,self.run_list[index].uncertainty],\
-        #                 fmt='%2.4f,%2.4f',header='Asymmetry, Uncertainty')
-        #         elif checked_items[0]:
-        #             np.savetxt(new_filename, np.c_[self.run_list[index].asymmetry],fmt='%2.4f',header='Asymmetry')
-        #         elif checked_items[1] and checked_items[2]:
-        #             np.savetxt(new_filename, np.c_[self.run_list[index].time,self.run_list[index].uncertainty],\
-        #                 fmt='%2.9f,%2.4f',header='Time, Uncertainty')
-        #         elif checked_items[1]:
-        #             np.savetxt(new_filename, np.c_[self.run_list[index].time],fmt='%2.9f',header='Time')
-        #         elif checked_items[2]:
-        #             np.savetxt(new_filename, np.c_[self.run_list[index].uncertainty],fmt='%2.4f',header='Uncertainty')
-        #         return True
-        # return False
 
 
 class RunData:

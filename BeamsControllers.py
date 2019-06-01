@@ -8,6 +8,7 @@ import sys
 import os
 import subprocess
 import time
+import pickle
 
 # Installed modules
 from PyQt5 import QtWidgets, QtCore
@@ -28,6 +29,8 @@ class ProgramController:
         # Note: The controllers are responsible for handling user input on the GUIs. The GUIs will update based on
         # changes in the model
         self.main_window_v = BeamsViews.MainGUIWindow()  # Builds Main Window GUI with all the connected panels
+        self.set_callbacks()
+
         self.file_manager_controller = FileManagerController(file_manager_panel=self.main_window_v.file_manager,
                                                              model=self.model, parent=self)
         self.plot_editor_controller = PlotController(plot_editor_panel=self.main_window_v.plot_editor,
@@ -38,6 +41,41 @@ class ProgramController:
 
         self.main_window_v.show()
         sys.exit(self.app.exec_())
+
+    def set_callbacks(self):
+        self.main_window_v.save_session_act.triggered.connect(lambda: self.save_session())
+        self.main_window_v.open_session_act.triggered.connect(lambda: self.open_session())
+        self.main_window_v.add_data_act.triggered.connect(lambda: self.add_data_file())
+
+    def add_data_file(self):
+        """ Prompts the user for and stores full file paths in model.
+            Note: The change in the model will notify and result in update of GUI. See update(). """
+        # Open a dialog to prompt users for file(s)
+        filenames = QtWidgets.QFileDialog.getOpenFileNames(self.main_window_v, 'Add file', '/home')[0]
+
+        for filename in filenames:  # Adds only the filename root (i.e. 0065156.dat) to the File Manager Panel
+            file_root = os.path.split(filename)[1]
+            self.model.update_file_list(file_path=filename, file_name=file_root)  # Store as dict in model
+
+    def save_session(self):
+        saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self.main_window_v, 'Specify file',
+                                                                '/home', 'BEAMS(*.beams)')[0]
+        # saved_file_path = saved_file_path.rsplit('.')[0] + '.beams'
+
+        saved_file = open(saved_file_path, 'wb')
+        pickle.dump(self.model.run_list, saved_file)
+        saved_file.close()
+
+    def open_session(self):
+        open_file_path = QtWidgets.QFileDialog.getOpenFileNames(self.main_window_v, 'Choose previous session',
+                                                                '/home', 'BEAMS(*.beams)')[0][0]
+        if os.path.splitext(open_file_path)[1] != '.beams':
+            message = '\t\t\tInvalid file chosen\t\t\t'
+            BeamsViews.ErrorMessageUI(message)
+            return
+        open_file = open(open_file_path, 'rb')
+        self.model.open_save_session(pickle.load(open_file))
+        open_file.close()
 
 
 class FileManagerController:
@@ -179,6 +217,7 @@ class FileManagerController:
     def update(self, signal=None):
         """ Called by the model when one of its FileManagerPanel-relevant attributes changes. """
         if signal == BeamsModel.FILE_CHANGED:  # Expects list of files to add the ListWidget in FileManagerPanel
+            print("Updating File Manager's list of files.")
             current_files = self.get_all_files()
             for file_root in self.model.all_full_filepaths.keys():
                 if file_root not in current_files:
@@ -367,8 +406,10 @@ class PlotController:
 
     def update(self, signal=None):
         if signal == BeamsModel.RUN_DATA_CHANGED:
+            print("Updating the Plots")
             self.visual_data_change(moving=False)
         elif signal == BeamsModel.RUN_LIST_CHANGED:
+            print("Updating the Plots")
             self.visual_data_change(moving=False)
 
 
@@ -448,6 +489,7 @@ class RunDisplayController:
 
     def update(self, signal):
         if signal == BeamsModel.RUN_LIST_CHANGED:
+            print("Updating the Run Display")
             self.populate_run_display()
 
 
@@ -573,8 +615,10 @@ class PlotDataController:
         self.plot_data_gui.c_hist_two.clear()
 
         if self.plot_data_gui.c_file_list.currentText():  # Stop displaying if no files left in file list
-            self.plot_data_gui.c_hist_one.addItems(self.formats[self.plot_data_gui.c_file_list.currentText()]['HistTitles'])
-            self.plot_data_gui.c_hist_two.addItems(self.formats[self.plot_data_gui.c_file_list.currentText()]['HistTitles'])
+            self.plot_data_gui.c_hist_one.addItems(self.formats[
+                                                       self.plot_data_gui.c_file_list.currentText()]['HistTitles'])
+            self.plot_data_gui.c_hist_two.addItems(self.formats[
+                                                       self.plot_data_gui.c_file_list.currentText()]['HistTitles'])
 
 
 
