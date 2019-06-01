@@ -58,24 +58,45 @@ class ProgramController:
             self.model.update_file_list(file_path=filename, file_name=file_root)  # Store as dict in model
 
     def save_session(self):
+        """ Prompts the user for a file path to save the current run data to and uses pickle to dump the data. """
         saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self.main_window_v, 'Specify file',
                                                                 '/home', 'BEAMS(*.beams)')[0]
-        # saved_file_path = saved_file_path.rsplit('.')[0] + '.beams'
 
         saved_file = open(saved_file_path, 'wb')
         pickle.dump(self.model.run_list, saved_file)
         saved_file.close()
 
     def open_session(self):
+        """ Prompts the user for a .beams file (old session) to read in with pickle. """
+        if self.model.run_list:
+            message = '\t\tWould you like to save your current session before closing?\t\t'
+            BeamsViews.PermissionsMessageUI(message, pos_function=self.save_session)
+
         open_file_path = QtWidgets.QFileDialog.getOpenFileNames(self.main_window_v, 'Choose previous session',
-                                                                '/home', 'BEAMS(*.beams)')[0][0]
+                                                                '/home', 'BEAMS(*.beams)')
+        if open_file_path[0]:
+            open_file_path = open_file_path[0][0]
+        else:
+            return
+
         if os.path.splitext(open_file_path)[1] != '.beams':
             message = '\t\t\tInvalid file chosen\t\t\t'
             BeamsViews.ErrorMessageUI(message)
             return
+
         open_file = open(open_file_path, 'rb')
-        self.model.open_save_session(pickle.load(open_file))
+
+        try:
+            data = pickle.load(open_file)
+        except pickle.UnpicklingError:
+            message = '\t\t\tCould not read in data from file\t\t\t'
+            BeamsViews.ErrorMessageUI(message)
+        else:
+            self.model.open_save_session(data)
+
         open_file.close()
+
+
 
 
 class FileManagerController:
