@@ -33,6 +33,12 @@ class BEAMSModel:
                           RUN_LIST_CHANGED: [],
                           RUN_DATA_CHANGED: []}
 
+        # For debugging currently
+        self.debugging_signals = {FILE_CHANGED: 'FILE_CHANGED',
+                                  PARAMETER_CHANGED: 'PARAMETER_CHANGED',
+                                  RUN_LIST_CHANGED: 'RUN_LIST_CHANGED',
+                                  RUN_DATA_CHANGED: 'RUN_DATA_CHANGED'}
+
         self.color_options = ["blue", "red", "green", "orange", "purple",
                               "brown", "yellow", "gray", "olive", "cyan", "pink"]
 
@@ -78,7 +84,7 @@ class BEAMSModel:
 
         for filename in formats.keys():  # Second checks if any filenames in the new list are not in the old
             if filename not in self.current_formats.keys():
-                print('Adding', formats[filename])
+                # print('Adding', formats[filename])
                 self.run_list.append(RunData(filename=filename, f_format=formats[filename],
                                              color=self.color_options[0]))
                 self.update_colors(color=self.color_options[0], used=True)
@@ -92,7 +98,7 @@ class BEAMSModel:
 
     def update_file_list(self, file_name=None, file_path=None):
         """ Adds full filepaths to model file dictionary. """
-        print(file_name, file_path)
+        # print(file_name, file_path)
         self.all_full_filepaths[file_name] = file_path
         self.notify(FILE_CHANGED)  # Notifies the File Manager Panel
 
@@ -112,16 +118,17 @@ class BEAMSModel:
 
     def open_save_session(self, run_list):
         self.run_list = run_list
-        self.all_full_filepaths = {}
+        # self.all_full_filepaths = {}
         for run in run_list:
             self.update_file_list(os.path.split(run.filename)[1], run.filename)
         self.notify(RUN_LIST_CHANGED)
+        self.notify(RUN_DATA_CHANGED)
 
     def notify(self, signal):
         """ Calls the update() function in any controller registered with the passed in signal. """
         for controller in self.observers[signal]:
             if 'update' in dir(controller):
-                print('Notifying {} of {}'.format(str(controller), signal))
+                print('Notifying {} of {}'.format(str(controller), self.debugging_signals[signal]))
                 controller.update(signal)
 
     def write_file(self, old_filename=None, new_filename=None, checked_items=None):

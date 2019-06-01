@@ -89,7 +89,7 @@ class ProgramController:
         try:
             data = pickle.load(open_file)
         except pickle.UnpicklingError:
-            message = '\t\t\tCould not read in data from file\t\t\t'
+            message = '\t\t\tCould not read in data from {}\t\t\t'.format(open_file_path)
             BeamsViews.ErrorMessageUI(message)
         else:
             self.model.open_save_session(data)
@@ -238,7 +238,7 @@ class FileManagerController:
     def update(self, signal=None):
         """ Called by the model when one of its FileManagerPanel-relevant attributes changes. """
         if signal == BeamsModel.FILE_CHANGED:  # Expects list of files to add the ListWidget in FileManagerPanel
-            print("Updating File Manager's list of files.")
+            print("Updating File Manager")
             current_files = self.get_all_files()
             for file_root in self.model.all_full_filepaths.keys():
                 if file_root not in current_files:
@@ -344,7 +344,7 @@ class PlotController:
             self.update_canvas_one(moving)
             self.update_canvas_two(moving)
         self.display_y_limits()
-        print('Plotted in {} seconds'.format(time.time()-start))
+        print('\tBinned and Plotted all runs in {} seconds'.format(time.time()-start))
 
     def update_canvas_one(self, moving=False):
         self.plot_panel.canvas_one.axes_time.clear()

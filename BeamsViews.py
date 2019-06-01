@@ -547,6 +547,10 @@ class ErrorMessageUI(QtWidgets.QDialog):
         self.setWindowTitle('Error')
         message = QtWidgets.QLabel(error_message)
         pos_button = QtWidgets.QPushButton('Okay')
+        self.setMinimumWidth(300)
+        self.setMinimumHeight(80)
+        pos_button.setFixedWidth(80)
+
 
         if pos_function:
             pos_button.released.connect(lambda: pos_function())
@@ -554,8 +558,10 @@ class ErrorMessageUI(QtWidgets.QDialog):
         pos_button.released.connect(lambda: self.close())
 
         col = QtWidgets.QVBoxLayout()
+
         col.addWidget(message)
         col.addWidget(pos_button)
+        col.setAlignment(pos_button, QtCore.Qt.AlignCenter)
         self.setLayout(col)
 
         self.exec_()
@@ -568,6 +574,10 @@ class PermissionsMessageUI(QtWidgets.QDialog):
         message = QtWidgets.QLabel(permissions_message)
         self.pos_button = QtWidgets.QPushButton('Okay')
         self.neg_button = QtWidgets.QPushButton('Cancel')
+        self.setMinimumWidth(300)
+        self.setMinimumWidth(80)
+        self.pos_button.setFixedWidth(80)
+        self.neg_button.setFixedWidth(80)
 
         if pos_function:
             self.pos_button.released.connect(lambda: pos_function())
@@ -583,6 +593,8 @@ class PermissionsMessageUI(QtWidgets.QDialog):
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.pos_button)
         row.addWidget(self.neg_button)
+        row.setAlignment(self.pos_button, QtCore.Qt.AlignRight)
+        row.setAlignment(self.neg_button, QtCore.Qt.AlignLeft)
         col.addLayout(row)
         self.setLayout(col)
 
