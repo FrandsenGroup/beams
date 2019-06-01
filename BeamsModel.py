@@ -98,7 +98,15 @@ class BEAMSModel:
 
     def update_file_list(self, file_name=None, file_path=None):
         """ Adds full filepaths to model file dictionary. """
-        # print(file_name, file_path)
+        # If file path is not reachable, add 'Not Found' tag to the file name.
+        if not BeamsUtility.is_found(file_path):
+            file_name = file_name + ' (Not Found) '
+            # e.g. user opened a session with deleted files or files from another computer. The data is fine, files not
+
+        # Else if it is reached and their is a tagged version of it in the list, remove it (user specified correct path)
+        elif (file_name + ' (Not Found) ') in self.all_full_filepaths.keys():
+            self.all_full_filepaths.pop((file_name + ' (Not Found) '))
+
         self.all_full_filepaths[file_name] = file_path
         self.notify(FILE_CHANGED)  # Notifies the File Manager Panel
 
@@ -118,9 +126,10 @@ class BEAMSModel:
 
     def open_save_session(self, run_list):
         self.run_list = run_list
-        # self.all_full_filepaths = {}
         for run in run_list:
-            self.update_file_list(os.path.split(run.filename)[1], run.filename)
+            file_root = os.path.split(run.filename)[1]
+            self.update_file_list(file_root, run.filename)
+            self.current_formats[run.filename] = run.f_formats
         self.notify(RUN_LIST_CHANGED)
         self.notify(RUN_DATA_CHANGED)
 

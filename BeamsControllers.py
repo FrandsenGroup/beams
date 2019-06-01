@@ -97,8 +97,6 @@ class ProgramController:
         open_file.close()
 
 
-
-
 class FileManagerController:
     """ Controller responsible for managing user input on the File Manager Panel. """
     def __init__(self, file_manager_panel=None, model=None, parent=None):
@@ -240,11 +238,21 @@ class FileManagerController:
         if signal == BeamsModel.FILE_CHANGED:  # Expects list of files to add the ListWidget in FileManagerPanel
             print("Updating File Manager")
             current_files = self.get_all_files()
+
+            # First checks to see if any new files have been added to the model's file list. Adds them to the view.
             for file_root in self.model.all_full_filepaths.keys():
                 if file_root not in current_files:
                     file_item = QtWidgets.QListWidgetItem(file_root, self.file_manager.file_list)
                     file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsUserCheckable)
                     file_item.setCheckState(QtCore.Qt.Unchecked)
+
+            # Then checks to see if any files have been removed from the model's file list. Removes them from the view.
+            for file_root in current_files:
+                if file_root not in self.model.all_full_filepaths.keys():
+                    for index in range(self.file_manager.file_list.count()):
+                        if file_root == self.file_manager.file_list.item(index).text():
+                            self.file_manager.file_list.takeItem(index)
+                            break
         else:
             raise ValueError('Unexpected Signal from Model in {}'.format(self))
 
@@ -282,6 +290,7 @@ class PlotController:
                                 'Annotations': self.plot_editor.check_annotation.isChecked,
                                 'Uncertainty': self.plot_editor.check_uncertain.isChecked,
                                 'LineStyle': self.display_plot_lines}
+
         self.model.plot_parameters = self.plot_parameters
         self.set_callbacks()
 
