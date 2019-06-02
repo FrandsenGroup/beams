@@ -69,6 +69,7 @@ class BEAMSModel:
                     self.update_colors(color=run.color, used=False)
                 run.color = color
 
+        print('FIXME Changing Color')
         self.notify(RUN_DATA_CHANGED)
 
     def update_runs(self, formats):
@@ -96,18 +97,22 @@ class BEAMSModel:
         """ Prompts the re-plotting of data by notifying the PlotPanel"""
         self.notify(PARAMETER_CHANGED)  # Notifies the Plot Panel
 
-    def update_file_list(self, file_name=None, file_path=None):
+    def update_file_list(self, file_name=None, file_path=None, remove=False):
         """ Adds full filepaths to model file dictionary. """
-        # If file path is not reachable, add 'Not Found' tag to the file name.
-        if not BeamsUtility.is_found(file_path):
-            file_name = file_name + ' (Not Found) '
-            # e.g. user opened a session with deleted files or files from another computer. The data is fine, files not
+        if remove:
+            self.all_full_filepaths.pop(file_name)
+        else:
+            # If file path is not reachable, add 'Not Found' tag to the file name.
+            if not BeamsUtility.is_found(file_path):
+                file_name = file_name + ' (Not Found) '
+                # e.g. user opened a session with deleted files or files from another computer.
 
-        # Else if it is reached and their is a tagged version of it in the list, remove it (user specified correct path)
-        elif (file_name + ' (Not Found) ') in self.all_full_filepaths.keys():
-            self.all_full_filepaths.pop((file_name + ' (Not Found) '))
+            # If it is reached and their is a tagged version of it in the list, remove it (user specified correct path)
+            elif (file_name + ' (Not Found) ') in self.all_full_filepaths.keys():
+                self.all_full_filepaths.pop((file_name + ' (Not Found) '))
 
-        self.all_full_filepaths[file_name] = file_path
+            self.all_full_filepaths[file_name] = file_path
+
         self.notify(FILE_CHANGED)  # Notifies the File Manager Panel
 
     def update_visibilities(self, file=None, isolate=False):
@@ -141,6 +146,7 @@ class BEAMSModel:
                 controller.update(signal)
 
     def write_file(self, old_filename=None, new_filename=None, checked_items=None):
+
         pass
 
 
@@ -266,6 +272,9 @@ class RunData:
 
     def bin_data(self, final_bin_size=None, begin_time=None, end_time=None, slider_moving=False):
         """ Bins the asymmetry based on user specified bin size. """
+        # if begin_time < float(self.f_formats['T0Bin'])*float(self.f_formats['binsize']):
+        #     begin_time = float(self.f_formats['T0Bin'])*float(self.f_formats['binsize'])
+
         # Get the initial and new bin sizes in micro-seconds
         bin_full = float(self.f_formats['binsize'])/1000
         bin_binned = float(final_bin_size)/1000

@@ -46,6 +46,10 @@ class ProgramController:
         self.main_window_v.save_session_act.triggered.connect(lambda: self.save_session())
         self.main_window_v.open_session_act.triggered.connect(lambda: self.open_session())
         self.main_window_v.add_data_act.triggered.connect(lambda: self.add_data_file())
+        self.main_window_v.format_act.triggered.connect(lambda: self.format_files())
+
+    def format_files(self):
+        BeamsViews.FileFormatterUI()
 
     def add_data_file(self):
         """ Prompts the user for and stores full file paths in model.
@@ -61,6 +65,8 @@ class ProgramController:
         """ Prompts the user for a file path to save the current run data to and uses pickle to dump the data. """
         saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self.main_window_v, 'Specify file',
                                                                 '/home', 'BEAMS(*.beams)')[0]
+        if not saved_file_path:
+            return
 
         saved_file = open(saved_file_path, 'wb')
         pickle.dump(self.model.run_list, saved_file)
@@ -128,6 +134,21 @@ class FileManagerController:
         self.file_manager.write_button.released.connect(lambda: self.b_write())
         self.file_manager.plot_button.released.connect(lambda: self.b_plot())
         self.file_manager.convert_button.released.connect(lambda: self.b_convert())
+        self.file_manager.remove_button.released.connect(lambda: self.b_remove())
+
+    def b_remove(self):
+        def remove():
+            for file_root in selected_files:
+                for index in range(self.file_manager.file_list.count()):
+                    if file_root == self.file_manager.file_list.item(index).text():
+                        self.file_manager.file_list.takeItem(index)
+                        self.model.update_file_list(file_root, remove=True)
+                        break
+
+        selected_files = self.get_selected_files()
+        message = 'Are you sure you would like to remove all currently selected files?'
+        BeamsViews.PermissionsMessageUI(message, pos_function=remove)
+
 
     def b_add(self):
         """ Prompts the user for and stores full file paths in model.
@@ -154,7 +175,8 @@ class FileManagerController:
             BeamsViews.PermissionsMessageUI(message, pos_function=self.b_convert)
 
         elif bad_files:  # Throw error message for unsupported file types
-            message = 'The following files are not supported: \n{}'.format(bad_files)
+            message = 'The following files are not supported or cannot be found/opened: \n{}'.format(
+                [(filename + '\n') for filename in bad_files])
             BeamsViews.ErrorMessageUI(message)
 
         elif beams_files or other_dat:  # Collect the formats of each file to send to the model.
@@ -269,7 +291,6 @@ class PlotController:
         self.model = model
         self.program_controller = parent
 
-        # self.model.observers[BeamsModel.RUN_LIST_CHANGED].append(self)
         self.model.observers[BeamsModel.RUN_DATA_CHANGED].append(self)
 
         self.plot_parameters = {'XMinOne': self.plot_editor.input_xmin_one.text,
@@ -372,8 +393,11 @@ class PlotController:
                     self.plot_panel.canvas_one.axes_time.plot(times, asymmetry, color=run.color, linestyle='None',
                                                               marker='.')
                 elif not self.plot_parameters['Uncertainty']():
+                    frequencies, magnitudes = run.calculate_fft(bin_size=float(self.plot_parameters['SliderOne']()),
+                                                                asymmetry=asymmetry, times=times)
                     self.plot_panel.canvas_one.axes_time.plot(times, asymmetry, color=run.color, marker='.',
                                                               linestyle=self.plot_parameters['LineStyle']())
+                    self.plot_panel.canvas_one.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.')
                 else:
                     frequencies, magnitudes = run.calculate_fft(bin_size=float(self.plot_parameters['SliderOne']()),
                                                                 asymmetry=asymmetry, times=times)
@@ -401,8 +425,11 @@ class PlotController:
                     self.plot_panel.canvas_two.axes_time.plot(times, asymmetry, color=run.color, linestyle='None',
                                                               marker='.')
                 elif not self.plot_parameters['Uncertainty']():
+                    frequencies, magnitudes = run.calculate_fft(bin_size=float(self.plot_parameters['SliderOne']()),
+                                                                asymmetry=asymmetry, times=times)
                     self.plot_panel.canvas_two.axes_time.plot(times, asymmetry, color=run.color, marker='.',
                                                               linestyle=self.plot_parameters['LineStyle']())
+                    self.plot_panel.canvas_two.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.')
                 else:
                     frequencies, magnitudes = run.calculate_fft(bin_size=float(self.plot_parameters['SliderOne']()),
                                                                 asymmetry=asymmetry, times=times)
@@ -472,8 +499,12 @@ class RunDisplayController:
         self.model.update_visibilities(isolate=False)
 
     def inspect_file(self):
-        self.popup = BeamsViews.FileDisplayUI(filename=self.run_display.run_titles.currentText())
-        self.popup.show()
+        if BeamsUtility.is_found(self.run_display.run_titles.currentText()):
+            self.popup = BeamsViews.FileDisplayUI(filename=self.run_display.run_titles.currentText())
+            self.popup.show()
+        else:
+            message = 'File not found.'
+            BeamsViews.ErrorMessageUI(message)
 
     def inspect_hist(self):
         for run in self.model.run_list:
@@ -491,13 +522,16 @@ class RunDisplayController:
 
     def update_run_display(self):
         self.run_display.histograms.clear()
-        self.run_display.color_choices.setCurrentText(self.model.run_list[self.run_display.run_titles.currentIndex()].color)
-        self.run_display.histograms.addItems(self.model.run_list[self.run_display.run_titles.currentIndex()].f_formats['HistTitles'])
+        self.run_display.color_choices.setCurrentText(self.model.run_list[
+                                                          self.run_display.run_titles.currentIndex()].color)
+        self.run_display.histograms.addItems(self.model.run_list[
+                                                 self.run_display.run_titles.currentIndex()].f_formats['HistTitles'])
 
     def populate_run_display(self):
         if self.model.run_list:
             self.run_display.run_titles.clear()
             self.run_display.run_titles.addItems([run.filename for run in self.model.run_list])
+            # self.run_display.current_runs.addItems([run.f_formats['Title'] for run in self.model.run_list])
             # self.run_display.color_choices.setCurrentText(self.model.run_list[0].color)
             # self.run_display.histograms.addItems(self.model.run_list[0].f_formats['HistTitles'])
             self.run_display.color_choices.setEnabled(True)

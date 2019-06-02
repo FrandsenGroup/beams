@@ -74,18 +74,22 @@ class FileManagerPanel(QtWidgets.QDockWidget):
 
         self.write_button = QtWidgets.QPushButton("Write")
         self.import_button = QtWidgets.QPushButton("+")
+        self.remove_button = QtWidgets.QPushButton('-')
         self.plot_button = QtWidgets.QPushButton("Plot")
         self.convert_button = QtWidgets.QPushButton("Convert")
 
         self.import_button.setFixedWidth(30)
+        self.remove_button.setFixedWidth(30)
 
         self.write_button.setToolTip('Write currently plotted data to .dat files')
         self.import_button.setToolTip('Add files')
+        self.remove_button.setToolTip('Remove currently selected files.')
         self.plot_button.setToolTip('Plot currently selected files')
         self.convert_button.setToolTip('Convert .msr formatted files to .dat ')
 
         hbox_one = QtWidgets.QHBoxLayout()
         hbox_one.addWidget(self.import_button)
+        hbox_one.addWidget(self.remove_button)
         hbox_one.addWidget(self.convert_button)
         hbox_one.addWidget(self.plot_button)
         hbox_one.addWidget(self.write_button)
@@ -320,6 +324,8 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.header_data_label = QtWidgets.QLabel()
         self.histogram_label = QtWidgets.QLabel()
 
+        # self.current_runs = QtWidgets.QListWidget()
+
     def layout_widgets(self):
         tempWidget = QtWidgets.QWidget()
         main_layout = QtWidgets.QVBoxLayout()
@@ -340,6 +346,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         main_layout.addLayout(row_one)
         main_layout.addLayout(row_two)
         main_layout.addLayout(row_thr)
+        # main_layout.addWidget(self.current_runs)
         main_layout.addWidget(self.plot_all_button)
 
         main_layout.addStretch(1)
@@ -425,8 +432,30 @@ class RunPlot(FigureCanvas):
 class FileFormatterUI(QtWidgets.QDialog):
     def __init__(self, filenames=None):
         super(FileFormatterUI, self).__init__()
+        self.column_data = QtWidgets.QTableWidget()
+        self.data = {'col123': [1,2,3,4,5],
+                  'col222': ['asdfa','sd',2,2,4]}
+        self.column_data.setRowCount(10)
+        self.column_data.setColumnCount(8)
+        self.setData(self.column_data)
+
+        layout = QtWidgets.QHBoxLayout()
+        layout.addWidget(self.column_data)
+        self.setLayout(layout)
 
         self.exec_()
+
+    def populate_table(self):
+        pass
+
+    def setData(self, table):
+        horHeaders = []
+        for n, key in enumerate(sorted(self.data.keys())):
+            horHeaders.append(key)
+            for m, item in enumerate(self.data[key]):
+                newitem = QtWidgets.QTableWidgetItem(item)
+                table.setItem(m, n, newitem)
+        table.setHorizontalHeaderLabels(horHeaders)
 
 
 # Other GUI's
@@ -561,6 +590,7 @@ class ErrorMessageUI(QtWidgets.QDialog):
 
         col.addWidget(message)
         col.addWidget(pos_button)
+        col.setAlignment(message, QtCore.Qt.AlignCenter)
         col.setAlignment(pos_button, QtCore.Qt.AlignCenter)
         self.setLayout(col)
 
@@ -590,6 +620,7 @@ class PermissionsMessageUI(QtWidgets.QDialog):
 
         col = QtWidgets.QVBoxLayout()
         col.addWidget(message)
+        col.setAlignment(message, QtCore.Qt.AlignCenter)
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.pos_button)
         row.addWidget(self.neg_button)
