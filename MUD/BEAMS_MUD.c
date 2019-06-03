@@ -187,16 +187,9 @@ readingMuSRFiles(int argc, char* argv[])
 		if(verbose)
 			printf("\tBin Size : %.16lf\n", secsPerBin[0]); 
 		
-		UINT32 T0_bin[1];
-		MUD_getHistT0_Bin(fh, 1, T0_bin);
-		fprintf(fp,"%d,",T0_bin[0]);
-
-		if(verbose)
-			printf("\tT0 Bin : %d\n", T0_bin[0]);
-
 		fprintf(fp, "%d\n", 3);
 		if(verbose)
-			printf("\tHeader Rows : %d\n", 3);
+			printf("\tHeader Rows : %d\n\n", 3);
 
 		/*
 		UINT32 Bkgd[1];
@@ -264,6 +257,81 @@ readingMuSRFiles(int argc, char* argv[])
 
 			if (verbose)
 				printf("\tRetrieved data from histogram %d (%s), with %d bins.\n",i+1,hist_title,num_bins[0]);		
+		}
+
+		for(UINT32 i = 0; i < num_hists[0]; i++)
+		{
+			UINT32 Bkgd1[1];
+			MUD_getHistBkgd1(fh, i+1, Bkgd1);
+			fprintf(fp, "%d", Bkgd1[0]);
+			if(i < num_hists[0]-1)
+			{
+				fprintf(fp, ",");
+			}
+			else
+			{
+				fprintf(fp, "\n");
+			}
+		}
+
+		for(UINT32 i = 0; i < num_hists[0]; i++)
+		{
+			UINT32 Bkgd2[1];
+			MUD_getHistBkgd2(fh, i+1, Bkgd2);
+			fprintf(fp, "%d", Bkgd2[0]);
+			if(i < num_hists[0]-1)
+			{
+				fprintf(fp, ",");
+			}
+			else
+			{
+				fprintf(fp, "\n");
+			}
+		}
+
+		for(UINT32 i = 0; i < num_hists[0]; i++)
+		{
+			UINT32 GoodBin1[1];
+			MUD_getHistGoodBin1(fh, i+1, GoodBin1);
+			fprintf(fp, "%d", GoodBin1[0]);
+			if(i < num_hists[0]-1)
+			{
+				fprintf(fp, ",");
+			}
+			else
+			{
+				fprintf(fp, "\n");
+			}
+		}
+
+		for(UINT32 i = 0; i < num_hists[0]; i++)
+		{
+			UINT32 GoodBin2[1];
+			MUD_getHistGoodBin2(fh, i+1, GoodBin2);
+			fprintf(fp, "%d", GoodBin2[0]);
+			if(i < num_hists[0]-1)
+			{
+				fprintf(fp, ",");
+			}
+			else
+			{
+				fprintf(fp, "\n");
+			}
+		}
+
+		for(UINT32 i = 0; i < num_hists[0]; i++)
+		{
+			UINT32 T0[1];
+			MUD_getHistT0_Bin(fh, i+1, T0);
+			fprintf(fp, "%d", T0[0]);
+			if(i < num_hists[0]-1)
+			{
+				fprintf(fp, ",");
+			}
+			else
+			{
+				fprintf(fp, "\n");
+			}
 		}
 		
 		if (verbose)
