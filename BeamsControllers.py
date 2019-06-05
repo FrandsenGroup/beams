@@ -48,7 +48,8 @@ class ProgramController:
         self.main_window_v.add_data_act.triggered.connect(lambda: self.add_data_file())
         self.main_window_v.format_act.triggered.connect(lambda: self.format_files())
 
-    def format_files(self):
+    @staticmethod
+    def format_files():
         BeamsViews.FileFormatterUI()
 
     def add_data_file(self):
@@ -135,8 +136,18 @@ class FileManagerController:
         self.file_manager.plot_button.released.connect(lambda: self.b_plot())
         self.file_manager.convert_button.released.connect(lambda: self.b_convert())
         self.file_manager.remove_button.released.connect(lambda: self.b_remove())
+        self.file_manager.select_all.stateChanged.connect(lambda: self.c_select_all())
+
+    def c_select_all(self):
+        """ Selects or deselects all files based on the checked state of the select all checkbox. """
+        for index in range(self.file_manager.file_list.count()):
+            if self.file_manager.select_all.checkState():
+                self.file_manager.file_list.item(index).setCheckState(QtCore.Qt.Checked)
+            else:
+                self.file_manager.file_list.item(index).setCheckState(QtCore.Qt.Unchecked)
 
     def b_remove(self):
+        """ Removes the currently selected files from the file manager. """
         def remove():
             for file_root in selected_files:
                 for index in range(self.file_manager.file_list.count()):
@@ -148,7 +159,6 @@ class FileManagerController:
         selected_files = self.get_selected_files()
         message = 'Are you sure you would like to remove all currently selected files?'
         BeamsViews.PermissionsMessageUI(message, pos_function=remove)
-
 
     def b_add(self):
         """ Prompts the user for and stores full file paths in model.

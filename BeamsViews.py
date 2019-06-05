@@ -72,6 +72,8 @@ class FileManagerPanel(QtWidgets.QDockWidget):
 
         tempWidget = QtWidgets.QWidget()
 
+        self.select_all = QtWidgets.QCheckBox()
+        self.select_all.setFixedWidth(20)
         self.write_button = QtWidgets.QPushButton("Write")
         self.import_button = QtWidgets.QPushButton("+")
         self.remove_button = QtWidgets.QPushButton('-')
@@ -86,8 +88,11 @@ class FileManagerPanel(QtWidgets.QDockWidget):
         self.remove_button.setToolTip('Remove currently selected files.')
         self.plot_button.setToolTip('Plot currently selected files')
         self.convert_button.setToolTip('Convert .msr formatted files to .dat ')
+        self.select_all.setToolTip('Select all files.')
 
         hbox_one = QtWidgets.QHBoxLayout()
+        hbox_one.addWidget(self.select_all)
+        hbox_one.setAlignment(self.select_all, QtCore.Qt.AlignCenter)
         hbox_one.addWidget(self.import_button)
         hbox_one.addWidget(self.remove_button)
         hbox_one.addWidget(self.convert_button)
@@ -456,6 +461,145 @@ class FileFormatterUI(QtWidgets.QDialog):
                 newitem = QtWidgets.QTableWidgetItem(item)
                 table.setItem(m, n, newitem)
         table.setHorizontalHeaderLabels(horHeaders)
+
+
+class FileFormatterGUI(object):
+    def setupUi(self, Dialog):
+        Dialog.setObjectName("Dialog")
+        Dialog.resize(779, 341)
+        self.tabWidget = QtWidgets.QTabWidget(Dialog)
+        self.tabWidget.setGeometry(QtCore.QRect(0, 0, 781, 341))
+        self.tabWidget.setObjectName("tabWidget")
+
+        self.file_format = QtWidgets.QWidget()
+        self.file_format.setObjectName("file_format")
+
+        self.plainTextEdit = QtWidgets.QPlainTextEdit(self.file_format)
+        self.plainTextEdit.setGeometry(QtCore.QRect(10, 40, 231, 211))
+        self.plainTextEdit.setObjectName("plainTextEdit")
+
+        self.pushButton = QtWidgets.QPushButton(self.file_format)
+        self.pushButton.setGeometry(QtCore.QRect(10, 260, 75, 23))
+        self.pushButton.setObjectName("pushButton")
+
+        self.comboBox_2 = QtWidgets.QComboBox(self.file_format)
+        self.comboBox_2.setGeometry(QtCore.QRect(90, 260, 151, 21))
+        self.comboBox_2.setObjectName("comboBox_2")
+
+        self.pushButton_2 = QtWidgets.QPushButton(self.file_format)
+        self.pushButton_2.setGeometry(QtCore.QRect(10, 290, 75, 23))
+        self.pushButton_2.setObjectName("pushButton_2")
+
+        self.comboBox_3 = QtWidgets.QComboBox(self.file_format)
+        self.comboBox_3.setGeometry(QtCore.QRect(90, 290, 151, 22))
+        self.comboBox_3.setObjectName("comboBox_3")
+
+        self.tableView = QtWidgets.QTableView(self.file_format)
+        self.tableView.setGeometry(QtCore.QRect(260, 40, 401, 211))
+        self.tableView.setTextElideMode(QtCore.Qt.ElideLeft)
+        self.tableView.setObjectName("tableView")
+
+        self.pushButton_3 = QtWidgets.QPushButton(self.file_format)
+        self.pushButton_3.setGeometry(QtCore.QRect(680, 60, 75, 23))
+        self.pushButton_3.setObjectName("pushButton_3")
+
+        self.pushButton_4 = QtWidgets.QPushButton(self.file_format)
+        self.pushButton_4.setGeometry(QtCore.QRect(680, 110, 75, 23))
+        self.pushButton_4.setObjectName("pushButton_4")
+
+        self.pushButton_5 = QtWidgets.QPushButton(self.file_format)
+        self.pushButton_5.setGeometry(QtCore.QRect(680, 160, 75, 23))
+        self.pushButton_5.setObjectName("pushButton_5")
+
+        self.pushButton_6 = QtWidgets.QPushButton(self.file_format)
+        self.pushButton_6.setGeometry(QtCore.QRect(680, 210, 75, 23))
+        self.pushButton_6.setObjectName("pushButton_6")
+
+        self.lineEdit_2 = QtWidgets.QLineEdit(self.file_format)
+        self.lineEdit_2.setGeometry(QtCore.QRect(512, 260, 101, 21))
+        self.lineEdit_2.setObjectName("lineEdit_2")
+
+        self.label = QtWidgets.QLabel(self.file_format)
+        self.label.setGeometry(QtCore.QRect(290, 260, 111, 20))
+        self.label.setObjectName("label")
+
+        self.label_2 = QtWidgets.QLabel(self.file_format)
+        self.label_2.setGeometry(QtCore.QRect(430, 260, 101, 21))
+        self.label_2.setObjectName("label_2")
+
+        self.spinBox = QtWidgets.QSpinBox(self.file_format)
+        self.spinBox.setGeometry(QtCore.QRect(370, 260, 42, 22))
+        self.spinBox.setObjectName("spinBox")
+
+        self.label_3 = QtWidgets.QLabel(self.file_format)
+        self.label_3.setGeometry(QtCore.QRect(10, 10, 231, 21))
+        self.label_3.setObjectName("label_3")
+
+        self.label_4 = QtWidgets.QLabel(self.file_format)
+        self.label_4.setGeometry(QtCore.QRect(280, 0, 361, 41))
+        self.label_4.setWordWrap(True)
+        self.label_4.setObjectName("label_4")
+
+        self.tabWidget.addTab(self.file_format, "")
+
+        self.plot_format = QtWidgets.QWidget()
+        self.plot_format.setObjectName("plot_format")
+
+        self.comboBox = QtWidgets.QComboBox(self.plot_format)
+        self.comboBox.setGeometry(QtCore.QRect(530, 150, 121, 22))
+        self.comboBox.setObjectName("comboBox")
+
+        self.comboBox_4 = QtWidgets.QComboBox(self.plot_format)
+        self.comboBox_4.setGeometry(QtCore.QRect(380, 150, 121, 22))
+        self.comboBox_4.setObjectName("comboBox_4")
+
+        self.listView = QtWidgets.QListView(self.plot_format)
+        self.listView.setGeometry(QtCore.QRect(30, 60, 256, 192))
+        self.listView.setObjectName("listView")
+
+        self.pushButton_7 = QtWidgets.QPushButton(self.plot_format)
+        self.pushButton_7.setGeometry(QtCore.QRect(380, 200, 75, 23))
+        self.pushButton_7.setObjectName("pushButton_7")
+
+        self.pushButton_8 = QtWidgets.QPushButton(self.plot_format)
+        self.pushButton_8.setGeometry(QtCore.QRect(480, 200, 75, 23))
+        self.pushButton_8.setObjectName("pushButton_8")
+
+        self.pushButton_9 = QtWidgets.QPushButton(self.plot_format)
+        self.pushButton_9.setGeometry(QtCore.QRect(580, 200, 75, 23))
+        self.pushButton_9.setObjectName("pushButton_9")
+
+        self.label_5 = QtWidgets.QLabel(self.plot_format)
+        self.label_5.setGeometry(QtCore.QRect(370, 70, 311, 51))
+        self.label_5.setWordWrap(True)
+        self.label_5.setObjectName("label_5")
+
+        self.tabWidget.addTab(self.plot_format, "")
+
+        self.retranslateUi(Dialog)
+        self.tabWidget.setCurrentIndex(0)
+        QtCore.QMetaObject.connectSlotsByName(Dialog)
+
+    def retranslateUi(self, Dialog):
+        _translate = QtCore.QCoreApplication.translate
+        Dialog.setWindowTitle(_translate("Dialog", "File and Plot Format"))
+        self.pushButton.setText(_translate("Dialog", "Inspect File"))
+        self.pushButton_2.setText(_translate("Dialog", "Inspect His"))
+        self.pushButton_3.setText(_translate("Dialog", "Clear"))
+        self.pushButton_4.setText(_translate("Dialog", "Apply"))
+        self.pushButton_5.setText(_translate("Dialog", "Done"))
+        self.pushButton_6.setText(_translate("Dialog", "Cancel"))
+        self.label.setText(_translate("Dialog", "Header Rows"))
+        self.label_2.setText(_translate("Dialog", "Size of Bins (µs)"))
+        self.label_3.setText(_translate("Dialog", "Select the files to apply this format to."))
+        self.label_4.setText(_translate("Dialog", "Specify the following data for each column. Columns with incomplete data can not be used"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.file_format), _translate("Dialog", "File Format"))
+        self.pushButton_7.setText(_translate("Dialog", "Apply"))
+        self.pushButton_8.setText(_translate("Dialog", "Done"))
+        self.pushButton_9.setText(_translate("Dialog", "Cancel"))
+        self.label_5.setText(_translate("Dialog", "If you are using a file containing histograms, specify which ones are to be used to calculate the asymmetry. Select the files on the left that will be using this format."))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.plot_format), _translate("Dialog", "Plot Format"))
+
 
 
 # Other GUI's

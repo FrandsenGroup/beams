@@ -180,16 +180,24 @@ class RunData:
         self.visibility = visibility
         self.color = color
         self.filename = filename
+        self.t0 = 0
+        self.start_one = 0
+        self.start_two = 0
+        self.end_one = 0
+        self.end_two = 0
 
         self.histogram_data = self.retrieve_histogram_data()
 
-        self.uncertainty = self.calculate_uncertainty(hist_one=self.f_formats['CalcHists'][0],
-                                                      hist_two=self.f_formats['CalcHists'][1])
         bkg_one, bkg_two = self.calculate_background_radiation(hist_one=self.f_formats['CalcHists'][0],
                                                                hist_two=self.f_formats['CalcHists'][1])
+
         self.asymmetry = self.calculate_asymmetry(hist_one=self.f_formats['CalcHists'][0],
                                                   hist_two=self.f_formats['CalcHists'][1],
                                                   bkg_one=bkg_one, bkg_two=bkg_two)
+
+        self.uncertainty = self.calculate_uncertainty(hist_one=self.f_formats['CalcHists'][0],
+                                                      hist_two=self.f_formats['CalcHists'][1])
+
         del self.histogram_data
 
     def __bool__(self):
@@ -207,14 +215,19 @@ class RunData:
 
     def calculate_uncertainty(self, hist_one=None, hist_two=None):
         """ Calculates the uncertainty based on histograms. """
-        d_front = np.sqrt(self.histogram_data[hist_two])
-        d_back = np.sqrt(self.histogram_data[hist_one])
-        uncertainty = np.array(np.sqrt(np.power((2*self.histogram_data[hist_one] /
-                                                 np.power(self.histogram_data[hist_two] +
-                                                          self.histogram_data[hist_one], 2)*d_front), 2) +
-                                       np.power((2*self.histogram_data[hist_two] /
-                                                 np.power(self.histogram_data[hist_two] +
-                                                          self.histogram_data[hist_one], 2)*d_back), 2)))
+
+        start_bin_one, start_bin_two, end_bin_one, end_bin_two = self.calculate_start_end(hist_one, hist_two)
+
+        uncertainty = np.zeros((end_bin_one - start_bin_one) + self.t0 + 1)
+
+        d_one = np.sqrt(self.histogram_data.loc[start_bin_one:end_bin_one, hist_one])
+        d_two = np.sqrt(self.histogram_data.loc[start_bin_two:end_bin_two, hist_two])
+        h_one = self.histogram_data.loc[start_bin_one:end_bin_one, hist_one]
+        h_two = self.histogram_data.loc[start_bin_two:end_bin_two, hist_two]
+
+        uncertainty[self.t0::] = np.array(np.sqrt(np.power((2 * h_one * d_two / np.power(h_two + h_one, 2)), 2) +
+                                                  np.power((2 * h_two * d_one / np.power(h_two + h_one, 2)), 2)))
+
         np.nan_to_num(uncertainty, copy=False)
         return uncertainty
 
@@ -232,22 +245,60 @@ class RunData:
         del background
         return [bkg_one, bkg_two]
 
+    def calculate_start_end(self, hist_one=None, hist_two=None):
+        """ Based on the T0, GoodBin1 and GoodBin2 of each histogram, determine the sections
+            to be used for the asymmetry. """
+        # Worst Case Example (nothing matches):
+        # Histogram 1: T0 is 979, GoodBin 1 is 1030, GoodBin2 is 27356
+        # Histogram 2: T0 is 982, GoodBin 1 is 1000, GoodBin2 is 27648
+        # 1)    We want to find the greater difference of the two between their T0 Bin and their GoodBin1. In this case
+        #       that would be 51 (1030 - 979) rather then 18 (1000 - 982).
+        # 2)    Add this greater separation to each histogram's T0 and this is our start bin for each histogram.
+        #       (1030 for Histogram 1 and 1033 for Histogram 2)
+        # 3)    Find the number of bins in the 'Good' area for each histogram.
+        # 4)    Choose end bins such that we only use overlapping area.
+
+        t_one = int(self.f_formats['T0'][hist_one])
+        t_two = int(self.f_formats['T0'][hist_two])
+        start_one = int(self.f_formats['GoodBinOne'][hist_one])
+        start_two = int(self.f_formats['GoodBinOne'][hist_two])
+        end_one = int(self.f_formats['GoodBinTwo'][hist_one])
+        end_two = int(self.f_formats['GoodBinTwo'][hist_two])
+
+        dif_one = start_one - t_one
+        dif_two = start_two - t_two
+
+        init_dif = dif_one if dif_one > dif_two else dif_two
+        start_bin_one = t_one + init_dif
+        start_bin_two = t_two + init_dif
+
+        num_good_one = end_one - start_bin_one
+        num_good_two = end_two - start_bin_two
+
+        num_cross_good = num_good_one if num_good_one < num_good_two else num_good_two
+        end_bin_one = start_bin_one + num_cross_good
+        end_bin_two = start_bin_two + num_cross_good
+
+        self.t0 = init_dif
+
+        print('{} and {} (Start->End): {}->{} : {}->{}. T0 = {}'.format(hist_one, hist_two, start_bin_one, end_bin_one,
+                                                                        start_bin_two, end_bin_two, self.t0))
+
+        return [start_bin_one, start_bin_two, end_bin_one, end_bin_two]
+
     def calculate_asymmetry(self, hist_one=None, hist_two=None, bkg_one=None, bkg_two=None):
-        """ Calculate asymmetry based on histograms. """
-        # We want to ensure the start and ends of the arrays match, while staying in 'Good' area.
-        start_bin = int(self.f_formats['GoodBinOne'][hist_one])
-        if start_bin < int(self.f_formats['GoodBinOne'][hist_two]):
-            start_bin = int(self.f_formats['GoodBinOne'][hist_two])
+        """ Calculate asymmetry based on the overlapping 'good' area of the histograms. """
 
-        end_bin = int(self.f_formats['GoodBinTwo'][hist_one])
-        if end_bin > int(self.f_formats['GoodBinTwo'][hist_two]):
-            end_bin = int(self.f_formats['GoodBinTwo'][hist_two])
+        start_bin_one, start_bin_two, end_bin_one, end_bin_two = self.calculate_start_end(hist_one, hist_two)
 
-        asymmetry = ((self.histogram_data.loc[start_bin:end_bin, hist_one] - bkg_one) -
-                     (self.histogram_data.loc[start_bin:end_bin, hist_two] - bkg_two)) / \
-                    ((self.histogram_data.loc[start_bin:end_bin, hist_two] - bkg_two) +
-                     (self.histogram_data.loc[start_bin:end_bin, hist_one] - bkg_one))
-        asymmetry.fillna(0.0, inplace=True)
+        asymmetry = np.zeros((end_bin_one - start_bin_one) + self.t0 + 1)
+
+        hist_good_one = self.histogram_data.loc[start_bin_one:end_bin_one, hist_one]
+        hist_good_two = self.histogram_data.loc[start_bin_two:end_bin_two, hist_two]
+
+        asymmetry[self.t0::] = ((hist_good_one - bkg_one) - (hist_good_two - bkg_two)) / \
+                               ((hist_good_two - bkg_two) + (hist_good_two - bkg_one))
+
         return asymmetry
 
     @staticmethod
@@ -272,9 +323,6 @@ class RunData:
 
     def bin_data(self, final_bin_size=None, begin_time=None, end_time=None, slider_moving=False):
         """ Bins the asymmetry based on user specified bin size. """
-        # if begin_time < float(self.f_formats['T0Bin'])*float(self.f_formats['binsize']):
-        #     begin_time = float(self.f_formats['T0Bin'])*float(self.f_formats['binsize'])
-
         # Get the initial and new bin sizes in micro-seconds
         bin_full = float(self.f_formats['binsize'])/1000
         bin_binned = float(final_bin_size)/1000
@@ -302,7 +350,7 @@ class RunData:
                 binned_asymmetry[new_index] = np.mean(self.asymmetry[binned_bins:(binned_bins+binned_indices_per_bin)])
                 binned_bins += binned_indices_per_bin
 
-        else:  # If slider is moving we will pre-allocate it here with np.empty()
+        else:  # If slider is moving we will pre-allocate uncertainty here with np.empty()
             binned_uncertainty = np.empty(binned_indices_total)
             
             for new_index in range(binned_indices_total):

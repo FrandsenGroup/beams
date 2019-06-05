@@ -72,6 +72,8 @@ def get_header(filename=None, header_rows=None):
             background_two = file.readline().rstrip('\n').rsplit(',')
             good_bins_one = file.readline().rstrip('\n').rsplit(',')
             good_bins_two = file.readline().rstrip('\n').rsplit(',')
+            initial_time = file.readline().rstrip('\n').rsplit(',')
+
         header_data = {k: v for k, v in zip(keys, values)}
         header_data['HistTitles'] = hist_titles
         header_data['HeaderRows'] = 3
@@ -79,6 +81,7 @@ def get_header(filename=None, header_rows=None):
         header_data['BkgdTwo'] = {k: v for k, v in zip(hist_titles, background_two)}
         header_data['GoodBinOne'] = {k: v for k, v in zip(hist_titles, good_bins_one)}
         header_data['GoodBinTwo'] = {k: v for k, v in zip(hist_titles, good_bins_two)}
+        header_data['T0'] = {k: v for k, v in zip(hist_titles, initial_time)}
 
     elif check_ext(filename, '.dat'):
         header_data = []
