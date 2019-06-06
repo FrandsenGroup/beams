@@ -229,9 +229,10 @@ class RunData:
         h_two = self.histogram_data.loc[start_bin_two-1:end_bin_two, hist_two]
 
         uncertainty = np.array(np.sqrt(np.power((2 * h_one * d_two / np.power(h_two + h_one, 2)), 2) +
-                                                  np.power((2 * h_two * d_one / np.power(h_two + h_one, 2)), 2)))
+                                       np.power((2 * h_two * d_one / np.power(h_two + h_one, 2)), 2)))
 
         np.nan_to_num(uncertainty, copy=False)
+
         return uncertainty
 
     def calculate_background_radiation(self, hist_one=None, hist_two=None):
@@ -246,6 +247,7 @@ class RunData:
         bkg_two = np.mean(background)
 
         del background
+
         return [bkg_one, bkg_two]
 
     def calculate_start_end(self, hist_one=None, hist_two=None):
@@ -317,6 +319,7 @@ class RunData:
         y_smooth = sp.UnivariateSpline(frequencies, y_values)
         y_smooth.set_smoothing_factor(0)
         y_smooth = y_smooth(x_smooth)
+
         return [x_smooth, y_smooth]
 
     def bin_data(self, final_bin_size=None, begin_time=None, end_time=None, slider_moving=False):
@@ -325,47 +328,48 @@ class RunData:
         # Get the initial and new bin sizes in micro-seconds
         bin_full = float(self.f_formats['binsize'])/1000
         bin_binned = float(final_bin_size)/1000
+        num_bins = len(self.asymmetry)
 
         if begin_time < self.t0 * bin_full:
             begin_time = self.t0 * bin_full
 
-        # Based on the chosen x values we can single out an area of the data we are going to bin
-        # Section of full array that is of interest [initial_bin:final_bin]
-        initial_bin = int(np.floor(begin_time / bin_full))
-
         # Determine how large the bins and binned arrays will be so we can pre-allocate them (much faster).
         binned_indices_per_bin = int(np.round(bin_binned/bin_full))  # FIXME .floor?
         print('binned_indices_per_bin = {}'.format(binned_indices_per_bin))
-        binned_indices_total = int(np.floor((float(end_time)-float(begin_time))/bin_binned))
+
+        binned_indices_total = int(np.floor(num_bins / binned_indices_per_bin))
         print('binned_indices_total = {}'.format(binned_indices_total))
-        leftover_bins = int(len(self.asymmetry) % binned_indices_per_bin)
+
+        leftover_bins = int(num_bins % binned_indices_per_bin)
         print('leftover_bins = {}'.format(leftover_bins))
+
         time_per_binned = binned_indices_per_bin * bin_full
         print('time_per_binned = {}'.format(time_per_binned))
 
-        # Pre-allocate Asymmetry
-        binned_asymmetry = np.empty(binned_indices_total)
-
         # Create the Time Array
-        binned_time = np.arange(binned_indices_total) * time_per_binned + begin_time + time_per_binned / 2
+        binned_time = (np.arange(binned_indices_total) * time_per_binned) + (self.t0 * bin_full) + (time_per_binned / 2)
 
-        binned_bins = initial_bin
-        if slider_moving:  # If slider is moving we won't calculate the uncertainty
+        if slider_moving:
+            if leftover_bins:
+                reshaped_asymmetry = np.reshape(self.asymmetry[:-leftover_bins],
+                                              (binned_indices_total, binned_indices_per_bin))
+            else:
+                reshaped_asymmetry = np.reshape(self.asymmetry, (binned_indices_total, binned_indices_per_bin))
+
             binned_uncertainty = []
-            start = time.time()
-            for new_index in range(binned_indices_total):
-                # Takes the mean of one full section of the area and stores it in one bin.
-                binned_asymmetry[new_index] = np.mean(self.asymmetry[binned_bins:(binned_bins+binned_indices_per_bin)])
-                binned_bins += binned_indices_per_bin
-            print('Competition BEAMS! got {}'.format(time.time() - start))
+            binned_asymmetry = np.apply_along_axis(np.mean, 1, reshaped_asymmetry)
 
-        else:  # If slider is moving we will pre-allocate uncertainty here with np.empty()
-            binned_uncertainty = np.empty(binned_indices_total)
-            
-            for new_index in range(binned_indices_total):
-                binned_asymmetry[new_index] = np.mean(self.asymmetry[binned_bins:(binned_bins+binned_indices_per_bin)])
-                binned_uncertainty[new_index] = np.sqrt(np.sum([u**2 for u in self.uncertainty[binned_bins:(binned_bins
-                                                + binned_indices_per_bin)]]))/binned_indices_per_bin
-                binned_bins += binned_indices_per_bin
+        else:
+            if leftover_bins:
+                reshaped_asymmetry = np.reshape(self.asymmetry[:-leftover_bins],
+                                              (binned_indices_total, binned_indices_per_bin))
+                reshaped_uncertainty = np.reshape(self.uncertainty[:-leftover_bins],
+                                                (binned_indices_total, binned_indices_per_bin))
+            else:
+                reshaped_asymmetry = np.reshape(self.asymmetry, (binned_indices_total, binned_indices_per_bin))
+                reshaped_uncertainty = np.reshape(self.uncertainty, (binned_indices_total, binned_indices_per_bin))
+
+            binned_asymmetry = np.apply_along_axis(np.mean, 1, reshaped_asymmetry)
+            binned_uncertainty = 1/binned_indices_per_bin * np.sqrt(np.apply_along_axis(np.sum, 1, reshaped_uncertainty**2))
 
         return [binned_asymmetry, binned_time, binned_uncertainty]

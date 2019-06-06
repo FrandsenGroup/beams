@@ -394,6 +394,8 @@ class PlotController:
         if not self.plot_parameters['YAutoOne']():
             self.plot_panel.canvas_one.axes_time.set_ylim(float(self.plot_parameters['YMinOne']()),
                                                           float(self.plot_parameters['YMaxOne']()))
+        self.plot_panel.canvas_one.axes_time.set_xlim(float(self.plot_parameters['XMinOne']()),
+                                                      float(self.plot_parameters['XMaxOne']()))
         for run in self.model.run_list:
             if run.visibility:
                 asymmetry, times, uncertainty = run.bin_data(final_bin_size=float(self.plot_parameters['SliderOne']()),
@@ -426,6 +428,9 @@ class PlotController:
         if not self.plot_parameters['YAutoTwo']():
             self.plot_panel.canvas_two.axes_time.set_ylim(float(self.plot_parameters['YMinTwo']()),
                                                           float(self.plot_parameters['YMaxTwo']()))
+
+        self.plot_panel.canvas_two.axes_time.set_xlim(float(self.plot_parameters['XMinTwo']()),
+                                                      float(self.plot_parameters['XMaxTwo']()))
         for run in self.model.run_list:
             if run.visibility:
                 asymmetry, times, uncertainty = run.bin_data(final_bin_size=float(self.plot_parameters['SliderTwo']()),
