@@ -219,7 +219,8 @@ class FileManagerController:
     def b_write(self):
         """ Launches the Writer GUI.
             Note: The change in the model will notify and result in update of GUI. See update(). """
-        self.popup = WriterController(model=self.model)
+        # self.popup = WriterController(model=self.model)
+        self.model.write_file()
 
     def prompt_formats(self, b_files, o_files):
         """ Collects the formats of the files user selected to plot. Formats for BEAMS files can

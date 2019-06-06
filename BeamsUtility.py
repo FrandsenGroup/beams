@@ -75,8 +75,8 @@ def get_header(filename=None, header_rows=None):
             initial_time = file.readline().rstrip('\n').rsplit(',')
 
         header_data = {k: v for k, v in zip(keys, values)}
+        print(header_data)
         header_data['HistTitles'] = hist_titles
-        header_data['HeaderRows'] = 3
         header_data['BkgdOne'] = {k: v for k, v in zip(hist_titles, background_one)}
         header_data['BkgdTwo'] = {k: v for k, v in zip(hist_titles, background_two)}
         header_data['GoodBinOne'] = {k: v for k, v in zip(hist_titles, good_bins_one)}
@@ -94,7 +94,7 @@ def get_header(filename=None, header_rows=None):
     return header_data
 
 
-def get_histograms(filename=None, skiprows=3, histogram=None):
+def get_histograms(filename=None, skiprows=None, histogram=None):
     """ Gets the histogram(s) from a specified .dat file, does not check retrieved data.
         User can specify a particular histogram to retrieve or None to retrieve all. """
     if histogram:
@@ -103,7 +103,7 @@ def get_histograms(filename=None, skiprows=3, histogram=None):
         except ValueError:
             raise InvalidFileFormat
     else:
-        histograms = pd.read_csv(filename, skiprows=skiprows)
+        histograms = pd.read_csv(filename, skiprows=skiprows-1)
     return histograms
 
 

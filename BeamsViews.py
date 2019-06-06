@@ -179,9 +179,9 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
         self.input_ymax_two.setFixedWidth(50)
 
         self.input_xmin_one.setText("1")
-        self.input_xmin_two.setText("1")
+        self.input_xmin_two.setText("0")
         self.input_xmax_one.setText("4")
-        self.input_xmax_two.setText("8")
+        self.input_xmax_two.setText("10")
         self.input_ymin_one.setText("-0.5")
         self.input_ymin_two.setText("0.5")
         self.input_ymax_one.setText("-0.5")
