@@ -646,14 +646,14 @@ class WriterController:
                         file_path = os.path.splitext(file_path)[0]
                         file_path += '({}).dat'.format(count)
                 else:
-                    file_path = os.path.splitext(run.filename)[0] + '_data.dat'
+                    file_path = os.path.splitext(run.filename)[0] + '.asy'
 
                 if self.writer_gui.radio_binned.isChecked():
-                    np.savetxt(file_path, np.c_[run.binned_asymmetry, run.binned_time, run.binned_uncertainty],
-                               fmt='%2.4f, %2.9f, %2.4f', header='BEAMS\nAsymmetry, Time, Uncertainty')
+                    np.savetxt(file_path, np.c_[run.binned_time, run.binned_asymmetry, run.binned_uncertainty],
+                               fmt='%2.4f, %2.9f, %2.4f', header='BEAMS\nTime (us), Asymmetry, Uncertainty')
                 else:
-                    np.savetxt(file_path, np.c_[run.asymmetry, run.time, run.uncertainty],
-                               fmt='%2.4f, %2.9f, %2.4f', header='BEAMS\nAsymmetry, Time, Uncertainty')
+                    np.savetxt(file_path, np.c_[run.time, run.asymmetry, run.uncertainty],
+                               fmt='%2.4f, %2.9f, %2.4f', header='BEAMS\nTime (us), Asymmetry, Uncertainty')
                 count += 1
 
     def remove_file(self):

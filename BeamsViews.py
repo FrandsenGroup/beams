@@ -634,7 +634,7 @@ class WriteDataUI(QtWidgets.QDialog):
         self.write_all = QtWidgets.QPushButton('Write All')
         self.done = QtWidgets.QPushButton('Done')
         self.input_filename = QtWidgets.QLineEdit()
-        self.input_filename.setPlaceholderText('Default is [filename]_data.dat')
+        self.input_filename.setPlaceholderText('Default is [filename].asy')
         self.check_full = QtWidgets.QCheckBox()
         self.check_full.setChecked(False)
         self.check_binned = QtWidgets.QCheckBox()
