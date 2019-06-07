@@ -140,14 +140,14 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
 
     def init_sliders(self):
         self.slider_one = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        self.slider_one.setMinimum(5)
+        self.slider_one.setMinimum(0)
         self.slider_one.setMaximum(500)
         self.slider_one.setValue(150)
         self.slider_one.setTickPosition(QtWidgets.QSlider.TicksBothSides)
         self.slider_one.setTickInterval(20)
 
         self.slider_two = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        self.slider_two.setMinimum(5)
+        self.slider_two.setMinimum(0)
         self.slider_two.setMaximum(500)
         self.slider_two.setValue(150)
         self.slider_two.setTickPosition(QtWidgets.QSlider.TicksBothSides)
@@ -618,6 +618,7 @@ class WriteDataUI(QtWidgets.QDialog):
     def __init__(self):
         super(WriteDataUI, self).__init__()
         self.init_UI()
+        # self.exec_()
 
     def init_UI(self):
         self.create_widgets()
@@ -625,22 +626,19 @@ class WriteDataUI(QtWidgets.QDialog):
 
     def create_widgets(self):
         self.file_list = QtWidgets.QComboBox()
-        self.select_folder = QtWidgets.QPushButton('Select Folder')
+        self.select_folder = QtWidgets.QPushButton('Custom')
         self.skip_file = QtWidgets.QPushButton('Skip File')
         self.write_file = QtWidgets.QPushButton('Write')
         self.write_all = QtWidgets.QPushButton('Write All')
         self.done = QtWidgets.QPushButton('Done')
         self.input_filename = QtWidgets.QLineEdit()
         self.input_filename.setPlaceholderText('Default is [filename]_data.dat')
-        self.check_asymmetry = QtWidgets.QCheckBox()
-        self.check_asymmetry.setChecked(True)
-        self.check_time = QtWidgets.QCheckBox()
-        self.check_time.setChecked(True)
-        self.check_uncertainty = QtWidgets.QCheckBox()
-        self.check_uncertainty.setChecked(True)
-        self.label_asymmetry = QtWidgets.QLabel('Asymmetry')
-        self.label_time = QtWidgets.QLabel('Time')
-        self.label_uncertainty = QtWidgets.QLabel('Uncertainty')
+        self.check_full = QtWidgets.QCheckBox()
+        self.check_full.setChecked(False)
+        self.check_binned = QtWidgets.QCheckBox()
+        self.check_binned.setChecked(True)
+        self.label_full = QtWidgets.QLabel('Full Data')
+        self.label_binned = QtWidgets.QLabel('Binned Data')
 
     def layout_widgets(self):
         col_one = QtWidgets.QVBoxLayout()
@@ -654,17 +652,16 @@ class WriteDataUI(QtWidgets.QDialog):
         row_one.addWidget(self.input_filename)
         col_one.addLayout(row_one)
 
-        row_two.addWidget(self.check_asymmetry)
-        row_two.addWidget(self.label_asymmetry)
+        col_one.addSpacing(15)
+        row_two.addWidget(self.label_binned)
+        row_two.addWidget(self.check_binned)
         row_two.addSpacing(10)
-        row_two.addWidget(self.check_time)
-        row_two.addWidget(self.label_time)
+        row_two.addWidget(self.label_full)
+        row_two.addWidget(self.check_full)
         row_two.addSpacing(10)
-        row_two.addWidget(self.check_uncertainty)
-        row_two.addWidget(self.label_uncertainty)
         row_two.setAlignment(QtCore.Qt.AlignLeft)
         col_one.addLayout(row_two)
-        col_one.addSpacing(25)
+        col_one.addSpacing(15)
 
         row_thr.addWidget(self.skip_file)
         row_thr.addSpacing(5)

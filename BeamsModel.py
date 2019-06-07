@@ -5,7 +5,7 @@ import BeamsUtility
 
 # Standard Library modules
 import os
-import time
+# import time
 
 # Installed modules
 import numpy as np
@@ -146,14 +146,6 @@ class BEAMSModel:
                 print('Notifying {} of {}'.format(str(controller), self.debugging_signals[signal]))
                 controller.update(signal)
 
-    def write_file(self, old_filename=None, new_filename=None, checked_items=None):
-        start_bin, _, end_bin, _ = self.run_list[0].calculate_start_end('Forw','Back')
-        binned_asymmetry, binned_time, binned_uncertainty = self.run_list[0].bin_data(150, self.run_list[0].t0*0.000390625,
-                                                                                      (end_bin-start_bin)*0.000390625, False)
-        np.savetxt('written.dat',
-                   np.c_[binned_asymmetry, binned_time, binned_uncertainty],
-                   fmt='%2.4f,%2.9f,%2.4f', header='Asymmetry, Time, Uncertainty')
-
 
 class RunData:
     """ Stores all data relevant to a run.
@@ -175,7 +167,7 @@ class RunData:
             uncertainty : the full uncertainty array calculated from user specified histograms
 
         Public Methods:
-            bin_data(self, final_bin_size, begin_time, end_time, slider_moving) : Returns binned asymmetry, time and
+            bin_data(self, final_bin_size, slider_moving) : Returns binned asymmetry, time and
                 uncertainty arrays.
             calculate_fft(bin_size, asymmetry, times) : Returns smoothed frequencies and magnitudes for plotting.
     """
@@ -202,6 +194,10 @@ class RunData:
 
         self.uncertainty = self.calculate_uncertainty(hist_one=self.f_formats['CalcHists'][0],
                                                       hist_two=self.f_formats['CalcHists'][1])
+
+        self.binned_asymmetry = np.array([])
+        self.binned_time = np.array([])
+        self.binned_uncertainty = np.array([])
 
         del self.histogram_data
 
@@ -238,12 +234,12 @@ class RunData:
     def calculate_background_radiation(self, hist_one=None, hist_two=None):
         """ Calculates the background radiation based on histogram data before positrons are being detected. """
         # Get the portion of histogram before positrons from muon decay are being detected
-        background = self.histogram_data.loc[
-                     int(self.f_formats['BkgdOne'][hist_one]):int(self.f_formats['BkgdTwo'][hist_one])-1, hist_one].values
+        background = self.histogram_data.loc[int(self.f_formats['BkgdOne'][hist_one]):
+                                             int(self.f_formats['BkgdTwo'][hist_one])-1, hist_one].values
         bkg_one = np.mean(background)  # Find mean on new array
 
-        background = self.histogram_data.loc[
-                     int(self.f_formats['BkgdOne'][hist_two]):int(self.f_formats['BkgdTwo'][hist_two])-1, hist_two].values
+        background = self.histogram_data.loc[int(self.f_formats['BkgdOne'][hist_two]):
+                                             int(self.f_formats['BkgdTwo'][hist_two])-1, hist_two].values
         bkg_two = np.mean(background)
 
         del background
@@ -322,32 +318,23 @@ class RunData:
 
         return [x_smooth, y_smooth]
 
-    def bin_data(self, final_bin_size=None, begin_time=None, end_time=None, slider_moving=False):
+    def bin_data(self, final_bin_size=None, slider_moving=False):
         """ Bins the asymmetry based on user specified bin size. """
 
-        # Get the initial and new bin sizes in micro-seconds
         bin_full = float(self.f_formats['binsize'])/1000
         bin_binned = float(final_bin_size)/1000
         num_bins = len(self.asymmetry)
 
-        if begin_time < self.t0 * bin_full:
-            begin_time = self.t0 * bin_full
+        if bin_binned <= bin_full:
+            times = (np.arange(len(self.asymmetry)) * bin_full) + (self.t0 * bin_full)
+            return [self.asymmetry, times, self.uncertainty]
 
-        # Determine how large the bins and binned arrays will be so we can pre-allocate them (much faster).
-        binned_indices_per_bin = int(np.round(bin_binned/bin_full))  # FIXME .floor?
-        print('binned_indices_per_bin = {}'.format(binned_indices_per_bin))
-
+        binned_indices_per_bin = int(np.round(bin_binned/bin_full))  # .floor?
         binned_indices_total = int(np.floor(num_bins / binned_indices_per_bin))
-        print('binned_indices_total = {}'.format(binned_indices_total))
-
         leftover_bins = int(num_bins % binned_indices_per_bin)
-        print('leftover_bins = {}'.format(leftover_bins))
-
         time_per_binned = binned_indices_per_bin * bin_full
-        print('time_per_binned = {}'.format(time_per_binned))
 
-        # Create the Time Array
-        binned_time = (np.arange(binned_indices_total) * time_per_binned) + (self.t0 * bin_full) + (time_per_binned / 2)
+        self.binned_time = (np.arange(binned_indices_total) * time_per_binned) + (self.t0 * bin_full) + (time_per_binned / 2)
 
         if slider_moving:
             if leftover_bins:
@@ -356,8 +343,8 @@ class RunData:
             else:
                 reshaped_asymmetry = np.reshape(self.asymmetry, (binned_indices_total, binned_indices_per_bin))
 
-            binned_uncertainty = []
-            binned_asymmetry = np.apply_along_axis(np.mean, 1, reshaped_asymmetry)
+            self.binned_uncertainty = []
+            self.binned_asymmetry = np.apply_along_axis(np.mean, 1, reshaped_asymmetry)
 
         else:
             if leftover_bins:
@@ -369,7 +356,8 @@ class RunData:
                 reshaped_asymmetry = np.reshape(self.asymmetry, (binned_indices_total, binned_indices_per_bin))
                 reshaped_uncertainty = np.reshape(self.uncertainty, (binned_indices_total, binned_indices_per_bin))
 
-            binned_asymmetry = np.apply_along_axis(np.mean, 1, reshaped_asymmetry)
-            binned_uncertainty = 1/binned_indices_per_bin * np.sqrt(np.apply_along_axis(np.sum, 1, reshaped_uncertainty**2))
+            self.binned_asymmetry = np.apply_along_axis(np.mean, 1, reshaped_asymmetry)
+            self.binned_uncertainty = 1 / binned_indices_per_bin * np.sqrt(np.apply_along_axis(np.sum, 1,
+                                                                                          reshaped_uncertainty**2))
 
-        return [binned_asymmetry, binned_time, binned_uncertainty]
+        return [self.binned_asymmetry, self.binned_time, self.binned_uncertainty]

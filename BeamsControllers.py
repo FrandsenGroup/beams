@@ -219,8 +219,7 @@ class FileManagerController:
     def b_write(self):
         """ Launches the Writer GUI.
             Note: The change in the model will notify and result in update of GUI. See update(). """
-        # self.popup = WriterController(model=self.model)
-        self.model.write_file()
+        self.popup = WriterController(model=self.model, selected_files=self.get_selected_files())
 
     def prompt_formats(self, b_files, o_files):
         """ Collects the formats of the files user selected to plot. Formats for BEAMS files can
@@ -368,8 +367,8 @@ class PlotController:
                 if self.plot_editor.slider_two.value() % 5 is not 0:
                     return
         else:
-            self.plot_editor.slider_one.setValue(int(self.plot_editor.input_slider_one.text()))
-            self.plot_editor.slider_two.setValue(int(self.plot_editor.input_slider_two.text()))
+            self.plot_editor.slider_one.setValue(int(np.ceil(float(self.plot_editor.input_slider_one.text()))))
+            self.plot_editor.slider_two.setValue(int(np.ceil(float(self.plot_editor.input_slider_two.text()))))
 
         self.visual_data_change(plot=plot, moving=moving)
 
@@ -398,21 +397,19 @@ class PlotController:
                                                       float(self.plot_parameters['XMaxOne']()))
         for run in self.model.run_list:
             if run.visibility:
-                asymmetry, times, uncertainty = run.bin_data(final_bin_size=float(self.plot_parameters['SliderOne']()),
-                                                             begin_time=float(self.plot_parameters['XMinOne']()),
-                                                             end_time=float(self.plot_parameters['XMaxOne']()),
+                asymmetry, times, uncertainty = run.bin_data(final_bin_size=float(self.plot_parameters['BinInputOne']()),
                                                              slider_moving=moving)
                 if moving:
                     self.plot_panel.canvas_one.axes_time.plot(times, asymmetry, color=run.color, linestyle='None',
                                                               marker='.')
                 elif not self.plot_parameters['Uncertainty']():
-                    frequencies, magnitudes = run.calculate_fft(bin_size=float(self.plot_parameters['SliderOne']()),
+                    frequencies, magnitudes = run.calculate_fft(bin_size=float(self.plot_parameters['BinInputOne']()),
                                                                 asymmetry=asymmetry, times=times)
                     self.plot_panel.canvas_one.axes_time.plot(times, asymmetry, color=run.color, marker='.',
                                                               linestyle=self.plot_parameters['LineStyle']())
                     self.plot_panel.canvas_one.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.')
                 else:
-                    frequencies, magnitudes = run.calculate_fft(bin_size=float(self.plot_parameters['SliderOne']()),
+                    frequencies, magnitudes = run.calculate_fft(bin_size=float(self.plot_parameters['BinInputOne']()),
                                                                 asymmetry=asymmetry, times=times)
                     self.plot_panel.canvas_one.axes_time.errorbar(times, asymmetry, uncertainty, color=run.color,
                                                                   linestyle=self.plot_parameters['LineStyle'](),
@@ -433,21 +430,19 @@ class PlotController:
                                                       float(self.plot_parameters['XMaxTwo']()))
         for run in self.model.run_list:
             if run.visibility:
-                asymmetry, times, uncertainty = run.bin_data(final_bin_size=float(self.plot_parameters['SliderTwo']()),
-                                                             begin_time=float(self.plot_parameters['XMinTwo']()),
-                                                             end_time=float(self.plot_parameters['XMaxTwo']()),
+                asymmetry, times, uncertainty = run.bin_data(final_bin_size=float(self.plot_parameters['BinInputTwo']()),
                                                              slider_moving=moving)
                 if moving:
                     self.plot_panel.canvas_two.axes_time.plot(times, asymmetry, color=run.color, linestyle='None',
                                                               marker='.')
                 elif not self.plot_parameters['Uncertainty']():
-                    frequencies, magnitudes = run.calculate_fft(bin_size=float(self.plot_parameters['SliderOne']()),
+                    frequencies, magnitudes = run.calculate_fft(bin_size=float(self.plot_parameters['BinInputTwo']()),
                                                                 asymmetry=asymmetry, times=times)
                     self.plot_panel.canvas_two.axes_time.plot(times, asymmetry, color=run.color, marker='.',
                                                               linestyle=self.plot_parameters['LineStyle']())
                     self.plot_panel.canvas_two.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.')
                 else:
-                    frequencies, magnitudes = run.calculate_fft(bin_size=float(self.plot_parameters['SliderOne']()),
+                    frequencies, magnitudes = run.calculate_fft(bin_size=float(self.plot_parameters['BinInputTwo']()),
                                                                 asymmetry=asymmetry, times=times)
                     self.plot_panel.canvas_two.axes_time.errorbar(times, asymmetry, uncertainty, color=run.color,
                                                                   linestyle=self.plot_parameters['LineStyle'](),
@@ -608,11 +603,59 @@ class FormatterController:
 
 
 class WriterController:
-    def __init__(self, writer_gui=None, model=None):
-        pass
+    def __init__(self, model=None, selected_files=None):
+        self.writer_gui = BeamsViews.WriteDataUI()
+        self.writer_gui.file_list.addItems(selected_files)
+
+        self.model = model
+        self.files = selected_files
+        self.custom_file = False
+
+        self.set_callbacks()
+        self.writer_gui.show()
 
     def set_callbacks(self):
-        pass
+        self.writer_gui.select_folder.released.connect(lambda: self.custom_file_choice())
+        self.writer_gui.write_file.released.connect(lambda: self.write_files(all_files=False))
+        self.writer_gui.write_all.released.connect(lambda: self.write_files(all_files=True))
+        self.writer_gui.skip_file.released.connect(lambda: self.remove_file())
+        self.writer_gui.done.released.connect(lambda: self.writer_gui.close())
+
+    def custom_file_choice(self):
+        saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self.writer_gui, 'Specify file',
+                                                                '/home', 'DAT(*.dat)')[0]
+        if not saved_file_path:
+            return
+        else:
+            self.writer_gui.input_filename.setText(saved_file_path)
+            self.custom_file = True
+
+    def write_files(self, all_files=False):
+        count = 0
+        for run in self.model.run_list:
+            if os.path.split(run.filename)[1] == self.writer_gui.file_list.currentText() or \
+                    (all_files and os.path.split(run.filename)[1] in self.files):
+
+                print('Writing', run.filename, 'to', self.writer_gui.input_filename.text())
+
+                if self.custom_file:
+                    file_path = self.writer_gui.input_filename.text()
+                    if count:
+                        file_path = os.path.splitext(file_path)[0]
+                        file_path += '({}).dat'.format(count)
+                else:
+                    file_path = os.path.splitext(run.filename)[0] + '_data.dat'
+
+                if self.writer_gui.check_binned.checkState():
+                    np.savetxt(file_path, np.c_[run.binned_asymmetry, run.binned_time, run.binned_uncertainty],
+                               fmt='%2.4f, %2.9f, %2.4f', header='BEAMS\nAsymmetry, Time, Uncertainty')
+                else:
+                    np.savetxt(file_path, np.c_[run.asymmetry, run.time, run.uncertainty],
+                               fmt='%2.4f, %2.9f, %2.4f', header='BEAMS\nAsymmetry, Time, Uncertainty')
+                count += 1
+
+    def remove_file(self):
+        self.writer_gui.file_list.removeItem(self.writer_gui.file_list.currentIndex())
 
 
 class PlotDataController:
