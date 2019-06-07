@@ -245,7 +245,7 @@ class FileManagerController:
     def prompt_histograms(self):
         """ Launches PlotDataGUI to prompt users to specify which histograms should be used
             to calculate the asymmetry. Users can change this later in the RunDisplayPanel"""
-        self.popup = PlotDataController(self.formats, parent=self)
+        self.popup = PlotDataController(self.formats, model=self.model)
 
     def get_selected_files(self):
         """ Returns all currently selected files in the File Manager Panel. """
@@ -620,10 +620,13 @@ class WriterController:
         self.writer_gui.write_all.released.connect(lambda: self.write_files(all_files=True))
         self.writer_gui.skip_file.released.connect(lambda: self.remove_file())
         self.writer_gui.done.released.connect(lambda: self.writer_gui.close())
+        self.writer_gui.radio_binned.toggled.connect(lambda: self.data_choice())
+        self.writer_gui.radio_full.toggled.connect(lambda: self.data_choice())
 
     def custom_file_choice(self):
+        """ Prompts the user for a custom file path. """
         saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self.writer_gui, 'Specify file',
-                                                                '/home', 'DAT(*.dat)')[0]
+                                                                os.getcwd(), 'DAT(*.dat)')[0]
         if not saved_file_path:
             return
         else:
@@ -631,12 +634,11 @@ class WriterController:
             self.custom_file = True
 
     def write_files(self, all_files=False):
+        """ Writes the user-specified run data (if they are read in) to a .dat file. """
         count = 0
         for run in self.model.run_list:
             if os.path.split(run.filename)[1] == self.writer_gui.file_list.currentText() or \
                     (all_files and os.path.split(run.filename)[1] in self.files):
-
-                print('Writing', run.filename, 'to', self.writer_gui.input_filename.text())
 
                 if self.custom_file:
                     file_path = self.writer_gui.input_filename.text()
@@ -646,7 +648,7 @@ class WriterController:
                 else:
                     file_path = os.path.splitext(run.filename)[0] + '_data.dat'
 
-                if self.writer_gui.check_binned.checkState():
+                if self.writer_gui.radio_binned.isChecked():
                     np.savetxt(file_path, np.c_[run.binned_asymmetry, run.binned_time, run.binned_uncertainty],
                                fmt='%2.4f, %2.9f, %2.4f', header='BEAMS\nAsymmetry, Time, Uncertainty')
                 else:
@@ -657,23 +659,23 @@ class WriterController:
     def remove_file(self):
         self.writer_gui.file_list.removeItem(self.writer_gui.file_list.currentIndex())
 
+    def data_choice(self):
+        binned = self.writer_gui.radio_binned.isChecked()
+        self.writer_gui.radio_binned.setChecked(binned)
+        self.writer_gui.radio_full.setChecked(not binned)
+
 
 class PlotDataController:
     """ PlotDataController paired with PlotDataUI prompts the user to specify which histograms
             will be used to calculate the asymmetry for each file.
 
             Instantiated by FileManagerController class only."""
-    def __init__(self, formats=None, parent=None):
+    def __init__(self, formats=None, model=None):
         """ Instantiates an object of the PlotDataController class, connects it to the PlotDataGUI
                 and its calling class (FileManagerController). """
 
-        if not parent or type(parent) is not FileManagerController:
-            raise AttributeError('Parameter parent=FileManagerController not passed.')
-            # PlotDataController calls update_model() in FileManagerController after GUI closes
-            # FIXME Figure out how to make a 'close' event. Wouldn't work with cancel though ...
-
         self.plot_data_gui = BeamsViews.PlotDataUI()
-        self.parent = parent
+        self.model = model
         self.set_callbacks()
         self.formats = formats
         self.plot_data_gui.c_file_list.addItems([file for file in self.formats.keys()])
@@ -725,7 +727,7 @@ class PlotDataController:
     def plot_formatted_files(self):
         """ Closes the GUI and calls update_model() in the parent class FileManagerControl. """
         self.plot_data_gui.close()
-        self.parent.update_model()  # FileManagerController will send the {file: format} dict to the model.
+        self.model.update_runs(self.formats)  # FileManagerController will send the {file: format} dict to the model.
 
     def remove_file(self):
         """ Removes the currently selected file from the file list and from the format list. """

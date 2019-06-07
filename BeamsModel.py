@@ -234,6 +234,7 @@ class RunData:
     def calculate_background_radiation(self, hist_one=None, hist_two=None):
         """ Calculates the background radiation based on histogram data before positrons are being detected. """
         # Get the portion of histogram before positrons from muon decay are being detected
+
         background = self.histogram_data.loc[int(self.f_formats['BkgdOne'][hist_one]):
                                              int(self.f_formats['BkgdTwo'][hist_one])-1, hist_one].values
         bkg_one = np.mean(background)  # Find mean on new array

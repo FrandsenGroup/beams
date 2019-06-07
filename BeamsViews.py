@@ -80,8 +80,11 @@ class FileManagerPanel(QtWidgets.QDockWidget):
         self.plot_button = QtWidgets.QPushButton("Plot")
         self.convert_button = QtWidgets.QPushButton("Convert")
 
-        self.import_button.setFixedWidth(30)
-        self.remove_button.setFixedWidth(30)
+        self.import_button.setFixedWidth(25)
+        self.remove_button.setFixedWidth(25)
+        self.write_button.setFixedWidth(60)
+        self.plot_button.setFixedWidth(60)
+        self.convert_button.setFixedWidth(60)
 
         self.write_button.setToolTip('Write currently plotted data to .dat files')
         self.import_button.setToolTip('Add files')
@@ -601,7 +604,6 @@ class FileFormatterGUI(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.plot_format), _translate("Dialog", "Plot Format"))
 
 
-
 # Other GUI's
 
 class FileDisplayUI(QtWidgets.QPlainTextEdit):
@@ -640,6 +642,9 @@ class WriteDataUI(QtWidgets.QDialog):
         self.label_full = QtWidgets.QLabel('Full Data')
         self.label_binned = QtWidgets.QLabel('Binned Data')
 
+        self.radio_binned = QtWidgets.QRadioButton()
+        self.radio_full = QtWidgets.QRadioButton()
+
     def layout_widgets(self):
         col_one = QtWidgets.QVBoxLayout()
         row_one = QtWidgets.QHBoxLayout()
@@ -654,10 +659,10 @@ class WriteDataUI(QtWidgets.QDialog):
 
         col_one.addSpacing(15)
         row_two.addWidget(self.label_binned)
-        row_two.addWidget(self.check_binned)
+        row_two.addWidget(self.radio_binned)
         row_two.addSpacing(10)
         row_two.addWidget(self.label_full)
-        row_two.addWidget(self.check_full)
+        row_two.addWidget(self.radio_full)
         row_two.addSpacing(10)
         row_two.setAlignment(QtCore.Qt.AlignLeft)
         col_one.addLayout(row_two)
