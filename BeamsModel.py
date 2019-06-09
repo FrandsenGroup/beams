@@ -5,7 +5,7 @@ import BeamsUtility
 
 # Standard Library modules
 import os
-# import time
+import time
 
 # Installed modules
 import numpy as np
@@ -178,10 +178,6 @@ class RunData:
         self.color = color
         self.filename = filename
         self.t0 = 0
-        self.start_one = 0
-        self.start_two = 0
-        self.end_one = 0
-        self.end_two = 0
 
         self.histogram_data = self.retrieve_histogram_data()
 
@@ -206,7 +202,10 @@ class RunData:
 
     def retrieve_histogram_data(self, specific_hist=None):
         """ Retrieves histogram data from a BEAMS formatted file. """
+        print(int(self.f_formats['HeaderRows']))
         histogram_data = BeamsUtility.get_histograms(self.filename, skiprows=int(self.f_formats['HeaderRows']))
+        print(histogram_data)
+        print(self.f_formats['HistTitles'])
         histogram_data.columns = self.f_formats['HistTitles']
 
         if not specific_hist:
@@ -298,6 +297,8 @@ class RunData:
 
         return asymmetry
 
+    # FIXME FFTs aren't quite right. Also, add some dynamic display functionality that only displays the
+    # FIXME important frequencies.
     @staticmethod
     def calculate_fft(bin_size, asymmetry, times):
         """ Calculates fast fourier transform on asymmetry. """
@@ -322,7 +323,7 @@ class RunData:
     def bin_data(self, final_bin_size=None, slider_moving=False):
         """ Bins the asymmetry based on user specified bin size. """
 
-        bin_full = float(self.f_formats['binsize'])/1000
+        bin_full = float(self.f_formats['BinSize'])/1000
         bin_binned = float(final_bin_size)/1000
         num_bins = len(self.asymmetry)
 

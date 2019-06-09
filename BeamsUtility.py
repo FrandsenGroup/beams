@@ -65,8 +65,7 @@ def get_header(filename=None, header_rows=None):
     if is_beams(filename):  # We are basically praying if it is BEAMS, it has the proper format. #fixthis, call errors
         with open(filename) as file:
             file.readline()
-            keys = file.readline().rstrip('\n').rsplit(',')
-            values = file.readline().rstrip('\n').rsplit(',')
+            metadata = file.readline().rstrip('\n').rsplit(',')
             hist_titles = file.readline().rstrip('\n').rsplit(',')
             background_one = file.readline().rstrip('\n').rsplit(',')
             background_two = file.readline().rstrip('\n').rsplit(',')
@@ -74,24 +73,26 @@ def get_header(filename=None, header_rows=None):
             good_bins_two = file.readline().rstrip('\n').rsplit(',')
             initial_time = file.readline().rstrip('\n').rsplit(',')
 
-        header_data = {k: v for k, v in zip(keys, values)}
-        print(header_data)
-        header_data['HistTitles'] = hist_titles
-        header_data['BkgdOne'] = {k: v for k, v in zip(hist_titles, background_one)}
-        header_data['BkgdTwo'] = {k: v for k, v in zip(hist_titles, background_two)}
-        header_data['GoodBinOne'] = {k: v for k, v in zip(hist_titles, good_bins_one)}
-        header_data['GoodBinTwo'] = {k: v for k, v in zip(hist_titles, good_bins_two)}
-        header_data['T0'] = {k: v for k, v in zip(hist_titles, initial_time)}
+        metadata = [pair.rsplit(':') for pair in metadata]
+        metadata = {pair[0]: pair[1] for pair in metadata}
+        metadata['HistTitles'] = hist_titles
+        metadata['BkgdOne'] = {k: v for k, v in zip(hist_titles, background_one)}
+        metadata['BkgdTwo'] = {k: v for k, v in zip(hist_titles, background_two)}
+        metadata['GoodBinOne'] = {k: v for k, v in zip(hist_titles, good_bins_one)}
+        metadata['GoodBinTwo'] = {k: v for k, v in zip(hist_titles, good_bins_two)}
+        metadata['T0'] = {k: v for k, v in zip(hist_titles, initial_time)}
 
     elif check_ext(filename, '.dat'):
-        header_data = []
+        metadata = []
         with open(filename) as file:
             for _ in range(header_rows):
-                header_data.append(file.readline())
+                metadata.append(file.readline())
 
     else:
         return None
-    return header_data
+
+    print('here--', metadata)
+    return metadata
 
 
 def get_histograms(filename=None, skiprows=None, histogram=None):

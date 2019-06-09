@@ -210,11 +210,14 @@ class FileManagerController:
                 out_file = os.path.splitext(full_file)[0] + '.dat'
                 out_file_root = os.path.split(out_file)[1]
 
-                if BeamsUtility.convert_msr(full_file, out_file):  # Run the MUD executable on the .msr file
+                if BeamsUtility.convert_msr(full_file, out_file, flags=['-v', '-all']):  # Run the MUD executable on the .msr file
                     self.model.update_file_list(file_path=out_file, file_name=out_file_root)
 
                 else:
-                    raise subprocess.CalledProcessError('Error writing {} to {}'.format(file, out_file_root))
+                    # Usually occurs when their have been changes in the .msr files
+                    message = 'Error reading .msr file.\n {} has possibly been corrupted.'.format(full_file)
+                    BeamsViews.ErrorMessageUI(error_message=message)
+                    return
 
     def b_write(self):
         """ Launches the Writer GUI.
@@ -620,13 +623,11 @@ class WriterController:
         self.writer_gui.write_all.released.connect(lambda: self.write_files(all_files=True))
         self.writer_gui.skip_file.released.connect(lambda: self.remove_file())
         self.writer_gui.done.released.connect(lambda: self.writer_gui.close())
-        self.writer_gui.radio_binned.toggled.connect(lambda: self.data_choice())
-        self.writer_gui.radio_full.toggled.connect(lambda: self.data_choice())
 
     def custom_file_choice(self):
         """ Prompts the user for a custom file path. """
         saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self.writer_gui, 'Specify file',
-                                                                os.getcwd(), 'DAT(*.dat)')[0]
+                                                                os.getcwd(), 'ASY(*.asy)')[0]
         if not saved_file_path:
             return
         else:
@@ -644,25 +645,25 @@ class WriterController:
                     file_path = self.writer_gui.input_filename.text()
                     if count:
                         file_path = os.path.splitext(file_path)[0]
-                        file_path += '({}).dat'.format(count)
+                        file_path += '({}).asy'.format(count)
                 else:
-                    file_path = os.path.splitext(run.filename)[0] + '.asy'
+                    if 'RunNumber' in run.f_formats.keys():
+                        file_path = os.path.split(run.filename)[0] + '\\' + str(run.f_formats['RunNumber']) + '.asy'
+                    else:
+                        file_path = os.path.splitext(run.filename)[0] + '.asy'
 
                 if self.writer_gui.radio_binned.isChecked():
                     np.savetxt(file_path, np.c_[run.binned_time, run.binned_asymmetry, run.binned_uncertainty],
-                               fmt='%2.4f, %2.9f, %2.4f', header='BEAMS\nTime (us), Asymmetry, Uncertainty')
-                else:
+                               fmt='%2.4f, %2.9f, %2.4f', header='BEAMS\nAsymmetry, Time, Uncertainty')
+                elif self.writer_gui.radio_full.isChecked():
                     np.savetxt(file_path, np.c_[run.time, run.asymmetry, run.uncertainty],
-                               fmt='%2.4f, %2.9f, %2.4f', header='BEAMS\nTime (us), Asymmetry, Uncertainty')
+                               fmt='%2.4f, %2.9f, %2.4f', header='BEAMS\nAsymmetry, Time, Uncertainty')
+                else:
+                    pass
                 count += 1
 
     def remove_file(self):
         self.writer_gui.file_list.removeItem(self.writer_gui.file_list.currentIndex())
-
-    def data_choice(self):
-        binned = self.writer_gui.radio_binned.isChecked()
-        self.writer_gui.radio_binned.setChecked(binned)
-        self.writer_gui.radio_full.setChecked(not binned)
 
 
 class PlotDataController:
