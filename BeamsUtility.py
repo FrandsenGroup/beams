@@ -74,6 +74,10 @@ def get_header(filename=None, header_rows=None):
             initial_time = file.readline().rstrip('\n').rsplit(',')
 
         metadata = [pair.rsplit(':') for pair in metadata]
+        for pair in metadata:
+            if len(pair) < 2:
+                pair.append('n/a')
+
         metadata = {pair[0]: pair[1] for pair in metadata}
         metadata['HistTitles'] = hist_titles
         metadata['BkgdOne'] = {k: v for k, v in zip(hist_titles, background_one)}
