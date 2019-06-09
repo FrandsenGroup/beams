@@ -325,8 +325,9 @@ class RunData:
         num_bins = len(self.asymmetry)
 
         if bin_binned <= bin_full:
-            times = (np.arange(len(self.asymmetry)) * bin_full) + (self.t0 * bin_full)
-            return [self.asymmetry, times, self.uncertainty]
+            #times = (np.arange(len(self.asymmetry)) * bin_full) + (self.t0 * bin_full)
+            #return [self.asymmetry, times, self.uncertainty]
+            bin_binned = 1.01*bin_full # this will create a bin size of 1
 
         binned_indices_per_bin = int(np.round(bin_binned/bin_full))  # .floor?
         binned_indices_total = int(np.floor(num_bins / binned_indices_per_bin))
