@@ -95,7 +95,6 @@ def get_header(filename=None, header_rows=None):
     else:
         return None
 
-    print('here--', metadata)
     return metadata
 
 

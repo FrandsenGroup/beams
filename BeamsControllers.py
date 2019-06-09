@@ -393,9 +393,9 @@ class PlotController:
         self.plot_panel.canvas_one.axes_time.clear()
         self.plot_panel.canvas_one.axes_freq.clear()
 
-        if not self.plot_parameters['YAutoOne']():
-            self.plot_panel.canvas_one.axes_time.set_ylim(float(self.plot_parameters['YMinOne']()),
-                                                          float(self.plot_parameters['YMaxOne']()))
+        max_y = -1
+        min_y = 1
+
         self.plot_panel.canvas_one.axes_time.set_xlim(float(self.plot_parameters['XMinOne']()),
                                                       float(self.plot_parameters['XMaxOne']()))
         for run in self.model.run_list:
@@ -419,18 +419,34 @@ class PlotController:
                                                                   marker='.')
                     self.plot_panel.canvas_one.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.')
 
+                frac_start = float(self.plot_parameters['XMinOne']()) / (times[len(times) - 1] - times[0])
+                frac_end = float(self.plot_parameters['XMaxOne']()) / (times[len(times) - 1] - times[0])
+                start_index = int(np.floor(len(asymmetry) * frac_start))
+                end_index = int(np.floor(len(asymmetry) * frac_end))
+
+                max_y = np.max(asymmetry[start_index:end_index]) if \
+                    np.max(asymmetry[start_index:end_index]) > max_y else max_y
+
+                min_y = np.min(asymmetry[start_index:end_index]) if \
+                    np.min(asymmetry[start_index:end_index]) < min_y else min_y
+
+        if not self.plot_parameters['YAutoOne']():
+            self.plot_panel.canvas_one.axes_time.set_ylim(float(self.plot_parameters['YMinOne']()),
+                                                          float(self.plot_parameters['YMaxOne']()))
+        else:
+            self.plot_panel.canvas_one.axes_time.set_ylim(min_y - abs(min_y * 0.05), max_y + abs(max_y * 0.05))
+
         self.plot_panel.canvas_one.set_style()
 
     def update_canvas_two(self, moving=False):
         self.plot_panel.canvas_two.axes_time.clear()
         self.plot_panel.canvas_two.axes_freq.clear()
 
-        if not self.plot_parameters['YAutoTwo']():
-            self.plot_panel.canvas_two.axes_time.set_ylim(float(self.plot_parameters['YMinTwo']()),
-                                                          float(self.plot_parameters['YMaxTwo']()))
-
         self.plot_panel.canvas_two.axes_time.set_xlim(float(self.plot_parameters['XMinTwo']()),
                                                       float(self.plot_parameters['XMaxTwo']()))
+        max_y = -2
+        min_y = 2
+
         for run in self.model.run_list:
             if run.visibility:
                 asymmetry, times, uncertainty = run.bin_data(final_bin_size=float(self.plot_parameters['BinInputTwo']()),
@@ -451,6 +467,23 @@ class PlotController:
                                                                   linestyle=self.plot_parameters['LineStyle'](),
                                                                   marker='.')
                     self.plot_panel.canvas_two.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.')
+
+                frac_start = float(self.plot_parameters['XMinTwo']()) / (times[len(times)-1] - times[0])
+                frac_end = float(self.plot_parameters['XMaxTwo']()) / (times[len(times)-1] - times[0])
+                start_index = int(np.floor(len(asymmetry)*frac_start))
+                end_index = int(np.floor(len(asymmetry)*frac_end))
+
+                max_y = np.max(asymmetry[start_index:end_index]) if \
+                    np.max(asymmetry[start_index:end_index]) > max_y else max_y
+
+                min_y = np.min(asymmetry[start_index:end_index]) if \
+                    np.min(asymmetry[start_index:end_index]) < min_y else min_y
+
+        if not self.plot_parameters['YAutoTwo']():
+            self.plot_panel.canvas_two.axes_time.set_ylim(float(self.plot_parameters['YMinTwo']()),
+                                                          float(self.plot_parameters['YMaxTwo']()))
+        else:
+            self.plot_panel.canvas_two.axes_time.set_ylim(min_y - abs(min_y * 0.05), max_y + abs(max_y * 0.05))
 
         self.plot_panel.canvas_two.set_style()
 
@@ -654,12 +687,12 @@ class WriterController:
 
                 if self.writer_gui.radio_binned.isChecked():
                     np.savetxt(file_path, np.c_[run.binned_time, run.binned_asymmetry, run.binned_uncertainty],
-                               fmt='%2.4f, %2.9f, %2.4f', header='BEAMS\nAsymmetry, Time, Uncertainty')
+                               fmt='%2.4f, %2.9f, %2.4f', header='BEAMS\nTime, Asymmetry, Uncertainty')
                 elif self.writer_gui.radio_full.isChecked():
                     np.savetxt(file_path, np.c_[run.time, run.asymmetry, run.uncertainty],
-                               fmt='%2.4f, %2.9f, %2.4f', header='BEAMS\nAsymmetry, Time, Uncertainty')
+                               fmt='%2.4f, %2.9f, %2.4f', header='BEAMS\nTime, Asymmetry, Uncertainty')
                 else:
-                    pass
+                    print('FFT not supported.')
                 count += 1
 
     def remove_file(self):

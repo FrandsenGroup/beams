@@ -202,10 +202,7 @@ class RunData:
 
     def retrieve_histogram_data(self, specific_hist=None):
         """ Retrieves histogram data from a BEAMS formatted file. """
-        print(int(self.f_formats['HeaderRows']))
         histogram_data = BeamsUtility.get_histograms(self.filename, skiprows=int(self.f_formats['HeaderRows']))
-        print(histogram_data)
-        print(self.f_formats['HistTitles'])
         histogram_data.columns = self.f_formats['HistTitles']
 
         if not specific_hist:
