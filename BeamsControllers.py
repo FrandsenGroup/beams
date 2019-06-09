@@ -687,10 +687,10 @@ class WriterController:
 
                 if self.writer_gui.radio_binned.isChecked():
                     np.savetxt(file_path, np.c_[run.binned_time, run.binned_asymmetry, run.binned_uncertainty],
-                               fmt='%2.4f, %2.9f, %2.4f', header='BEAMS\nTime, Asymmetry, Uncertainty')
+                               fmt='%2.9f, %2.4f, %2.4f', header='BEAMS\nTime, Asymmetry, Uncertainty')
                 elif self.writer_gui.radio_full.isChecked():
                     np.savetxt(file_path, np.c_[run.time, run.asymmetry, run.uncertainty],
-                               fmt='%2.4f, %2.9f, %2.4f', header='BEAMS\nTime, Asymmetry, Uncertainty')
+                               fmt='%2.9f, %2.4f, %2.4f', header='BEAMS\nTime, Asymmetry, Uncertainty')
                 else:
                     print('FFT not supported.')
                 count += 1
