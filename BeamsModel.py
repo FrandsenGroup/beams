@@ -311,20 +311,15 @@ class RunData:
         """ Calculates fast fourier transform on asymmetry. """
         magnitudes = np.fft.fft(asymmetry)
         frequencies = np.fft.fftfreq(len(magnitudes), times[1]-times[0])
-        #
-        # # Calculate the spline for the graph
+        magnitudes[0] = 0
+
         x_smooth = np.linspace(frequencies.min(), frequencies.max(), 300)
-        np.insert(x_smooth, 0, 0)
-        #
-        # print(frequencies, magnitudes)
-        # print(frequencies[0:int(np.floor(len(frequencies)/2))],
-        #       magnitudes[0:int(np.floor(len(frequencies)/2))])
 
         y_smooth = sp.UnivariateSpline(frequencies[0:int(np.floor(len(frequencies)/2))],
                                        abs(magnitudes[0:int(np.floor(len(frequencies)/2))]))
         y_smooth.set_smoothing_factor(0)
         y_smooth = y_smooth(x_smooth)
-        #
+
         return [x_smooth, y_smooth]
 
     def bin_data(self, final_bin_size=None, slider_moving=False):

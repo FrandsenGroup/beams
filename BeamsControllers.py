@@ -501,7 +501,9 @@ class PlotController:
                 min_y = np.min(asymmetry[start_index:end_index]) if \
                     np.min(asymmetry[start_index:end_index]) < min_y else min_y
 
+        print(max_mag, max_freq)
         max_mag = 20 if max_mag > 20 else max_mag
+        print(max_mag, max_freq)
 
         self.plot_panel.canvas_two.axes_freq.set_xlim(0, max_freq * 1.1)
         self.plot_panel.canvas_two.axes_freq.set_ylim(0, max_mag * 1.1)
@@ -566,6 +568,7 @@ class RunDisplayController:
         self.run_display.color_choices.currentIndexChanged.connect(lambda: self.change_color())
         self.run_display.current_runs.currentRowChanged.connect(lambda: self.update_run_display())
         self.run_display.current_runs.itemChanged.connect(lambda: self.change_title())
+        self.run_display.header_data.currentIndexChanged.connect(lambda: self.change_metadata())
 
     def isolate_plot(self):
         self.model.update_visibilities(file=self.run_display.current_file.text(), isolate=True)
@@ -596,23 +599,30 @@ class RunDisplayController:
                                     color=self.run_display.color_choices.currentText())
 
     def update_run_display(self):
+        index = self.run_display.current_runs.currentRow()
         self.run_display.histograms.clear()
-        self.run_display.current_file.setText(self.model.run_list[self.run_display.current_runs.currentRow()].filename)
-        self.run_display.color_choices.setCurrentText(self.model.run_list[self.run_display.current_runs.currentRow()].color)
-        self.run_display.histograms.addItems(self.model.run_list[self.run_display.current_runs.currentRow()].f_formats['HistTitles'])
+
+        self.run_display.current_file.setText(self.model.run_list[index].filename)
+        self.run_display.color_choices.setCurrentText(self.model.run_list[index].color)
+        self.run_display.histograms.addItems(self.model.run_list[index].f_formats['HistTitles'])
+        self.update_metadata()
 
     def update_metadata(self):
-        for run in self.model.run_list:
-            if run.filename == self.run_display.current_file.text():
-                pass
+        index = self.run_display.current_runs.currentRow()
+        self.run_display.header_data.clear()
+        self.run_display.header_data.addItems([key for key in self.model.run_list[index].f_formats.keys()])
+
+    def change_metadata(self):
+        if self.run_display.header_data.currentText():
+            index = self.run_display.current_runs.currentRow()
+            key = self.run_display.header_data.currentText()
+            value = self.model.run_list[index].f_formats[key]
+            self.run_display.header_display.setText(str(value))
 
     def change_title(self):
         if self.run_display.current_runs.currentItem():
-            print(self.run_display.current_runs.currentItem().text())
             self.model.update_title(file=self.run_display.current_file.text(),
                                     new_title=self.run_display.current_runs.currentItem().text())
-        else:
-            print('None boss')
 
     def populate_run_display(self):
         if self.model.run_list:
@@ -630,6 +640,8 @@ class RunDisplayController:
             self.run_display.inspect_hist_button.setEnabled(True)
             self.run_display.inspect_file_button.setEnabled(True)
             self.run_display.plot_all_button.setEnabled(True)
+            self.run_display.header_data.setEnabled(True)
+            self.run_display.header_display.setEnabled(True)
         else:
             self.run_display.color_choices.clear()
             self.run_display.histograms.clear()
@@ -639,6 +651,8 @@ class RunDisplayController:
             self.run_display.inspect_hist_button.setEnabled(False)
             self.run_display.inspect_file_button.setEnabled(False)
             self.run_display.plot_all_button.setEnabled(False)
+            self.run_display.header_data.setEnabled(False)
+            self.run_display.header_display.setEnabled(False)
 
     def update(self, signal):
         if signal == BeamsModel.RUN_LIST_CHANGED:
