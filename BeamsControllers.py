@@ -434,7 +434,7 @@ class PlotController:
             self.plot_panel.canvas_one.axes_time.set_ylim(float(self.plot_parameters['YMinOne']()),
                                                           float(self.plot_parameters['YMaxOne']()))
         else:
-            self.plot_panel.canvas_one.axes_time.set_ylim(min_y - abs(min_y * 0.05), max_y + abs(max_y * 0.05))
+            self.plot_panel.canvas_one.axes_time.set_ylim(min_y - abs(min_y * 0.1), max_y + abs(max_y * 0.1))
 
         self.plot_panel.canvas_one.set_style()
 
@@ -483,7 +483,7 @@ class PlotController:
             self.plot_panel.canvas_two.axes_time.set_ylim(float(self.plot_parameters['YMinTwo']()),
                                                           float(self.plot_parameters['YMaxTwo']()))
         else:
-            self.plot_panel.canvas_two.axes_time.set_ylim(min_y - abs(min_y * 0.05), max_y + abs(max_y * 0.05))
+            self.plot_panel.canvas_two.axes_time.set_ylim(min_y - abs(min_y * 0.1), max_y + abs(max_y * 0.1))
 
         self.plot_panel.canvas_two.set_style()
 

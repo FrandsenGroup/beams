@@ -432,7 +432,7 @@ class RunPlot(FigureCanvas):
         self.axes_freq.set_ylabel("Magnitude")
         # self.axes_freq.set_yticklabels([])
         self.axes_freq.set_xlim(0, 2.5)
-        self.axes_freq.set_ylim(0, None)
+        self.axes_freq.set_ylim(0, 7)
 
 
 # Formatter GUI

@@ -10,6 +10,7 @@ import time
 # Installed modules
 import numpy as np
 import scipy.interpolate as sp
+import scipy.fftpack as spf
 
 # Signals from Model to Controllers
 FILE_CHANGED = 1
@@ -296,25 +297,25 @@ class RunData:
 
     # FIXME FFTs aren't quite right. Also, add some dynamic display functionality that only displays the
     # FIXME important frequencies.
-    @staticmethod
-    def calculate_fft(bin_size, asymmetry, times):
+    # @staticmethod
+    def calculate_fft(self, bin_size, asymmetry, times):
         """ Calculates fast fourier transform on asymmetry. """
-        n = len(asymmetry)
-        k = np.arange(n)
-        frequencies = k / (n * bin_size / 1000)
-        frequencies = frequencies[range(int(n/2))]
-        y_values = np.fft.fft([asymmetry, times]) / n
-        y_values = abs(y_values[0, range(int(n/2))])
-        y_values[0] = 0
-
-        # Calculate the spline for the graph
+        magnitudes = np.fft.fft(asymmetry)
+        frequencies = np.fft.fftfreq(len(magnitudes), times[1]-times[0])
+        #
+        # # Calculate the spline for the graph
         x_smooth = np.linspace(frequencies.min(), frequencies.max(), 300)
         np.insert(x_smooth, 0, 0)
+        #
+        print(frequencies, magnitudes)
+        print(frequencies[0:int(np.floor(len(frequencies)/2))],
+              magnitudes[0:int(np.floor(len(frequencies)/2))])
 
-        y_smooth = sp.UnivariateSpline(frequencies, y_values)
+        y_smooth = sp.UnivariateSpline(frequencies[0:int(np.floor(len(frequencies)/2))],
+                                       abs(magnitudes[0:int(np.floor(len(frequencies)/2))]))
         y_smooth.set_smoothing_factor(0)
         y_smooth = y_smooth(x_smooth)
-
+        #
         return [x_smooth, y_smooth]
 
     def bin_data(self, final_bin_size=None, slider_moving=False):
@@ -325,8 +326,8 @@ class RunData:
         num_bins = len(self.asymmetry)
 
         if bin_binned <= bin_full:
-            #times = (np.arange(len(self.asymmetry)) * bin_full) + (self.t0 * bin_full)
-            #return [self.asymmetry, times, self.uncertainty]
+            # times = (np.arange(len(self.asymmetry)) * bin_full) + (self.t0 * bin_full)
+            # return [self.asymmetry, times, self.uncertainty]
             bin_binned = 1.01*bin_full # this will create a bin size of 1
 
         binned_indices_per_bin = int(np.round(bin_binned/bin_full))  # .floor?
