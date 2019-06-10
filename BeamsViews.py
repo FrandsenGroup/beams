@@ -424,15 +424,17 @@ class RunPlot(FigureCanvas):
         self.axes_time.tick_params(bottom=False, left=False)
         self.axes_time.set_xlabel("Time (" + chr(956) + "s)")
         self.axes_time.set_ylabel("Asymmetry")
+        # self.axes_time.legend(loc='upper left')
 
         self.axes_freq.spines['right'].set_visible(False)
         self.axes_freq.spines['top'].set_visible(False)
         self.axes_freq.tick_params(bottom=False, left=False)
         self.axes_freq.set_xlabel("Frequency (MHz)")
         self.axes_freq.set_ylabel("Magnitude")
+        self.axes_freq.legend(loc='upper right')
         # self.axes_freq.set_yticklabels([])
-        self.axes_freq.set_xlim(0, 2.5)
-        self.axes_freq.set_ylim(0, 7)
+        # self.axes_freq.set_xlim(0, 2.5)
+        # self.axes_freq.set_ylim(0, 7)
 
 
 # Formatter GUI

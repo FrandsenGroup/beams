@@ -307,9 +307,9 @@ class RunData:
         x_smooth = np.linspace(frequencies.min(), frequencies.max(), 300)
         np.insert(x_smooth, 0, 0)
         #
-        print(frequencies, magnitudes)
-        print(frequencies[0:int(np.floor(len(frequencies)/2))],
-              magnitudes[0:int(np.floor(len(frequencies)/2))])
+        # print(frequencies, magnitudes)
+        # print(frequencies[0:int(np.floor(len(frequencies)/2))],
+        #       magnitudes[0:int(np.floor(len(frequencies)/2))])
 
         y_smooth = sp.UnivariateSpline(frequencies[0:int(np.floor(len(frequencies)/2))],
                                        abs(magnitudes[0:int(np.floor(len(frequencies)/2))]))
