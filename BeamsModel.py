@@ -73,7 +73,6 @@ class BEAMSModel:
                     return
                 run.color = color
 
-        print('FIXME Changing Color')
         self.notify(RUN_DATA_CHANGED)
 
     def update_runs(self, formats):
@@ -194,6 +193,9 @@ class RunData:
 
         self.uncertainty = self.calculate_uncertainty(hist_one=self.f_formats['CalcHists'][0],
                                                       hist_two=self.f_formats['CalcHists'][1])
+
+        self.time = (np.arange(len(self.asymmetry)) * float(self.f_formats['BinSize'])/1000) + \
+                    (self.t0 * float(self.f_formats['BinSize'])/1000)
 
         self.binned_asymmetry = np.array([])
         self.binned_time = np.array([])
@@ -329,9 +331,7 @@ class RunData:
         num_bins = len(self.asymmetry)
 
         if bin_binned <= bin_full:
-            # times = (np.arange(len(self.asymmetry)) * bin_full) + (self.t0 * bin_full)
-            # return [self.asymmetry, times, self.uncertainty]
-            bin_binned = 1.01*bin_full # this will create a bin size of 1
+            return [self.asymmetry, self.time, self.uncertainty]
 
         binned_indices_per_bin = int(np.round(bin_binned/bin_full))  # .floor?
         binned_indices_total = int(np.floor(num_bins / binned_indices_per_bin))

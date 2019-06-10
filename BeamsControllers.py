@@ -617,6 +617,7 @@ class RunDisplayController:
         if self.model.run_list:
             self.run_display.current_file.setText(self.model.run_list[0].filename)
             self.run_display.current_runs.addItems([run.f_formats['Title'] for run in self.model.run_list])
+            self.run_display.current_runs.setCurrentRow(0)
             # self.run_display.color_choices.setCurrentText(self.model.run_list[0].color)
             # self.run_display.histograms.addItems(self.model.run_list[0].f_formats['HistTitles'])
             self.run_display.color_choices.setEnabled(True)
