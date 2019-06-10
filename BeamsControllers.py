@@ -441,6 +441,8 @@ class PlotController:
                 min_y = np.min(asymmetry[start_index:end_index]) if \
                     np.min(asymmetry[start_index:end_index]) < min_y else min_y
 
+        max_mag = 20 if max_mag > 20 else max_mag
+
         self.plot_panel.canvas_one.axes_freq.set_xlim(0, max_freq * 1.1)
         self.plot_panel.canvas_one.axes_freq.set_ylim(0, max_mag * 1.1)
 
@@ -506,7 +508,7 @@ class PlotController:
                 min_y = np.min(asymmetry[start_index:end_index]) if \
                     np.min(asymmetry[start_index:end_index]) < min_y else min_y
 
-        max_mag = 10 if max_mag > 10 else max_mag
+        max_mag = 20 if max_mag > 20 else max_mag
 
         self.plot_panel.canvas_two.axes_freq.set_xlim(0, max_freq * 1.1)
         self.plot_panel.canvas_two.axes_freq.set_ylim(0, max_mag * 1.1)
@@ -569,17 +571,17 @@ class RunDisplayController:
         self.run_display.inspect_file_button.released.connect(lambda: self.inspect_file())
         self.run_display.inspect_hist_button.released.connect(lambda: self.inspect_hist())
         self.run_display.color_choices.currentIndexChanged.connect(lambda: self.change_color())
-        self.run_display.run_titles.currentIndexChanged.connect(lambda: self.update_run_display())
+        self.run_display.current_runs.currentRowChanged.connect(lambda: self.update_run_display())
 
     def isolate_plot(self):
-        self.model.update_visibilities(file=self.run_display.run_titles.currentText(), isolate=True)
+        self.model.update_visibilities(file=self.run_display.current_file.text(), isolate=True)
 
     def plot_all(self):
         self.model.update_visibilities(isolate=False)
 
     def inspect_file(self):
-        if BeamsUtility.is_found(self.run_display.run_titles.currentText()):
-            self.popup = BeamsViews.FileDisplayUI(filename=self.run_display.run_titles.currentText())
+        if BeamsUtility.is_found(self.run_display.current_file.text()):
+            self.popup = BeamsViews.FileDisplayUI(filename=self.run_display.current_file.text())
             self.popup.show()
         else:
             message = 'File not found.'
@@ -587,7 +589,7 @@ class RunDisplayController:
 
     def inspect_hist(self):
         for run in self.model.run_list:
-            if run.filename == self.run_display.run_titles.currentText():
+            if run.filename == self.run_display.current_file.text():
                 histogram = run.retrieve_histogram_data(specific_hist=self.run_display.histograms.currentText()).values
                 print(histogram)
                 plt.ioff()
@@ -596,21 +598,25 @@ class RunDisplayController:
                 break
 
     def change_color(self):
-        self.model.update_run_color(file=self.run_display.run_titles.currentText(),
+        self.model.update_run_color(file=self.run_display.current_file.text(),
                                     color=self.run_display.color_choices.currentText())
 
     def update_run_display(self):
+        print(self.run_display.current_runs.currentRow())
         self.run_display.histograms.clear()
-        self.run_display.color_choices.setCurrentText(self.model.run_list[
-                                                          self.run_display.run_titles.currentIndex()].color)
-        self.run_display.histograms.addItems(self.model.run_list[
-                                                 self.run_display.run_titles.currentIndex()].f_formats['HistTitles'])
+        self.run_display.current_file.setText(self.model.run_list[self.run_display.current_runs.currentRow()].filename)
+        self.run_display.color_choices.setCurrentText(self.model.run_list[self.run_display.current_runs.currentRow()].color)
+        self.run_display.histograms.addItems(self.model.run_list[self.run_display.current_runs.currentRow()].f_formats['HistTitles'])
+
+    def update_metadata(self):
+        for run in self.model.run_list:
+            if run.filename == self.run_display.current_file.text():
+                pass
 
     def populate_run_display(self):
         if self.model.run_list:
-            self.run_display.run_titles.clear()
-            self.run_display.run_titles.addItems([run.filename for run in self.model.run_list])
-            # self.run_display.current_runs.addItems([run.f_formats['Title'] for run in self.model.run_list])
+            self.run_display.current_file.setText(self.model.run_list[0].filename)
+            self.run_display.current_runs.addItems([run.f_formats['Title'] for run in self.model.run_list])
             # self.run_display.color_choices.setCurrentText(self.model.run_list[0].color)
             # self.run_display.histograms.addItems(self.model.run_list[0].f_formats['HistTitles'])
             self.run_display.color_choices.setEnabled(True)
@@ -620,7 +626,6 @@ class RunDisplayController:
             self.run_display.inspect_file_button.setEnabled(True)
             self.run_display.plot_all_button.setEnabled(True)
         else:
-            self.run_display.run_titles.clear()
             self.run_display.color_choices.clear()
             self.run_display.histograms.clear()
             self.run_display.color_choices.setEnabled(False)

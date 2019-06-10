@@ -28,7 +28,7 @@ def convert_msr(in_file=None, out_file=None, flags=None):
             args = system_args[sys.platform]
 
             if flags:
-                args.extend(flags)  # -v (verbose) -hist (no histograms) -head (no header)
+                args.extend(flags)  # -v (verbose) -all (all metadata) See BEAMS_MUD.c to see other flags.
 
             if sys.platform == 'win32':
                 shell = True

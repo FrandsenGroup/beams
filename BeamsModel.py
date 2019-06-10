@@ -69,6 +69,8 @@ class BEAMSModel:
             if run.filename == file:
                 if run.color in self.used_colors:
                     self.update_colors(color=run.color, used=False)
+                if run.color == color:
+                    return
                 run.color = color
 
         print('FIXME Changing Color')
@@ -93,6 +95,7 @@ class BEAMSModel:
                 self.update_colors(color=self.color_options[0], used=True)
                 self.current_formats.update({filename: formats[filename]})
 
+        self.notify(RUN_DATA_CHANGED)
         self.notify(RUN_LIST_CHANGED)  # Notifies the Run Display Panel
 
     def update_plot_parameters(self):
