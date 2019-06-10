@@ -6,9 +6,32 @@
 int 
 readingMuSRFiles(int argc, char* argv[])
 {
+	int header_rows = 8;
+
 	bool read_header = true;
 	bool read_histogram = true;
 	bool verbose = false;
+
+	bool read_expt_number = false;
+	bool read_run_number = false;
+	bool read_elapsed_secs = false;
+	bool read_time_begin = false;
+	bool read_time_end = false;
+	bool read_title = false;
+	bool read_lab = false;
+	bool read_area = false;
+	bool read_method = false;
+	bool read_apparatus = false;
+	bool read_insert = false;
+	bool read_sample = false;
+	bool read_orient = false;
+	bool read_das = false;
+	bool read_experimenters = false;
+	bool read_temperature = false;
+	bool read_field = false;
+	bool read_num_hists = false;
+	bool read_num_bins = false;
+	bool read_bin_size = true;
 
 	for(int i = 0; i < argc; i++)
 	{
@@ -23,6 +46,104 @@ readingMuSRFiles(int argc, char* argv[])
 		else if(strcmp(argv[i],"-v") == 0)
 		{
 			verbose = true;
+		}
+		else if(strcmp(argv[i], "-en") == 0)
+		{
+			read_expt_number = true;
+		}
+		else if(strcmp(argv[i], "-rn") == 0)
+		{
+			read_run_number = true;
+		}
+		else if(strcmp(argv[i], "-es") == 0)
+		{
+			read_elapsed_secs = true;
+		}
+		else if(strcmp(argv[i], "-tb") == 0)
+		{
+			read_time_begin = true;
+		}
+		else if(strcmp(argv[i], "-te") == 0)
+		{
+			read_time_end = true;
+		}
+		else if(strcmp(argv[i], "-ti") == 0)
+		{
+			read_title = true;
+		}
+		else if(strcmp(argv[i], "-lb") == 0)
+		{
+			read_lab = true;
+		}
+		else if(strcmp(argv[i], "-ar") == 0)
+		{
+			read_area = true;
+		}
+		else if(strcmp(argv[i], "-me") == 0)
+		{
+			read_method = true;
+		}
+		else if(strcmp(argv[i], "-ap") == 0)
+		{
+			read_apparatus = true;
+		}
+		else if(strcmp(argv[i], "-in") == 0)
+		{
+			read_insert = true;
+		}
+		else if(strcmp(argv[i], "-sa") == 0)
+		{
+			read_sample = true;
+		}
+		else if(strcmp(argv[i], "-or") == 0)
+		{
+			read_orient = true;
+		}
+		else if(strcmp(argv[i], "-da") == 0)
+		{
+			read_das = true;
+		}
+		else if(strcmp(argv[i], "-ex") == 0)
+		{
+			read_experimenters = true;
+		}
+		else if(strcmp(argv[i], "-tp") == 0)
+		{
+			read_temperature = true;
+		}
+		else if(strcmp(argv[i], "-fd") == 0)
+		{
+			read_field = true;
+		}
+		else if(strcmp(argv[i], "-nh") == 0)
+		{
+			read_num_hists = true;
+		}
+		else if(strcmp(argv[i], "-nb") == 0)
+		{
+			read_num_bins = true;
+		}
+		else if(strcmp(argv[i], "-all") == 0)
+		{
+		bool read_expt_number = true;
+		read_run_number = true;
+		read_elapsed_secs = true;
+		read_time_begin = true;
+		read_time_end = true;
+		read_title = true;
+		read_lab = true;
+		read_area = true;
+		read_method = true;
+		read_apparatus = true;
+		read_insert = true;
+		read_sample = true;
+		read_orient = true;
+		read_das = true;
+		read_experimenters = true;
+		read_temperature = true;
+		read_field = true;
+		read_num_hists = true;
+		read_num_bins = true;
 		}
 	}	
 	
@@ -45,162 +166,173 @@ readingMuSRFiles(int argc, char* argv[])
 		if (verbose)
 			printf("Retrieving header data ... \n\n");
 
-		fprintf(fp, "BEAMS\nExptNumber,RunNumber,ElapsedSecs,TimeBegin,TimeEnd,Title,Lab,Area,Method,Apparatus,Insert,Sample,Orient,Das,Experimenters,Temperature,Field,NumHists,numBins,binsize,T0Bin,HeaderRows\n");
-		UINT32 pExptNumber[1];
-		MUD_getExptNumber(fh, pExptNumber);
-		fprintf(fp, "%d,",pExptNumber[0]);
-	
-		if(verbose)
-			printf("\tExperiment Number : %d\n", pExptNumber[0]);
+		fprintf(fp, "BEAMS\nHeaderRows:%d", header_rows);
+		if (verbose)
+		    printf("\tHeaderRows : %d\n", header_rows);
 
-		UINT32 pRunNumber[1];
-		MUD_getRunNumber(fh, pRunNumber);
-		fprintf(fp, "%d,",pRunNumber[0]);
-
-		if(verbose)
-			printf("\tRun Number : %d\n", pRunNumber);
-
-		UINT32 pElapsedSec[1];
-		MUD_getElapsedSec(fh, pElapsedSec);
-		fprintf(fp, "%d,",pElapsedSec[0]);
-
-		if(verbose)
-			printf("\tElapsed Seconds : %d\n", pElapsedSec[0]);
-
-		UINT32 TimeBegin[1];
-		MUD_getTimeBegin(fh, TimeBegin);
-		fprintf(fp, "%d,",TimeBegin[0]);
-
-		if(verbose)
-			printf("\tBeginning Time : %d\n", TimeBegin[0]);
-
-		UINT32 TimeEnd[1];
-		MUD_getTimeEnd(fh, TimeEnd);
-		fprintf(fp, "%d,",TimeEnd[0]);
-
-		if(verbose)
-			printf("\tEnding Time: %d\n", TimeEnd[0]);
-
-		char title[48];
-		MUD_getTitle(fh, title, 48);
-		fprintf(fp, "%s,",title);
-
-		if(verbose)
-			printf("\tRun Title : %s\n", title);
-
-		char lab[16];
-		MUD_getLab(fh, lab, 16);
-		fprintf(fp, "%s,",lab);
-
-		if(verbose)
-			printf("\tLab : %s\n", lab);
-
-		char area[16];
-		MUD_getArea(fh, area, 16);
-		fprintf(fp, "%s,",area);
-
-		if(verbose)
-			printf("\tArea : %s\n", area);
- 
-		//FIXME Problem reading in the µ symbol
-		char method[4];
-		MUD_getMethod(fh, method, 4);
-		fprintf(fp, "%s,",method);
-
-		if(verbose)
-			printf("\tMethod : %s\n", method);
-
-		char apparatus[16];
-		MUD_getApparatus(fh, apparatus, 16);
-		fprintf(fp, "%s,",apparatus);
-
-		if(verbose)
-			printf("\tApparatus : %s\n", apparatus);
-
-		char insert[16];
-		MUD_getInsert(fh, insert, 16);
-		fprintf(fp, "%s,",insert);
-
-		if(verbose)
-			printf("\tInsert : %s\n", insert);
-
-		char sample[16];
-		MUD_getSample(fh, sample, 16);
-		fprintf(fp, "%s,",sample);
-
-		if(verbose)
-			printf("\tSample : %s\n", sample);
-
-		char orient[16];
-		MUD_getOrient(fh, orient, 16);
-		fprintf(fp, "%s,",orient);
-
-		if(verbose)
-			printf("\tOrientation : %s\n", orient);
-
-		char das[16];
-		MUD_getDas(fh, das, 16);
-		fprintf(fp, "%s,",das);
-
-		if(verbose)
-			printf("\tDas : %s\n", das);
-
-		char experimenter[32];
-		MUD_getExperimenter(fh, experimenter, 32);
-		fprintf(fp, "%s,",experimenter);
-
-		if(verbose)
-			printf("\tExperimenter(s) : %s\n", experimenter); 
-
-		char temperature[16];
-		MUD_getTemperature(fh, temperature, 16);
-		fprintf(fp, "%s,",temperature);
-
-		if(verbose)
-			printf("\tTemperature : %s\n", temperature);
-
-		char field[16];
-		MUD_getField(fh, field, 16);
-		fprintf(fp, "%s,",field);
-
-		if(verbose)
-			printf("\tField : %s\n", field);
-
-		UINT32 histsNum[1];
-		MUD_getHists(fh, pType, histsNum);
-		fprintf(fp,"%d,",histsNum[0]);
-
-		if(verbose)
-			printf("\t# of Histograms : %d\n", histsNum[0]);
-
-		UINT32 binsNum[1];
-		MUD_getHistNumBins(fh, 1, binsNum);
-		fprintf(fp,"%d,",binsNum[0]);
-
-		if(verbose)
-			printf("\t# of Bins : %d\n", binsNum[0]);
-
-		REAL64 secsPerBin[1];
-		MUD_getHistSecondsPerBin(fh, 1, secsPerBin);
-		fprintf(fp,"%.16lf,",secsPerBin[0]*1000000000);
-
-		if(verbose)
-			printf("\tBin Size : %.16lf\n", secsPerBin[0]); 
-		
-		fprintf(fp, "%d\n", 3);
-		if(verbose)
-			printf("\tHeader Rows : %d\n\n", 3);
-
-		/*
-		UINT32 Bkgd[1];
-		MUD_getHistBkgd1(fh, 1, Bkgd);
-		fprintf(fp, "%d\n",Bkgd[0]);
-
-		if(verbose)
-			printf("\tBackground : %d\n\n",Bkgd[0]);	
-		*/
+	    if (read_bin_size)
+	    {
+	        REAL64 pData[1];
+	        MUD_getHistSecondsPerBin(fh, 1, pData);
+            	fprintf(fp, ",BinSize:%.16lf", pData[0]*1000000000);
+            	if (verbose)
+                	printf("\tBinSize : %.16lf\n", pData[0]*1000000000);
+        	}
+	    if (read_expt_number)
+	    {
+	        UINT32 pData[1];
+	        MUD_getExptNumber(fh, pData);
+	        fprintf(fp, ",ExptNumber:%d", pData[0]);
+	        if(verbose)
+	            printf("\tExptNumber : %d\n", pData[0]);
+        }
+		if (read_run_number)
+		{
+		    UINT32 pData[1];
+		    MUD_getRunNumber(fh, pData);
+		    fprintf(fp, ",RunNumber:%d", pData[0]);
+		    if(verbose)
+	            printf("\tRunNumber : %d\n", pData[0]);
+        }
+	    if (read_title)
+	    {
+	        char pData[48];
+	        MUD_getTitle(fh, pData, 48);
+	        fprintf(fp, ",Title:%s", pData);
+	        if(verbose)
+	            printf("\tTitle : %s\n", pData);
+	    }
+	    if (read_lab)
+	    {
+	        char pData[16];
+	        MUD_getLab(fh, pData, 16);
+	        fprintf(fp, ",Lab:%s", pData);
+	        if(verbose)
+	            printf("\tLab : %s\n", pData);
+	    }
+	    if (read_area)
+	    {
+	        char pData[16];
+	        MUD_getArea(fh, pData, 16);
+	        fprintf(fp, ",Area:%s", pData);
+	        if(verbose)
+	            printf("\tArea : %s\n", pData);
+	    }
+	    if (read_temperature)
+	    {
+	        char pData[16];
+	        MUD_getTemperature(fh, pData, 16);
+	        fprintf(fp, ",Temperature:%s", pData);
+	        if(verbose)
+	            printf("\tTemperature : %s\n", pData);
+	    }
+	    if (read_field)
+	    {
+	        char pData[16];
+	        MUD_getField(fh, pData, 16);
+	        fprintf(fp, ",Field:%s", pData);
+	        if(verbose)
+	            printf("\tField : %s\n", pData);
+	    }
+	    if (read_time_begin)
+	    {
+	        UINT32 pData[1];
+	        MUD_getTimeBegin(fh, pData);
+	        fprintf(fp, ",BeginTime:%d", pData[0]);
+	        if(verbose)
+	            printf("\tBeginTime : %d\n", pData[0]);
+	    }
+	    if (read_time_end)
+	    {
+	        UINT32 pData[1];
+	        MUD_getTimeEnd(fh, pData);
+	        fprintf(fp, ",EndTime:%d", pData[0]);
+	        if(verbose)
+	            printf("\tEndTime : %d\n", pData[0]);
+	    }
+	    if (read_elapsed_secs)
+	    {
+	        UINT32 pData[1];
+	        MUD_getElapsedSec(fh, pData);
+	        fprintf(fp, ",ElapsedSecs:%d", pData[0]);
+	        if(verbose)
+	            printf("\tElapsedSecs : %d\n", pData[0]);
+	    }
+	    if (read_method)
+	    {
+	        char pData[4];
+	        MUD_getMethod(fh, pData, 4);
+	        fprintf(fp, ",Method:%s", pData);
+	        if(verbose)
+	            printf("\tMethod : %s\n", pData);
+	    }
+	    if (read_apparatus)
+	    {
+            char pData[16];
+            MUD_getApparatus(fh, pData, 16);
+            fprintf(fp, ",Apparatus:%s", pData);
+            if(verbose)
+	            printf("\tApparatus : %s\n", pData);
+	    }
+	    if (read_insert)
+	    {
+            char pData[16];
+            MUD_getInsert(fh, pData, 16);
+            fprintf(fp, ",Insert:%s", pData);
+            if(verbose)
+	            printf("\tInsert : %s\n", pData);
+	    }
+	    if (read_sample)
+	    {
+            char pData[16];
+            MUD_getSample(fh, pData, 16);
+            fprintf(fp, ",Sample:%s", pData);
+            if(verbose)
+	            printf("\tSample : %s\n", pData);
+	    }
+	    if (read_orient)
+	    {
+            char pData[16];
+            MUD_getOrient(fh, pData, 16);
+            fprintf(fp, ",Orientation:%s", pData);
+            if(verbose)
+	            printf("\tOrientation : %s\n", pData);
+	    }
+	    if (read_das)
+	    {
+            char pData[16];
+            MUD_getDas(fh, pData, 16);
+            fprintf(fp, ",Das:%s", pData);
+            if(verbose)
+	            printf("\tDas : %s\n", pData);
+	    }
+	    if (read_num_hists)
+	    {
+            UINT32 pData[1];
+            MUD_getHists(fh, pType, pData);
+            fprintf(fp, ",NumHists:%d", pData[0]);
+            if(verbose)
+	            printf("\tNumHists : %d\n", pData[0]);
+	    }
+	    if (read_num_bins)
+	    {
+            UINT32 pData[1];
+            MUD_getHistNumBins(fh, 1, pData);
+            fprintf(fp, ",NumBins:%d", pData[0]);
+            if(verbose)
+	            printf("\tNumBins : %d\n", pData[0]);
+	    }
+	    if (read_experimenters)
+	    {
+            char pData[32];
+            MUD_getExperimenter(fh, pData, 32);
+            fprintf(fp, ",Experimenters:%s", pData);
+            if(verbose)
+	            printf("\tExperimenters : %s\n", pData);
+	    }
+		printf("\n");
+	    fprintf(fp, "\n");
 	}
-
 
 	if(read_histogram)
 	{
