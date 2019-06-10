@@ -409,7 +409,7 @@ class PlotController:
                     self.plot_panel.canvas_one.axes_time.plot(times, asymmetry, color=run.color, marker='.',
                                                               linestyle=self.plot_parameters['LineStyle']())
                     self.plot_panel.canvas_one.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
-                                                              label=run.f_formats['Title'])
+                                                              label=self.display_annotations(run))
 
                     max_mag = np.max(magnitudes) if np.max(magnitudes) > max_mag else max_mag
                     max_freq = np.max(frequencies) if np.max(frequencies) > max_freq else max_freq
@@ -420,7 +420,7 @@ class PlotController:
                                                                   linestyle=self.plot_parameters['LineStyle'](),
                                                                   marker='.', label=run.f_formats['RunNumber'])
                     self.plot_panel.canvas_one.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
-                                                              label=run.f_formats['Title'])
+                                                              label=self.display_annotations(run))
 
                     max_mag = np.max(magnitudes) if np.max(magnitudes) > max_mag else max_mag
                     max_freq = np.max(frequencies) if np.max(frequencies) > max_freq else max_freq
@@ -462,8 +462,12 @@ class PlotController:
 
         for run in self.model.run_list:
             if run.visibility:
+                start_binning = time.time()
                 asymmetry, times, uncertainty = run.bin_data(final_bin_size=float(self.plot_parameters['BinInputTwo']()),
                                                              slider_moving=moving)
+                print('To Bin: {}'.format((time.time() - start_binning)))
+
+
                 if moving:
                     self.plot_panel.canvas_two.axes_time.plot(times, asymmetry, color=run.color, linestyle='None',
                                                               marker='.')
@@ -473,22 +477,26 @@ class PlotController:
                     self.plot_panel.canvas_two.axes_time.plot(times, asymmetry, color=run.color, marker='.',
                                                               linestyle=self.plot_parameters['LineStyle']())
                     self.plot_panel.canvas_two.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
-                                                              label=run.f_formats['Title'])
+                                                              label=self.display_annotations(run))
 
                     max_mag = np.max(magnitudes) if np.max(magnitudes) > max_mag else max_mag
                     max_freq = np.max(frequencies) if np.max(frequencies) > max_freq else max_freq
 
                 else:
+                    start_plotting = time.time()
                     frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times)
-
+                    print('To Calculate Frequency: {}'.format((time.time() - start_plotting)))
+                    start_plotting = time.time()
                     self.plot_panel.canvas_two.axes_time.errorbar(times, asymmetry, uncertainty, color=run.color,
                                                                   linestyle=self.plot_parameters['LineStyle'](),
                                                                   marker='.')
+                    print('To Plot: {}'.format((time.time() - start_plotting)))
                     self.plot_panel.canvas_two.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
-                                                              label=run.f_formats['Title'])
+                                                              label=self.display_annotations(run))
 
                     max_mag = np.max(magnitudes) if np.max(magnitudes) > max_mag else max_mag
                     max_freq = np.max(frequencies) if np.max(frequencies) > max_freq else max_freq
+
 
                 frac_start = float(self.plot_parameters['XMinTwo']()) / (times[len(times)-1] - times[0])
                 frac_end = float(self.plot_parameters['XMaxTwo']()) / (times[len(times)-1] - times[0])
@@ -515,6 +523,9 @@ class PlotController:
             self.plot_panel.canvas_two.axes_time.set_ylim(min_y - abs(min_y * 0.1), max_y + abs(max_y * 0.1))
 
         self.plot_panel.canvas_two.set_style()
+
+    def display_annotations(self, run):
+        return run.f_formats['Title'] if self.plot_parameters['Annotations']() else None
 
     def display_plot_lines(self):
         return '-' if self.plot_parameters['PlotLines']() else 'None'

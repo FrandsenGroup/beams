@@ -135,6 +135,7 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
         self.check_autoscale_one = QtWidgets.QCheckBox()
         self.check_autoscale_two = QtWidgets.QCheckBox()
         self.check_uncertain.setChecked(True)
+        self.check_annotation.setChecked(True)
         self.check_autoscale_one.setChecked(True)
         self.check_autoscale_two.setChecked(True)
         self.label_uncertain = QtWidgets.QLabel('Show Uncertainty')
