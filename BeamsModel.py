@@ -133,6 +133,12 @@ class BEAMSModel:
 
         self.notify(RUN_DATA_CHANGED)
 
+    def update_title(self, file=None, new_title=None):
+        for run in self.run_list:
+            if run.filename == file:
+                run.f_formats['Title'] = new_title
+                self.notify(RUN_DATA_CHANGED)
+
     def open_save_session(self, run_list):
         self.run_list = run_list
         for run in run_list:
@@ -300,10 +306,8 @@ class RunData:
 
         return asymmetry
 
-    # FIXME FFTs aren't quite right. Also, add some dynamic display functionality that only displays the
-    # FIXME important frequencies.
-    # @staticmethod
-    def calculate_fft(self, bin_size, asymmetry, times):
+    @staticmethod
+    def calculate_fft(asymmetry, times):
         """ Calculates fast fourier transform on asymmetry. """
         magnitudes = np.fft.fft(asymmetry)
         frequencies = np.fft.fftfreq(len(magnitudes), times[1]-times[0])

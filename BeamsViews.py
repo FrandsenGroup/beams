@@ -337,6 +337,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.current_runs = QtWidgets.QListWidget()
         self.current_file = QtWidgets.QLineEdit()
         self.current_file.setEnabled(False)
+        # self.current_runs.edit
 
     def layout_widgets(self):
         temp_widget = QtWidgets.QWidget()
