@@ -307,18 +307,27 @@ class RunData:
         return asymmetry
 
     @staticmethod
-    def calculate_fft(asymmetry, times):
+    def calculate_fft(asymmetry, times, spline=True):
         """ Calculates fast fourier transform on asymmetry. """
         magnitudes = np.fft.fft(asymmetry)
         frequencies = np.fft.fftfreq(len(magnitudes), times[1]-times[0])
         magnitudes[0] = 0
 
-        x_smooth = np.linspace(frequencies.min(), frequencies.max(), 300)
+        if spline:
+            print('Spline')
+            x_smooth = np.linspace(frequencies.min(), frequencies.max(), 300)
 
-        y_smooth = sp.UnivariateSpline(frequencies[0:int(np.floor(len(frequencies)/2))],
-                                       abs(magnitudes[0:int(np.floor(len(frequencies)/2))]))
-        y_smooth.set_smoothing_factor(0)
-        y_smooth = y_smooth(x_smooth)
+            start_uv = time.time()
+            y_smooth = sp.UnivariateSpline(frequencies[0:int(np.floor(len(frequencies)/2))],
+                                           abs(magnitudes[0:int(np.floor(len(frequencies)/2))]))
+            print('To UV : {}'.format((time.time() - start_uv)))
+
+            y_smooth.set_smoothing_factor(0)
+            y_smooth = y_smooth(x_smooth)
+        else:
+            print('No spline')
+            x_smooth = frequencies
+            y_smooth = magnitudes
 
         return [x_smooth, y_smooth]
 

@@ -467,12 +467,11 @@ class PlotController:
                                                              slider_moving=moving)
                 print('To Bin: {}'.format((time.time() - start_binning)))
 
-
                 if moving:
                     self.plot_panel.canvas_two.axes_time.plot(times, asymmetry, color=run.color, linestyle='None',
                                                               marker='.')
                 elif not self.plot_parameters['Uncertainty']():
-                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times)
+                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times, spline=False)
 
                     self.plot_panel.canvas_two.axes_time.plot(times, asymmetry, color=run.color, marker='.',
                                                               linestyle=self.plot_parameters['LineStyle']())
@@ -484,7 +483,7 @@ class PlotController:
 
                 else:
                     start_plotting = time.time()
-                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times)
+                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times, spline=False)
                     print('To Calculate Frequency: {}'.format((time.time() - start_plotting)))
                     start_plotting = time.time()
                     self.plot_panel.canvas_two.axes_time.errorbar(times, asymmetry, uncertainty, color=run.color,
