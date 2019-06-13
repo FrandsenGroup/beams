@@ -135,6 +135,7 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
         self.check_autoscale_one = QtWidgets.QCheckBox()
         self.check_autoscale_two = QtWidgets.QCheckBox()
         self.check_uncertain.setChecked(True)
+        self.check_annotation.setChecked(True)
         self.check_autoscale_one.setChecked(True)
         self.check_autoscale_two.setChecked(True)
         self.label_uncertain = QtWidgets.QLabel('Show Uncertainty')
@@ -308,17 +309,22 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
 
     def create_widgets(self):
         self.display_label = QtWidgets.QLabel("Choose a currently plotted run below.\n")
-        self.run_titles = QtWidgets.QComboBox()
-        self.run_titles.addItem("No Runs Plotted")
+        # self.run_titles = QtWidgets.QComboBox()
+        # self.run_titles.addItem("No Runs Plotted")
         self.color_choices = QtWidgets.QComboBox()
         self.color_choices.setEnabled(False)
         self.color_choices.addItems(["None", "blue", "red", "green", "orange", "purple",
                                      "brown", "yellow", "gray", "olive", "cyan", "pink", "custom"])
+
         self.isolate_button = QtWidgets.QPushButton("Isolate")
         self.isolate_button.setEnabled(False)
         self.header_data = QtWidgets.QComboBox()
         self.header_data.setEnabled(False)
+        self.header_data.setFixedWidth(100)
+        # self.header_secondary = QtWidgets.QComboBox()
+        # self.header_secondary.setEnabled(False)
         self.header_display = QtWidgets.QLineEdit()
+        self.header_display.setToolTip('Edits are not saved.')
         self.header_display.setEnabled(False)
         self.histograms = QtWidgets.QComboBox()
         self.histograms.addItem("None")
@@ -329,16 +335,20 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.inspect_file_button.setEnabled(False)
         self.plot_all_button = QtWidgets.QPushButton("Plot All Runs")
         self.plot_all_button.setEnabled(False)
+
         self.header_data_label = QtWidgets.QLabel()
         self.histogram_label = QtWidgets.QLabel()
 
-        # self.current_runs = QtWidgets.QListWidget()
+        self.current_runs = QtWidgets.QListWidget()
+        self.current_file = QtWidgets.QLineEdit()
+        self.current_file.setEnabled(False)
+        # self.current_runs.edit
 
     def layout_widgets(self):
-        tempWidget = QtWidgets.QWidget()
+        temp_widget = QtWidgets.QWidget()
         main_layout = QtWidgets.QVBoxLayout()
         main_layout.addWidget(self.display_label)
-        main_layout.addWidget(self.run_titles)
+        main_layout.addWidget(self.current_file)
 
         row_one = QtWidgets.QHBoxLayout()
         row_one.addWidget(self.isolate_button)
@@ -354,12 +364,12 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         main_layout.addLayout(row_one)
         main_layout.addLayout(row_two)
         main_layout.addLayout(row_thr)
-        # main_layout.addWidget(self.current_runs)
+        main_layout.addWidget(self.current_runs)
         main_layout.addWidget(self.plot_all_button)
 
         main_layout.addStretch(1)
-        tempWidget.setLayout(main_layout)
-        self.setWidget(tempWidget)
+        temp_widget.setLayout(main_layout)
+        self.setWidget(temp_widget)
 
 
 class PlotPanel(QtWidgets.QDockWidget):
@@ -421,18 +431,16 @@ class RunPlot(FigureCanvas):
     def set_style(self):
         self.axes_time.spines['right'].set_visible(False)
         self.axes_time.spines['top'].set_visible(False)
-        self.axes_time.tick_params(bottom=False, left=False)
+        # self.axes_time.tick_params(bottom=False, left=False)
         self.axes_time.set_xlabel("Time (" + chr(956) + "s)")
         self.axes_time.set_ylabel("Asymmetry")
 
         self.axes_freq.spines['right'].set_visible(False)
         self.axes_freq.spines['top'].set_visible(False)
-        self.axes_freq.tick_params(bottom=False, left=False)
+        # self.axes_freq.tick_params(bottom=False, left=False)
         self.axes_freq.set_xlabel("Frequency (MHz)")
         self.axes_freq.set_ylabel("Magnitude")
-        # self.axes_freq.set_yticklabels([])
-        self.axes_freq.set_xlim(0, 2.5)
-        self.axes_freq.set_ylim(0, None)
+        self.axes_freq.legend(loc='upper right')
 
 
 # Formatter GUI

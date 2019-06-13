@@ -196,9 +196,6 @@ class FileManagerController:
             message = 'No files selected.'
             BeamsViews.ErrorMessageUI(message)
 
-        # FIXME Currently if it runs into msr files or bad files it won't plot the data. Maybe change it
-        # FIXME so it will deselect these files and still read in and plot the good files.
-
     def b_convert(self):
         """ Converts currently selected .msr files to .dat files and saves them in the current directory.
             Note: The change in the model will notify and result in update of GUI. See update(). """
@@ -395,6 +392,8 @@ class PlotController:
 
         max_y = -1
         min_y = 1
+        max_mag = 0
+        max_freq = 0
 
         self.plot_panel.canvas_one.axes_time.set_xlim(float(self.plot_parameters['XMinOne']()),
                                                       float(self.plot_parameters['XMaxOne']()))
@@ -406,18 +405,25 @@ class PlotController:
                     self.plot_panel.canvas_one.axes_time.plot(times, asymmetry, color=run.color, linestyle='None',
                                                               marker='.')
                 elif not self.plot_parameters['Uncertainty']():
-                    frequencies, magnitudes = run.calculate_fft(bin_size=float(self.plot_parameters['BinInputOne']()),
-                                                                asymmetry=asymmetry, times=times)
+                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times)
                     self.plot_panel.canvas_one.axes_time.plot(times, asymmetry, color=run.color, marker='.',
                                                               linestyle=self.plot_parameters['LineStyle']())
-                    self.plot_panel.canvas_one.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.')
+                    self.plot_panel.canvas_one.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
+                                                              label=self.display_annotations(run))
+
+                    max_mag = np.max(magnitudes) if np.max(magnitudes) > max_mag else max_mag
+                    max_freq = np.max(frequencies) if np.max(frequencies) > max_freq else max_freq
+
                 else:
-                    frequencies, magnitudes = run.calculate_fft(bin_size=float(self.plot_parameters['BinInputOne']()),
-                                                                asymmetry=asymmetry, times=times)
+                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times)
                     self.plot_panel.canvas_one.axes_time.errorbar(times, asymmetry, uncertainty, color=run.color,
                                                                   linestyle=self.plot_parameters['LineStyle'](),
-                                                                  marker='.')
-                    self.plot_panel.canvas_one.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.')
+                                                                  marker='.', label=run.f_formats['RunNumber'])
+                    self.plot_panel.canvas_one.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
+                                                              label=self.display_annotations(run))
+
+                    max_mag = np.max(magnitudes) if np.max(magnitudes) > max_mag else max_mag
+                    max_freq = np.max(frequencies) if np.max(frequencies) > max_freq else max_freq
 
                 frac_start = float(self.plot_parameters['XMinOne']()) / (times[len(times) - 1] - times[0])
                 frac_end = float(self.plot_parameters['XMaxOne']()) / (times[len(times) - 1] - times[0])
@@ -430,11 +436,16 @@ class PlotController:
                 min_y = np.min(asymmetry[start_index:end_index]) if \
                     np.min(asymmetry[start_index:end_index]) < min_y else min_y
 
+        max_mag = 20 if max_mag > 20 else max_mag
+
+        self.plot_panel.canvas_one.axes_freq.set_xlim(0, max_freq * 1.1)
+        self.plot_panel.canvas_one.axes_freq.set_ylim(0, max_mag * 1.1)
+
         if not self.plot_parameters['YAutoOne']():
             self.plot_panel.canvas_one.axes_time.set_ylim(float(self.plot_parameters['YMinOne']()),
                                                           float(self.plot_parameters['YMaxOne']()))
         else:
-            self.plot_panel.canvas_one.axes_time.set_ylim(min_y - abs(min_y * 0.05), max_y + abs(max_y * 0.05))
+            self.plot_panel.canvas_one.axes_time.set_ylim(min_y - abs(min_y * 0.1), max_y + abs(max_y * 0.1))
 
         self.plot_panel.canvas_one.set_style()
 
@@ -446,27 +457,45 @@ class PlotController:
                                                       float(self.plot_parameters['XMaxTwo']()))
         max_y = -2
         min_y = 2
+        max_mag = 0
+        max_freq = 0
 
         for run in self.model.run_list:
             if run.visibility:
+                start_binning = time.time()
                 asymmetry, times, uncertainty = run.bin_data(final_bin_size=float(self.plot_parameters['BinInputTwo']()),
                                                              slider_moving=moving)
+                print('To Bin: {}'.format((time.time() - start_binning)))
+
                 if moving:
                     self.plot_panel.canvas_two.axes_time.plot(times, asymmetry, color=run.color, linestyle='None',
                                                               marker='.')
                 elif not self.plot_parameters['Uncertainty']():
-                    frequencies, magnitudes = run.calculate_fft(bin_size=float(self.plot_parameters['BinInputTwo']()),
-                                                                asymmetry=asymmetry, times=times)
+                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times, spline=False)
+
                     self.plot_panel.canvas_two.axes_time.plot(times, asymmetry, color=run.color, marker='.',
                                                               linestyle=self.plot_parameters['LineStyle']())
-                    self.plot_panel.canvas_two.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.')
+                    self.plot_panel.canvas_two.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
+                                                              label=self.display_annotations(run))
+
+                    max_mag = np.max(magnitudes) if np.max(magnitudes) > max_mag else max_mag
+                    max_freq = np.max(frequencies) if np.max(frequencies) > max_freq else max_freq
+
                 else:
-                    frequencies, magnitudes = run.calculate_fft(bin_size=float(self.plot_parameters['BinInputTwo']()),
-                                                                asymmetry=asymmetry, times=times)
+                    start_plotting = time.time()
+                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times, spline=False)
+                    print('To Calculate Frequency: {}'.format((time.time() - start_plotting)))
+                    start_plotting = time.time()
                     self.plot_panel.canvas_two.axes_time.errorbar(times, asymmetry, uncertainty, color=run.color,
                                                                   linestyle=self.plot_parameters['LineStyle'](),
                                                                   marker='.')
-                    self.plot_panel.canvas_two.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.')
+                    print('To Plot: {}'.format((time.time() - start_plotting)))
+                    self.plot_panel.canvas_two.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
+                                                              label=self.display_annotations(run))
+
+                    max_mag = np.max(magnitudes) if np.max(magnitudes) > max_mag else max_mag
+                    max_freq = np.max(frequencies) if np.max(frequencies) > max_freq else max_freq
+
 
                 frac_start = float(self.plot_parameters['XMinTwo']()) / (times[len(times)-1] - times[0])
                 frac_end = float(self.plot_parameters['XMaxTwo']()) / (times[len(times)-1] - times[0])
@@ -479,13 +508,23 @@ class PlotController:
                 min_y = np.min(asymmetry[start_index:end_index]) if \
                     np.min(asymmetry[start_index:end_index]) < min_y else min_y
 
+        print(max_mag, max_freq)
+        max_mag = 20 if max_mag > 20 else max_mag
+        print(max_mag, max_freq)
+
+        self.plot_panel.canvas_two.axes_freq.set_xlim(0, max_freq * 1.1)
+        self.plot_panel.canvas_two.axes_freq.set_ylim(0, max_mag * 1.1)
+
         if not self.plot_parameters['YAutoTwo']():
             self.plot_panel.canvas_two.axes_time.set_ylim(float(self.plot_parameters['YMinTwo']()),
                                                           float(self.plot_parameters['YMaxTwo']()))
         else:
-            self.plot_panel.canvas_two.axes_time.set_ylim(min_y - abs(min_y * 0.05), max_y + abs(max_y * 0.05))
+            self.plot_panel.canvas_two.axes_time.set_ylim(min_y - abs(min_y * 0.1), max_y + abs(max_y * 0.1))
 
         self.plot_panel.canvas_two.set_style()
+
+    def display_annotations(self, run):
+        return run.f_formats['Title'] if self.plot_parameters['Annotations']() else None
 
     def display_plot_lines(self):
         return '-' if self.plot_parameters['PlotLines']() else 'None'
@@ -537,17 +576,19 @@ class RunDisplayController:
         self.run_display.inspect_file_button.released.connect(lambda: self.inspect_file())
         self.run_display.inspect_hist_button.released.connect(lambda: self.inspect_hist())
         self.run_display.color_choices.currentIndexChanged.connect(lambda: self.change_color())
-        self.run_display.run_titles.currentIndexChanged.connect(lambda: self.update_run_display())
+        self.run_display.current_runs.currentRowChanged.connect(lambda: self.update_run_display())
+        self.run_display.current_runs.itemChanged.connect(lambda: self.change_title())
+        self.run_display.header_data.currentIndexChanged.connect(lambda: self.change_metadata())
 
     def isolate_plot(self):
-        self.model.update_visibilities(file=self.run_display.run_titles.currentText(), isolate=True)
+        self.model.update_visibilities(file=self.run_display.current_file.text(), isolate=True)
 
     def plot_all(self):
         self.model.update_visibilities(isolate=False)
 
     def inspect_file(self):
-        if BeamsUtility.is_found(self.run_display.run_titles.currentText()):
-            self.popup = BeamsViews.FileDisplayUI(filename=self.run_display.run_titles.currentText())
+        if BeamsUtility.is_found(self.run_display.current_file.text()):
+            self.popup = BeamsViews.FileDisplayUI(filename=self.run_display.current_file.text())
             self.popup.show()
         else:
             message = 'File not found.'
@@ -555,7 +596,7 @@ class RunDisplayController:
 
     def inspect_hist(self):
         for run in self.model.run_list:
-            if run.filename == self.run_display.run_titles.currentText():
+            if run.filename == self.run_display.current_file.text():
                 histogram = run.retrieve_histogram_data(specific_hist=self.run_display.histograms.currentText()).values
                 print(histogram)
                 plt.ioff()
@@ -564,31 +605,54 @@ class RunDisplayController:
                 break
 
     def change_color(self):
-        self.model.update_run_color(file=self.run_display.run_titles.currentText(),
+        self.model.update_run_color(file=self.run_display.current_file.text(),
                                     color=self.run_display.color_choices.currentText())
 
     def update_run_display(self):
+        index = self.run_display.current_runs.currentRow()
         self.run_display.histograms.clear()
-        self.run_display.color_choices.setCurrentText(self.model.run_list[
-                                                          self.run_display.run_titles.currentIndex()].color)
-        self.run_display.histograms.addItems(self.model.run_list[
-                                                 self.run_display.run_titles.currentIndex()].f_formats['HistTitles'])
+
+        self.run_display.current_file.setText(self.model.run_list[index].filename)
+        self.run_display.color_choices.setCurrentText(self.model.run_list[index].color)
+        self.run_display.histograms.addItems(self.model.run_list[index].f_formats['HistTitles'])
+        self.update_metadata()
+
+    def update_metadata(self):
+        index = self.run_display.current_runs.currentRow()
+        self.run_display.header_data.clear()
+        self.run_display.header_data.addItems([key for key in self.model.run_list[index].f_formats.keys()])
+
+    def change_metadata(self):
+        if self.run_display.header_data.currentText():
+            index = self.run_display.current_runs.currentRow()
+            key = self.run_display.header_data.currentText()
+            value = self.model.run_list[index].f_formats[key]
+            self.run_display.header_display.setText(str(value))
+
+    def change_title(self):
+        if self.run_display.current_runs.currentItem():
+            self.model.update_title(file=self.run_display.current_file.text(),
+                                    new_title=self.run_display.current_runs.currentItem().text())
 
     def populate_run_display(self):
         if self.model.run_list:
-            self.run_display.run_titles.clear()
-            self.run_display.run_titles.addItems([run.filename for run in self.model.run_list])
-            # self.run_display.current_runs.addItems([run.f_formats['Title'] for run in self.model.run_list])
-            # self.run_display.color_choices.setCurrentText(self.model.run_list[0].color)
-            # self.run_display.histograms.addItems(self.model.run_list[0].f_formats['HistTitles'])
+            self.run_display.current_runs.clear()
+            self.run_display.current_file.setText(self.model.run_list[0].filename)
+            self.run_display.current_runs.addItems([run.f_formats['Title'] for run in self.model.run_list])
+            for index in range(self.run_display.current_runs.count()):
+                item = self.run_display.current_runs.item(index)
+                item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
+            self.run_display.current_runs.setCurrentRow(0)
+
             self.run_display.color_choices.setEnabled(True)
             self.run_display.isolate_button.setEnabled(True)
             self.run_display.histograms.setEnabled(True)
             self.run_display.inspect_hist_button.setEnabled(True)
             self.run_display.inspect_file_button.setEnabled(True)
             self.run_display.plot_all_button.setEnabled(True)
+            self.run_display.header_data.setEnabled(True)
+            self.run_display.header_display.setEnabled(True)
         else:
-            self.run_display.run_titles.clear()
             self.run_display.color_choices.clear()
             self.run_display.histograms.clear()
             self.run_display.color_choices.setEnabled(False)
@@ -597,6 +661,8 @@ class RunDisplayController:
             self.run_display.inspect_hist_button.setEnabled(False)
             self.run_display.inspect_file_button.setEnabled(False)
             self.run_display.plot_all_button.setEnabled(False)
+            self.run_display.header_data.setEnabled(False)
+            self.run_display.header_display.setEnabled(False)
 
     def update(self, signal):
         if signal == BeamsModel.RUN_LIST_CHANGED:
@@ -613,7 +679,6 @@ class FormatterController:
         if not parent or type(parent) is not FileManagerController:
             raise AttributeError('Parameter parent=FileManagerController not passed.')
             # FormatterController calls prompt_histograms() in FileManagerController after GUI closes
-            # FIXME Figure out how to make a 'close' event.
 
         self.formatter_gui = BeamsViews.FileFormatterUI(filenames=files)
         self.parent_controller = parent

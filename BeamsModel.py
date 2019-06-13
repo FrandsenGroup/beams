@@ -10,6 +10,7 @@ import time
 # Installed modules
 import numpy as np
 import scipy.interpolate as sp
+import scipy.fftpack as spf
 
 # Signals from Model to Controllers
 FILE_CHANGED = 1
@@ -68,9 +69,10 @@ class BEAMSModel:
             if run.filename == file:
                 if run.color in self.used_colors:
                     self.update_colors(color=run.color, used=False)
+                if run.color == color:
+                    return
                 run.color = color
 
-        print('FIXME Changing Color')
         self.notify(RUN_DATA_CHANGED)
 
     def update_runs(self, formats):
@@ -92,6 +94,7 @@ class BEAMSModel:
                 self.update_colors(color=self.color_options[0], used=True)
                 self.current_formats.update({filename: formats[filename]})
 
+        self.notify(RUN_DATA_CHANGED)
         self.notify(RUN_LIST_CHANGED)  # Notifies the Run Display Panel
 
     def update_plot_parameters(self):
@@ -129,6 +132,12 @@ class BEAMSModel:
                 run.visibility = True
 
         self.notify(RUN_DATA_CHANGED)
+
+    def update_title(self, file=None, new_title=None):
+        for run in self.run_list:
+            if run.filename == file:
+                run.f_formats['Title'] = new_title
+                self.notify(RUN_DATA_CHANGED)
 
     def open_save_session(self, run_list):
         self.run_list = run_list
@@ -190,6 +199,9 @@ class RunData:
 
         self.uncertainty = self.calculate_uncertainty(hist_one=self.f_formats['CalcHists'][0],
                                                       hist_two=self.f_formats['CalcHists'][1])
+
+        self.time = (np.arange(len(self.asymmetry)) * float(self.f_formats['BinSize'])/1000) + \
+                    (self.t0 * float(self.f_formats['BinSize'])/1000)
 
         self.binned_asymmetry = np.array([])
         self.binned_time = np.array([])
@@ -294,26 +306,23 @@ class RunData:
 
         return asymmetry
 
-    # FIXME FFTs aren't quite right. Also, add some dynamic display functionality that only displays the
-    # FIXME important frequencies.
     @staticmethod
-    def calculate_fft(bin_size, asymmetry, times):
+    def calculate_fft(asymmetry, times, spline=True):
         """ Calculates fast fourier transform on asymmetry. """
-        n = len(asymmetry)
-        k = np.arange(n)
-        frequencies = k / (n * bin_size / 1000)
-        frequencies = frequencies[range(int(n/2))]
-        y_values = np.fft.fft([asymmetry, times]) / n
-        y_values = abs(y_values[0, range(int(n/2))])
-        y_values[0] = 0
+        magnitudes = np.fft.fft(asymmetry)
+        frequencies = np.fft.fftfreq(len(magnitudes), times[1]-times[0])
+        magnitudes[0] = 0
 
-        # Calculate the spline for the graph
-        x_smooth = np.linspace(frequencies.min(), frequencies.max(), 300)
-        np.insert(x_smooth, 0, 0)
+        if spline:
+            x_smooth = np.linspace(frequencies.min(), frequencies.max(), 300)
 
-        y_smooth = sp.UnivariateSpline(frequencies, y_values)
-        y_smooth.set_smoothing_factor(0)
-        y_smooth = y_smooth(x_smooth)
+            y_smooth = sp.UnivariateSpline(frequencies[0:int(np.floor(len(frequencies)/2))],
+                                           abs(magnitudes[0:int(np.floor(len(frequencies)/2))]))
+            y_smooth.set_smoothing_factor(0)
+            y_smooth = y_smooth(x_smooth)
+        else:
+            x_smooth = frequencies
+            y_smooth = magnitudes
 
         return [x_smooth, y_smooth]
 
@@ -325,9 +334,7 @@ class RunData:
         num_bins = len(self.asymmetry)
 
         if bin_binned <= bin_full:
-            #times = (np.arange(len(self.asymmetry)) * bin_full) + (self.t0 * bin_full)
-            #return [self.asymmetry, times, self.uncertainty]
-            bin_binned = 1.01*bin_full # this will create a bin size of 1
+            return [self.asymmetry, self.time, self.uncertainty]
 
         binned_indices_per_bin = int(np.round(bin_binned/bin_full))  # .floor?
         binned_indices_total = int(np.floor(num_bins / binned_indices_per_bin))
