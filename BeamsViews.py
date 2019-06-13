@@ -195,7 +195,7 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
         self.input_ymin_one.setEnabled(False)
         self.input_ymin_two.setEnabled(False)
 
-    def layout_UI(self):
+    def layout_UI(self)
         try:  # Deals with issues with mu symbol
             label_xmin_one = QtWidgets.QLabel("XMin (" + chr(956) + "s)")
             label_xmin_two = QtWidgets.QLabel("XMin (" + chr(956) + "s)")
