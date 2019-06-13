@@ -199,6 +199,15 @@ class FileManagerController:
     def b_convert(self):
         """ Converts currently selected .msr files to .dat files and saves them in the current directory.
             Note: The change in the model will notify and result in update of GUI. See update(). """
+        def remove_msr():
+            for file_root in checked_items:
+                if os.path.splitext(file_root)[1] == '.msr':
+                    for index in range(self.file_manager.file_list.count()):
+                        if file_root == self.file_manager.file_list.item(index).text():
+                            self.file_manager.file_list.takeItem(index)
+                            self.model.update_file_list(file_root, remove=True)
+                            break
+
         checked_items = self.get_selected_files()
         for file in checked_items:
             full_file = self.model.all_full_filepaths[file]  # Get full file path from the Model for each file
@@ -215,6 +224,7 @@ class FileManagerController:
                     message = 'Error reading .msr file.\n {} has possibly been corrupted.'.format(full_file)
                     BeamsViews.ErrorMessageUI(error_message=message)
                     return
+        remove_msr()
 
     def b_write(self):
         """ Launches the Writer GUI.
