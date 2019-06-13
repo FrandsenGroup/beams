@@ -255,7 +255,7 @@ class FileManagerController:
     def prompt_histograms(self):
         """ Launches PlotDataGUI to prompt users to specify which histograms should be used
             to calculate the asymmetry. Users can change this later in the RunDisplayPanel"""
-        self.popup = PlotDataController(self.formats, model=self.model)
+        self.popup = PlotDataController(self.formats, model=self.model, plot=True)
 
     def get_selected_files(self):
         """ Returns all currently selected files in the File Manager Panel. """
@@ -722,8 +722,30 @@ class WriterController:
         self.files = selected_files
         self.custom_file = False
 
+        self.popup = None
+        self.formats = None
+
         self.set_callbacks()
         self.writer_gui.show()
+
+        current_runs = [run.filename for run in self.model.run_list]
+        for file in self.files:
+            if file not in current_runs:
+                message = 'Some of the files you\'ve selected haven\'t been read in yet. Would you like to now?'
+                BeamsViews.PermissionsMessageUI(message, pos_function=self.read_files)
+                break
+
+    def read_files(self):
+        check_files = [self.model.all_full_filepaths[key] for key in self.files]
+        beams_files, *_ = BeamsUtility.check_files(check_files)
+        if self.formats:
+            self.formats.clear()
+
+        if beams_files:
+            self.formats = {file: file_format for file, file_format in
+                            zip(beams_files, [BeamsUtility.get_header(file) for file in beams_files])}
+
+            self.popup = PlotDataController(self.formats, model=self.model, plot=False)
 
     def set_callbacks(self):
         self.writer_gui.select_folder.released.connect(lambda: self.custom_file_choice())
@@ -779,11 +801,12 @@ class PlotDataController:
             will be used to calculate the asymmetry for each file.
 
             Instantiated by FileManagerController class only."""
-    def __init__(self, formats=None, model=None):
+    def __init__(self, formats=None, model=None, plot=True):
         """ Instantiates an object of the PlotDataController class, connects it to the PlotDataGUI
                 and its calling class (FileManagerController). """
 
         self.plot_data_gui = BeamsViews.PlotDataUI()
+        self.plot = plot
         self.model = model
         self.set_callbacks()
         self.formats = formats
@@ -836,7 +859,7 @@ class PlotDataController:
     def plot_formatted_files(self):
         """ Closes the GUI and calls update_model() in the parent class FileManagerControl. """
         self.plot_data_gui.close()
-        self.model.update_runs(self.formats)  # FileManagerController will send the {file: format} dict to the model.
+        self.model.update_runs(self.formats, plot=self.plot)  # FileManagerController will send the {file: format} dict to the model.
 
     def remove_file(self):
         """ Removes the currently selected file from the file list and from the format list. """

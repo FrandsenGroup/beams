@@ -75,7 +75,7 @@ class BEAMSModel:
 
         self.notify(RUN_DATA_CHANGED)
 
-    def update_runs(self, formats):
+    def update_runs(self, formats, plot=True):
         """ Updates the list of runs by removing any old runs not selected by user and adding the new ones."""
         current_files = [file for file in self.current_formats.keys()]
         for filename in current_files:  # First checks if any old filenames are not in the new list
@@ -88,14 +88,14 @@ class BEAMSModel:
 
         for filename in formats.keys():  # Second checks if any filenames in the new list are not in the old
             if filename not in self.current_formats.keys():
-                # print('Adding', formats[filename])
                 self.run_list.append(RunData(filename=filename, f_format=formats[filename],
                                              color=self.color_options[0]))
                 self.update_colors(color=self.color_options[0], used=True)
                 self.current_formats.update({filename: formats[filename]})
 
-        self.notify(RUN_DATA_CHANGED)
-        self.notify(RUN_LIST_CHANGED)  # Notifies the Run Display Panel
+        if plot:
+            self.notify(RUN_DATA_CHANGED)
+            self.notify(RUN_LIST_CHANGED)  # Notifies the Run Display Panel
 
     def update_plot_parameters(self):
         """ Prompts the re-plotting of data by notifying the PlotPanel"""
