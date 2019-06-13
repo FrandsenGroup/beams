@@ -436,7 +436,7 @@ class PlotController:
                 min_y = np.min(asymmetry[start_index:end_index]) if \
                     np.min(asymmetry[start_index:end_index]) < min_y else min_y
 
-        max_mag = 20 if max_mag > 20 else max_mag
+        # max_mag = 20 if max_mag > 20 else max_mag
 
         self.plot_panel.canvas_one.axes_freq.set_xlim(0, max_freq * 1.1)
         self.plot_panel.canvas_one.axes_freq.set_ylim(0, max_mag * 1.1)
@@ -450,6 +450,7 @@ class PlotController:
         self.plot_panel.canvas_one.set_style()
 
     def update_canvas_two(self, moving=False):
+        # FIXME Much room for improvement in this function.
         self.plot_panel.canvas_two.axes_time.clear()
         self.plot_panel.canvas_two.axes_freq.clear()
 
@@ -496,7 +497,6 @@ class PlotController:
                     max_mag = np.max(magnitudes) if np.max(magnitudes) > max_mag else max_mag
                     max_freq = np.max(frequencies) if np.max(frequencies) > max_freq else max_freq
 
-
                 frac_start = float(self.plot_parameters['XMinTwo']()) / (times[len(times)-1] - times[0])
                 frac_end = float(self.plot_parameters['XMaxTwo']()) / (times[len(times)-1] - times[0])
                 start_index = int(np.floor(len(asymmetry)*frac_start))
@@ -508,9 +508,9 @@ class PlotController:
                 min_y = np.min(asymmetry[start_index:end_index]) if \
                     np.min(asymmetry[start_index:end_index]) < min_y else min_y
 
-        print(max_mag, max_freq)
-        max_mag = 20 if max_mag > 20 else max_mag
-        print(max_mag, max_freq)
+        # print(max_mag, max_freq)
+        # max_mag = 20 if max_mag > 20 else max_mag
+        # print(max_mag, max_freq)
 
         self.plot_panel.canvas_two.axes_freq.set_xlim(0, max_freq * 1.1)
         self.plot_panel.canvas_two.axes_freq.set_ylim(0, max_mag * 1.1)
