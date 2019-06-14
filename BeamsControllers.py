@@ -43,10 +43,11 @@ class ProgramController:
         sys.exit(self.app.exec_())
 
     def set_callbacks(self):
-        self.main_window_v.save_session_act.triggered.connect(lambda: self.save_session())
-        self.main_window_v.open_session_act.triggered.connect(lambda: self.open_session())
-        self.main_window_v.add_data_act.triggered.connect(lambda: self.add_data_file())
-        self.main_window_v.format_act.triggered.connect(lambda: self.format_files())
+        self.main_window_v.save_session_act.triggered.connect(self.save_session)
+        self.main_window_v.open_session_act.triggered.connect(self.open_session)
+        self.main_window_v.add_data_act.triggered.connect(self.add_data_file)
+        self.main_window_v.format_act.triggered.connect(self.format_files)
+        self.main_window_v.exit_act.triggered.connect(sys.exit)
 
     @staticmethod
     def format_files():
@@ -329,6 +330,7 @@ class PlotController:
                                 'YAutoTwo': self.plot_editor.check_autoscale_two.isChecked,
                                 'PlotLines': self.plot_editor.check_plot_lines.isChecked,
                                 'Annotations': self.plot_editor.check_annotation.isChecked,
+                                'Spline': self.plot_editor.check_spline.isChecked,
                                 'Uncertainty': self.plot_editor.check_uncertain.isChecked,
                                 'LineStyle': self.display_plot_lines}
 
@@ -361,6 +363,7 @@ class PlotController:
         self.plot_editor.check_annotation.stateChanged.connect(lambda: self.visual_data_change())
         self.plot_editor.check_plot_lines.stateChanged.connect(lambda: self.visual_data_change())
         self.plot_editor.check_uncertain.stateChanged.connect(lambda: self.visual_data_change())
+        self.plot_editor.check_spline.stateChanged.connect(lambda: self.visual_data_change())
         self.plot_editor.check_autoscale_one.stateChanged.connect(lambda: self.check_y_limits(plot=1))
         self.plot_editor.check_autoscale_two.stateChanged.connect(lambda: self.check_y_limits(plot=2))
 
@@ -415,7 +418,8 @@ class PlotController:
                     self.plot_panel.canvas_one.axes_time.plot(times, asymmetry, color=run.color, linestyle='None',
                                                               marker='.')
                 elif not self.plot_parameters['Uncertainty']():
-                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times)
+                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times,
+                                                                spline=self.plot_parameters['Spline']())
                     self.plot_panel.canvas_one.axes_time.plot(times, asymmetry, color=run.color, marker='.',
                                                               linestyle=self.plot_parameters['LineStyle']())
                     self.plot_panel.canvas_one.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
@@ -425,7 +429,8 @@ class PlotController:
                     max_freq = np.max(frequencies) if np.max(frequencies) > max_freq else max_freq
 
                 else:
-                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times)
+                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times,
+                                                                spline=self.plot_parameters['Spline']())
                     self.plot_panel.canvas_one.axes_time.errorbar(times, asymmetry, uncertainty, color=run.color,
                                                                   linestyle=self.plot_parameters['LineStyle'](),
                                                                   marker='.', label=run.f_formats['RunNumber'])
@@ -482,7 +487,8 @@ class PlotController:
                     self.plot_panel.canvas_two.axes_time.plot(times, asymmetry, color=run.color, linestyle='None',
                                                               marker='.')
                 elif not self.plot_parameters['Uncertainty']():
-                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times, spline=False)
+                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times,
+                                                                spline=self.plot_parameters['Spline']())
 
                     self.plot_panel.canvas_two.axes_time.plot(times, asymmetry, color=run.color, marker='.',
                                                               linestyle=self.plot_parameters['LineStyle']())
@@ -494,7 +500,8 @@ class PlotController:
 
                 else:
                     start_plotting = time.time()
-                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times, spline=False)
+                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times,
+                                                                spline=self.plot_parameters['Spline']())
                     print('To Calculate Frequency: {}'.format((time.time() - start_plotting)))
                     start_plotting = time.time()
                     self.plot_panel.canvas_two.axes_time.errorbar(times, asymmetry, uncertainty, color=run.color,

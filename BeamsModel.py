@@ -310,7 +310,7 @@ class RunData:
     def calculate_fft(asymmetry, times, spline=True):
         """ Calculates fast fourier transform on asymmetry. """
         magnitudes = np.fft.fft(asymmetry)
-        frequencies = np.fft.fftfreq(len(magnitudes), times[1]-times[0])
+        frequencies = abs(np.fft.fftfreq(len(magnitudes), times[1]-times[0]))
         magnitudes[0] = 0
 
         if spline:
