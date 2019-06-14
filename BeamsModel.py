@@ -320,6 +320,7 @@ class RunData:
                                            abs(magnitudes[0:int(np.floor(len(frequencies)/2))]))
             y_smooth.set_smoothing_factor(0)
             y_smooth = y_smooth(x_smooth)
+
         else:
             print('No spline')
             x_smooth = frequencies[0:int(np.floor(len(frequencies)/2))]
