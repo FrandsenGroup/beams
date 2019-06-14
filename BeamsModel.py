@@ -322,8 +322,8 @@ class RunData:
             y_smooth = y_smooth(x_smooth)
         else:
             print('No spline')
-            x_smooth = frequencies
-            y_smooth = magnitudes
+            x_smooth = frequencies[0:int(np.floor(len(frequencies)/2))]
+            y_smooth = abs(magnitudes[0:int(np.floor(len(frequencies)/2))])
 
         return [x_smooth, y_smooth]
 
