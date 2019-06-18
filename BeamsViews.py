@@ -123,10 +123,14 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
 
     def init_UI(self):
         self.setWindowTitle("Graph Editor")
+        self.init_buttons()
         self.init_check_options()
         self.init_sliders()
         self.init_input_boxes()
         self.setWidget(self.layout_UI())
+
+    def init_buttons(self):
+        self.save_button = QtWidgets.QPushButton('Save')
 
     def init_check_options(self):
         self.check_uncertain = QtWidgets.QCheckBox()
@@ -300,6 +304,8 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
         main_layout = QtWidgets.QHBoxLayout()
         main_layout.addLayout(col_one)
         main_layout.addLayout(col_two)
+        main_layout.addSpacing(15)
+        main_layout.addWidget(self.save_button)
 
         temp_widget.setLayout(main_layout)
         return temp_widget
@@ -450,8 +456,6 @@ class RunPlot(FigureCanvas):
         self.axes_freq.set_ylabel("Magnitude")
         self.axes_freq.legend(loc='upper right')
 
-
-# Formatter GUI
 
 class FileFormatterUI(QtWidgets.QDialog):
     def __init__(self, filenames=None):
@@ -620,8 +624,6 @@ class FileFormatterGUI(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.plot_format), _translate("Dialog", "Plot Format"))
 
 
-# Other GUI's
-
 class FileDisplayUI(QtWidgets.QPlainTextEdit):
     def __init__(self, filename=None):
         super(FileDisplayUI, self).__init__()
@@ -699,6 +701,38 @@ class WriteDataUI(QtWidgets.QDialog):
         self.setLayout(col_one)
 
 
+class SavePlotUI(QtWidgets.QDialog):
+    def __init__(self):
+        super(SavePlotUI, self).__init__()
+        message = QtWidgets.QLabel('Would you like to save the left-side or right-side plots?')
+        self.left_radio = QtWidgets.QRadioButton()
+        self.right_radio = QtWidgets.QRadioButton()
+        self.save_button = QtWidgets.QPushButton('Save As')
+        left_label = QtWidgets.QLabel('Left')
+        right_label = QtWidgets.QLabel('Right')
+
+        main_layout = QtWidgets.QVBoxLayout()
+        row_one = QtWidgets.QHBoxLayout()
+        row_one.addSpacing(35)
+        row_one.addWidget(message)
+        row_one.setAlignment(message, QtCore.Qt.AlignCenter)
+        row_one.addSpacing(35)
+        row_two = QtWidgets.QHBoxLayout()
+        row_two.addStretch()
+        row_two.addWidget(left_label)
+        row_two.addWidget(self.left_radio)
+        row_two.addSpacing(15)
+        row_two.addWidget(right_label)
+        row_two.addWidget(self.right_radio)
+        row_two.addSpacing(25)
+        row_two.addWidget(self.save_button)
+        row_two.addStretch()
+        main_layout.addLayout(row_one)
+        main_layout.addSpacing(12)
+        main_layout.addLayout(row_two)
+
+        self.setLayout(main_layout)
+
 class PlotDataUI(QtWidgets.QDialog):
     def __init__(self):
         super(PlotDataUI, self).__init__()
@@ -733,7 +767,6 @@ class PlotDataUI(QtWidgets.QDialog):
         self.setLayout(col)
 
 
-# Support GUIs
 class ErrorMessageUI(QtWidgets.QDialog):
     def __init__(self, error_message=None, pos_function=None):
         super(ErrorMessageUI, self).__init__()

@@ -5,12 +5,10 @@ import BeamsUtility
 
 # Standard Library modules
 import os
-import time
 
 # Installed modules
 import numpy as np
 import scipy.interpolate as sp
-import scipy.fftpack as spf
 
 # Signals from Model to Controllers
 FILE_CHANGED = 1
@@ -70,7 +68,7 @@ class BEAMSModel:
                 if run.color in self.used_colors:
                     self.update_colors(color=run.color, used=False)
                 if run.color == color:
-                    return
+                    return  # No change
                 run.color = color
 
         self.notify(RUN_DATA_CHANGED)
@@ -95,7 +93,7 @@ class BEAMSModel:
 
         if plot:
             self.notify(RUN_DATA_CHANGED)
-            self.notify(RUN_LIST_CHANGED)  # Notifies the Run Display Panel
+            self.notify(RUN_LIST_CHANGED)
 
     def update_plot_parameters(self):
         """ Prompts the re-plotting of data by notifying the PlotPanel"""
@@ -224,7 +222,6 @@ class RunData:
 
     def calculate_uncertainty(self, hist_one=None, hist_two=None):
         """ Calculates the uncertainty based on histograms. """
-
         start_bin_one, start_bin_two, end_bin_one, end_bin_two = self.calculate_start_end(hist_one, hist_two)
 
         d_one = np.sqrt(self.histogram_data.loc[start_bin_one-1:end_bin_one, hist_one])
@@ -241,17 +238,13 @@ class RunData:
 
     def calculate_background_radiation(self, hist_one=None, hist_two=None):
         """ Calculates the background radiation based on histogram data before positrons are being detected. """
-        # Get the portion of histogram before positrons from muon decay are being detected
-
         background = self.histogram_data.loc[int(self.f_formats['BkgdOne'][hist_one]):
                                              int(self.f_formats['BkgdTwo'][hist_one])-1, hist_one].values
-        bkg_one = np.mean(background)  # Find mean on new array
+        bkg_one = np.mean(background)
 
         background = self.histogram_data.loc[int(self.f_formats['BkgdOne'][hist_two]):
                                              int(self.f_formats['BkgdTwo'][hist_two])-1, hist_two].values
         bkg_two = np.mean(background)
-
-        del background
 
         return [bkg_one, bkg_two]
 
@@ -295,7 +288,6 @@ class RunData:
 
     def calculate_asymmetry(self, hist_one=None, hist_two=None, bkg_one=None, bkg_two=None):
         """ Calculate asymmetry based on the overlapping 'good' area of the histograms. """
-
         start_bin_one, start_bin_two, end_bin_one, end_bin_two = self.calculate_start_end(hist_one, hist_two)
 
         hist_good_one = self.histogram_data.loc[start_bin_one-1:end_bin_one, hist_one].values
@@ -317,12 +309,11 @@ class RunData:
             x_smooth = np.linspace(frequencies.min(), frequencies.max(), 300)
 
             y_smooth = sp.UnivariateSpline(frequencies[0:int(np.floor(len(frequencies)/2))],
-                                           abs(magnitudes[0:int(np.floor(len(frequencies)/2))]))
+                                           abs(magnitudes[0:int(np.floor(len(frequencies)/2))]),
+                                           k=5)
             y_smooth.set_smoothing_factor(0)
             y_smooth = y_smooth(x_smooth)
-
         else:
-            print('No spline')
             x_smooth = frequencies[0:int(np.floor(len(frequencies)/2))]
             y_smooth = abs(magnitudes[0:int(np.floor(len(frequencies)/2))])
 

@@ -311,6 +311,7 @@ class PlotController:
         self.plot_panel = plot_panel
         self.model = model
         self.program_controller = parent
+        self.popup = None
 
         self.model.observers[BeamsModel.RUN_DATA_CHANGED].append(self)
 
@@ -366,6 +367,10 @@ class PlotController:
         self.plot_editor.check_spline.stateChanged.connect(lambda: self.visual_data_change())
         self.plot_editor.check_autoscale_one.stateChanged.connect(lambda: self.check_y_limits(plot=1))
         self.plot_editor.check_autoscale_two.stateChanged.connect(lambda: self.check_y_limits(plot=2))
+        self.plot_editor.save_button.released.connect(self.save_plots)
+
+    def save_plots(self):
+        self.popup = SavePlotController(canvases=[self.plot_panel.canvas_one, self.plot_panel.canvas_two])
 
     def bin_changed(self, moving=None, plot=None):
         """ Handles the bin size changing on either the slider or the text box. If one changes then
@@ -400,6 +405,7 @@ class PlotController:
         print('\tBinned and Plotted all runs in {} seconds'.format(time.time()-start))
 
     def update_canvas_one(self, moving=False):
+        # FIXME this function has gotten a bit out of hand, refactor time!
         self.plot_panel.canvas_one.axes_time.clear()
         self.plot_panel.canvas_one.axes_freq.clear()
 
@@ -478,11 +484,8 @@ class PlotController:
 
         for run in self.model.run_list:
             if run.visibility:
-                start_binning = time.time()
                 asymmetry, times, uncertainty = run.bin_data(final_bin_size=float(self.plot_parameters['BinInputTwo']()),
                                                              slider_moving=moving)
-                print('To Bin: {}'.format((time.time() - start_binning)))
-
                 if moving:
                     self.plot_panel.canvas_two.axes_time.plot(times, asymmetry, color=run.color, linestyle='None',
                                                               marker='.')
@@ -499,15 +502,11 @@ class PlotController:
                     max_freq = np.max(frequencies) if np.max(frequencies) > max_freq else max_freq
 
                 else:
-                    start_plotting = time.time()
                     frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times,
                                                                 spline=self.plot_parameters['Spline']())
-                    print('To Calculate Frequency: {}'.format((time.time() - start_plotting)))
-                    start_plotting = time.time()
                     self.plot_panel.canvas_two.axes_time.errorbar(times, asymmetry, uncertainty, color=run.color,
                                                                   linestyle=self.plot_parameters['LineStyle'](),
                                                                   marker='.')
-                    print('To Plot: {}'.format((time.time() - start_plotting)))
                     self.plot_panel.canvas_two.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
                                                               label=self.display_annotations(run))
 
@@ -588,6 +587,7 @@ class RunDisplayController:
         return 'Run Display Controller'
 
     def set_callbacks(self):
+        """ Sets callbacks for events in the Run Display Panel. """
         self.run_display.isolate_button.released.connect(lambda: self.isolate_plot())
         self.run_display.plot_all_button.released.connect(lambda: self.plot_all())
         self.run_display.inspect_file_button.released.connect(lambda: self.inspect_file())
@@ -615,7 +615,6 @@ class RunDisplayController:
         for run in self.model.run_list:
             if run.filename == self.run_display.current_file.text():
                 histogram = run.retrieve_histogram_data(specific_hist=self.run_display.histograms.currentText()).values
-                print(histogram)
                 plt.ioff()
                 self.popup = BeamsViews.HistogramDisplay(histogram=histogram)
                 self.popup.show()
@@ -739,7 +738,7 @@ class WriterController:
         for file in self.files:
             if file not in current_runs:
                 message = 'Some of the files you\'ve selected haven\'t been read in yet. Would you like to now?'
-                BeamsViews.PermissionsMessageUI(message, pos_function=self.read_files)
+                BeamsViews.PermissionsMessageUI(message, pos_function=self.read_files, neg_function=self.writer_gui.close)
                 break
 
     def read_files(self):
@@ -866,7 +865,7 @@ class PlotDataController:
     def plot_formatted_files(self):
         """ Closes the GUI and calls update_model() in the parent class FileManagerControl. """
         self.plot_data_gui.close()
-        self.model.update_runs(self.formats, plot=self.plot)  # FileManagerController will send the {file: format} dict to the model.
+        self.model.update_runs(self.formats, plot=self.plot)
 
     def remove_file(self):
         """ Removes the currently selected file from the file list and from the format list. """
@@ -885,4 +884,28 @@ class PlotDataController:
                                                        self.plot_data_gui.c_file_list.currentText()]['HistTitles'])
 
 
+class SavePlotController:
+    def __init__(self, canvases=None):
+        self.save_plot_gui = BeamsViews.SavePlotUI()
+        self.save_plot_gui.save_button.released.connect(self.save_plots)
+        self.canvases = canvases
+        self.save_plot_gui.show()
 
+    def save_plots(self):
+        if self.save_plot_gui.left_radio.isChecked():
+            plot = 1
+        elif self.save_plot_gui.right_radio.isChecked():
+            plot = 2
+        else:
+            message = 'You need to select a plot.'
+            BeamsViews.ErrorMessageUI(error_message=message)
+            return
+
+        plt.figure(plot)  # Sets current figure.
+
+        saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self.save_plot_gui, 'Specify file', '/home')[0]
+        if not saved_file_path:
+            return
+
+        plt.savefig(saved_file_path)
+        self.save_plot_gui.close()

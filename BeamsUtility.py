@@ -143,6 +143,7 @@ def check_files(filenames=None):
     dat_beams_files = []  # .dat files in BEAMS format, no specification necessary
     dat_other_files = []  # .dat files in non-BEAMS format, user specification necessary
     msr_files = []  # .msr files (MUD format)
+    asy_files = []  # Files holding asymmetry data
     bad_files = []  # Unsupported file types
 
     for file in filenames:
