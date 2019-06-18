@@ -2,7 +2,7 @@
 
 # Installed modules
 from PyQt5 import QtWidgets, QtGui, QtCore
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import (FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
 import matplotlib.pyplot as plt
 
 
@@ -410,20 +410,19 @@ class PlotPanel(QtWidgets.QDockWidget):
         self.setWidget(tempWidget)
 
 
-class HistogramDisplay(QtWidgets.QDockWidget):
+class HistogramDisplay(QtWidgets.QMainWindow):
     def __init__(self, histogram=None):
         super(HistogramDisplay, self).__init__()
-        temp_widget = QtWidgets.QWidget()
+        self._main = QtWidgets.QWidget()
+        self.setCentralWidget(self._main)
+        layout = QtWidgets.QVBoxLayout(self._main)
+
         self.canvas = CanvasUI()
+        layout.addWidget(self.canvas)
+        self.addToolBar(NavigationToolbar(self.canvas, self))
 
-        layout_hist = QtWidgets.QHBoxLayout()
-        layout_hist.addWidget(self.canvas)
-        temp_widget.setLayout(layout_hist)
-        self.setWidget(temp_widget)
         plt.ion()
-
         self.canvas.canvas_axes.plot(histogram, linestyle='None', marker='s')
-        # self.exec_()
 
 
 class CanvasUI(FigureCanvas):
@@ -732,6 +731,7 @@ class SavePlotUI(QtWidgets.QDialog):
         main_layout.addLayout(row_two)
 
         self.setLayout(main_layout)
+
 
 class PlotDataUI(QtWidgets.QDialog):
     def __init__(self):

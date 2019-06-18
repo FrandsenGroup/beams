@@ -404,6 +404,7 @@ class PlotController:
         self.display_y_limits()
         print('\tBinned and Plotted all runs in {} seconds'.format(time.time()-start))
 
+    # @BeamsUtility.profile
     def update_canvas_one(self, moving=False):
         # FIXME this function has gotten a bit out of hand, refactor time!
         self.plot_panel.canvas_one.axes_time.clear()
@@ -902,9 +903,9 @@ class SavePlotController:
             return
 
         accepted_file_types = "PNG(*.png);;PDF(.pdf);;RAW(*.raw);;EPS(*.eps);;PGF(*pgf)" \
-                         ";;PS(*.ps);;RGBA(*.rgba);;SVG(*.svg);;SVGZ(*svgz)"
+                              ";;PS(*.ps);;RGBA(*.rgba);;SVG(*.svg);;SVGZ(*svgz)"  # Set by matplotlib
 
-        saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self.save_plot_gui, 'Specify file', '/home',
+        saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self.save_plot_gui, 'Specify file', os.getenv('HOME'),
                                                                 filter=accepted_file_types)[0]
         if not saved_file_path:
             return
