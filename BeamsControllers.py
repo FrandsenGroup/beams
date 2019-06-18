@@ -908,5 +908,10 @@ class SavePlotController:
         if not saved_file_path:
             return
 
-        plt.savefig(saved_file_path)
-        self.save_plot_gui.close()
+        try:
+            plt.savefig(saved_file_path)
+        except ValueError:
+            message = 'Invalid save file type.'
+            BeamsViews.ErrorMessageUI(error_message=message)
+        else:
+            self.save_plot_gui.close()
