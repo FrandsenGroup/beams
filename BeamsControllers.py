@@ -903,7 +903,8 @@ class SavePlotController:
 
         plt.figure(plot)  # Sets current figure.
 
-        saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self.save_plot_gui, 'Specify file', '/home')[0]
+        saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self.save_plot_gui, 'Specify file', '/home',
+                                                                "PNG(*.png);;PDF(.pdf);;RAW(*.raw)")[0]
         if not saved_file_path:
             return
 
