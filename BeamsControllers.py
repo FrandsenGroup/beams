@@ -66,7 +66,7 @@ class ProgramController:
     def save_session(self):
         """ Prompts the user for a file path to save the current run data to and uses pickle to dump the data. """
         saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self.main_window_v, 'Specify file',
-                                                                '/home', 'BEAMS(*.beams)')[0]
+                                                                os.getcwd(), 'BEAMS(*.beams)')[0]
         if not saved_file_path:
             return
 
@@ -81,7 +81,7 @@ class ProgramController:
             BeamsViews.PermissionsMessageUI(message, pos_function=self.save_session)
 
         open_file_path = QtWidgets.QFileDialog.getOpenFileNames(self.main_window_v, 'Choose previous session',
-                                                                '/home', 'BEAMS(*.beams)')
+                                                                os.getcwd(), 'BEAMS(*.beams)')
         if open_file_path[0]:
             open_file_path = open_file_path[0][0]
         else:
@@ -616,9 +616,12 @@ class RunDisplayController:
         for run in self.model.run_list:
             if run.filename == self.run_display.current_file.text():
                 histogram = run.retrieve_histogram_data(specific_hist=self.run_display.histograms.currentText()).values
-                plt.ioff()
+
+                plt.ioff()  # Need to turn off interactive plotting to create the new figure for this histograms
                 self.popup = BeamsViews.HistogramDisplay(histogram=histogram)
                 self.popup.show()
+                plt.ion()
+
                 break
 
     def change_color(self):
@@ -888,9 +891,22 @@ class PlotDataController:
 class SavePlotController:
     def __init__(self, canvases=None):
         self.save_plot_gui = BeamsViews.SavePlotUI()
-        self.save_plot_gui.save_button.released.connect(self.save_plots)
         self.canvases = canvases
+        self.extension_filters = self.get_supported_extensions()
+
+        self.save_plot_gui.save_button.released.connect(self.save_plots)
         self.save_plot_gui.show()
+
+    @staticmethod
+    def get_supported_extensions():
+        extensions = plt.gcf().canvas.get_supported_filetypes().keys()
+        extension_filters = ";;"
+        extension_list = []
+
+        [(extension_list.append("{}(*.{})".format(str(ext).upper(), ext))) for ext in extensions]
+        extension_filters = extension_filters.join(extension_list)
+
+        return extension_filters
 
     def save_plots(self):
         if self.save_plot_gui.left_radio.isChecked():  # Setting the current figure to left or right (1 or 2)
@@ -902,11 +918,8 @@ class SavePlotController:
             BeamsViews.ErrorMessageUI(error_message=message)
             return
 
-        accepted_file_types = "PNG(*.png);;PDF(.pdf);;RAW(*.raw);;EPS(*.eps);;PGF(*pgf)" \
-                              ";;PS(*.ps);;RGBA(*.rgba);;SVG(*.svg);;SVGZ(*svgz)"  # Set by matplotlib
-
-        saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self.save_plot_gui, 'Specify file', os.getenv('HOME'),
-                                                                filter=accepted_file_types)[0]
+        saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self.save_plot_gui, 'Specify file', os.getcwd(),
+                                                                filter=self.extension_filters)[0]
         if not saved_file_path:
             return
 

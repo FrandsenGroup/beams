@@ -421,7 +421,6 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         layout.addWidget(self.canvas)
         self.addToolBar(NavigationToolbar(self.canvas, self))
 
-        plt.ion()
         self.canvas.canvas_axes.plot(histogram, linestyle='None', marker='s')
 
 
