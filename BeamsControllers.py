@@ -892,19 +892,20 @@ class SavePlotController:
         self.save_plot_gui.show()
 
     def save_plots(self):
-        if self.save_plot_gui.left_radio.isChecked():
-            plot = 1
+        if self.save_plot_gui.left_radio.isChecked():  # Setting the current figure to left or right (1 or 2)
+            plt.figure(1)
         elif self.save_plot_gui.right_radio.isChecked():
-            plot = 2
+            plt.figure(2)
         else:
             message = 'You need to select a plot.'
             BeamsViews.ErrorMessageUI(error_message=message)
             return
 
-        plt.figure(plot)  # Sets current figure.
+        accepted_file_types = "PNG(*.png);;PDF(.pdf);;RAW(*.raw);;EPS(*.eps);;PGF(*pgf)" \
+                         ";;PS(*.ps);;RGBA(*.rgba);;SVG(*.svg);;SVGZ(*svgz)"
 
         saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self.save_plot_gui, 'Specify file', '/home',
-                                                                "PNG(*.png);;PDF(.pdf);;RAW(*.raw)")[0]
+                                                                filter=accepted_file_types)[0]
         if not saved_file_path:
             return
 
