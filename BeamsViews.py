@@ -726,7 +726,7 @@ class SavePlotUI(QtWidgets.QDialog):
         row_two.addWidget(self.save_button)
         row_two.addStretch()
         main_layout.addLayout(row_one)
-        main_layout.addSpacing(12)
+        main_layout.addSpacing(5)
         main_layout.addLayout(row_two)
 
         self.setLayout(main_layout)

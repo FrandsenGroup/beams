@@ -194,8 +194,7 @@ class FileManagerController:
             self.prompt_formats(beams_files, other_dat)
 
         else:  # No files were selected, inform the user.
-            message = 'No files selected.'
-            BeamsViews.ErrorMessageUI(message)
+            BeamsViews.ErrorMessageUI(error_message='No files selected.')
 
     def b_convert(self):
         """ Converts currently selected .msr files to .dat files and saves them in the current directory.
@@ -376,17 +375,17 @@ class PlotController:
         """ Handles the bin size changing on either the slider or the text box. If one changes then
             the other is updated. """
         if moving:
-            self.plot_editor.input_slider_one.setText(str(self.plot_editor.slider_one.value()))
-            self.plot_editor.input_slider_two.setText(str(self.plot_editor.slider_two.value()))
+            self.plot_editor.input_slider_one.setText(str(self.plot_parameters['SliderOne']()))
+            self.plot_editor.input_slider_two.setText(str(self.plot_parameters['SliderTwo']()))
             if plot == 1:
-                if self.plot_editor.slider_one.value() % 5 is not 0:
+                if self.plot_parameters['SliderOne']() % 5 is not 0:
                     return
             elif plot == 2:
-                if self.plot_editor.slider_two.value() % 5 is not 0:
+                if self.plot_parameters['SliderTwo']() % 5 is not 0:
                     return
         else:
-            self.plot_editor.slider_one.setValue(int(np.ceil(float(self.plot_editor.input_slider_one.text()))))
-            self.plot_editor.slider_two.setValue(int(np.ceil(float(self.plot_editor.input_slider_two.text()))))
+            self.plot_editor.slider_one.setValue(int(np.ceil(float(self.plot_parameters['BinInputOne']()))))
+            self.plot_editor.slider_two.setValue(int(np.ceil(float(self.plot_parameters['BinInputTwo']()))))
 
         self.visual_data_change(plot=plot, moving=moving)
 
@@ -738,11 +737,13 @@ class WriterController:
         self.set_callbacks()
         self.writer_gui.show()
 
-        current_runs = [run.filename for run in self.model.run_list]
+        current_runs = [os.path.split(run.filename)[1] for run in self.model.run_list]
+        print(current_runs, self.files)
         for file in self.files:
             if file not in current_runs:
                 message = 'Some of the files you\'ve selected haven\'t been read in yet. Would you like to now?'
-                BeamsViews.PermissionsMessageUI(message, pos_function=self.read_files, neg_function=self.writer_gui.close)
+                BeamsViews.PermissionsMessageUI(message, pos_function=self.read_files,
+                                                neg_function=self.writer_gui.close)
                 break
 
     def read_files(self):
@@ -888,7 +889,7 @@ class PlotDataController:
                                                        self.plot_data_gui.c_file_list.currentText()]['HistTitles'])
 
 
-class SavePlotController:
+class SavePlotController:  # fixme just make this a smart UI in the views file, it's pretty short.
     def __init__(self, canvases=None):
         self.save_plot_gui = BeamsViews.SavePlotUI()
         self.canvases = canvases
@@ -914,8 +915,7 @@ class SavePlotController:
         elif self.save_plot_gui.right_radio.isChecked():
             plt.figure(2)
         else:
-            message = 'You need to select a plot.'
-            BeamsViews.ErrorMessageUI(error_message=message)
+            BeamsViews.ErrorMessageUI(error_message='You need to select a plot.')
             return
 
         saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self.save_plot_gui, 'Specify file', os.getcwd(),
@@ -926,7 +926,6 @@ class SavePlotController:
         try:
             plt.savefig(saved_file_path)
         except ValueError:
-            message = 'Invalid save file type.'
-            BeamsViews.ErrorMessageUI(error_message=message)
+            BeamsViews.ErrorMessageUI(error_message='Invalid save file type.')
         else:
             self.save_plot_gui.close()

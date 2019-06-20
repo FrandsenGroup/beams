@@ -302,22 +302,43 @@ class RunData:
     def calculate_fft(asymmetry, times, spline=True):
         """ Calculates fast fourier transform on asymmetry. """
         magnitudes = np.fft.fft(asymmetry)
-        frequencies = abs(np.fft.fftfreq(len(magnitudes), times[1]-times[0]))
         magnitudes[0] = 0
+        frequencies = abs(np.fft.fftfreq(len(magnitudes), times[1]-times[0]))
+        num_frequencies = len(frequencies)
+
+        frequencies = frequencies[0:int(np.floor(num_frequencies/2))]
+        magnitudes = abs(magnitudes[0:int(np.floor(num_frequencies/2))])
+        print(len(frequencies), len(magnitudes))
+
+        # # fixme 6-19-19 start
+        # # Determine a smart range for the fft here. Migrate this code to controller once we clean the update_plot funcs.
+        # # We want the range to:
+        # #   a) include the most significant frequencies
+        # #   b) but make sure the highest frequency is easily deducible.
+        #
+        # idx = (-magnitudes).argsort()[:2]
+        # buffered_cluster_max_idx = int(np.floor(np.max(idx)*1.25))
+        #
+        # buffered_highest_frq = frequencies[np.argmax(magnitudes)*5] if np.argmax(magnitudes)*5 < num_frequencies \
+        #     else frequencies[-1]
+        #
+        # if buffered_cluster_max_idx > buffered_highest_frq_idx and buffered_highest_frq_idx< num_frequencies:
+        #     magnitudes = magnitudes[0:buffered_highest_frq_idx]
+        #     frequencies = frequencies[0:buffered_highest_frq_idx]
+        # elif buffered_cluster_max_idx < num_frequencies:
+        #     magnitudes = magnitudes[0:buffered_cluster_max_idx]
+        #     frequencies = frequencies[0:buffered_cluster_max_idx]
+        # # fixme end
 
         if spline:
             x_smooth = np.linspace(frequencies.min(), frequencies.max(), 300)
 
-            y_smooth = sp.UnivariateSpline(frequencies[0:int(np.floor(len(frequencies)/2))],
-                                           abs(magnitudes[0:int(np.floor(len(frequencies)/2))]),
-                                           k=5)
+            y_smooth = sp.UnivariateSpline(frequencies, magnitudes, k=5)
             y_smooth.set_smoothing_factor(0)
             y_smooth = y_smooth(x_smooth)
+            return [x_smooth, y_smooth]
         else:
-            x_smooth = frequencies[0:int(np.floor(len(frequencies)/2))]
-            y_smooth = abs(magnitudes[0:int(np.floor(len(frequencies)/2))])
-
-        return [x_smooth, y_smooth]
+            return [frequencies, magnitudes]
 
     def bin_data(self, final_bin_size=None, slider_moving=False):
         """ Bins the asymmetry based on user specified bin size. """
