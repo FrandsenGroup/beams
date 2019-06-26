@@ -435,24 +435,22 @@ class CanvasUI(FigureCanvas):
 class RunPlot(FigureCanvas):
     def __init__(self, dpi=100):
         fig = plt.figure(dpi=dpi)
-        self.axes_time = fig.add_subplot(211, label="Time Domain")
-        self.axes_freq = fig.add_subplot(212, label="Frequency Domain")
+        self.axes_time = fig.add_subplot(211)
+        self.axes_freq = fig.add_subplot(212)
         self.set_style()
         FigureCanvas.__init__(self, fig)
 
     def set_style(self):
-        title_fontsize = 12
+        title_font_size = 12
         self.axes_time.spines['right'].set_visible(False)
         self.axes_time.spines['top'].set_visible(False)
-        # self.axes_time.tick_params(bottom=False, left=False)
-        self.axes_time.set_xlabel("Time (" + chr(956) + "s)", fontsize=title_fontsize)
-        self.axes_time.set_ylabel("Asymmetry", fontsize=title_fontsize)
+        self.axes_time.set_xlabel("Time (" + chr(956) + "s)", fontsize=title_font_size)
+        self.axes_time.set_ylabel("Asymmetry", fontsize=title_font_size)
 
         self.axes_freq.spines['right'].set_visible(False)
         self.axes_freq.spines['top'].set_visible(False)
-        # self.axes_freq.tick_params(bottom=False, left=False)
-        self.axes_freq.set_xlabel("Frequency (MHz)", fontsize=title_fontsize)
-        self.axes_freq.set_ylabel("Magnitude", fontsize=title_fontsize)
+        self.axes_freq.set_xlabel("Frequency (MHz)", fontsize=title_font_size)
+        self.axes_freq.set_ylabel("Magnitude", fontsize=title_font_size)
         self.axes_freq.legend(loc='upper right')
 
 

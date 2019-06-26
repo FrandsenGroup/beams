@@ -223,15 +223,13 @@ class RunData:
     def calculate_uncertainty(self, hist_one=None, hist_two=None):
         """ Calculates the uncertainty based on histograms. """
         start_bin_one, start_bin_two, end_bin_one, end_bin_two = self.calculate_start_end(hist_one, hist_two)
-
-        d_one = np.sqrt(self.histogram_data.loc[start_bin_one-1:end_bin_one, hist_one])
-        d_two = np.sqrt(self.histogram_data.loc[start_bin_two-1:end_bin_two, hist_two])
-        h_one = self.histogram_data.loc[start_bin_one-1:end_bin_one, hist_one]
-        h_two = self.histogram_data.loc[start_bin_two-1:end_bin_two, hist_two]
+        d_one = np.sqrt(self.histogram_data.loc[start_bin_one-1:end_bin_one, hist_one].values)
+        d_two = np.sqrt(self.histogram_data.loc[start_bin_two-1:end_bin_two, hist_two].values)
+        h_one = self.histogram_data.loc[start_bin_one-1:end_bin_one, hist_one].values
+        h_two = self.histogram_data.loc[start_bin_two-1:end_bin_two, hist_two].values
 
         uncertainty = np.array(np.sqrt(np.power((2 * h_one * d_two / np.power(h_two + h_one, 2)), 2) +
                                        np.power((2 * h_two * d_one / np.power(h_two + h_one, 2)), 2)))
-
         np.nan_to_num(uncertainty, copy=False)
 
         return uncertainty
@@ -283,19 +281,16 @@ class RunData:
         end_bin_two = start_bin_two + num_cross_good
 
         self.t0 = init_dif
-
         return [start_bin_one, start_bin_two, end_bin_one, end_bin_two]
 
     def calculate_asymmetry(self, hist_one=None, hist_two=None, bkg_one=None, bkg_two=None):
         """ Calculate asymmetry based on the overlapping 'good' area of the histograms. """
         start_bin_one, start_bin_two, end_bin_one, end_bin_two = self.calculate_start_end(hist_one, hist_two)
-
         hist_good_one = self.histogram_data.loc[start_bin_one-1:end_bin_one, hist_one].values
         hist_good_two = self.histogram_data.loc[start_bin_two-1:end_bin_two, hist_two].values
 
         asymmetry = ((hist_good_one - bkg_one) - (hist_good_two - bkg_two)) / \
                     ((hist_good_two - bkg_two) + (hist_good_one - bkg_one))
-
         return asymmetry
 
     @staticmethod
@@ -308,7 +303,6 @@ class RunData:
 
         frequencies = frequencies[0:int(np.floor(num_frequencies/2))]
         magnitudes = abs(magnitudes[0:int(np.floor(num_frequencies/2))])
-        print(len(frequencies), len(magnitudes))
 
         # # fixme 6-19-19 start
         # # Determine a smart range for the fft here. Migrate this code to controller once we clean the update_plot funcs.
@@ -356,7 +350,6 @@ class RunData:
         time_per_binned = binned_indices_per_bin * bin_full
 
         self.binned_time = (np.arange(binned_indices_total) * time_per_binned) + (self.t0 * bin_full) + (time_per_binned / 2)
-
         if slider_moving:
             if leftover_bins:
                 reshaped_asymmetry = np.reshape(self.asymmetry[:-leftover_bins],
@@ -369,6 +362,7 @@ class RunData:
 
         else:
             if leftover_bins:
+
                 reshaped_asymmetry = np.reshape(self.asymmetry[:-leftover_bins],
                                               (binned_indices_total, binned_indices_per_bin))
                 reshaped_uncertainty = np.reshape(self.uncertainty[:-leftover_bins],

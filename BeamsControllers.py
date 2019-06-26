@@ -9,6 +9,7 @@ import os
 import subprocess
 import time
 import pickle
+import threading
 
 # Installed modules
 from PyQt5 import QtWidgets, QtCore
@@ -394,17 +395,23 @@ class PlotController:
         start = time.time()
         if plot:
             if plot == 1:
-                self.update_canvas_one(moving)
+                thread_one = threading.Thread(target=self.update_canvas_one(moving), daemon=True)
+                thread_one.start()
             else:
-                self.update_canvas_two(moving)
+                thread_two = threading.Thread(target=self.update_canvas_two(moving), daemon=True)
+                thread_two.start()
         else:
-            self.update_canvas_one(moving)
-            self.update_canvas_two(moving)
+            thread_one = threading.Thread(target=self.update_canvas_one(moving), daemon=True)
+            thread_one.start()
+            thread_two = threading.Thread(target=self.update_canvas_two(moving), daemon=True)
+            thread_two.start()
+        print('Moving on')
         self.display_y_limits()
         print('\tBinned and Plotted all runs in {} seconds'.format(time.time()-start))
 
     # @BeamsUtility.profile
     def update_canvas_one(self, moving=False):
+        print('starting one')
         # FIXME this function has gotten a bit out of hand, refactor time!
         self.plot_panel.canvas_one.axes_time.clear()
         self.plot_panel.canvas_one.axes_freq.clear()
@@ -469,8 +476,10 @@ class PlotController:
             self.plot_panel.canvas_one.axes_time.set_ylim(min_y - abs(min_y * 0.1), max_y + abs(max_y * 0.1))
 
         self.plot_panel.canvas_one.set_style()
+        print('ending one')
 
     def update_canvas_two(self, moving=False):
+        print('starting two')
         # FIXME Much room for improvement in this function.
         self.plot_panel.canvas_two.axes_time.clear()
         self.plot_panel.canvas_two.axes_freq.clear()
@@ -538,6 +547,7 @@ class PlotController:
             self.plot_panel.canvas_two.axes_time.set_ylim(min_y - abs(min_y * 0.1), max_y + abs(max_y * 0.1))
 
         self.plot_panel.canvas_two.set_style()
+        print('ending two')
 
     def display_annotations(self, run):
         return run.f_formats['Title'] if self.plot_parameters['Annotations']() else None
@@ -870,7 +880,9 @@ class PlotDataController:
     def plot_formatted_files(self):
         """ Closes the GUI and calls update_model() in the parent class FileManagerControl. """
         self.plot_data_gui.close()
-        self.model.update_runs(self.formats, plot=self.plot)
+
+        update_thread = threading.Thread(target=self.model.update_runs(self.formats, plot=self.plot), daemon=True)
+        update_thread.start()
 
     def remove_file(self):
         """ Removes the currently selected file from the file list and from the format list. """
