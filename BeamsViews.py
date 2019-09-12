@@ -33,6 +33,9 @@ class MainGUIWindow(QtWidgets.QMainWindow):
         self.plot_panel = PlotPanel()
         self.setCentralWidget(self.plot_panel)
 
+        self.mufyt_panel = MuFytPanel()
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.mufyt_panel)
+
     def init_menu_bar(self):
         self.menu_bar = self.menuBar()
 
@@ -124,7 +127,6 @@ class MuFytPanel(QtWidgets.QDockWidget):
 
     def init_widgets(self):
         self.input_function = QtWidgets.QLineEdit()
-        self.
 
     def layout_widgets(self):
         pass
