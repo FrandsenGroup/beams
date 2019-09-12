@@ -116,6 +116,20 @@ class FileManagerPanel(QtWidgets.QDockWidget):
         self.setFloating(False)
 
 
+class MuFytPanel(QtWidgets.QDockWidget):
+    def __init__(self):
+        super(MuFytPanel, self).__init__()
+        self.init_widgets()
+        self.layout_widgets()
+
+    def init_widgets(self):
+        self.input_function = QtWidgets.QLineEdit()
+        self.
+
+    def layout_widgets(self):
+        pass
+
+
 class PlotEditorPanel(QtWidgets.QDockWidget):
     def __init__(self):
         super(PlotEditorPanel, self).__init__()

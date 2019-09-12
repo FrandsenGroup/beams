@@ -304,7 +304,7 @@ class RunData:
         frequencies = frequencies[0:int(np.floor(num_frequencies/2))]
         magnitudes = abs(magnitudes[0:int(np.floor(num_frequencies/2))])
 
-        # # fixme 6-19-19 start
+        # # fixme
         # # Determine a smart range for the fft here. Migrate this code to controller once we clean the update_plot funcs.
         # # We want the range to:
         # #   a) include the most significant frequencies
@@ -322,7 +322,7 @@ class RunData:
         # elif buffered_cluster_max_idx < num_frequencies:
         #     magnitudes = magnitudes[0:buffered_cluster_max_idx]
         #     frequencies = frequencies[0:buffered_cluster_max_idx]
-        # # fixme end
+        # # fixme
 
         if spline:
             x_smooth = np.linspace(frequencies.min(), frequencies.max(), 300)

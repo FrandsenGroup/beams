@@ -106,6 +106,11 @@ class ProgramController:
         open_file.close()
 
 
+class MuFytController:
+    def __init__(self, mufyt_panel=None, model=None, parent=None):
+        pass
+
+
 class FileManagerController:
     """ Controller responsible for managing user input on the File Manager Panel. """
     def __init__(self, file_manager_panel=None, model=None, parent=None):
