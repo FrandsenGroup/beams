@@ -201,6 +201,8 @@ def is_found(filename=None):
 
 
 def parse_func(s):
+    """ Takes in an expression as a string and returns a set of the free variables. """
+    # Add to these sets any keywords you want to be recognized as not variables.
     oper_set = ('+', '-', '/', '*', '(', ')', '[', ']', '{', '}', '^', '!')
     key_1_char_set = ('e', 'i')
     key_2_char_set = ('pi')
@@ -209,24 +211,29 @@ def parse_func(s):
 
     free_set = set()
     free_variable = []
+    skip_chars = 0
 
     for i, character in enumerate(s):
+        if skip_chars > 0:
+            skip_chars -= 1
+            continue
+
         if character.isspace() or character in oper_set:
             free_variable_joined = "".join(free_variable)
             free_set.add(free_variable_joined)
             free_variable = []
-            continue
 
         elif character.isalpha():
             if s[i].lower() in key_1_char_set and (s[i + 1] in oper_set or s[i + 1].isspace()):
                 continue
-            elif s[i:i + 2].lower() in key_2_char_set or s[i - 1:i + 1].lower() in key_2_char_set:
+            elif s[i:i + 2].lower() in key_2_char_set:
+                skip_chars = 1
                 continue
-            elif s[i:i + 3].lower() in key_3_char_set or s[i - 1:i + 2].lower() in key_3_char_set or \
-                    s[i - 2:i + 1].lower() in key_3_char_set:
+            elif s[i:i + 3].lower() in key_3_char_set:
+                skip_chars = 2
                 continue
-            elif s[i:i + 4].lower() in key_4_char_set or s[i - 1:i + 3].lower() in key_4_char_set or \
-                    s[i - 2:i + 2].lower() in key_4_char_set or s[i - 3:i + 1].lower() in key_4_char_set:
+            elif s[i:i + 4].lower() in key_4_char_set:
+                skip_chars = 3
                 continue
             else:
                 free_variable.append(character)
