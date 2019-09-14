@@ -200,6 +200,48 @@ def is_found(filename=None):
         return True
 
 
+def parse_func(s):
+    oper_set = ('+', '-', '/', '*', '(', ')', '[', ']', '{', '}', '^', '!')
+    key_1_char_set = ('e', 'i')
+    key_2_char_set = ('pi')
+    key_3_char_set = ('sin', 'cos', 'tan')
+    key_4_char_set = ('sinh', 'cosh', 'tanh')
+
+    free_set = set()
+    free_variable = []
+
+    for i, character in enumerate(s):
+        if character.isspace() or character in oper_set:
+            free_variable_joined = "".join(free_variable)
+            free_set.add(free_variable_joined)
+            free_variable = []
+            continue
+
+        elif character.isalpha():
+            if s[i].lower() in key_1_char_set and (s[i + 1] in oper_set or s[i + 1].isspace()):
+                continue
+            elif s[i:i + 2].lower() in key_2_char_set or s[i - 1:i + 1].lower() in key_2_char_set:
+                continue
+            elif s[i:i + 3].lower() in key_3_char_set or s[i - 1:i + 2].lower() in key_3_char_set or \
+                    s[i - 2:i + 1].lower() in key_3_char_set:
+                continue
+            elif s[i:i + 4].lower() in key_4_char_set or s[i - 1:i + 3].lower() in key_4_char_set or \
+                    s[i - 2:i + 2].lower() in key_4_char_set or s[i - 3:i + 1].lower() in key_4_char_set:
+                continue
+            else:
+                free_variable.append(character)
+
+        elif character.isdigit():
+            if free_variable:
+                free_variable.append(character)
+
+    free_variable_joined = "".join(free_variable)
+    free_set.add(free_variable_joined)
+    free_set.remove('')
+
+    return free_set
+
+
 def is_valid_format(sections=None, t0=None, header_rows=None, file_names=None):
     def check_file_names():
         for filename in file_names:
@@ -242,6 +284,8 @@ def is_valid_format(sections=None, t0=None, header_rows=None, file_names=None):
                 if v1 == v2 and k1 != k2:
                     return False
         return True
+
+
 
     def check_columns_setup():
         """Checks specified sections to ensure needed attributes can be calculated and none have the same column"""
