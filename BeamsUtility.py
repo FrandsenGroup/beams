@@ -202,6 +202,7 @@ def is_found(filename=None):
 
 def parse_func(s):
     """ Takes in an expression as a string and returns a set of the free variables. """
+
     # Add to these sets any keywords you want to be recognized as not variables.
     oper_set = ('+', '-', '/', '*', '(', ')', '[', ']', '{', '}', '^', '!')
     key_1_char_set = ('e', 'i')
@@ -224,16 +225,16 @@ def parse_func(s):
             free_variable = []
 
         elif character.isalpha():
-            if s[i].lower() in key_1_char_set and (s[i + 1] in oper_set or s[i + 1].isspace()):
-                continue
-            elif s[i:i + 2].lower() in key_2_char_set:
-                skip_chars = 1
+            if s[i:i + 4].lower() in key_4_char_set:
+                skip_chars = 3
                 continue
             elif s[i:i + 3].lower() in key_3_char_set:
                 skip_chars = 2
                 continue
-            elif s[i:i + 4].lower() in key_4_char_set:
-                skip_chars = 3
+            elif s[i:i + 2].lower() in key_2_char_set:
+                skip_chars = 1
+                continue
+            elif s[i].lower() in key_1_char_set and (s[i + 1] in oper_set or s[i + 1].isspace()):
                 continue
             else:
                 free_variable.append(character)
