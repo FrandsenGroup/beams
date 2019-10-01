@@ -37,8 +37,8 @@ def convert_msr(in_file=None, out_file=None, flags=None):
 
     if is_found(in_file) and check_ext(in_file, '.msr') and check_ext(out_file, '.dat'):
         system_args = {'win32': ['MUD', in_file, out_file],  # Windows Syntax
-                       'linux': ['./MUD.exe', in_file, out_file],  # Linux Syntax
-                       'darwin': ['./MUD.exe', in_file, out_file]}  # Mac Syntax
+                       'linux': ['./MUDC', in_file, out_file],  # Linux Syntax
+                       'darwin': ['./MUDC', in_file, out_file]}  # Mac Syntax
 
         if sys.platform in system_args.keys():
             args = system_args[sys.platform]
@@ -204,6 +204,7 @@ def parse_func(s):
     """ Takes in an expression as a string and returns a set of the free variables. """
 
     # Add to these sets any keywords you want to be recognized as not variables.
+    # Keep keywords lowercase, user input will be cast to lowercase for comparison.
     oper_set = ('+', '-', '/', '*', '(', ')', '[', ']', '{', '}', '^', '!')
     key_1_char_set = ('e', 'i')
     key_2_char_set = ('pi')
