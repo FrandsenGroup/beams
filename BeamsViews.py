@@ -450,10 +450,12 @@ class CanvasUI(FigureCanvas):
 
 class RunPlot(FigureCanvas):
     def __init__(self, dpi=100):
+        self._draw_pending = True
         fig = plt.figure(dpi=dpi)
         self.axes_time = fig.add_subplot(211)
         self.axes_freq = fig.add_subplot(212)
         self.set_style()
+
         FigureCanvas.__init__(self, fig)
 
     def set_style(self):

@@ -32,7 +32,7 @@ def profile(fnc):
 def convert_msr(in_file=None, out_file=None, flags=None):
     """ Takes an 'in_file' with a .msr extension and then converts and writes the data to
         an 'out_file' with a .dat extension. Tested on Ubuntu and Windows 10 successfully.
-        To convert it calls the MUD.exe executable which is compiled from the source code
+        To convert it calls the MUD.exe/MUDC executable which is compiled from the source code
         in the mud/src folder. """
 
     if is_found(in_file) and check_ext(in_file, '.msr') and check_ext(out_file, '.dat'):
