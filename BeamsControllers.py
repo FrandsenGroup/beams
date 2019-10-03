@@ -1,5 +1,7 @@
 # BEAMS specific modules
+print('here3')
 import BeamsViews
+print('here4')
 import BeamsModel
 import BeamsUtility
 
@@ -12,6 +14,7 @@ import pickle
 import threading
 
 # Installed modules
+
 from PyQt5 import QtWidgets, QtCore
 import matplotlib.pyplot as plt
 import numpy as np
@@ -416,6 +419,8 @@ class PlotController:
 
     # @BeamsUtility.profile
     def update_canvas_one(self, moving=False):
+        # plt.ion()
+        # plt.draw()
         print('starting one')
         # FIXME this function has gotten a bit out of hand, refactor time!
         self.plot_panel.canvas_one.axes_time.clear()
@@ -471,6 +476,7 @@ class PlotController:
 
         # max_mag = 20 if max_mag > 20 else max_mag
 
+
         self.plot_panel.canvas_one.axes_freq.set_xlim(0, max_freq * 1.1)
         self.plot_panel.canvas_one.axes_freq.set_ylim(0, max_mag * 1.1)
 
@@ -481,7 +487,11 @@ class PlotController:
             self.plot_panel.canvas_one.axes_time.set_ylim(min_y - abs(min_y * 0.1), max_y + abs(max_y * 0.1))
 
         self.plot_panel.canvas_one.set_style()
+        # plt.draw()
         print('ending one')
+
+        self.plot_panel.canvas_one.axes_time.figure.canvas.draw()
+        # self.plot_panel.canvas_one.axes_freq.figure.canvas.draw()
 
     def update_canvas_two(self, moving=False):
         print('starting two')
@@ -542,6 +552,8 @@ class PlotController:
         # max_mag = 20 if max_mag > 20 else max_mag
         # print(max_mag, max_freq)
 
+
+
         self.plot_panel.canvas_two.axes_freq.set_xlim(0, max_freq * 1.1)
         self.plot_panel.canvas_two.axes_freq.set_ylim(0, max_mag * 1.1)
 
@@ -552,6 +564,9 @@ class PlotController:
             self.plot_panel.canvas_two.axes_time.set_ylim(min_y - abs(min_y * 0.1), max_y + abs(max_y * 0.1))
 
         self.plot_panel.canvas_two.set_style()
+
+        self.plot_panel.canvas_two.axes_time.figure.canvas.draw()
+        # self.plot_panel.canvas_two.axes_freq.figure.canvas.draw()
         print('ending two')
 
     def display_annotations(self, run):

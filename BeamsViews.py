@@ -4,6 +4,7 @@
 from PyQt5 import QtWidgets, QtGui, QtCore
 from matplotlib.backends.backend_qt5agg import (FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 
 
 # Main Window GUI and Panels
@@ -30,11 +31,11 @@ class MainGUIWindow(QtWidgets.QMainWindow):
         self.run_display = RunDisplayPanel()
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.run_display)
 
-        self.plot_panel = PlotPanel()
-        self.setCentralWidget(self.plot_panel)
-
         self.mufyt_panel = MuFytPanel()
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.mufyt_panel)
+
+        self.plot_panel = PlotPanel()
+        self.setCentralWidget(self.plot_panel)
 
     def init_menu_bar(self):
         self.menu_bar = self.menuBar()
@@ -406,16 +407,12 @@ class PlotPanel(QtWidgets.QDockWidget):
     def __init__(self):
         super(PlotPanel, self).__init__()
 
-        self.init_center_UI()
-
-        plt.ion()
-
-    def init_center_UI(self):
         self.setWindowTitle("Graphing Area")
         tempWidget = QtWidgets.QWidget()
 
         self.canvas_one = RunPlot()
         self.canvas_two = RunPlot()
+
         self.linestyle = 'None'
 
         hbox = QtWidgets.QHBoxLayout()
@@ -442,21 +439,30 @@ class HistogramDisplay(QtWidgets.QMainWindow):
 
 class CanvasUI(FigureCanvas):
     def __init__(self):
-        fig = plt.figure(dpi=100)
+        self._draw_pending = False
+        self._is_drawing = False
+        fig = plt.figure()
+        # plt.ion()
+
         self.canvas_axes = fig.add_subplot(111, label='Canvas')
-        self._draw_pending = True
+
         FigureCanvas.__init__(self, fig)
 
 
 class RunPlot(FigureCanvas):
-    def __init__(self, dpi=100):
+    def __init__(self):
+        # I get an error if I don't create these variables, True or False hasn't made a difference.
         self._draw_pending = True
-        fig = plt.figure(dpi=dpi)
-        self.axes_time = fig.add_subplot(211)
-        self.axes_freq = fig.add_subplot(212)
+        self._is_drawing = True
+        FigureCanvas.__init__(self, Figure())
+        axes = self.figure.subplots(2, 1)
+
+        self.axes_time = axes[0]
+        self.axes_freq = axes[1]
+
         self.set_style()
 
-        FigureCanvas.__init__(self, fig)
+
 
     def set_style(self):
         title_font_size = 12
