@@ -1,7 +1,5 @@
 # BEAMS specific modules
-print('here3')
 import BeamsViews
-print('here4')
 import BeamsModel
 import BeamsUtility
 
@@ -287,7 +285,7 @@ class FileManagerController:
     def update(self, signal=None):
         """ Called by the model when one of its FileManagerPanel-relevant attributes changes. """
         if signal == BeamsModel.FILE_CHANGED:  # Expects list of files to add the ListWidget in FileManagerPanel
-            print("Updating File Manager")
+            # print("Updating File Manager")
             current_files = self.get_all_files()
 
             # First checks to see if any new files have been added to the model's file list. Adds them to the view.
@@ -413,15 +411,14 @@ class PlotController:
             thread_one.start()
             thread_two = threading.Thread(target=self.update_canvas_two(moving), daemon=True)
             thread_two.start()
-        print('Moving on')
+        # print('Moving on')
         self.display_y_limits()
-        print('\tBinned and Plotted all runs in {} seconds'.format(time.time()-start))
+        # print('\tBinned and Plotted all runs in {} seconds'.format(time.time()-start))
 
     # @BeamsUtility.profile
     def update_canvas_one(self, moving=False):
         # plt.ion()
         # plt.draw()
-        print('starting one')
         # FIXME this function has gotten a bit out of hand, refactor time!
         self.plot_panel.canvas_one.axes_time.clear()
         self.plot_panel.canvas_one.axes_freq.clear()
@@ -476,7 +473,6 @@ class PlotController:
 
         # max_mag = 20 if max_mag > 20 else max_mag
 
-
         self.plot_panel.canvas_one.axes_freq.set_xlim(0, max_freq * 1.1)
         self.plot_panel.canvas_one.axes_freq.set_ylim(0, max_mag * 1.1)
 
@@ -487,14 +483,11 @@ class PlotController:
             self.plot_panel.canvas_one.axes_time.set_ylim(min_y - abs(min_y * 0.1), max_y + abs(max_y * 0.1))
 
         self.plot_panel.canvas_one.set_style()
-        # plt.draw()
-        print('ending one')
 
         self.plot_panel.canvas_one.axes_time.figure.canvas.draw()
-        # self.plot_panel.canvas_one.axes_freq.figure.canvas.draw()
 
     def update_canvas_two(self, moving=False):
-        print('starting two')
+        # print('starting two')
         # FIXME Much room for improvement in this function.
         self.plot_panel.canvas_two.axes_time.clear()
         self.plot_panel.canvas_two.axes_freq.clear()
@@ -548,11 +541,9 @@ class PlotController:
                 min_y = np.min(asymmetry[start_index:end_index]) if \
                     np.min(asymmetry[start_index:end_index]) < min_y else min_y
 
-        # print(max_mag, max_freq)
+#         # print(max_mag, max_freq)
         # max_mag = 20 if max_mag > 20 else max_mag
-        # print(max_mag, max_freq)
-
-
+#         # print(max_mag, max_freq)
 
         self.plot_panel.canvas_two.axes_freq.set_xlim(0, max_freq * 1.1)
         self.plot_panel.canvas_two.axes_freq.set_ylim(0, max_mag * 1.1)
@@ -566,8 +557,6 @@ class PlotController:
         self.plot_panel.canvas_two.set_style()
 
         self.plot_panel.canvas_two.axes_time.figure.canvas.draw()
-        # self.plot_panel.canvas_two.axes_freq.figure.canvas.draw()
-        print('ending two')
 
     def display_annotations(self, run):
         return run.f_formats['Title'] if self.plot_parameters['Annotations']() else None
@@ -595,10 +584,10 @@ class PlotController:
 
     def update(self, signal=None):
         if signal == BeamsModel.RUN_DATA_CHANGED:
-            print("Updating the Plots")
+            # print("Updating the Plots")
             self.visual_data_change(moving=False)
         elif signal == BeamsModel.RUN_LIST_CHANGED:
-            print("Updating the Plots")
+            # print("Updating the Plots")
             self.visual_data_change(moving=False)
 
 
@@ -715,7 +704,7 @@ class RunDisplayController:
 
     def update(self, signal):
         if signal == BeamsModel.RUN_LIST_CHANGED:
-            print("Updating the Run Display")
+            # print("Updating the Run Display")
             self.populate_run_display()
 
 
@@ -768,7 +757,7 @@ class WriterController:
         self.writer_gui.show()
 
         current_runs = [os.path.split(run.filename)[1] for run in self.model.run_list]
-        print(current_runs, self.files)
+        # print(current_runs, self.files)
         for file in self.files:
             if file not in current_runs:
                 message = 'Some of the files you\'ve selected haven\'t been read in yet. Would you like to now?'
