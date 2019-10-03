@@ -163,6 +163,8 @@ class FileManagerController:
                         self.file_manager.file_list.takeItem(index)
                         self.model.update_file_list(file_root, remove=True)
                         break
+            if len(self.get_selected_files()) == 0:
+                self.file_manager.select_all.setChecked(False)
 
         selected_files = self.get_selected_files()
         message = 'Are you sure you would like to remove all currently selected files?'
@@ -232,6 +234,9 @@ class FileManagerController:
                     BeamsViews.ErrorMessageUI(error_message=message)
                     return
         remove_msr()
+        if len(self.get_selected_files()) == 0:
+            self.file_manager.select_all.setChecked(False)
+            self.file_manager.select_all.setChecked(True)
 
     def b_write(self):
         """ Launches the Writer GUI.

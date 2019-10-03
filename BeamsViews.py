@@ -3,7 +3,6 @@
 # Installed modules
 from PyQt5 import QtWidgets, QtGui, QtCore
 from matplotlib.backends.backend_qt5agg import (FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
-import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 
 
@@ -441,12 +440,9 @@ class CanvasUI(FigureCanvas):
     def __init__(self):
         self._draw_pending = False
         self._is_drawing = False
-        fig = plt.figure()
-        # plt.ion()
+        FigureCanvas.__init__(self, Figure())
 
-        self.canvas_axes = fig.add_subplot(111, label='Canvas')
-
-        FigureCanvas.__init__(self, fig)
+        self.canvas_axes = self.figure.add_subplot(111, label='Canvas')
 
 
 class RunPlot(FigureCanvas):
@@ -461,8 +457,6 @@ class RunPlot(FigureCanvas):
         self.axes_freq = axes[1]
 
         self.set_style()
-
-
 
     def set_style(self):
         title_font_size = 12
