@@ -440,11 +440,11 @@ class PlotController:
                                                              slider_moving=moving)
                 if moving:
                     self.plot_panel.canvas_one.axes_time.plot(times, asymmetry, color=run.color, linestyle='None',
-                                                              marker='.')
+                                                              marker=run.marker)
                 elif not self.plot_parameters['Uncertainty']():
                     frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times,
                                                                 spline=self.plot_parameters['Spline']())
-                    self.plot_panel.canvas_one.axes_time.plot(times, asymmetry, color=run.color, marker='.',
+                    self.plot_panel.canvas_one.axes_time.plot(times, asymmetry, color=run.color, marker=run.marker,
                                                               linestyle=self.plot_parameters['LineStyle']())
                     self.plot_panel.canvas_one.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
                                                               label=self.display_annotations(run))
@@ -457,7 +457,7 @@ class PlotController:
                                                                 spline=self.plot_parameters['Spline']())
                     self.plot_panel.canvas_one.axes_time.errorbar(times, asymmetry, uncertainty, color=run.color,
                                                                   linestyle=self.plot_parameters['LineStyle'](),
-                                                                  marker='.', label=run.f_formats['RunNumber'])
+                                                                  marker=run.marker, label=run.f_formats['RunNumber'])
                     self.plot_panel.canvas_one.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
                                                               label=self.display_annotations(run))
 
@@ -509,12 +509,12 @@ class PlotController:
                                                              slider_moving=moving)
                 if moving:
                     self.plot_panel.canvas_two.axes_time.plot(times, asymmetry, color=run.color, linestyle='None',
-                                                              marker='.')
+                                                              marker=run.marker)
                 elif not self.plot_parameters['Uncertainty']():
                     frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times,
                                                                 spline=self.plot_parameters['Spline']())
 
-                    self.plot_panel.canvas_two.axes_time.plot(times, asymmetry, color=run.color, marker='.',
+                    self.plot_panel.canvas_two.axes_time.plot(times, asymmetry, color=run.color, marker=run.marker,
                                                               linestyle=self.plot_parameters['LineStyle']())
                     self.plot_panel.canvas_two.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
                                                               label=self.display_annotations(run))
@@ -527,7 +527,7 @@ class PlotController:
                                                                 spline=self.plot_parameters['Spline']())
                     self.plot_panel.canvas_two.axes_time.errorbar(times, asymmetry, uncertainty, color=run.color,
                                                                   linestyle=self.plot_parameters['LineStyle'](),
-                                                                  marker='.')
+                                                                  marker=run.marker)
                     self.plot_panel.canvas_two.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
                                                               label=self.display_annotations(run))
 
@@ -544,10 +544,6 @@ class PlotController:
 
                 min_y = np.min(asymmetry[start_index:end_index]) if \
                     np.min(asymmetry[start_index:end_index]) < min_y else min_y
-
-#         # print(max_mag, max_freq)
-        # max_mag = 20 if max_mag > 20 else max_mag
-#         # print(max_mag, max_freq)
 
         self.plot_panel.canvas_two.axes_freq.set_xlim(0, max_freq * 1.1)
         self.plot_panel.canvas_two.axes_freq.set_ylim(0, max_mag * 1.1)
@@ -605,6 +601,7 @@ class RunDisplayController:
         self.model.observers[BeamsModel.RUN_LIST_CHANGED].append(self)
 
         self.set_callbacks()
+        self._change_selection = False
 
     def __str__(self):
         return 'Run Display Controller'
@@ -616,6 +613,7 @@ class RunDisplayController:
         self.run_display.inspect_file_button.released.connect(lambda: self.inspect_file())
         self.run_display.inspect_hist_button.released.connect(lambda: self.inspect_hist())
         self.run_display.color_choices.currentIndexChanged.connect(lambda: self.change_color())
+        self.run_display.marker_choices.currentIndexChanged.connect(lambda: self.change_marker())
         self.run_display.current_runs.currentRowChanged.connect(lambda: self.update_run_display())
         self.run_display.current_runs.itemChanged.connect(lambda: self.change_title())
         self.run_display.header_data.currentIndexChanged.connect(lambda: self.change_metadata())
@@ -643,17 +641,26 @@ class RunDisplayController:
                 break
 
     def change_color(self):
-        self.model.update_run_color(file=self.run_display.current_file.text(),
+        if not self._change_selection:
+            self.model.update_run_color(file=self.run_display.current_file.text(),
                                     color=self.run_display.color_choices.currentText())
 
+    def change_marker(self):
+        if not self._change_selection:
+            self.model.update_run_marker(file=self.run_display.current_file.text(),
+                                     marker=self.run_display.marker_choices.currentText())
+
     def update_run_display(self):
+        self._change_selection = True
         index = self.run_display.current_runs.currentRow()
         self.run_display.histograms.clear()
 
         self.run_display.current_file.setText(self.model.run_list[index].filename)
         self.run_display.color_choices.setCurrentText(self.model.run_list[index].color)
+        self.run_display.marker_choices.setCurrentText(self.model.marker_options[self.model.run_list[index].marker])
         self.run_display.histograms.addItems(self.model.run_list[index].f_formats['HistTitles'])
         self.update_metadata()
+        self._change_selection = False
 
     def update_metadata(self):
         index = self.run_display.current_runs.currentRow()
@@ -682,6 +689,7 @@ class RunDisplayController:
                 item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
             self.run_display.current_runs.setCurrentRow(0)
 
+            self.run_display.marker_choices.setEnabled(True)
             self.run_display.color_choices.setEnabled(True)
             self.run_display.isolate_button.setEnabled(True)
             self.run_display.histograms.setEnabled(True)
@@ -691,7 +699,8 @@ class RunDisplayController:
             self.run_display.header_data.setEnabled(True)
             self.run_display.header_display.setEnabled(True)
         else:
-            self.run_display.color_choices.clear()
+            # self.run_display.marker_choices.clear()
+            # self.run_display.color_choices.clear()
             self.run_display.histograms.clear()
             self.run_display.color_choices.setEnabled(False)
             self.run_display.isolate_button.setEnabled(False)

@@ -342,9 +342,17 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         # self.run_titles = QtWidgets.QComboBox()
         # self.run_titles.addItem("No Runs Plotted")
         self.color_choices = QtWidgets.QComboBox()
+        self.color_choices.setFixedWidth(60)
         self.color_choices.setEnabled(False)
         self.color_choices.addItems(["None", "blue", "red", "green", "orange", "purple",
                                      "brown", "yellow", "gray", "olive", "cyan", "pink", "custom"])
+        self.marker_choices = QtWidgets.QComboBox()
+        self.marker_choices.setFixedWidth(60)
+        self.marker_choices.setEnabled(False)
+        self.marker_choices.addItems(['point', 'triangle_down', 'triangle_up', 'triangle_left',
+                               'triangle_right', 'octagon', 'square', 'pentagon', 'plus',
+                               'star', 'hexagon_1', 'hexagon_2', 'x', 'diamond',
+                               'thin_diamond'])
 
         self.isolate_button = QtWidgets.QPushButton("Isolate")
         self.isolate_button.setEnabled(False)
@@ -383,6 +391,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         row_one = QtWidgets.QHBoxLayout()
         row_one.addWidget(self.isolate_button)
         row_one.addWidget(self.color_choices)
+        row_one.addWidget(self.marker_choices)
         row_two = QtWidgets.QHBoxLayout()
         row_two.addWidget(self.histograms)
         row_two.addWidget(self.inspect_hist_button)

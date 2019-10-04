@@ -24,6 +24,8 @@ class BEAMSModel:
         self.all_full_filepaths = {}
         self.plot_parameters = {}
         self.used_colors = []
+        self.unused_markers = dict()
+        self.used_markers = dict()
         self.run_list = []
         self.current_formats = {}
 
@@ -41,6 +43,41 @@ class BEAMSModel:
 
         self.color_options = ["blue", "red", "green", "orange", "purple",
                               "brown", "yellow", "gray", "olive", "cyan", "pink"]
+        self.marker_options_values = {'point': '.', 'triangle_down': 'v', 'triangle_up': '^', 'triangle_left': '<',
+                               'triangle_right': '>', 'octagon': '8', 'square': 's', 'pentagon': 'p', 'plus': 'P',
+                               'star': '*', 'hexagon_1': 'h', 'hexagon_2': 'H', 'x': 'X', 'diamond': 'D',
+                               'thin_diamond': 'd'}
+        self.marker_options = {v: k for k, v in self.marker_options_values.items()}
+        self.unused_markers = self.marker_options.copy()
+
+    def update_markers(self, marker=None, used=False):
+        if used:
+            if marker not in self.used_markers.keys():
+                self.used_markers[marker] = self.marker_options[marker]
+            if marker in self.unused_markers.keys():
+                self.unused_markers.pop(marker)
+        else:
+            if marker not in self.unused_markers.keys():
+                self.unused_markers[marker] = self.marker_options[marker]
+            if marker in self.used_markers.keys():
+                self.used_markers.pop(marker)
+        return True
+
+    def update_run_marker(self, file=None, marker=None):
+        marker = self.marker_options_values[marker]
+
+        if marker in self.unused_markers.keys():
+            self.update_markers(marker=marker, used=True)
+
+        for run in self.run_list:
+            if run.filename == file:
+                if run.marker in self.used_markers.keys():
+                    self.update_markers(marker=run.marker, used=False)
+                if run.marker == marker:
+                    return
+                run.marker = marker
+
+        self.notify(RUN_DATA_CHANGED)
 
     def update_colors(self, color=None, used=False, custom=False):
         """ Updates the used and un-used color lists so as to keep track of which colors are available
@@ -81,14 +118,21 @@ class BEAMSModel:
                 for run in self.run_list:
                     if run.filename == filename:
                         self.update_colors(color=run.color, used=False)  # Update color availability
+                        self.update_markers(marker=run.marker, used=False)
                         self.run_list.remove(run)  # Remove the no longer selected run.
                 self.current_formats.pop(filename)
 
         for filename in formats.keys():  # Second checks if any filenames in the new list are not in the old
             if filename not in self.current_formats.keys():
+                marker = list(self.unused_markers.keys())[0]
+                color = self.color_options[0]
+
                 self.run_list.append(RunData(filename=filename, f_format=formats[filename],
-                                             color=self.color_options[0]))
-                self.update_colors(color=self.color_options[0], used=True)
+                                             color=color, marker=marker))
+
+                self.update_colors(color=color, used=True)
+                self.update_markers(marker=marker, used=True)
+
                 self.current_formats.update({filename: formats[filename]})
 
         if plot:
@@ -178,8 +222,9 @@ class RunData:
                 uncertainty arrays.
             calculate_fft(bin_size, asymmetry, times) : Returns smoothed frequencies and magnitudes for plotting.
     """
-    def __init__(self, filename=None, f_format=None, visibility=True, color=None):
+    def __init__(self, filename=None, f_format=None, visibility=True, color=None, marker=None):
         """Initialize a RunData object based on filename and format"""
+        self.marker = marker
         self.f_formats = f_format
         self.visibility = visibility
         self.color = color
