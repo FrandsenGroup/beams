@@ -14,9 +14,6 @@ import threading
 # Installed modules
 
 from PyQt5 import QtWidgets, QtCore
-import matplotlib.pyplot as plt
-# import matplotlib
-# matplotlib.use('Qt5Agg')
 import numpy as np
 
 
@@ -641,12 +638,8 @@ class RunDisplayController:
         for run in self.model.run_list:
             if run.filename == self.run_display.current_file.text():
                 histogram = run.retrieve_histogram_data(specific_hist=self.run_display.histograms.currentText()).values
-
-                plt.ioff()  # Need to turn off interactive plotting to create the new figure for this histograms
                 self.popup = BeamsViews.HistogramDisplay(histogram=histogram)
                 self.popup.show()
-                plt.ion()
-
                 break
 
     def change_color(self):
