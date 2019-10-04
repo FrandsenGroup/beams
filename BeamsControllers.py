@@ -15,6 +15,8 @@ import threading
 
 from PyQt5 import QtWidgets, QtCore
 import matplotlib.pyplot as plt
+# import matplotlib
+# matplotlib.use('Qt5Agg')
 import numpy as np
 
 
@@ -924,9 +926,8 @@ class SavePlotController:  # fixme just make this a smart UI in the views file, 
         self.save_plot_gui.save_button.released.connect(self.save_plots)
         self.save_plot_gui.show()
 
-    @staticmethod
-    def get_supported_extensions():
-        extensions = plt.gcf().canvas.get_supported_filetypes().keys()
+    def get_supported_extensions(self):
+        extensions = self.canvases[0].get_supported_filetypes().keys()
         extension_filters = ";;"
         extension_list = []
 
@@ -937,9 +938,9 @@ class SavePlotController:  # fixme just make this a smart UI in the views file, 
 
     def save_plots(self):
         if self.save_plot_gui.left_radio.isChecked():  # Setting the current figure to left or right (1 or 2)
-            plt.figure(1)
+            figure = self.canvases[0].figure
         elif self.save_plot_gui.right_radio.isChecked():
-            plt.figure(2)
+            figure = self.canvases[1].figure
         else:
             BeamsViews.ErrorMessageUI(error_message='You need to select a plot.')
             return
@@ -950,7 +951,7 @@ class SavePlotController:  # fixme just make this a smart UI in the views file, 
             return
 
         try:
-            plt.savefig(saved_file_path)
+            figure.savefig(saved_file_path)
         except ValueError:
             BeamsViews.ErrorMessageUI(error_message='Invalid save file type.')
         else:

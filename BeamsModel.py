@@ -304,26 +304,6 @@ class RunData:
         frequencies = frequencies[0:int(np.floor(num_frequencies/2))]
         magnitudes = abs(magnitudes[0:int(np.floor(num_frequencies/2))])
 
-        # # fixme
-        # # Determine a smart range for the fft here. Migrate this code to controller once we clean the update_plot funcs.
-        # # We want the range to:
-        # #   a) include the most significant frequencies
-        # #   b) but make sure the highest frequency is easily deducible.
-        #
-        # idx = (-magnitudes).argsort()[:2]
-        # buffered_cluster_max_idx = int(np.floor(np.max(idx)*1.25))
-        #
-        # buffered_highest_frq = frequencies[np.argmax(magnitudes)*5] if np.argmax(magnitudes)*5 < num_frequencies \
-        #     else frequencies[-1]
-        #
-        # if buffered_cluster_max_idx > buffered_highest_frq_idx and buffered_highest_frq_idx< num_frequencies:
-        #     magnitudes = magnitudes[0:buffered_highest_frq_idx]
-        #     frequencies = frequencies[0:buffered_highest_frq_idx]
-        # elif buffered_cluster_max_idx < num_frequencies:
-        #     magnitudes = magnitudes[0:buffered_cluster_max_idx]
-        #     frequencies = frequencies[0:buffered_cluster_max_idx]
-        # # fixme
-
         if spline:
             x_smooth = np.linspace(frequencies.min(), frequencies.max(), 300)
 
@@ -350,6 +330,7 @@ class RunData:
         time_per_binned = binned_indices_per_bin * bin_full
 
         self.binned_time = (np.arange(binned_indices_total) * time_per_binned) + (self.t0 * bin_full) + (time_per_binned / 2)
+
         if slider_moving:
             if leftover_bins:
                 reshaped_asymmetry = np.reshape(self.asymmetry[:-leftover_bins],
