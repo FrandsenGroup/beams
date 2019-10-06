@@ -38,7 +38,7 @@ def convert_msr(in_file=None, out_file=None, flags=None):
     if is_found(in_file) and check_ext(in_file, '.msr') and check_ext(out_file, '.dat'):
         system_args = {'win32': ['MUD', in_file, out_file],  # Windows Syntax
                        'linux': ['./MUDC', in_file, out_file],  # Linux Syntax
-                       'darwin': ['./MUDC', in_file, out_file]}  # Mac Syntax
+                       'darwin': ['./MUDM', in_file, out_file]}  # Mac Syntax
 
         if sys.platform in system_args.keys():
             args = system_args[sys.platform]
