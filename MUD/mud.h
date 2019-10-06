@@ -125,8 +125,10 @@ typedef unsigned short		UINT16;
 typedef int			INT32;
 typedef unsigned int		UINT32;
 #else
-typedef long			INT32;
-typedef unsigned long		UINT32;
+typedef int			INT32;
+typedef unsigned int		UINT32;
+//typedef long			INT32;
+//typedef unsigned long		UINT32;
 #endif /* __alpha || __linux */
 typedef float			REAL32;
 typedef double			REAL64;
