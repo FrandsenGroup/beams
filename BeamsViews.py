@@ -73,22 +73,27 @@ class FileManagerPanel(QtWidgets.QDockWidget):
         super(FileManagerPanel, self).__init__()
         self.setWindowTitle("File Manager")
 
-        tempWidget = QtWidgets.QWidget()
+        # Create our widget which will hold everything for this panel.
+        temp_widget = QtWidgets.QWidget()
 
+        # Create Widgets
+        self.file_list = QtWidgets.QListWidget()
         self.select_all = QtWidgets.QCheckBox()
-        self.select_all.setFixedWidth(20)
         self.write_button = QtWidgets.QPushButton("Write")
         self.import_button = QtWidgets.QPushButton("+")
         self.remove_button = QtWidgets.QPushButton('-')
         self.plot_button = QtWidgets.QPushButton("Plot")
         self.convert_button = QtWidgets.QPushButton("Convert")
 
+        # Set Widget Dimensions
+        self.select_all.setFixedWidth(20)
         self.import_button.setFixedWidth(25)
         self.remove_button.setFixedWidth(25)
         self.write_button.setFixedWidth(60)
         self.plot_button.setFixedWidth(60)
         self.convert_button.setFixedWidth(60)
 
+        # Set Widget Tooltips
         self.write_button.setToolTip('Write currently plotted data to .dat files')
         self.import_button.setToolTip('Add files')
         self.remove_button.setToolTip('Remove currently selected files.')
@@ -96,6 +101,7 @@ class FileManagerPanel(QtWidgets.QDockWidget):
         self.convert_button.setToolTip('Convert .msr formatted files to .dat ')
         self.select_all.setToolTip('Select all files.')
 
+        # Layout Widgets
         hbox_one = QtWidgets.QHBoxLayout()
         hbox_one.addWidget(self.select_all)
         hbox_one.setAlignment(self.select_all, QtCore.Qt.AlignCenter)
@@ -105,89 +111,60 @@ class FileManagerPanel(QtWidgets.QDockWidget):
         hbox_one.addWidget(self.plot_button)
         hbox_one.addWidget(self.write_button)
 
-        self.file_list = QtWidgets.QListWidget()
-
         hbox_two = QtWidgets.QHBoxLayout()
         hbox_two.addWidget(self.file_list)
 
         vbox_one = QtWidgets.QVBoxLayout()
         vbox_one.addLayout(hbox_one)
         vbox_one.addLayout(hbox_two)
-        tempWidget.setLayout(vbox_one)
+        temp_widget.setLayout(vbox_one)
 
-        self.setWidget(tempWidget)
+        # Set DockWidget to be fully laid out widget.
+        self.setWidget(temp_widget)
         self.setFloating(False)
 
 
+# Yo Dylan! See FileManagerPanel above for a good example.
 class MuFytPanel(QtWidgets.QDockWidget):
     def __init__(self):
+        # Call superclass so all dock widget attributes are initialized.
         super(MuFytPanel, self).__init__()
-        self.init_widgets()
-        self.layout_widgets()
 
-    def init_widgets(self):
-        self.input_function = QtWidgets.QLineEdit()
+        # Create our widget which will hold everything for this panel.
+        temp_widget = QtWidgets.QWidget()
 
-    def layout_widgets(self):
-        pass
+        # Create Widgets
+
+        # Set Widget Dimensions
+
+        # Set Widget Tooltips
+
+        # Layout Widgets
+
+        # Set DockWidget to be fully laid out widget.
+        self.setWidget(temp_widget)
+        self.setFloating(False)
 
 
 class PlotEditorPanel(QtWidgets.QDockWidget):
     def __init__(self):
         super(PlotEditorPanel, self).__init__()
-        self.init_UI()
 
-    def init_UI(self):
-        self.setWindowTitle("Graph Editor")
-        self.init_buttons()
-        self.init_check_options()
-        self.init_sliders()
-        self.init_input_boxes()
-        self.setWidget(self.layout_UI())
-
-    def init_buttons(self):
         self.save_button = QtWidgets.QPushButton('Save')
-
-    def init_check_options(self):
         self.check_uncertain = QtWidgets.QCheckBox()
         self.check_annotation = QtWidgets.QCheckBox()
         self.check_plot_lines = QtWidgets.QCheckBox()
         self.check_spline = QtWidgets.QCheckBox()
         self.check_autoscale_one = QtWidgets.QCheckBox()
         self.check_autoscale_two = QtWidgets.QCheckBox()
-        self.check_uncertain.setChecked(True)
-        self.check_annotation.setChecked(True)
-        self.check_spline.setChecked(False)
-        self.check_autoscale_one.setChecked(True)
-        self.check_autoscale_two.setChecked(True)
         self.label_uncertain = QtWidgets.QLabel('Show Uncertainty')
         self.label_annotation = QtWidgets.QLabel('Show Annotations')
         self.label_plot_lines = QtWidgets.QLabel('Show Plot Lines')
         self.label_spline = QtWidgets.QLabel('FFT Spline')
-
-    def init_sliders(self):
         self.slider_one = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        self.slider_one.setMinimum(0)
-        self.slider_one.setMaximum(500)
-        self.slider_one.setValue(150)
-        self.slider_one.setTickPosition(QtWidgets.QSlider.TicksBothSides)
-        self.slider_one.setTickInterval(20)
-
         self.slider_two = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        self.slider_two.setMinimum(0)
-        self.slider_two.setMaximum(500)
-        self.slider_two.setValue(2)
-        self.slider_two.setTickPosition(QtWidgets.QSlider.TicksBothSides)
-        self.slider_two.setTickInterval(20)
-
         self.input_slider_one = QtWidgets.QLineEdit()
         self.input_slider_two = QtWidgets.QLineEdit()
-        self.input_slider_one.setFixedWidth(50)
-        self.input_slider_two.setFixedWidth(50)
-        self.input_slider_one.setText(str(self.slider_one.value()))
-        self.input_slider_two.setText(str(self.slider_two.value()))
-
-    def init_input_boxes(self):
         self.input_xmin_one = QtWidgets.QLineEdit()
         self.input_xmin_two = QtWidgets.QLineEdit()
         self.input_xmax_one = QtWidgets.QLineEdit()
@@ -196,6 +173,44 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
         self.input_ymin_two = QtWidgets.QLineEdit()
         self.input_ymax_one = QtWidgets.QLineEdit()
         self.input_ymax_two = QtWidgets.QLineEdit()
+
+        self.init_UI()
+
+    def init_UI(self):
+        self.setWindowTitle("Graph Editor")
+        self.init_check_options()
+        self.init_sliders()
+        self.init_input_boxes()
+        self.setWidget(self.layout_UI())
+
+    def init_check_options(self):
+        self.check_uncertain.setChecked(True)
+        self.check_annotation.setChecked(True)
+        self.check_spline.setChecked(False)
+        self.check_autoscale_one.setChecked(True)
+        self.check_autoscale_two.setChecked(True)
+
+
+    def init_sliders(self):
+        self.slider_one.setMinimum(0)
+        self.slider_one.setMaximum(500)
+        self.slider_one.setValue(150)
+        self.slider_one.setTickPosition(QtWidgets.QSlider.TicksBothSides)
+        self.slider_one.setTickInterval(20)
+
+        self.slider_two.setMinimum(0)
+        self.slider_two.setMaximum(500)
+        self.slider_two.setValue(2)
+        self.slider_two.setTickPosition(QtWidgets.QSlider.TicksBothSides)
+        self.slider_two.setTickInterval(20)
+
+        self.input_slider_one.setFixedWidth(50)
+        self.input_slider_two.setFixedWidth(50)
+        self.input_slider_one.setText(str(self.slider_one.value()))
+        self.input_slider_two.setText(str(self.slider_two.value()))
+
+    def init_input_boxes(self):
+
         self.input_xmin_one.setFixedWidth(50)
         self.input_xmax_one.setFixedWidth(50)
         self.input_xmin_two.setFixedWidth(50)
