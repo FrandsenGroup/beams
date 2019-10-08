@@ -324,6 +324,7 @@ class PlotController:
         self.popup = None
 
         self.model.observers[BeamsModel.RUN_DATA_CHANGED].append(self)
+        self.canvases = [self.plot_panel.canvas_one, self.plot_panel.canvas_two]
 
         self.plot_parameters = {'XMinOne': self.plot_editor.input_xmin_one.text,
                                 'XMinTwo': self.plot_editor.input_xmin_two.text,
@@ -405,66 +406,66 @@ class PlotController:
         start = time.time()
         if plot:
             if plot == 1:
-                thread_one = threading.Thread(target=self._update_canvas_one(moving), daemon=True)
+                thread_one = threading.Thread(target=self._update_canvas(1, moving), daemon=True)
                 thread_one.start()
             else:
-                thread_two = threading.Thread(target=self._update_canvas_two(moving), daemon=True)
+                thread_two = threading.Thread(target=self._update_canvas(2, moving), daemon=True)
                 thread_two.start()
         else:
-            thread_one = threading.Thread(target=self._update_canvas_one(moving), daemon=True)
+            thread_one = threading.Thread(target=self._update_canvas(1, moving), daemon=True)
             thread_one.start()
-            thread_two = threading.Thread(target=self._update_canvas_two(moving), daemon=True)
+            thread_two = threading.Thread(target=self._update_canvas(2, moving), daemon=True)
             thread_two.start()
         # print('Moving on')
         self._display_y_limits()
         # print('\tBinned and Plotted all runs in {} seconds'.format(time.time()-start))
 
-    def _update_canvas_one(self, moving=False):
-        # plt.ion()
-        # plt.draw()
-        # FIXME this function has gotten a bit out of hand, refactor time!
-        self.plot_panel.canvas_one.axes_time.clear()
-        self.plot_panel.canvas_one.axes_freq.clear()
+    def _update_canvas(self, can_int, moving=False):
+        canvas = self.canvases[can_int-1]
+        xmin = self.plot_parameters['XMinOne']() if can_int == 1 else self.plot_parameters['XMinTwo']()
+        xmax = self.plot_parameters['XMaxOne']() if can_int == 1 else self.plot_parameters['XMaxTwo']()
+        bin = self.plot_parameters['BinInputOne']() if can_int == 1 else self.plot_parameters['BinInputTwo']()
+        yauto = self.plot_parameters['YAutoOne']() if can_int == 1 else self.plot_parameters['YAutoTwo']()
+        ymin = self.plot_parameters['YMinOne']() if can_int == 1 else self.plot_parameters['YMinTwo']()
+        ymax = self.plot_parameters['YMaxOne']() if can_int == 1 else self.plot_parameters['YMaxTwo']()
+
+        canvas.axes_time.clear()
+        canvas.axes_freq.clear()
 
         max_y = -1
         min_y = 1
         max_mag = 0
         max_freq = 0
 
-        self.plot_panel.canvas_one.axes_time.set_xlim(float(self.plot_parameters['XMinOne']()),
-                                                      float(self.plot_parameters['XMaxOne']()))
+        canvas.axes_time.set_xlim(float(xmin), float(xmax))
+
         for run in self.model.run_list:
             if run.visibility:
-                asymmetry, times, uncertainty = run.bin_data(final_bin_size=float(self.plot_parameters['BinInputOne']()),
-                                                             slider_moving=moving)
+                asymmetry, times, uncertainty = run.bin_data(final_bin_size=float(bin), slider_moving=moving)
                 if moving:
-                    self.plot_panel.canvas_one.axes_time.plot(times, asymmetry, color=run.color, linestyle='None',
-                                                              marker=run.marker)
-                elif not self.plot_parameters['Uncertainty']():
-                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times,
-                                                                spline=self.plot_parameters['Spline']())
-                    self.plot_panel.canvas_one.axes_time.plot(times, asymmetry, color=run.color, marker=run.marker,
-                                                              linestyle=self.plot_parameters['LineStyle']())
-                    self.plot_panel.canvas_one.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
-                                                              label=self._display_annotations(run))
-
-                    max_mag = np.max(magnitudes) if np.max(magnitudes) > max_mag else max_mag
-                    max_freq = np.max(frequencies) if np.max(frequencies) > max_freq else max_freq
-
+                    canvas.axes_time.plot(times, asymmetry, color=run.color, linestyle='None', marker=run.marker)
                 else:
+                    if not self.plot_parameters['Uncertainty']():
+                        canvas.axes_time.plot(times, asymmetry, color=run.color, marker=run.marker,
+                                                                  linestyle=self.plot_parameters['LineStyle']())
+
+                    else:
+                        canvas.axes_time.errorbar(times, asymmetry, uncertainty, color=run.color,
+                                                                      linestyle=self.plot_parameters['LineStyle'](),
+                                                                      marker=run.marker,
+                                                                      label=run.f_formats['RunNumber'])
+
                     frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times,
                                                                 spline=self.plot_parameters['Spline']())
-                    self.plot_panel.canvas_one.axes_time.errorbar(times, asymmetry, uncertainty, color=run.color,
-                                                                  linestyle=self.plot_parameters['LineStyle'](),
-                                                                  marker=run.marker, label=run.f_formats['RunNumber'])
-                    self.plot_panel.canvas_one.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
+
+                    canvas.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
                                                               label=self._display_annotations(run))
 
                     max_mag = np.max(magnitudes) if np.max(magnitudes) > max_mag else max_mag
                     max_freq = np.max(frequencies) if np.max(frequencies) > max_freq else max_freq
 
-                frac_start = float(self.plot_parameters['XMinOne']()) / (times[len(times) - 1] - times[0])
-                frac_end = float(self.plot_parameters['XMaxOne']()) / (times[len(times) - 1] - times[0])
+                frac_start = float(xmin) / (times[len(times) - 1] - times[0])
+                frac_end = float(xmax) / (times[len(times) - 1] - times[0])
                 start_index = int(np.floor(len(asymmetry) * frac_start))
                 end_index = int(np.floor(len(asymmetry) * frac_end))
 
@@ -474,88 +475,17 @@ class PlotController:
                 min_y = np.min(asymmetry[start_index:end_index]) if \
                     np.min(asymmetry[start_index:end_index]) < min_y else min_y
 
-        # max_mag = 20 if max_mag > 20 else max_mag
+        canvas.axes_freq.set_xlim(0, max_freq * 1.1)
+        canvas.axes_freq.set_ylim(0, max_mag * 1.1)
 
-        self.plot_panel.canvas_one.axes_freq.set_xlim(0, max_freq * 1.1)
-        self.plot_panel.canvas_one.axes_freq.set_ylim(0, max_mag * 1.1)
-
-        if not self.plot_parameters['YAutoOne']():
-            self.plot_panel.canvas_one.axes_time.set_ylim(float(self.plot_parameters['YMinOne']()),
-                                                          float(self.plot_parameters['YMaxOne']()))
+        if not yauto:
+            canvas.axes_time.set_ylim(float(ymin), float(ymax))
         else:
-            self.plot_panel.canvas_one.axes_time.set_ylim(min_y - abs(min_y * 0.1), max_y + abs(max_y * 0.1))
+            canvas.axes_time.set_ylim(min_y - abs(min_y * 0.1), max_y + abs(max_y * 0.1))
 
-        self.plot_panel.canvas_one.set_style()
+        canvas.set_style()
 
-        self.plot_panel.canvas_one.axes_time.figure.canvas.draw()
-
-    def _update_canvas_two(self, moving=False):
-        # print('starting two')
-        # FIXME Much room for improvement in this function.
-        self.plot_panel.canvas_two.axes_time.clear()
-        self.plot_panel.canvas_two.axes_freq.clear()
-
-        self.plot_panel.canvas_two.axes_time.set_xlim(float(self.plot_parameters['XMinTwo']()),
-                                                      float(self.plot_parameters['XMaxTwo']()))
-        max_y = -2
-        min_y = 2
-        max_mag = 0
-        max_freq = 0
-
-        for run in self.model.run_list:
-            if run.visibility:
-                asymmetry, times, uncertainty = run.bin_data(final_bin_size=float(self.plot_parameters['BinInputTwo']()),
-                                                             slider_moving=moving)
-                if moving:
-                    self.plot_panel.canvas_two.axes_time.plot(times, asymmetry, color=run.color, linestyle='None',
-                                                              marker=run.marker)
-                elif not self.plot_parameters['Uncertainty']():
-                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times,
-                                                                spline=self.plot_parameters['Spline']())
-
-                    self.plot_panel.canvas_two.axes_time.plot(times, asymmetry, color=run.color, marker=run.marker,
-                                                              linestyle=self.plot_parameters['LineStyle']())
-                    self.plot_panel.canvas_two.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
-                                                              label=self._display_annotations(run))
-
-                    max_mag = np.max(magnitudes) if np.max(magnitudes) > max_mag else max_mag
-                    max_freq = np.max(frequencies) if np.max(frequencies) > max_freq else max_freq
-
-                else:
-                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times,
-                                                                spline=self.plot_parameters['Spline']())
-                    self.plot_panel.canvas_two.axes_time.errorbar(times, asymmetry, uncertainty, color=run.color,
-                                                                  linestyle=self.plot_parameters['LineStyle'](),
-                                                                  marker=run.marker)
-                    self.plot_panel.canvas_two.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
-                                                              label=self._display_annotations(run))
-
-                    max_mag = np.max(magnitudes) if np.max(magnitudes) > max_mag else max_mag
-                    max_freq = np.max(frequencies) if np.max(frequencies) > max_freq else max_freq
-
-                frac_start = float(self.plot_parameters['XMinTwo']()) / (times[len(times)-1] - times[0])
-                frac_end = float(self.plot_parameters['XMaxTwo']()) / (times[len(times)-1] - times[0])
-                start_index = int(np.floor(len(asymmetry)*frac_start))
-                end_index = int(np.floor(len(asymmetry)*frac_end))
-
-                max_y = np.max(asymmetry[start_index:end_index]) if \
-                    np.max(asymmetry[start_index:end_index]) > max_y else max_y
-
-                min_y = np.min(asymmetry[start_index:end_index]) if \
-                    np.min(asymmetry[start_index:end_index]) < min_y else min_y
-
-        self.plot_panel.canvas_two.axes_freq.set_xlim(0, max_freq * 1.1)
-        self.plot_panel.canvas_two.axes_freq.set_ylim(0, max_mag * 1.1)
-
-        if not self.plot_parameters['YAutoTwo']():
-            self.plot_panel.canvas_two.axes_time.set_ylim(float(self.plot_parameters['YMinTwo']()),
-                                                          float(self.plot_parameters['YMaxTwo']()))
-        else:
-            self.plot_panel.canvas_two.axes_time.set_ylim(min_y - abs(min_y * 0.1), max_y + abs(max_y * 0.1))
-
-        self.plot_panel.canvas_two.set_style()
-
-        self.plot_panel.canvas_two.axes_time.figure.canvas.draw()
+        canvas.axes_time.figure.canvas.draw()
 
     def _display_annotations(self, run):
         return run.f_formats['Title'] if self.plot_parameters['Annotations']() else None
