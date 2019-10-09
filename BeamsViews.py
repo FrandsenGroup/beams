@@ -6,6 +6,8 @@ from matplotlib.backends.backend_qt5agg import (FigureCanvasQTAgg as FigureCanva
                                                 NavigationToolbar2QT as NavigationToolbar)
 from matplotlib.figure import Figure
 
+style_imported = False
+
 
 # noinspection PyArgumentList
 class MainGUIWindow(QtWidgets.QMainWindow):
@@ -31,6 +33,8 @@ class MainGUIWindow(QtWidgets.QMainWindow):
 
         self.plot_panel = PlotPanel()
         self.setCentralWidget(self.plot_panel)
+
+        self.addToolBar(NavigationToolbar(self.plot_panel.canvas_one, self))
 
         # Initialize Menu Bar for Main Window
         self.menu_bar = self.menuBar()
@@ -418,14 +422,20 @@ class PlotPanel(QtWidgets.QDockWidget):
         self.setWindowTitle("Graphing Area")
         self.full_widget = QtWidgets.QWidget()
 
-        self.canvas_one = RunPlot()
-        self.canvas_two = RunPlot()
+        # self.canvas_one = RunPlot()
+        # self.canvas_two = RunPlot()
+        self.canvas_wrapper_one = CanvasWrapper()
+        self.canvas_wrapper_two = CanvasWrapper()
+        self.canvas_one = self.canvas_wrapper_one.canvas
+        self.canvas_two = self.canvas_wrapper_two.canvas
 
         self.linestyle = 'None'
 
         hbox = QtWidgets.QHBoxLayout()
-        hbox.addWidget(self.canvas_one)
-        hbox.addWidget(self.canvas_two)
+        # hbox.addWidget(self.canvas_one)
+        # hbox.addWidget(self.canvas_two)
+        hbox.addWidget(self.canvas_wrapper_one)
+        hbox.addWidget(self.canvas_wrapper_two)
         self.full_widget.setLayout(hbox)
 
         self.setWidget(self.full_widget)
@@ -457,6 +467,14 @@ class CanvasUI(FigureCanvas):
 
 
 # noinspection PyArgumentList
+class CanvasWrapper(QtWidgets.QMainWindow):
+    def __init__(self):
+        super(CanvasWrapper, self).__init__()
+        self.canvas = RunPlot()
+        self.setCentralWidget(self.canvas)
+        self.addToolBar(QtCore.Qt.BottomToolBarArea, NavigationToolbar(self.canvas, self))
+
+# noinspection PyArgumentList
 class RunPlot(FigureCanvas):
     def __init__(self):
         # I get an error if I don't create these variables, True or False hasn't made a difference.
@@ -469,20 +487,69 @@ class RunPlot(FigureCanvas):
         self.axes_time = axes[0]
         self.axes_freq = axes[1]
 
-        self.set_style()
+        self.set_blank()
 
-    def set_style(self):
+    def set_blank(self):
         title_font_size = 12
         self.axes_time.spines['right'].set_visible(False)
         self.axes_time.spines['top'].set_visible(False)
+        self.axes_time.spines['left'].set_visible(False)
+        self.axes_time.spines['bottom'].set_visible(False)
+        self.axes_time.set_xlabel("Add '.msr', '.dat' or '.asy' files and press 'Plot' to see data.",
+                                  fontsize=title_font_size)
+        self.axes_time.xaxis.label.set_color("#B8B8B8")
+        # self.axes_time.set_ylabel("Asymmetry", fontsize=title_font_size)
+        self.axes_time.tick_params(axis='x', colors='white')
+        self.axes_time.tick_params(axis='y', colors='white')
+
+        self.axes_freq.spines['right'].set_visible(False)
+        self.axes_freq.spines['top'].set_visible(False)
+        self.axes_freq.spines['left'].set_visible(False)
+        self.axes_freq.spines['bottom'].set_visible(False)
+        # self.axes_freq.set_xlabel("Frequency (MHz)", fontsize=title_font_size)
+        # self.axes_freq.set_ylabel("Magnitude", fontsize=title_font_size)
+        # self.axes_freq.legend(loc='upper right')
+        self.axes_freq.tick_params(axis='x', colors='white')
+        self.axes_freq.tick_params(axis='y', colors='white')
+
+    def set_style(self):
+        if style_imported:
+            self.figure.set_facecolor('#32414B')
+            self.axes_time.set_facecolor('#32414B')
+            self.axes_freq.set_facecolor('#32414B')
+            self.axes_time.spines['left'].set_color('white')
+            self.axes_time.spines['bottom'].set_color('white')
+            self.axes_time.xaxis.label.set_color('white')
+            self.axes_time.yaxis.label.set_color('white')
+            self.axes_time.tick_params(axis='x', colors='white')
+            self.axes_time.tick_params(axis='y', colors='white')
+            self.axes_freq.spines['left'].set_color('white')
+            self.axes_freq.spines['bottom'].set_color('white')
+            self.axes_freq.xaxis.label.set_color('white')
+            self.axes_freq.yaxis.label.set_color('white')
+            self.axes_freq.tick_params(axis='x', colors='white')
+            self.axes_freq.tick_params(axis='y', colors='white')
+        else:
+            self.axes_time.tick_params(axis='x', colors='black')
+            self.axes_time.tick_params(axis='y', colors='black')
+            self.axes_freq.tick_params(axis='x', colors='black')
+            self.axes_freq.tick_params(axis='y', colors='black')
+
+        title_font_size = 12
+        self.axes_time.spines['right'].set_visible(False)
+        self.axes_time.spines['top'].set_visible(False)
+        self.axes_time.spines['left'].set_visible(True)
+        self.axes_time.spines['bottom'].set_visible(True)
         self.axes_time.set_xlabel("Time (" + chr(956) + "s)", fontsize=title_font_size)
         self.axes_time.set_ylabel("Asymmetry", fontsize=title_font_size)
 
         self.axes_freq.spines['right'].set_visible(False)
         self.axes_freq.spines['top'].set_visible(False)
+        self.axes_freq.spines['left'].set_visible(True)
+        self.axes_freq.spines['bottom'].set_visible(True)
         self.axes_freq.set_xlabel("Frequency (MHz)", fontsize=title_font_size)
         self.axes_freq.set_ylabel("Magnitude", fontsize=title_font_size)
-        self.axes_freq.legend(loc='upper right')
+        self.axes_freq.legend(loc='upper right') # fixme, move this line to the update canvas in controller
 
 
 # noinspection PyArgumentList
