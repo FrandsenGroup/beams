@@ -29,7 +29,7 @@ def profile(fnc):
     return inner
 
 
-def convert_msr(in_file=None, out_file=None, flags=None):
+def convert_msr(in_file, out_file, flags=None):
     """ Takes an 'in_file' with a .msr extension and then converts and writes the data to
         an 'out_file' with a .dat extension. Tested on Ubuntu and Windows 10 successfully.
         To convert it calls the MUD.exe/MUDC executable which is compiled from the source code
@@ -63,7 +63,7 @@ def convert_msr(in_file=None, out_file=None, flags=None):
     return False  # Unrecognized file format
 
 
-def read_dat(filename=None, skiprows=3):
+def read_dat(filename, skiprows=3):
     """ Reads and returns the histogram and header, does not check retrieved data. """
     if check_ext(filename, '.dat'):
         header = get_header(filename)
@@ -74,7 +74,7 @@ def read_dat(filename=None, skiprows=3):
     return None
 
 
-def get_header(filename=None, header_rows=None):
+def get_header(filename, header_rows=None):
     """ Gets the header from a .dat file. If BEAMS formatted, it creates a dictionary with
         the header data, otherwise it stores the first user-specified number of lines in a
         list of strings. """
@@ -114,7 +114,7 @@ def get_header(filename=None, header_rows=None):
     return metadata
 
 
-def get_histograms(filename=None, skiprows=None, histogram=None):
+def get_histograms(filename, skiprows=None, histogram=None):
     """ Gets the histogram(s) from a specified .dat file, does not check retrieved data.
         User can specify a particular histogram to retrieve or None to retrieve all. """
     if histogram:
@@ -127,7 +127,20 @@ def get_histograms(filename=None, skiprows=None, histogram=None):
     return histograms
 
 
-def check_ext(filename=None, expected_ext=None):
+def read_asy(filename):
+    if is_beams(filename):
+        try:
+            data = pd.read_csv(filename, skiprows=2)
+            print(data)
+        except ValueError:
+            return None
+    else:
+        return None
+
+    return data
+
+
+def check_ext(filename, expected_ext):
     """ Checks the extension of file against the user specified extension. """
     _, ext = os.path.splitext(filename)
     if ext == expected_ext:
@@ -154,7 +167,7 @@ def check_input(user_input=None, expected=None, low_limit=None, up_limit=None, e
     return True
 
 
-def check_files(filenames=None):
+def check_files(filenames):
     """ Checks given filenames for BEAM format, .dat or .msr extensions. """
     dat_beams_files = []  # .dat files in BEAMS format, no specification necessary
     dat_other_files = []  # .dat files in non-BEAMS format, user specification necessary
@@ -180,7 +193,7 @@ def check_files(filenames=None):
     return [dat_beams_files, dat_other_files, msr_files, bad_files, asy_files]
 
 
-def is_beams(filename=None):
+def is_beams(filename):
     """ Checks if the .dat file is BEAMS formatted (first line should read 'BEAMS'). No other checks."""
     if is_found(filename):
         with open(filename) as file:
@@ -189,7 +202,7 @@ def is_beams(filename=None):
     return False
 
 
-def is_found(filename=None):
+def is_found(filename):
     """ Checks that the file path can be successfully found and opened. """
     try:
         with open(filename):

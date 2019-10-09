@@ -231,6 +231,28 @@ class RunData:
         self.filename = filename
         self.t0 = 0
 
+        self.histogram_data = None
+        self.asymmetry = None
+        self.uncertainty = None
+        self.time = None
+        self.binned_asymmetry = None
+        self.binned_uncertainty = None
+        self.binned_time = None
+
+        if BeamsUtility.check_ext(filename, '.dat'):
+            self.read_from_dat()
+        elif BeamsUtility.check_ext(filename, '.asy'):
+            self.read_from_asy()
+        else:
+            print('Invalid file')
+
+    def __bool__(self):
+        return self.visibility
+
+    def read_from_asy(self):
+        self.time, self.asymmetry, self.uncertainty = BeamsUtility.read_asy(self.filename)
+
+    def read_from_dat(self):
         self.histogram_data = self.retrieve_histogram_data()
 
         bkg_one, bkg_two = self.calculate_background_radiation(hist_one=self.f_formats['CalcHists'][0],
@@ -243,17 +265,14 @@ class RunData:
         self.uncertainty = self.calculate_uncertainty(hist_one=self.f_formats['CalcHists'][0],
                                                       hist_two=self.f_formats['CalcHists'][1])
 
-        self.time = (np.arange(len(self.asymmetry)) * float(self.f_formats['BinSize'])/1000) + \
-                    (self.t0 * float(self.f_formats['BinSize'])/1000)
+        self.time = (np.arange(len(self.asymmetry)) * float(self.f_formats['BinSize']) / 1000) + \
+                    (self.t0 * float(self.f_formats['BinSize']) / 1000)
 
         self.binned_asymmetry = np.array([])
         self.binned_time = np.array([])
         self.binned_uncertainty = np.array([])
 
         del self.histogram_data
-
-    def __bool__(self):
-        return self.visibility
 
     def retrieve_histogram_data(self, specific_hist=None):
         """ Retrieves histogram data from a BEAMS formatted file. """
