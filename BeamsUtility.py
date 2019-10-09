@@ -164,23 +164,25 @@ def check_files(filenames=None):
 
     for file in filenames:
         if is_found(file):
-            if is_beams(file):
+            if is_beams(file) and check_ext(file, '.dat'):
                 dat_beams_files.append(file)
             elif check_ext(file, '.dat'):
                 dat_other_files.append(file)
             elif check_ext(file, '.msr'):
                 msr_files.append(file)
+            elif check_ext(file, '.asy'):
+                asy_files.append(file)
             else:
                 bad_files.append(file)
         else:
             bad_files.append(file)
 
-    return [dat_beams_files, dat_other_files, msr_files, bad_files]
+    return [dat_beams_files, dat_other_files, msr_files, bad_files, asy_files]
 
 
 def is_beams(filename=None):
     """ Checks if the .dat file is BEAMS formatted (first line should read 'BEAMS'). No other checks."""
-    if is_found(filename) and check_ext(filename, '.dat'):
+    if is_found(filename):
         with open(filename) as file:
             if file.readline().rstrip('\n') == 'BEAMS':
                 return True

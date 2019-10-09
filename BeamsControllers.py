@@ -16,11 +16,22 @@ import threading
 from PyQt5 import QtWidgets, QtCore
 import numpy as np
 
+style_imported = False
+if False:
+    try:
+        import qdarkstyle
+        style_imported = True
+    except ImportError:
+        pass
+
 
 class ProgramController:
     """ Main controller responsible for initializing and starting the application. """
     def __init__(self):
         self.app = QtWidgets.QApplication(sys.argv)
+
+        if style_imported:
+            self.app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
 
         # Initialize the model
         # Note: The model holds most application-relevant data and the 'business logic' of the application.
@@ -228,7 +239,7 @@ class FileManagerController:
         filenames = self._get_selected_files()
         checked_items = [self.model.all_full_filepaths[file_root] for file_root in filenames]
 
-        beams_files, other_dat, msr_files, bad_files = BeamsUtility.check_files(checked_items)
+        beams_files, other_dat, msr_files, bad_files, asy_files = BeamsUtility.check_files(checked_items)
 
         if msr_files:  # Users must give permission to read and convert .msr files to .dat
             message = 'MUD Files selected, would you like them to be converted?'
@@ -239,7 +250,7 @@ class FileManagerController:
                 [(filename + '\n') for filename in bad_files])
             BeamsViews.ErrorMessageUI(message)
 
-        elif beams_files or other_dat:  # Collect the formats of each file to send to the model.
+        elif beams_files or other_dat or asy_files:  # Collect the formats of each file to send to the model.
             self._prompt_formats(beams_files, other_dat)
 
         else:  # No files were selected, inform the user.
@@ -403,24 +414,19 @@ class PlotController:
 
     def _visual_data_change(self, plot=None, moving=False):
         """ Handles the changes made to Plot Editor widgets that necessitate recalculation of the Run Data. """
-        start = time.time()
         if plot:
             if plot == 1:
-                thread_one = threading.Thread(target=self._update_canvas(1, moving), daemon=True)
-                thread_one.start()
+                threading.Thread(target=self._update_canvas(1, moving), daemon=True).start()
             else:
-                thread_two = threading.Thread(target=self._update_canvas(2, moving), daemon=True)
-                thread_two.start()
+                threading.Thread(target=self._update_canvas(2, moving), daemon=True).start()
         else:
-            thread_one = threading.Thread(target=self._update_canvas(1, moving), daemon=True)
-            thread_one.start()
-            thread_two = threading.Thread(target=self._update_canvas(2, moving), daemon=True)
-            thread_two.start()
-        # print('Moving on')
+            threading.Thread(target=self._update_canvas(1, moving), daemon=True).start()
+            threading.Thread(target=self._update_canvas(2, moving), daemon=True).start()
+
         self._display_y_limits()
-        # print('\tBinned and Plotted all runs in {} seconds'.format(time.time()-start))
 
     def _update_canvas(self, can_int, moving=False):
+        # Get the appropriate plotting parameters for the specified canvas
         canvas = self.canvases[can_int-1]
         xmin = self.plot_parameters['XMinOne']() if can_int == 1 else self.plot_parameters['XMinTwo']()
         xmax = self.plot_parameters['XMaxOne']() if can_int == 1 else self.plot_parameters['XMaxTwo']()
