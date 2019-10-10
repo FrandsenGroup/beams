@@ -337,25 +337,43 @@ class PlotController:
         self.model.observers[BeamsModel.RUN_DATA_CHANGED].append(self)
         self.canvases = [self.plot_panel.canvas_one, self.plot_panel.canvas_two]
 
-        self.plot_parameters = {'XMinOne': self.plot_editor.input_xmin_one.text,
-                                'XMinTwo': self.plot_editor.input_xmin_two.text,
-                                'XMaxOne': self.plot_editor.input_xmax_one.text,
-                                'XMaxTwo': self.plot_editor.input_xmax_two.text,
-                                'YMinOne': self.plot_editor.input_ymin_one.text,
-                                'YMinTwo': self.plot_editor.input_ymin_two.text,
-                                'YMaxOne': self.plot_editor.input_ymax_one.text,
-                                'YMaxTwo': self.plot_editor.input_ymax_two.text,
-                                'BinInputOne': self.plot_editor.input_slider_one.text,
-                                'BinInputTwo': self.plot_editor.input_slider_two.text,
-                                'SliderOne': self.plot_editor.slider_one.value,
-                                'SliderTwo': self.plot_editor.slider_two.value,
-                                'YAutoOne': self.plot_editor.check_autoscale_one.isChecked,
-                                'YAutoTwo': self.plot_editor.check_autoscale_two.isChecked,
+        self.plot_parameters = {
+                                'TimeXMinOne': self.plot_panel.input_time_xmin_one.text,
+                                'TimeXMinTwo': self.plot_panel.input_time_xmin_two.text,
+                                'TimeXMaxOne': self.plot_panel.input_time_xmax_one.text,
+                                'TimeXMaxTwo': self.plot_panel.input_time_xmax_two.text,
+                                'TimeYMinOne': self.plot_panel.input_time_ymin_one.text,
+                                'TimeYMinTwo': self.plot_panel.input_time_ymin_two.text,
+                                'TimeYMaxOne': self.plot_panel.input_time_ymax_one.text,
+                                'TimeYMaxTwo': self.plot_panel.input_time_ymax_two.text,
+
+                                'FreqXMinOne': self.plot_panel.input_freq_xmin_one.text,
+                                'FreqXMinTwo': self.plot_panel.input_freq_xmin_two.text,
+                                'FreqXMaxOne': self.plot_panel.input_freq_xmax_one.text,
+                                'FreqXMaxTwo': self.plot_panel.input_freq_xmax_two.text,
+                                'FreqYMinOne': self.plot_panel.input_freq_ymin_one.text,
+                                'FreqYMinTwo': self.plot_panel.input_freq_ymin_two.text,
+                                'FreqYMaxOne': self.plot_panel.input_freq_ymax_one.text,
+                                'FreqYMaxTwo': self.plot_panel.input_freq_ymax_two.text,
+
+                                'BinInputOne': self.plot_panel.input_slider_one.text,
+                                'BinInputTwo': self.plot_panel.input_slider_two.text,
+                                'SliderOne': self.plot_panel.slider_one.value,
+                                'SliderTwo': self.plot_panel.slider_two.value,
+
+                                'TimeYAutoOne': self.plot_panel.check_time_y_autoscale_one.isChecked,
+                                'TimeYAutoTwo': self.plot_panel.check_time_y_autoscale_two.isChecked,
+                                'FreqYAutoOne': self.plot_panel.check_freq_y_autoscale_one.isChecked,
+                                'FreqYAutoTwo': self.plot_panel.check_freq_y_autoscale_two.isChecked,
+                                'FreqXAutoOne': self.plot_panel.check_freq_x_autoscale_one.isChecked,
+                                'FreqXAutoTwo': self.plot_panel.check_freq_x_autoscale_two.isChecked,
+
                                 'PlotLines': self.plot_editor.check_plot_lines.isChecked,
                                 'Annotations': self.plot_editor.check_annotation.isChecked,
                                 'Spline': self.plot_editor.check_spline.isChecked,
                                 'Uncertainty': self.plot_editor.check_uncertain.isChecked,
-                                'LineStyle': self._display_plot_lines}
+                                'LineStyle': self._display_plot_lines
+        }
 
         self.model.plot_parameters = self.plot_parameters
         self._set_callbacks()
@@ -369,26 +387,26 @@ class PlotController:
 
     def _set_callbacks(self):
         """ Sets callbacks for events in the Plot Editor Panel. """
-        self.plot_editor.input_xmin_one.returnPressed.connect(lambda: self._visual_data_change(plot=1))
-        self.plot_editor.input_xmin_two.returnPressed.connect(lambda: self._visual_data_change(plot=2))
-        self.plot_editor.input_xmax_one.returnPressed.connect(lambda: self._visual_data_change(plot=1))
-        self.plot_editor.input_xmax_two.returnPressed.connect(lambda: self._visual_data_change(plot=2))
-        self.plot_editor.input_ymin_one.returnPressed.connect(lambda: self._visual_data_change(plot=1))
-        self.plot_editor.input_ymin_two.returnPressed.connect(lambda: self._visual_data_change(plot=2))
-        self.plot_editor.input_ymax_one.returnPressed.connect(lambda: self._visual_data_change(plot=1))
-        self.plot_editor.input_ymax_two.returnPressed.connect(lambda: self._visual_data_change(plot=2))
-        self.plot_editor.input_slider_one.returnPressed.connect(lambda: self._bin_changed(moving=False, plot=1))
-        self.plot_editor.input_slider_two.returnPressed.connect(lambda: self._bin_changed(moving=False, plot=2))
-        self.plot_editor.slider_one.sliderMoved.connect(lambda: self._bin_changed(moving=True, plot=1))
-        self.plot_editor.slider_two.sliderMoved.connect(lambda: self._bin_changed(moving=True, plot=2))
-        self.plot_editor.slider_one.sliderReleased.connect(lambda: self._bin_changed(moving=False, plot=1))
-        self.plot_editor.slider_two.sliderReleased.connect(lambda: self._bin_changed(moving=False, plot=2))
+        self.plot_panel.input_time_xmin_one.returnPressed.connect(lambda: self._visual_data_change(plot=1))
+        self.plot_panel.input_time_xmin_two.returnPressed.connect(lambda: self._visual_data_change(plot=2))
+        self.plot_panel.input_time_xmax_one.returnPressed.connect(lambda: self._visual_data_change(plot=1))
+        self.plot_panel.input_time_xmax_two.returnPressed.connect(lambda: self._visual_data_change(plot=2))
+        self.plot_panel.input_time_ymin_one.returnPressed.connect(lambda: self._visual_data_change(plot=1))
+        self.plot_panel.input_time_ymin_two.returnPressed.connect(lambda: self._visual_data_change(plot=2))
+        self.plot_panel.input_time_ymax_one.returnPressed.connect(lambda: self._visual_data_change(plot=1))
+        self.plot_panel.input_time_ymax_two.returnPressed.connect(lambda: self._visual_data_change(plot=2))
+        self.plot_panel.input_slider_one.returnPressed.connect(lambda: self._bin_changed(moving=False, plot=1))
+        self.plot_panel.input_slider_two.returnPressed.connect(lambda: self._bin_changed(moving=False, plot=2))
+        self.plot_panel.slider_one.sliderMoved.connect(lambda: self._bin_changed(moving=True, plot=1))
+        self.plot_panel.slider_two.sliderMoved.connect(lambda: self._bin_changed(moving=True, plot=2))
+        self.plot_panel.slider_one.sliderReleased.connect(lambda: self._bin_changed(moving=False, plot=1))
+        self.plot_panel.slider_two.sliderReleased.connect(lambda: self._bin_changed(moving=False, plot=2))
         self.plot_editor.check_annotation.stateChanged.connect(lambda: self._visual_data_change())
         self.plot_editor.check_plot_lines.stateChanged.connect(lambda: self._visual_data_change())
         self.plot_editor.check_uncertain.stateChanged.connect(lambda: self._visual_data_change())
         self.plot_editor.check_spline.stateChanged.connect(lambda: self._visual_data_change())
-        self.plot_editor.check_autoscale_one.stateChanged.connect(lambda: self._check_y_limits(plot=1))
-        self.plot_editor.check_autoscale_two.stateChanged.connect(lambda: self._check_y_limits(plot=2))
+        self.plot_panel.check_time_y_autoscale_one.stateChanged.connect(lambda: self._check_y_limits(plot=1))
+        self.plot_panel.check_time_y_autoscale_two.stateChanged.connect(lambda: self._check_y_limits(plot=2))
         self.plot_editor.save_button.released.connect(self._save_plots)
 
     def _save_plots(self):
@@ -398,8 +416,8 @@ class PlotController:
         """ Handles the bin size changing on either the slider or the text box. If one changes then
             the other is updated. """
         if moving:
-            self.plot_editor.input_slider_one.setText(str(self.plot_parameters['SliderOne']()))
-            self.plot_editor.input_slider_two.setText(str(self.plot_parameters['SliderTwo']()))
+            self.plot_panel.input_slider_one.setText(str(self.plot_parameters['SliderOne']()))
+            self.plot_panel.input_slider_two.setText(str(self.plot_parameters['SliderTwo']()))
             if plot == 1:
                 if self.plot_parameters['SliderOne']() % 5 is not 0:
                     return
@@ -407,8 +425,8 @@ class PlotController:
                 if self.plot_parameters['SliderTwo']() % 5 is not 0:
                     return
         else:
-            self.plot_editor.slider_one.setValue(int(np.ceil(float(self.plot_parameters['BinInputOne']()))))
-            self.plot_editor.slider_two.setValue(int(np.ceil(float(self.plot_parameters['BinInputTwo']()))))
+            self.plot_panel.slider_one.setValue(int(np.ceil(float(self.plot_parameters['BinInputOne']()))))
+            self.plot_panel.slider_two.setValue(int(np.ceil(float(self.plot_parameters['BinInputTwo']()))))
 
         self._visual_data_change(plot=plot, moving=moving)
 
@@ -428,12 +446,12 @@ class PlotController:
     def _update_canvas(self, can_int, moving=False):
         # Get the appropriate plotting parameters for the specified canvas
         canvas = self.canvases[can_int-1]
-        xmin = self.plot_parameters['XMinOne']() if can_int == 1 else self.plot_parameters['XMinTwo']()
-        xmax = self.plot_parameters['XMaxOne']() if can_int == 1 else self.plot_parameters['XMaxTwo']()
+        xmin = self.plot_parameters['TimeXMinOne']() if can_int == 1 else self.plot_parameters['TimeXMinTwo']()
+        xmax = self.plot_parameters['TimeXMaxOne']() if can_int == 1 else self.plot_parameters['TimeXMaxTwo']()
         bin = self.plot_parameters['BinInputOne']() if can_int == 1 else self.plot_parameters['BinInputTwo']()
-        yauto = self.plot_parameters['YAutoOne']() if can_int == 1 else self.plot_parameters['YAutoTwo']()
-        ymin = self.plot_parameters['YMinOne']() if can_int == 1 else self.plot_parameters['YMinTwo']()
-        ymax = self.plot_parameters['YMaxOne']() if can_int == 1 else self.plot_parameters['YMaxTwo']()
+        yauto = self.plot_parameters['TimeYAutoOne']() if can_int == 1 else self.plot_parameters['TimeYAutoTwo']()
+        ymin = self.plot_parameters['TimeYMinOne']() if can_int == 1 else self.plot_parameters['TimeYMinTwo']()
+        ymax = self.plot_parameters['TimeYMaxOne']() if can_int == 1 else self.plot_parameters['TimeYMaxTwo']()
 
         canvas.axes_time.clear()
         canvas.axes_freq.clear()
@@ -501,20 +519,20 @@ class PlotController:
 
     def _display_y_limits(self):
         y_min, y_max = self.plot_panel.canvas_one.axes_time.get_ylim()
-        self.plot_editor.input_ymin_one.setText('{0:.3f}'.format(y_min))
-        self.plot_editor.input_ymax_one.setText('{0:.3f}'.format(y_max))
+        self.plot_panel.input_time_ymin_one.setText('{0:.3f}'.format(y_min))
+        self.plot_panel.input_time_ymax_one.setText('{0:.3f}'.format(y_max))
 
         y_min, y_max = self.plot_panel.canvas_two.axes_time.get_ylim()
-        self.plot_editor.input_ymin_two.setText('{0:.3f}'.format(y_min))
-        self.plot_editor.input_ymax_two.setText('{0:.3f}'.format(y_max))
+        self.plot_panel.input_time_ymin_two.setText('{0:.3f}'.format(y_min))
+        self.plot_panel.input_time_ymax_two.setText('{0:.3f}'.format(y_max))
 
     def _check_y_limits(self, plot=None):
         if plot == 1:
-            self.plot_editor.input_ymin_one.setEnabled(not self.plot_parameters['YAutoOne']())
-            self.plot_editor.input_ymax_one.setEnabled(not self.plot_parameters['YAutoOne']())
+            self.plot_panel.input_time_ymin_one.setEnabled(not self.plot_parameters['TimeYAutoOne']())
+            self.plot_panel.input_time_ymax_one.setEnabled(not self.plot_parameters['TimeYAutoOne']())
         else:
-            self.plot_editor.input_ymin_two.setEnabled(not self.plot_parameters['YAutoTwo']())
-            self.plot_editor.input_ymax_two.setEnabled(not self.plot_parameters['YAutoTwo']())
+            self.plot_panel.input_time_ymin_two.setEnabled(not self.plot_parameters['TimeYAutoTwo']())
+            self.plot_panel.input_time_ymax_two.setEnabled(not self.plot_parameters['TimeYAutoTwo']())
         self._visual_data_change(plot=plot, moving=False)
 
     def update(self, signal=None):

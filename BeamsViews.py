@@ -22,19 +22,17 @@ class MainGUIWindow(QtWidgets.QMainWindow):
         self.file_manager = FileManagerPanel()
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.file_manager)
 
-        self.plot_editor = PlotEditorPanel()
-        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.plot_editor)
-
         self.run_display = RunDisplayPanel()
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.run_display)
+
+        self.plot_editor = PlotEditorPanel()
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.plot_editor)
 
         self.mufyt_panel = MuFytPanel()
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.mufyt_panel)
 
         self.plot_panel = PlotPanel()
         self.setCentralWidget(self.plot_panel)
-
-        self.addToolBar(NavigationToolbar(self.plot_panel.canvas_one, self))
 
         # Initialize Menu Bar for Main Window
         self.menu_bar = self.menuBar()
@@ -154,7 +152,7 @@ class MuFytPanel(QtWidgets.QDockWidget):
 class PlotEditorPanel(QtWidgets.QDockWidget):
     def __init__(self):
         super(PlotEditorPanel, self).__init__()
-        self.setWindowTitle("Graph Editor")
+        self.setWindowTitle("Graph Options")
 
         self._full_widget = QtWidgets.QWidget()
 
@@ -177,6 +175,7 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
         self.input_ymin_two = QtWidgets.QLineEdit()
         self.input_ymax_one = QtWidgets.QLineEdit()
         self.input_ymax_two = QtWidgets.QLineEdit()
+
         self._label_uncertain = QtWidgets.QLabel('Show Uncertainty')
         self._label_annotation = QtWidgets.QLabel('Show Annotations')
         self._label_plot_lines = QtWidgets.QLabel('Show Plot Lines')
@@ -247,53 +246,53 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
         self.input_ymax_two.setFixedWidth(50)
 
     def _set_widget_layout(self):
-        row_one = QtWidgets.QHBoxLayout()
-        row_two = QtWidgets.QHBoxLayout()
-
-        row_one.addWidget(self._label_auto_one)
-        row_one.addWidget(self.check_autoscale_one)
-        row_one.addSpacing(10)
-        row_one.addWidget(self._label_ymin_one)
-        row_one.addWidget(self.input_ymin_one)
-        row_one.addSpacing(10)
-        row_one.addWidget(self._label_ymax_one)
-        row_one.addWidget(self.input_ymax_one)
-        row_one.addSpacing(10)
-        row_one.addWidget(self._label_xmin_one)
-        row_one.addWidget(self.input_xmin_one)
-        row_one.addSpacing(10)
-        row_one.addWidget(self._label_xmax_one)
-        row_one.addWidget(self.input_xmax_one)
-        row_one.addSpacing(10)
-        row_one.addWidget(self._label_slider_one)
-        row_one.addWidget(self.input_slider_one)
-        row_one.addSpacing(10)
-        row_one.addWidget(self.slider_one)
-
-        row_two.addWidget(self._label_auto_two)
-        row_two.addWidget(self.check_autoscale_two)
-        row_two.addSpacing(10)
-        row_two.addWidget(self._label_ymin_two)
-        row_two.addWidget(self.input_ymin_two)
-        row_two.addSpacing(10)
-        row_two.addWidget(self._label_ymax_two)
-        row_two.addWidget(self.input_ymax_two)
-        row_two.addSpacing(10)
-        row_two.addWidget(self._label_xmin_two)
-        row_two.addWidget(self.input_xmin_two)
-        row_two.addSpacing(10)
-        row_two.addWidget(self._label_xmax_two)
-        row_two.addWidget(self.input_xmax_two)
-        row_two.addSpacing(10)
-        row_two.addWidget(self._label_slider_two)
-        row_two.addWidget(self.input_slider_two)
-        row_two.addSpacing(10)
-        row_two.addWidget(self.slider_two)
-
-        col_one = QtWidgets.QVBoxLayout()
-        col_one.addLayout(row_one)
-        col_one.addLayout(row_two)
-
+        # row_one = QtWidgets.QHBoxLayout()
+        # row_two = QtWidgets.QHBoxLayout()
+        #
+        # row_one.addWidget(self._label_auto_one)
+        # row_one.addWidget(self.check_autoscale_one)
+        # row_one.addSpacing(10)
+        # row_one.addWidget(self._label_ymin_one)
+        # row_one.addWidget(self.input_ymin_one)
+        # row_one.addSpacing(10)
+        # row_one.addWidget(self._label_ymax_one)
+        # row_one.addWidget(self.input_ymax_one)
+        # row_one.addSpacing(10)
+        # row_one.addWidget(self._label_xmin_one)
+        # row_one.addWidget(self.input_xmin_one)
+        # row_one.addSpacing(10)
+        # row_one.addWidget(self._label_xmax_one)
+        # row_one.addWidget(self.input_xmax_one)
+        # row_one.addSpacing(10)
+        # row_one.addWidget(self._label_slider_one)
+        # row_one.addWidget(self.input_slider_one)
+        # row_one.addSpacing(10)
+        # # row_one.addWidget(self.slider_one)
+        #
+        # row_two.addWidget(self._label_auto_two)
+        # row_two.addWidget(self.check_autoscale_two)
+        # row_two.addSpacing(10)
+        # row_two.addWidget(self._label_ymin_two)
+        # row_two.addWidget(self.input_ymin_two)
+        # row_two.addSpacing(10)
+        # row_two.addWidget(self._label_ymax_two)
+        # row_two.addWidget(self.input_ymax_two)
+        # row_two.addSpacing(10)
+        # row_two.addWidget(self._label_xmin_two)
+        # row_two.addWidget(self.input_xmin_two)
+        # row_two.addSpacing(10)
+        # row_two.addWidget(self._label_xmax_two)
+        # row_two.addWidget(self.input_xmax_two)
+        # row_two.addSpacing(10)
+        # row_two.addWidget(self._label_slider_two)
+        # row_two.addWidget(self.input_slider_two)
+        # row_two.addSpacing(10)
+        # row_two.addWidget(self.slider_two)
+        #
+        # col_one = QtWidgets.QVBoxLayout()
+        # col_one.addLayout(row_one)
+        # col_one.addLayout(row_two)
+        #
         col_two = QtWidgets.QVBoxLayout()
 
         row_unc = QtWidgets.QHBoxLayout()
@@ -304,6 +303,9 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
         row_ann.addWidget(self.check_annotation)
         row_ann.addWidget(self._label_annotation)
         row_ann.setAlignment(QtCore.Qt.AlignLeft)
+
+        col_thr = QtWidgets.QVBoxLayout()
+
         row_lns = QtWidgets.QHBoxLayout()
         row_lns.addWidget(self.check_plot_lines)
         row_lns.addWidget(self._label_plot_lines)
@@ -315,14 +317,16 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
 
         col_two.addLayout(row_unc)
         col_two.addLayout(row_ann)
-        col_two.addLayout(row_lns)
-        col_two.addLayout(row_spl)
+        col_thr.addLayout(row_lns)
+        col_thr.addLayout(row_spl)
+        # col_two.addStretch()
 
         main_layout = QtWidgets.QHBoxLayout()
-        main_layout.addLayout(col_one)
+        # main_layout.addLayout(col_one)
         main_layout.addLayout(col_two)
+        main_layout.addLayout(col_thr)
         main_layout.addSpacing(15)
-        main_layout.addWidget(self.save_button)
+        # main_layout.addWidget(self.save_button)
 
         self._full_widget.setLayout(main_layout)
 
@@ -410,7 +414,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         main_layout.addWidget(self.current_runs)
         main_layout.addWidget(self.plot_all_button)
 
-        main_layout.addStretch(1)
+        # main_layout.addStretch(1)
         self._full_widget.setLayout(main_layout)
 
 
@@ -422,23 +426,95 @@ class PlotPanel(QtWidgets.QDockWidget):
         self.setWindowTitle("Graphing Area")
         self.full_widget = QtWidgets.QWidget()
 
-        # self.canvas_one = RunPlot()
-        # self.canvas_two = RunPlot()
         self.canvas_wrapper_one = CanvasWrapper()
         self.canvas_wrapper_two = CanvasWrapper()
+        self.canvas_wrapper_one.plot_editor.setWindowTitle('Plot 1 Editor')
+        self.canvas_wrapper_two.plot_editor.setWindowTitle('Plot 2 Editor')
         self.canvas_one = self.canvas_wrapper_one.canvas
         self.canvas_two = self.canvas_wrapper_two.canvas
+        self.editor_one = self.canvas_wrapper_one.plot_editor
+        self.editor_two = self.canvas_wrapper_two.plot_editor
 
         self.linestyle = 'None'
 
         hbox = QtWidgets.QHBoxLayout()
-        # hbox.addWidget(self.canvas_one)
-        # hbox.addWidget(self.canvas_two)
         hbox.addWidget(self.canvas_wrapper_one)
         hbox.addWidget(self.canvas_wrapper_two)
         self.full_widget.setLayout(hbox)
 
         self.setWidget(self.full_widget)
+
+        self.slider_one = self.editor_one.slider_bin
+        self.slider_two = self.editor_two.slider_bin
+        self.input_slider_one = self.editor_one.input_bin
+        self.input_slider_two = self.editor_two.input_bin
+
+        self.input_time_xmin_one = self.editor_one.input_time_xmin
+        self.input_time_xmin_two = self.editor_two.input_time_xmin
+        self.input_time_xmax_one = self.editor_one.input_time_xmax
+        self.input_time_xmax_two = self.editor_two.input_time_xmax
+        self.input_time_ymin_one = self.editor_one.input_time_ymin
+        self.input_time_ymin_two = self.editor_two.input_time_ymin
+        self.input_time_ymax_one = self.editor_one.input_time_ymax
+        self.input_time_ymax_two = self.editor_two.input_time_ymax
+
+        self.input_freq_xmin_one = self.editor_one.input_freq_xmin
+        self.input_freq_xmin_two = self.editor_two.input_freq_xmin
+        self.input_freq_xmax_one = self.editor_one.input_freq_xmax
+        self.input_freq_xmax_two = self.editor_two.input_freq_xmax
+
+        self.input_freq_ymin_one = self.editor_one.input_freq_ymin
+        self.input_freq_ymin_two = self.editor_two.input_freq_ymin
+        self.input_freq_ymax_one = self.editor_one.input_freq_ymax
+        self.input_freq_ymax_two = self.editor_two.input_freq_ymax
+
+        self.check_time_y_autoscale_one = self.editor_one.check_time_yauto
+        self.check_time_y_autoscale_two = self.editor_two.check_time_yauto
+        self.check_freq_y_autoscale_one = self.editor_one.check_freq_yauto
+        self.check_freq_y_autoscale_two = self.editor_two.check_freq_yauto
+        self.check_freq_x_autoscale_one = self.editor_one.check_freq_xauto
+        self.check_freq_x_autoscale_two = self.editor_two.check_freq_xauto
+
+        self._set_widget_attributes()
+
+    def _set_widget_attributes(self):
+        self.input_time_xmin_one.setText("0")
+        self.input_time_xmin_two.setText("0")
+        self.input_time_xmax_one.setText("8")
+        self.input_time_xmax_two.setText("0.5")
+        self.input_time_ymin_one.setText("-0.3")
+        self.input_time_ymin_two.setText("0.5")
+        self.input_time_ymax_one.setText("-0.5")
+        self.input_time_ymax_two.setText("0.5")
+
+        self.input_time_ymin_one.setEnabled(False)
+        self.input_time_ymin_two.setEnabled(False)
+        self.input_time_ymax_one.setEnabled(False)
+        self.input_time_ymax_two.setEnabled(False)
+
+        self.input_freq_xmin_one.setEnabled(False)
+        self.input_freq_xmin_two.setEnabled(False)
+        self.input_freq_xmax_one.setEnabled(False)
+        self.input_freq_xmax_two.setEnabled(False)
+
+        self.input_freq_ymin_one.setEnabled(False)
+        self.input_freq_ymin_two.setEnabled(False)
+        self.input_freq_ymax_one.setEnabled(False)
+        self.input_freq_ymax_two.setEnabled(False)
+
+        self.slider_one.setMinimum(0)
+        self.slider_one.setMaximum(500)
+        self.slider_one.setValue(150)
+        self.slider_one.setTickPosition(QtWidgets.QSlider.TicksBothSides)
+        self.slider_one.setTickInterval(20)
+        self.slider_two.setMinimum(0)
+        self.slider_two.setMaximum(500)
+        self.slider_two.setValue(2)
+        self.slider_two.setTickPosition(QtWidgets.QSlider.TicksBothSides)
+        self.slider_two.setTickInterval(20)
+
+        self.input_slider_one.setText(str(self.slider_one.value()))
+        self.input_slider_two.setText(str(self.slider_two.value()))
 
 
 # noinspection PyArgumentList
@@ -472,7 +548,158 @@ class CanvasWrapper(QtWidgets.QMainWindow):
         super(CanvasWrapper, self).__init__()
         self.canvas = RunPlot()
         self.setCentralWidget(self.canvas)
-        self.addToolBar(QtCore.Qt.BottomToolBarArea, NavigationToolbar(self.canvas, self))
+        self.addToolBar(QtCore.Qt.TopToolBarArea, NavigationToolbar(self.canvas, self))
+        self.plot_editor = SinglePlotEditor()
+        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.plot_editor)
+
+
+# noinspection PyArgumentList
+class SinglePlotEditor(QtWidgets.QDockWidget):
+    def __init__(self):
+        super(SinglePlotEditor, self).__init__()
+
+        self._full_widget = QtWidgets.QWidget()
+
+        self._label_slider_bin = QtWidgets.QLabel('')
+        self._label_input_bin = QtWidgets.QLabel('Time Bins (ns)')
+
+        self.slider_bin = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.input_bin = QtWidgets.QLineEdit()
+
+        self._label_time = QtWidgets.QLabel('Time')
+        self._label_time_xmin = QtWidgets.QLabel('XMin (\u03BCs)')
+        self._label_time_xmax = QtWidgets.QLabel('XMax (\u03BCs)')
+        self._label_time_ymin = QtWidgets.QLabel('YMin')
+        self._label_time_ymax = QtWidgets.QLabel('YMax')
+        self._label_time_yauto = QtWidgets.QLabel('Auto Y')
+
+        self.input_time_xmin = QtWidgets.QLineEdit()
+        self.input_time_xmax = QtWidgets.QLineEdit()
+        self.input_time_ymin = QtWidgets.QLineEdit()
+        self.input_time_ymax = QtWidgets.QLineEdit()
+        self.check_time_yauto = QtWidgets.QCheckBox()
+
+        self._label_freq = QtWidgets.QLabel('Frequency')
+        self._label_freq_xmin = QtWidgets.QLabel('XMin (MHz)')
+        self._label_freq_xmax = QtWidgets.QLabel('XMax (MHz)')
+        self._label_freq_ymin = QtWidgets.QLabel('YMin')
+        self._label_freq_ymax = QtWidgets.QLabel('YMax')
+        self._label_freq_yauto = QtWidgets.QLabel('Auto Y')
+        self._label_freq_xauto = QtWidgets.QLabel('Auto X')
+
+        self.input_freq_xmin = QtWidgets.QLineEdit()
+        self.input_freq_xmax = QtWidgets.QLineEdit()
+        self.input_freq_ymin = QtWidgets.QLineEdit()
+        self.input_freq_ymax = QtWidgets.QLineEdit()
+        self.check_freq_yauto = QtWidgets.QCheckBox()
+        self.check_freq_xauto = QtWidgets.QCheckBox()
+
+        self._set_widget_attributes()
+        self._set_widget_tooltips()
+        self._set_widget_dimensions()
+        self._set_widget_layout()
+
+        self.setWidget(self._full_widget)
+
+    def _set_widget_attributes(self):
+        self.check_freq_xauto.setChecked(True)
+        self.check_freq_yauto.setChecked(True)
+        self.check_time_yauto.setChecked(True)
+
+    def _set_widget_tooltips(self):
+        pass
+
+    def _set_widget_dimensions(self):
+        self.input_time_xmin.setFixedWidth(50)
+        self.input_time_xmax.setFixedWidth(50)
+        self.input_time_ymin.setFixedWidth(50)
+        self.input_time_ymax.setFixedWidth(50)
+        self.input_freq_xmin.setFixedWidth(50)
+        self.input_freq_xmax.setFixedWidth(50)
+        self.input_freq_ymin.setFixedWidth(50)
+        self.input_freq_ymax.setFixedWidth(50)
+        self.input_bin.setFixedWidth(50)
+
+    def _set_widget_layout(self):
+        spacing = 10
+        main_layout = QtWidgets.QVBoxLayout()
+
+        row_1 = QtWidgets.QHBoxLayout()
+        row_1.addWidget(self._label_input_bin)
+        row_1.addWidget(self.input_bin)
+        row_1.addWidget(self.slider_bin)
+
+        main_layout.addLayout(row_1)
+
+        time_form = QtWidgets.QGroupBox('Time')
+        time_layout = QtWidgets.QFormLayout()
+
+        row_time_1 = QtWidgets.QHBoxLayout()
+        row_time_1.addSpacing(60)
+        row_time_1.addSpacing(spacing)
+        row_time_1.addWidget(self._label_time_xmax)
+        row_time_1.addWidget(self.input_time_xmax)
+        row_time_1.addSpacing(spacing)
+        row_time_1.addWidget(self._label_time_xmin)
+        row_time_1.addWidget(self.input_time_xmin)
+        row_time_1.addStretch()
+        time_layout.addRow(row_time_1)
+
+        row_time_2 = QtWidgets.QHBoxLayout()
+        row_time_2.addWidget(self._label_time_yauto)
+        row_time_2.addWidget(self.check_time_yauto)
+        row_time_2.addSpacing(24)
+        row_time_2.addSpacing(spacing)
+        row_time_2.addWidget(self._label_time_ymax)
+        row_time_2.addWidget(self.input_time_ymax)
+        row_time_2.addSpacing(23)
+        row_time_2.addSpacing(spacing)
+        row_time_2.addWidget(self._label_time_ymin)
+        row_time_2.addWidget(self.input_time_ymin)
+        row_time_2.addStretch()
+        time_layout.addRow(row_time_2)
+        time_form.setLayout(time_layout)
+
+        freq_form = QtWidgets.QGroupBox('Frequency')
+        freq_layout = QtWidgets.QFormLayout()
+
+        row_freq_1 = QtWidgets.QHBoxLayout()
+        row_freq_1.addWidget(self._label_freq_xauto)
+        row_freq_1.addWidget(self.check_freq_xauto)
+        row_freq_1.addSpacing(10)
+        row_freq_1.addSpacing(spacing)
+        row_freq_1.addWidget(self._label_freq_xmax)
+        row_freq_1.addWidget(self.input_freq_xmax)
+        row_freq_1.addSpacing(spacing)
+        row_freq_1.addWidget(self._label_freq_xmin)
+        row_freq_1.addWidget(self.input_freq_xmin)
+        row_freq_1.addStretch()
+        freq_layout.addRow(row_freq_1)
+
+        row_freq_2 = QtWidgets.QHBoxLayout()
+        row_freq_2.addWidget(self._label_freq_yauto)
+        row_freq_2.addWidget(self.check_freq_yauto)
+        row_freq_2.addSpacing(42)
+        row_freq_2.addSpacing(spacing)
+        row_freq_2.addWidget(self._label_freq_ymax)
+        row_freq_2.addWidget(self.input_freq_ymax)
+        row_freq_2.addSpacing(31)
+        row_freq_2.addSpacing(spacing)
+        row_freq_2.addWidget(self._label_freq_ymin)
+        row_freq_2.addWidget(self.input_freq_ymin)
+        row_freq_2.addStretch()
+        freq_layout.addRow(row_freq_2)
+        freq_form.setLayout(freq_layout)
+
+        editor_layout = QtWidgets.QHBoxLayout()
+        editor_layout.addWidget(time_form)
+        editor_layout.addWidget(freq_form)
+
+        main_layout.addLayout(editor_layout)
+
+        self._full_widget.setLayout(main_layout)
+
+
 
 # noinspection PyArgumentList
 class RunPlot(FigureCanvas):
