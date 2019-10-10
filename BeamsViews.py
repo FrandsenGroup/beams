@@ -357,7 +357,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.output_header_display = QtWidgets.QLineEdit()
         self._label_header_data = QtWidgets.QLabel()
         self._label_histogram = QtWidgets.QLabel()
-        self._label_display = QtWidgets.QLabel("Choose a currently plotted run below.\n")
+        self._label_display = QtWidgets.QLabel("Plot a file to interact with data below\n")
 
         self._set_widget_attributes()
         self._set_widget_tooltips()
@@ -645,7 +645,7 @@ class SinglePlotEditor(QtWidgets.QDockWidget):
         time_layout = QtWidgets.QFormLayout()
 
         row_time_1 = QtWidgets.QHBoxLayout()
-        row_time_1.addSpacing(60)
+        row_time_1.addSpacing(65)
         row_time_1.addSpacing(spacing)
         row_time_1.addWidget(self._label_time_xmax)
         row_time_1.addWidget(self.input_time_xmax)
