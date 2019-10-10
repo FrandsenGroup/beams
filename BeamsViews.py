@@ -2,8 +2,7 @@
 
 # Installed modules
 from PyQt5 import QtWidgets, QtGui, QtCore
-from matplotlib.backends.backend_qt5agg import (FigureCanvasQTAgg as FigureCanvas,
-                                                NavigationToolbar2QT as NavigationToolbar)
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
 
 style_imported = False
@@ -13,6 +12,9 @@ style_imported = False
 class MainGUIWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super(MainGUIWindow, self).__init__()
+
+        style_file = StyleFile('light_style.qss', 'light_style_vars.txt')
+        self.setStyleSheet(style_file.style)
 
         self.setGeometry(100, 100, 1700, 900)
         self.setWindowTitle("BEAMS | Basic and Effective Analysis for Muon Spin-Spectroscopy")
@@ -70,6 +72,7 @@ class MainGUIWindow(QtWidgets.QMainWindow):
 class FileManagerPanel(QtWidgets.QDockWidget):
     def __init__(self):
         super(FileManagerPanel, self).__init__()
+        self.setTitleBarWidget(QtWidgets.QWidget())
         self.setWindowTitle("File Manager")
 
         # Create our widget which will hold everything for this panel.
@@ -78,11 +81,11 @@ class FileManagerPanel(QtWidgets.QDockWidget):
         # Create Widgets
         self.file_list = QtWidgets.QListWidget()
         self.select_all = QtWidgets.QCheckBox()
-        self.write_button = QtWidgets.QPushButton("Write")
-        self.import_button = QtWidgets.QPushButton("+")
-        self.remove_button = QtWidgets.QPushButton('-')
-        self.plot_button = QtWidgets.QPushButton("Plot")
-        self.convert_button = QtWidgets.QPushButton("Convert")
+        self.write_button = StyleOneButton("Write")
+        self.import_button = StyleTwoButton("+")
+        self.remove_button = StyleTwoButton('-')
+        self.plot_button = StyleOneButton("Plot")
+        self.convert_button = StyleOneButton("Convert")
 
         # Set Widget Dimensions
         self.select_all.setFixedWidth(20)
@@ -152,6 +155,7 @@ class MuFytPanel(QtWidgets.QDockWidget):
 class PlotEditorPanel(QtWidgets.QDockWidget):
     def __init__(self):
         super(PlotEditorPanel, self).__init__()
+        self.setTitleBarWidget(QtWidgets.QWidget())
         self.setWindowTitle("Graph Options")
 
         self._full_widget = QtWidgets.QWidget()
@@ -335,6 +339,7 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
 class RunDisplayPanel(QtWidgets.QDockWidget):
     def __init__(self):
         super(RunDisplayPanel, self).__init__()
+        self.setTitleBarWidget(QtWidgets.QWidget())
         self.setWindowTitle('Run Display')
 
         self._full_widget = QtWidgets.QWidget()
@@ -344,10 +349,10 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.header_data = QtWidgets.QComboBox()
         self.histograms = QtWidgets.QComboBox()
         self.current_runs = QtWidgets.QListWidget()
-        self.isolate_button = QtWidgets.QPushButton("Isolate")
-        self.inspect_hist_button = QtWidgets.QPushButton("Inspect Hist")
-        self.inspect_file_button = QtWidgets.QPushButton("Inspect File")
-        self.plot_all_button = QtWidgets.QPushButton("Plot All Runs")
+        self.isolate_button = StyleOneButton("Isolate")
+        self.inspect_hist_button = StyleTwoButton("See Hist")
+        self.inspect_file_button = StyleTwoButton("See File")
+        self.plot_all_button = StyleOneButton("Plot All Runs")
         self.output_current_file = QtWidgets.QLineEdit()
         self.output_header_display = QtWidgets.QLineEdit()
         self._label_header_data = QtWidgets.QLabel()
@@ -390,6 +395,9 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.color_choices.setFixedWidth(60)
         self.marker_choices.setFixedWidth(60)
         self.header_data.setFixedWidth(100)
+        self.inspect_hist_button.setFixedWidth(70)
+        self.inspect_file_button.setFixedWidth(70)
+        self.isolate_button.setFixedWidth(70)
 
     def _set_widget_layout(self):
         main_layout = QtWidgets.QVBoxLayout()
@@ -401,10 +409,10 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         row_one.addWidget(self.color_choices)
         row_one.addWidget(self.marker_choices)
         row_two = QtWidgets.QHBoxLayout()
-        row_two.addWidget(self.histograms)
         row_two.addWidget(self.inspect_hist_button)
-        row_two.addWidget(self.inspect_file_button)
+        row_two.addWidget(self.histograms)
         row_thr = QtWidgets.QHBoxLayout()
+        row_thr.addWidget(self.inspect_file_button)
         row_thr.addWidget(self.header_data)
         row_thr.addWidget(self.output_header_display)
 
@@ -422,6 +430,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
 class PlotPanel(QtWidgets.QDockWidget):
     def __init__(self):
         super(PlotPanel, self).__init__()
+        self.setTitleBarWidget(QtWidgets.QWidget())
 
         self.setWindowTitle("Graphing Area")
         self.full_widget = QtWidgets.QWidget()
@@ -557,6 +566,7 @@ class CanvasWrapper(QtWidgets.QMainWindow):
 class SinglePlotEditor(QtWidgets.QDockWidget):
     def __init__(self):
         super(SinglePlotEditor, self).__init__()
+        self.setTitleBarWidget(QtWidgets.QWidget())
 
         self._full_widget = QtWidgets.QWidget()
 
@@ -698,7 +708,6 @@ class SinglePlotEditor(QtWidgets.QDockWidget):
         main_layout.addLayout(editor_layout)
 
         self._full_widget.setLayout(main_layout)
-
 
 
 # noinspection PyArgumentList
@@ -1023,3 +1032,68 @@ class PermissionsMessageUI(QtWidgets.QDialog):
         self.setLayout(col)
 
         self.exec_()
+
+
+# noinspection PyArgumentList
+class NavigationToolbar(NavigationToolbar2QT):
+    # only display the buttons we need
+    NavigationToolbar2QT.toolitems = (
+        ('Home', 'Reset original view', 'home', 'home'),
+        ('Back', 'Back to previous view', 'back', 'back'),
+        ('Forward', 'Forward to next view', 'forward', 'forward'),
+        # (None, None, None, None),
+        ('Pan', 'Pan axes with left mouse, zoom with right', 'move', 'pan'),
+        ('Zoom', 'Zoom to rectangle', 'zoom_to_rect', 'zoom'),
+        # ('Subplots', 'Configure subplots', 'subplots', 'configure_subplots'),
+        # (None, None, None, None),
+        ('Save', 'Save the figure', 'filesave', 'save_figure'),
+    )
+
+
+# noinspection PyArgumentList
+class StyleFile:
+    def __init__(self, qss_file, var_file):
+        qss_vars = self._parse_var_file(var_file)
+        self.style = self._parse_qss_file(qss_file, qss_vars)
+
+    @staticmethod
+    def _parse_var_file(var_file):
+        var_read_file = open(var_file).read().split()
+        keys = [key for key in var_read_file if key[0] == '@']
+        values = [value for value in var_read_file if value[0] == '#']
+        qss_vars = {k: v for k, v in zip(keys, values)}
+        return qss_vars
+
+    @staticmethod
+    def _parse_qss_file(qss_file, qss_vars):
+        qss_read_file = open(qss_file).read()
+        qss_updated_file = ""
+        current_char = 0
+        for _ in qss_read_file:
+            if current_char == len(qss_read_file):
+                break
+            for key in qss_vars.keys():
+                len_key = len(key)
+                if qss_read_file[current_char:current_char+len_key] == key:
+                    qss_updated_file += qss_vars[key]
+                    current_char += len_key
+                    break
+            else:
+                qss_updated_file += qss_read_file[current_char]
+                current_char += 1
+        return qss_updated_file
+
+
+class StyleOneButton(QtWidgets.QPushButton):
+    def __init__(self, *args):
+        super(StyleOneButton, self).__init__(*args)
+
+
+class StyleTwoButton(QtWidgets.QPushButton):
+    def __init__(self, *args):
+        super(StyleTwoButton, self).__init__(*args)
+
+
+class StyleThreeButton(QtWidgets.QPushButton):
+    def __init__(self, *args):
+        super(StyleThreeButton, self).__init__(*args)

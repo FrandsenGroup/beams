@@ -1,0 +1,113 @@
+QWidget {
+    background-color: @background;
+    border-color: @background;
+}
+
+StyleOneButton {
+    background-color: @brand_zero;
+    border-style: None;
+    border-radius: 3px;
+    font: bold 12px;
+    color: #ffffff;
+    min-height: 22px;
+}
+
+StyleOneButton:pressed {
+    background-color: @brand_plus_two;
+}
+
+StyleOneButton:hover:!pressed {
+    background-color: @brand_plus_one;
+}
+
+StyleOneButton:disabled {
+    background-color: @brand_minus_two;
+}
+
+StyleTwoButton {
+    background-color: @high_contrast;
+    border-style: None;
+    border-radius: 3px;
+    font: bold 12px;
+    color: #ffffff;
+    min-height: 22px;
+}
+
+StyleTwoButton:hover:!pressed {
+    background-color: @highest_contrast;
+}
+
+StyleThreeButton {
+    background-color: @brand_minus_two;
+    border-style: None;
+    border-radius: 3px;
+    font: bold 12px;
+    color: #ffffff;
+    min-height: 22px;
+}
+
+QComboBox {
+
+}
+
+QLineEdit {
+    border-style: solid;
+    border-width: 1px;
+    border-radius: 2px;
+    border-color: @background;
+    background-color: @low_contrast;
+}
+
+QListWidget {
+    background-color: #ffffff;
+}
+
+QComboBox {
+    border: 1px solid @background;
+    border-radius: 0px;
+    padding: 1px 18px 1px 3px;
+    min-width: 6em;
+}
+
+QComboBox:editable {
+    background: white;
+}
+
+QComboBox:!editable, QComboBox::drop-down:editable {
+     background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                 stop: 0 @lowest_contrast, stop: 0.4 @lowest_contrast,
+                                 stop: 0.5 @lowest_contrast, stop: 1.0 @lowest_contrast);
+}
+
+/* QComboBox gets the "on" state when the popup is open */
+QComboBox:!editable:on, QComboBox::drop-down:editable:on {
+    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                stop: 0 #D3D3D3, stop: 0.4 #D8D8D8,
+                                stop: 0.5 #DDDDDD, stop: 1.0 #E1E1E1);
+}
+
+QComboBox:on { /* shift the text when the popup opens */
+    padding-top: 3px;
+    padding-left: 4px;
+}
+
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 15px;
+
+    border-left-width: 0px;
+    border-left-color: darkgray;
+    border-left-style: solid; /* just a single line */
+    border-top-right-radius: 3px; /* same radius as the QComboBox */
+    border-bottom-right-radius: 3px;
+}
+
+QComboBox::down-arrow {
+    image: url(icons/down_arrow.png);
+}
+
+QComboBox::down-arrow:on { /* shift the arrow when popup is open */
+    top: 1px;
+    left: 1px;
+}
