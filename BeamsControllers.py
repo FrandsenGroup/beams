@@ -243,7 +243,7 @@ class FileManagerController:
 
         if msr_files:  # Users must give permission to read and convert .msr files to .dat
             message = 'MUD Files selected, would you like them to be converted?'
-            BeamsViews.PermissionsMessageUI(message, pos_function=self.b_convert)
+            BeamsViews.PermissionsMessageUI(message, pos_function=self.convert_file)
 
         elif bad_files:  # Throw error message for unsupported file types
             message = 'The following files are not supported or cannot be found/opened: \n{}'.format(

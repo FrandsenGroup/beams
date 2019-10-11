@@ -124,7 +124,14 @@ class BEAMSModel:
 
         for filename in formats.keys():  # Second checks if any filenames in the new list are not in the old
             if filename not in self.current_formats.keys():
+                if len(self.unused_markers.keys()) == 0:
+                    self.unused_markers = self.used_markers.copy()
+
                 marker = list(self.unused_markers.keys())[0]
+
+                if len(self.color_options) == 0:
+                    self.color_options = self.used_colors.copy()
+
                 color = self.color_options[0]
 
                 self.run_list.append(RunData(filename=filename, f_format=formats[filename],

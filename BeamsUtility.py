@@ -177,7 +177,7 @@ def check_files(filenames):
 
     for file in filenames:
         if is_found(file):
-            if is_beams(file) and check_ext(file, '.dat'):
+            if check_ext(file, '.dat') and is_beams(file):
                 dat_beams_files.append(file)
             elif check_ext(file, '.dat'):
                 dat_other_files.append(file)

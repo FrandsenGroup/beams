@@ -1,6 +1,7 @@
 @brand_zero = #009fff
 @brand_minus_one = #39b5ff
 @brand_minus_two = #65c5ff
+@brand_minus_three = #ceebfd
 @brand_plus_one = #007cc7
 @brand_plus_two = #00578b
 @background = #f9f9fd
