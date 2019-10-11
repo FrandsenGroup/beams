@@ -1,5 +1,8 @@
 # View for BEAMS Application
 
+# Standard Library Modules
+import warnings
+
 # Installed modules
 from PyQt5 import QtWidgets, QtGui, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
@@ -12,9 +15,6 @@ style_imported = False
 class MainGUIWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super(MainGUIWindow, self).__init__()
-
-        style_file = StyleFile('light_style.qss', 'light_style_vars.txt')
-        self.setStyleSheet(style_file.style)
 
         self.setGeometry(100, 100, 1700, 900)
         self.setWindowTitle("BEAMS | Basic and Effective Analysis for Muon Spin-Spectroscopy")
@@ -748,7 +748,7 @@ class RunPlot(FigureCanvas):
         self.axes_freq.tick_params(axis='x', colors='white')
         self.axes_freq.tick_params(axis='y', colors='white')
 
-    def set_style(self):
+    def set_style(self, moving):
         if style_imported:
             self.figure.set_facecolor('#32414B')
             self.axes_time.set_facecolor('#32414B')
@@ -785,7 +785,8 @@ class RunPlot(FigureCanvas):
         self.axes_freq.spines['bottom'].set_visible(True)
         self.axes_freq.set_xlabel("Frequency (MHz)", fontsize=title_font_size)
         self.axes_freq.set_ylabel("Magnitude", fontsize=title_font_size)
-        self.axes_freq.legend(loc='upper right') # fixme, move this line to the update canvas in controller
+        if not moving:
+            self.axes_freq.legend(loc='upper right') # fixme, move this line to the update canvas in controller
 
 
 # noinspection PyArgumentList
@@ -835,11 +836,11 @@ class WriteDataUI(QtWidgets.QDialog):
         self.setWindowTitle('Specify options for writing data')
 
         self.file_list = QtWidgets.QComboBox()
-        self.select_folder = QtWidgets.QPushButton('Custom')
-        self.skip_file = QtWidgets.QPushButton('Skip File')
-        self.write_file = QtWidgets.QPushButton('Write')
-        self.write_all = QtWidgets.QPushButton('Write All')
-        self.done = QtWidgets.QPushButton('Done')
+        self.select_folder = StyleTwoButton('Custom')
+        self.skip_file = StyleOneButton('Skip File')
+        self.write_file = StyleOneButton('Write')
+        self.write_all = StyleOneButton('Write All')
+        self.done = StyleOneButton('Done')
         self.input_filename = QtWidgets.QLineEdit()
         self.input_filename.setPlaceholderText('Default is [run number].asy')
         self.label_full = QtWidgets.QLabel('Full Data')
@@ -861,7 +862,11 @@ class WriteDataUI(QtWidgets.QDialog):
         pass
 
     def _set_widget_dimensions(self):
-        pass
+        self.select_folder.setFixedWidth(80)
+        self.skip_file.setFixedWidth(80)
+        self.write_file.setFixedWidth(80)
+        self.write_all.setFixedWidth(80)
+        self.done.setFixedWidth(80)
 
     def _set_widget_layout(self):
         col_one = QtWidgets.QVBoxLayout()
@@ -946,11 +951,11 @@ class PlotDataUI(QtWidgets.QDialog):
         self.c_file_list = QtWidgets.QComboBox()
         self.c_hist_one = QtWidgets.QComboBox()
         self.c_hist_two = QtWidgets.QComboBox()
-        self.b_apply = QtWidgets.QPushButton('Apply')
-        self.b_apply_all = QtWidgets.QPushButton('Apply All')
-        self.b_plot = QtWidgets.QPushButton('Plot')
-        self.b_skip = QtWidgets.QPushButton('Skip')
-        self.b_cancel = QtWidgets.QPushButton('Cancel')
+        self.b_apply = StyleOneButton('Apply')
+        self.b_apply_all = StyleOneButton('Apply All')
+        self.b_plot = StyleOneButton('Plot')
+        self.b_skip = StyleOneButton('Skip')
+        self.b_cancel = StyleTwoButton('Cancel')
 
         col = QtWidgets.QVBoxLayout()
         row_1 = QtWidgets.QHBoxLayout()
@@ -977,7 +982,7 @@ class ErrorMessageUI(QtWidgets.QDialog):
         super(ErrorMessageUI, self).__init__()
         self.setWindowTitle('Error')
         message = QtWidgets.QLabel(error_message)
-        pos_button = QtWidgets.QPushButton('Okay')
+        pos_button = StyleOneButton('Okay')
         self.setMinimumWidth(300)
         self.setMinimumHeight(80)
         pos_button.setFixedWidth(80)
@@ -1004,8 +1009,8 @@ class PermissionsMessageUI(QtWidgets.QDialog):
         super(PermissionsMessageUI, self).__init__()
         self.setWindowTitle('Permission')
         message = QtWidgets.QLabel(permissions_message)
-        self.pos_button = QtWidgets.QPushButton('Okay')
-        self.neg_button = QtWidgets.QPushButton('Cancel')
+        self.pos_button = StyleOneButton('Okay')
+        self.neg_button = StyleTwoButton('Cancel')
         self.setMinimumWidth(300)
         self.setMinimumWidth(80)
         self.pos_button.setFixedWidth(80)
@@ -1097,3 +1102,4 @@ class StyleTwoButton(QtWidgets.QPushButton):
 class StyleThreeButton(QtWidgets.QPushButton):
     def __init__(self, *args):
         super(StyleThreeButton, self).__init__(*args)
+

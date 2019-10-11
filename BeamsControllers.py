@@ -10,6 +10,7 @@ import subprocess
 import time
 import pickle
 import threading
+import warnings
 
 # Installed modules
 
@@ -32,6 +33,8 @@ class ProgramController:
 
         if style_imported:
             self.app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
+        else:
+            self.app.setStyleSheet(BeamsViews.StyleFile('light_style.qss', 'light_style_vars.txt').style)
 
         # Initialize the model
         # Note: The model holds most application-relevant data and the 'business logic' of the application.
@@ -468,6 +471,7 @@ class PlotController:
                 asymmetry, times, uncertainty = run.bin_data(final_bin_size=float(bin), slider_moving=moving)
                 if moving:
                     canvas.axes_time.plot(times, asymmetry, color=run.color, linestyle='None', marker=run.marker)
+
                 else:
                     if not self.plot_parameters['Uncertainty']():
                         canvas.axes_time.plot(times, asymmetry, color=run.color, marker=run.marker,
@@ -476,14 +480,14 @@ class PlotController:
                     else:
                         canvas.axes_time.errorbar(times, asymmetry, uncertainty, color=run.color,
                                                                       linestyle=self.plot_parameters['LineStyle'](),
-                                                                      marker=run.marker,
-                                                                      label=run.f_formats['RunNumber'])
+                                                                      marker=run.marker)
 
                     frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times,
                                                                 spline=self.plot_parameters['Spline']())
 
+
                     canvas.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
-                                                              label=self._display_annotations(run))
+                                                                  label=self._display_annotations(run))
 
                     max_mag = np.max(magnitudes) if np.max(magnitudes) > max_mag else max_mag
                     max_freq = np.max(frequencies) if np.max(frequencies) > max_freq else max_freq
@@ -499,15 +503,17 @@ class PlotController:
                 min_y = np.min(asymmetry[start_index:end_index]) if \
                     np.min(asymmetry[start_index:end_index]) < min_y else min_y
 
-        canvas.axes_freq.set_xlim(0, max_freq * 1.1)
-        canvas.axes_freq.set_ylim(0, max_mag * 1.1)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            canvas.axes_freq.set_xlim(0, max_freq * 1.1)
+            canvas.axes_freq.set_ylim(0, max_mag * 1.1)
 
         if not yauto:
             canvas.axes_time.set_ylim(float(ymin), float(ymax))
         else:
             canvas.axes_time.set_ylim(min_y - abs(min_y * 0.1), max_y + abs(max_y * 0.1))
 
-        canvas.set_style()
+        canvas.set_style(moving)
 
         canvas.axes_time.figure.canvas.draw()
 
