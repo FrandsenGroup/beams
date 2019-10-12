@@ -226,13 +226,16 @@ class FileManagerController:
     def add_file(self):
         """ Prompts the user for and stores full file paths in model.
             Note: The change in the model will notify and result in update of GUI. See update(). """
-        self.popup = WebServiceController(self.model)
+        BeamsViews.AddFileUI(self, WebServiceController, self.model)
+        # self.popup = WebServiceController(self.model)
+
+    def add_file_from_disk(self):
         # Open a dialog to prompt users for file(s)
-        # filenames = QtWidgets.QFileDialog.getOpenFileNames(self.file_manager, 'Add file', '/home')[0]
-        #
-        # for filename in filenames:  # Adds only the filename root (i.e. 0065156.dat) to the File Manager Panel
-        #     file_root = os.path.split(filename)[1]
-        #     self.model.update_file_list(file_path=filename, file_name=file_root)  # Store as dict in model
+        filenames = QtWidgets.QFileDialog.getOpenFileNames(self.file_manager, 'Add file', '/home')[0]
+
+        for filename in filenames:  # Adds only the filename root (i.e. 0065156.dat) to the File Manager Panel
+            file_root = os.path.split(filename)[1]
+            self.model.update_file_list(file_path=filename, file_name=file_root)  # Store as dict in model
 
     def plot_file(self):
         """ Sends all checked files to the model to read.
@@ -1024,9 +1027,8 @@ class WebServiceController:
     def download(self):
         downloads = self._assemble_downloads()
         if downloads is None:
+            self.dialog.output_web.insertPlainText('No runs specified.\n')
             return
-
-        print(downloads)
 
         good = 0
         for i, download in enumerate(downloads):
@@ -1048,10 +1050,11 @@ class WebServiceController:
                 for chunk in response.iter_content(100000):
                     fb.write(chunk)
 
+            self.model.update_file_list(file_path=save_file, file_name=os.path.split(save_file)[1])
+            self.dialog.output_web.insertPlainText('Successfully downloaded {}.\n'.format(full_url))
             good += 1
-            self.dialog.output_web.insertPlainText('Successfully downloaded {}.'.format(full_url))
 
-        self.dialog.output_web.insertPlainText('{}/{} Files downloaded successfully.'.format(good, len(downloads)))
+        self.dialog.output_web.insertPlainText('{}/{} Files downloaded successfully.\n'.format(good, len(downloads)))
 
     def done(self):
         self.dialog.close()

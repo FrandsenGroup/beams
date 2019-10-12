@@ -1135,6 +1135,51 @@ class WebDownloadUI(QtWidgets.QDialog):
 
 
 # noinspection PyArgumentList
+class AddFileUI(QtWidgets.QDialog):
+    def __init__(self, file_manager, web_manager, model):
+        super(AddFileUI, self).__init__()
+        self.file_manager = file_manager
+        self.web_manager = web_manager
+        self.model = model
+
+        self.setWindowTitle('Permission')
+        message = QtWidgets.QLabel('Would you like to add files from the local file system or online.')
+        self.pos_button = StyleOneButton('From disk')
+        self.neg_button = StyleOneButton('From musr.ca')
+        self.setMinimumWidth(300)
+        self.setMinimumWidth(80)
+        self.pos_button.setFixedWidth(100)
+        self.neg_button.setFixedWidth(100)
+
+        self.pos_button.released.connect(lambda: self._set_type(True))
+        self.neg_button.released.connect(lambda: self._set_type(False))
+
+        col = QtWidgets.QVBoxLayout()
+        col.addWidget(message)
+        col.setAlignment(message, QtCore.Qt.AlignCenter)
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(self.pos_button)
+        row.addWidget(self.neg_button)
+        row.setAlignment(self.pos_button, QtCore.Qt.AlignRight)
+        row.setAlignment(self.neg_button, QtCore.Qt.AlignLeft)
+        col.addLayout(row)
+        self.setLayout(col)
+
+        self.exec_()
+
+    def _set_type(self, x=False):
+        self.close()
+        if x:
+            self.file_manager.add_file_from_disk()
+        else:
+            self.web_manager(self.model)
+
+
+
+
+
+
+# noinspection PyArgumentList
 class StyleFile:
     def __init__(self, qss_file, var_file):
         qss_vars = self._parse_var_file(var_file)
