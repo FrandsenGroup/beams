@@ -13,7 +13,7 @@ import threading
 import warnings
 
 # Installed modules
-
+import requests
 from PyQt5 import QtWidgets, QtCore
 import numpy as np
 
@@ -138,7 +138,6 @@ class FileManagerController:
         self.program_controller = parent
         self.formats = {}
         self.popup = None
-
         self.model.observers[BeamsModel.FILE_CHANGED].append(self)
 
         self._set_callbacks()
@@ -227,12 +226,13 @@ class FileManagerController:
     def add_file(self):
         """ Prompts the user for and stores full file paths in model.
             Note: The change in the model will notify and result in update of GUI. See update(). """
+        self.popup = WebServiceController(self.model)
         # Open a dialog to prompt users for file(s)
-        filenames = QtWidgets.QFileDialog.getOpenFileNames(self.file_manager, 'Add file', '/home')[0]
-
-        for filename in filenames:  # Adds only the filename root (i.e. 0065156.dat) to the File Manager Panel
-            file_root = os.path.split(filename)[1]
-            self.model.update_file_list(file_path=filename, file_name=file_root)  # Store as dict in model
+        # filenames = QtWidgets.QFileDialog.getOpenFileNames(self.file_manager, 'Add file', '/home')[0]
+        #
+        # for filename in filenames:  # Adds only the filename root (i.e. 0065156.dat) to the File Manager Panel
+        #     file_root = os.path.split(filename)[1]
+        #     self.model.update_file_list(file_path=filename, file_name=file_root)  # Store as dict in model
 
     def plot_file(self):
         """ Sends all checked files to the model to read.
@@ -915,3 +915,148 @@ class SavePlotController:  # fixme just make this a smart UI in the views file, 
             BeamsViews.ErrorMessageUI(error_message='Invalid save file type.')
         else:
             self.save_plot_gui.close()
+
+
+class WebServiceController:
+    def __init__(self, model):
+        self.dialog = BeamsViews.WebDownloadUI()
+        self.model = model
+        self._search_url = "http://musr.ca/mud/runSel.php"
+        self._data_url = "http://musr.ca/mud/data/"
+
+        self._set_callbacks()
+
+        self.dialog.show()
+
+    def _set_callbacks(self):
+        self.dialog.search_button.released.connect(lambda: self.query())
+        self.dialog.download_button.released.connect(lambda: self.download())
+        self.dialog.done_button.released.connect(lambda: self.done())
+        self.dialog.select_button.released.connect(lambda: self.save_to())
+
+    def _assemble_query(self):
+        query = "?"
+
+        area = self.dialog.input_area.text()
+        if len(area) > 0:
+            query += "area={}&".format(area)
+
+        year = self.dialog.input_year.text()
+        if len(year) > 0:
+            query += "year={}&".format(year)
+
+        expt = self.dialog.input_expt.text()
+        if len(expt) > 0:
+            query += "expt={}&".format(expt)
+
+        runs = self.dialog.input_runs.text()
+        if len(runs) > 0:
+            query += "run={}&".format(runs)
+
+        return query
+
+    def _assemble_downloads(self):
+        download_string = ""
+
+        area = self.dialog.input_area.text()
+        if len(area) == 0:
+            return
+        download_string += "{}/".format(area)
+
+        year = self.dialog.input_year.text()
+        if len(year) == 0:
+            return
+        download_string += "{}/".format(year)
+
+        runs = self.dialog.input_runs.text()
+        if len(runs) == 0:
+            return
+
+        runs = runs.split('-')
+        if len(runs) == 1:
+            download_string += '{0:06d}.msr'.format(int(runs[0]))
+            return [download_string]
+
+        return [download_string + '{0:06d}.msr'.format(download) for download in range(int(runs[0]), int(runs[1])+1)]
+
+    def _assemble_save(self, download):
+        directory = self.dialog.input_file.text()
+
+        if len(directory) == 0:
+            directory = os.getcwd()
+
+        return directory + "\\{}".format(download.split('/')[-1])
+
+    def query(self):
+        query = self._assemble_query()
+
+        if len(query) < 2:
+            self.dialog.output_web.insertPlainText("No query parameters filled.\n")
+        else:
+            self.dialog.output_web.insertPlainText("Sending query : {}\n".format(query))
+
+        full_url = self._search_url + query
+
+        try:
+            response = requests.get(full_url)
+        except requests.exceptions.ConnectionError:
+            self.dialog.output_web.insertPlainText("Error: Check your internet connection.\n")
+            return
+
+        if response.status_code != 200:
+            self.dialog.output_web.insertPlainText("Error : {}\n".format(response.status_code))
+            return
+
+        for x in response.text.split('TR>'):
+            y = x.split('<TD')
+            if len(y) > 2:
+                year = y[2][1:5]
+                area = y[3].split('<i>')[1].split('</i>')[0]
+                expt = y[4].split('>')[1].split('<')[0]
+                expt_type = y[5].split('>')[3].split('<')[0]
+                run_numbers = y[6].split('"')
+                if len(run_numbers) > 4:
+                    run_number = run_numbers[3].split()[2]
+                    self.dialog.output_web.insertPlainText('{}  Year: {}, Area: {}, '
+                                                           'Expt: {}, Type: {}\n'.format(run_number, year, area,
+                                                                                         expt, expt_type))
+
+    def download(self):
+        downloads = self._assemble_downloads()
+        if downloads is None:
+            return
+
+        print(downloads)
+
+        good = 0
+        for i, download in enumerate(downloads):
+            full_url = self._data_url + download
+
+            try:
+                response = requests.get(full_url)
+            except requests.exceptions.ConnectionError:
+                self.dialog.output_web.insertPlainText('Failed to download {}. Connection Error\n'.format(full_url))
+                continue
+
+            if response.status_code != 200:
+                self.dialog.output_web.insertPlainText('Failed to download {}. Error {}\n'.format(full_url,
+                                                                                                  response.status_code))
+                continue
+
+            save_file = self._assemble_save(download)
+            with open(save_file, 'wb') as fb:
+                for chunk in response.iter_content(100000):
+                    fb.write(chunk)
+
+            good += 1
+            self.dialog.output_web.insertPlainText('Successfully downloaded {}.'.format(full_url))
+
+        self.dialog.output_web.insertPlainText('{}/{} Files downloaded successfully.'.format(good, len(downloads)))
+
+    def done(self):
+        self.dialog.close()
+
+    def save_to(self):
+        path = QtWidgets.QFileDialog.getExistingDirectory(caption='Select directory to save MUD files to',)
+        if path:
+            self.dialog.input_file.setText(path)

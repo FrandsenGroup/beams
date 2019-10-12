@@ -1056,6 +1056,85 @@ class NavigationToolbar(NavigationToolbar2QT):
 
 
 # noinspection PyArgumentList
+class WebDownloadUI(QtWidgets.QDialog):
+    def __init__(self):
+        super(WebDownloadUI, self).__init__()
+
+        self.input_area = QtWidgets.QLineEdit()
+        self.input_year = QtWidgets.QLineEdit()
+        self.input_runs = QtWidgets.QLineEdit()
+        self.input_file = QtWidgets.QLineEdit()
+        self.input_expt = QtWidgets.QLineEdit()
+        self.output_web = QtWidgets.QPlainTextEdit()
+        self.select_button = StyleTwoButton('Save to')
+        self.download_button = StyleOneButton('Download')
+        self.search_button = StyleOneButton('Search')
+        self.done_button = StyleOneButton('Done')
+        self._label_description = QtWidgets.QLabel('Provide the information below to search and/or download runs from'
+                                                   'musr.ca.')
+
+        self._set_widget_dimensions()
+        self._set_widget_attributes()
+        self._set_widget_layout()
+
+    def _set_widget_dimensions(self):
+        self.input_area.setFixedWidth(70)
+        self.input_expt.setFixedWidth(70)
+        self.input_year.setFixedWidth(70)
+        self.select_button.setFixedWidth(80)
+        self.download_button.setFixedWidth(80)
+        self.done_button.setFixedWidth(80)
+        self.search_button.setFixedWidth(80)
+        self.output_web.setFixedHeight(150)
+        self.setFixedWidth(400)
+
+    def _set_widget_attributes(self):
+        self.input_area.setPlaceholderText('Area')
+        self.input_year.setPlaceholderText('Year (YYYY)')
+        self.input_runs.setPlaceholderText('Range of Runs (N-N)')
+        self.input_file.setPlaceholderText('Save Directory (default is current)')
+        self.input_expt.setPlaceholderText('Expt #')
+
+        self.output_web.setEnabled(True)
+        self.output_web.appendPlainText('No queries or downloads attempted.\n')
+
+    def _set_widget_layout(self):
+        main_layout = QtWidgets.QVBoxLayout()
+        main_layout.addWidget(self._label_description)
+        main_layout.addSpacing(5)
+
+        row_1 = QtWidgets.QHBoxLayout()
+        row_1.addWidget(self.input_expt)
+        row_1.addWidget(self.input_year)
+        row_1.addWidget(self.input_area)
+        row_1.addWidget(self.input_runs)
+        main_layout.addLayout(row_1)
+
+        row_2 = QtWidgets.QHBoxLayout()
+        row_2.addWidget(self.select_button)
+        row_2.addWidget(self.input_file)
+        main_layout.addLayout(row_2)
+        main_layout.addSpacing(10)
+
+        row_3 = QtWidgets.QHBoxLayout()
+        row_3.addStretch()
+        row_3.addWidget(self.search_button)
+        row_3.addSpacing(10)
+        row_3.addWidget(self.download_button)
+        row_3.addSpacing(10)
+        row_3.addWidget(self.done_button)
+        row_3.addStretch()
+        main_layout.addLayout(row_3)
+        main_layout.addSpacing(10)
+
+        row_4 = QtWidgets.QHBoxLayout()
+        row_4.addWidget(self.output_web)
+        main_layout.addLayout(row_4)
+
+        self.setLayout(main_layout)
+
+
+# noinspection PyArgumentList
 class StyleFile:
     def __init__(self, qss_file, var_file):
         qss_vars = self._parse_var_file(var_file)
