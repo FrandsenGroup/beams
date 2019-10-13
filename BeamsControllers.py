@@ -388,6 +388,14 @@ class PlotController:
         self.plot_panel.input_time_ymin_two.returnPressed.connect(lambda: self._visual_data_change(plot=2))
         self.plot_panel.input_time_ymax_one.returnPressed.connect(lambda: self._visual_data_change(plot=1))
         self.plot_panel.input_time_ymax_two.returnPressed.connect(lambda: self._visual_data_change(plot=2))
+        self.plot_panel.input_freq_xmin_one.returnPressed.connect(lambda: self._visual_data_change(plot=1))
+        self.plot_panel.input_freq_xmin_two.returnPressed.connect(lambda: self._visual_data_change(plot=2))
+        self.plot_panel.input_freq_xmax_one.returnPressed.connect(lambda: self._visual_data_change(plot=1))
+        self.plot_panel.input_freq_xmax_two.returnPressed.connect(lambda: self._visual_data_change(plot=2))
+        self.plot_panel.input_freq_ymin_one.returnPressed.connect(lambda: self._visual_data_change(plot=1))
+        self.plot_panel.input_freq_ymin_two.returnPressed.connect(lambda: self._visual_data_change(plot=2))
+        self.plot_panel.input_freq_ymax_one.returnPressed.connect(lambda: self._visual_data_change(plot=1))
+        self.plot_panel.input_freq_ymax_two.returnPressed.connect(lambda: self._visual_data_change(plot=2))
         self.plot_panel.input_slider_one.returnPressed.connect(lambda: self._bin_changed(moving=False, plot=1))
         self.plot_panel.input_slider_two.returnPressed.connect(lambda: self._bin_changed(moving=False, plot=2))
         self.plot_panel.slider_one.sliderMoved.connect(lambda: self._bin_changed(moving=True, plot=1))
@@ -398,8 +406,12 @@ class PlotController:
         self.plot_editor.check_plot_lines.stateChanged.connect(lambda: self._visual_data_change())
         self.plot_editor.check_uncertain.stateChanged.connect(lambda: self._visual_data_change())
         self.plot_editor.check_spline.stateChanged.connect(lambda: self._visual_data_change())
-        self.plot_panel.check_time_y_autoscale_one.stateChanged.connect(lambda: self._check_y_limits(plot=1))
-        self.plot_panel.check_time_y_autoscale_two.stateChanged.connect(lambda: self._check_y_limits(plot=2))
+        self.plot_panel.check_time_y_autoscale_one.stateChanged.connect(lambda: self._check_y_limits(1, 'TimeYAuto'))
+        self.plot_panel.check_time_y_autoscale_two.stateChanged.connect(lambda: self._check_y_limits(2, 'TimeYAuto'))
+        self.plot_panel.check_freq_y_autoscale_one.stateChanged.connect(lambda: self._check_y_limits(1, 'FreqYAuto'))
+        self.plot_panel.check_freq_y_autoscale_two.stateChanged.connect(lambda: self._check_y_limits(2, 'FreqYAuto'))
+        self.plot_panel.check_freq_x_autoscale_one.stateChanged.connect(lambda: self._check_y_limits(1, 'FreqXAuto'))
+        self.plot_panel.check_freq_x_autoscale_two.stateChanged.connect(lambda: self._check_y_limits(2, 'FreqXAuto'))
 
     def _bin_changed(self, moving=None, plot=None):
         """ Handles the bin size changing on either the slider or the text box. If one changes then
@@ -431,6 +443,7 @@ class PlotController:
             threading.Thread(target=self._update_canvas(2, moving), daemon=True).start()
 
         self._display_y_limits()
+        self._display_x_limits()
 
     def _update_canvas(self, can_int, moving=False):
         # Get the appropriate plotting parameters for the specified canvas
@@ -438,9 +451,9 @@ class PlotController:
         xmin = self.plot_parameters['TimeXMinOne']() if can_int == 1 else self.plot_parameters['TimeXMinTwo']()
         xmax = self.plot_parameters['TimeXMaxOne']() if can_int == 1 else self.plot_parameters['TimeXMaxTwo']()
         bin = self.plot_parameters['BinInputOne']() if can_int == 1 else self.plot_parameters['BinInputTwo']()
-        yauto = self.plot_parameters['TimeYAutoOne']() if can_int == 1 else self.plot_parameters['TimeYAutoTwo']()
-        ymin = self.plot_parameters['TimeYMinOne']() if can_int == 1 else self.plot_parameters['TimeYMinTwo']()
-        ymax = self.plot_parameters['TimeYMaxOne']() if can_int == 1 else self.plot_parameters['TimeYMaxTwo']()
+        timeyauto = self.plot_parameters['TimeYAutoOne']() if can_int == 1 else self.plot_parameters['TimeYAutoTwo']()
+        freqyauto = self.plot_parameters['FreqYAutoOne']() if can_int == 1 else self.plot_parameters['FreqYAutoTwo']()
+        freqxauto = self.plot_parameters['FreqXAutoOne']() if can_int == 1 else self.plot_parameters['FreqXAutoTwo']()
 
         canvas.axes_time.clear()
         canvas.axes_freq.clear()
@@ -471,7 +484,6 @@ class PlotController:
                     frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times,
                                                                 spline=self.plot_parameters['Spline']())
 
-
                     canvas.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
                                                                   label=self._display_annotations(run))
 
@@ -489,15 +501,25 @@ class PlotController:
                 min_y = np.min(asymmetry[start_index:end_index]) if \
                     np.min(asymmetry[start_index:end_index]) < min_y else min_y
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            canvas.axes_freq.set_xlim(0, max_freq * 1.1)
-            canvas.axes_freq.set_ylim(0, max_mag * 1.1)
-
-        if not yauto:
+        if not timeyauto:
+            ymin = self.plot_parameters['TimeYMinOne']() if can_int == 1 else self.plot_parameters['TimeYMinTwo']()
+            ymax = self.plot_parameters['TimeYMaxOne']() if can_int == 1 else self.plot_parameters['TimeYMaxTwo']()
             canvas.axes_time.set_ylim(float(ymin), float(ymax))
         else:
             canvas.axes_time.set_ylim(min_y - abs(min_y * 0.1), max_y + abs(max_y * 0.1))
+
+        if not freqyauto:
+            ymin = self.plot_parameters['FreqYMinOne']() if can_int == 1 else self.plot_parameters['FreqYMinTwo']()
+            ymax = self.plot_parameters['FreqYMaxOne']() if can_int == 1 else self.plot_parameters['FreqYMaxTwo']()
+            canvas.axes_freq.set_ylim(float(ymin), float(ymax))
+        else:
+            with warnings.catch_warnings():
+                canvas.axes_freq.set_ylim(0, max_mag * 1.1)
+
+        if not freqxauto:
+            xmin = self.plot_parameters['FreqXMinOne']() if can_int == 1 else self.plot_parameters['FreqXMinTwo']()
+            xmax = self.plot_parameters['FreqXMaxOne']() if can_int == 1 else self.plot_parameters['FreqXMaxTwo']()
+            canvas.axes_freq.set_xlim(float(xmin), float(xmax))
 
         canvas.set_style(moving)
 
@@ -509,6 +531,15 @@ class PlotController:
     def _display_plot_lines(self):
         return '-' if self.plot_parameters['PlotLines']() else 'None'
 
+    def _display_x_limits(self):
+        x_min, x_max = self.plot_panel.canvas_one.axes_freq.get_xlim()
+        self.plot_panel.input_freq_xmin_one.setText('{0:.3f}'.format(x_min))
+        self.plot_panel.input_freq_xmax_one.setText('{0:.3f}'.format(x_max))
+
+        x_min, x_max = self.plot_panel.canvas_two.axes_freq.get_xlim()
+        self.plot_panel.input_freq_xmin_two.setText('{0:.3f}'.format(x_min))
+        self.plot_panel.input_freq_xmax_two.setText('{0:.3f}'.format(x_max))
+
     def _display_y_limits(self):
         y_min, y_max = self.plot_panel.canvas_one.axes_time.get_ylim()
         self.plot_panel.input_time_ymin_one.setText('{0:.3f}'.format(y_min))
@@ -518,13 +549,37 @@ class PlotController:
         self.plot_panel.input_time_ymin_two.setText('{0:.3f}'.format(y_min))
         self.plot_panel.input_time_ymax_two.setText('{0:.3f}'.format(y_max))
 
-    def _check_y_limits(self, plot=None):
-        if plot == 1:
-            self.plot_panel.input_time_ymin_one.setEnabled(not self.plot_parameters['TimeYAutoOne']())
-            self.plot_panel.input_time_ymax_one.setEnabled(not self.plot_parameters['TimeYAutoOne']())
-        else:
-            self.plot_panel.input_time_ymin_two.setEnabled(not self.plot_parameters['TimeYAutoTwo']())
-            self.plot_panel.input_time_ymax_two.setEnabled(not self.plot_parameters['TimeYAutoTwo']())
+        y_min, y_max = self.plot_panel.canvas_one.axes_freq.get_ylim()
+        self.plot_panel.input_freq_ymin_one.setText('{0:.3f}'.format(y_min))
+        self.plot_panel.input_freq_ymax_one.setText('{0:.3f}'.format(y_max))
+
+        y_min, y_max = self.plot_panel.canvas_two.axes_freq.get_ylim()
+        self.plot_panel.input_freq_ymin_two.setText('{0:.3f}'.format(y_min))
+        self.plot_panel.input_freq_ymax_two.setText('{0:.3f}'.format(y_max))
+
+    def _check_y_limits(self, plot=None, option='TimeYAuto'):
+        if option == 'TimeYAuto':
+            if plot == 1:
+                self.plot_panel.input_time_ymin_one.setEnabled(not self.plot_parameters['TimeYAutoOne']())
+                self.plot_panel.input_time_ymax_one.setEnabled(not self.plot_parameters['TimeYAutoOne']())
+            else:
+                self.plot_panel.input_time_ymin_two.setEnabled(not self.plot_parameters['TimeYAutoTwo']())
+                self.plot_panel.input_time_ymax_two.setEnabled(not self.plot_parameters['TimeYAutoTwo']())
+        elif option == 'FreqYAuto':
+            if plot == 1:
+                self.plot_panel.input_freq_ymin_one.setEnabled(not self.plot_parameters['FreqYAutoOne']())
+                self.plot_panel.input_freq_ymax_one.setEnabled(not self.plot_parameters['FreqYAutoOne']())
+            else:
+                self.plot_panel.input_freq_ymin_two.setEnabled(not self.plot_parameters['FreqYAutoTwo']())
+                self.plot_panel.input_freq_ymax_two.setEnabled(not self.plot_parameters['FreqYAutoTwo']())
+        elif option == 'FreqXAuto':
+            if plot == 1:
+                self.plot_panel.input_freq_xmin_one.setEnabled(not self.plot_parameters['FreqXAutoOne']())
+                self.plot_panel.input_freq_xmax_one.setEnabled(not self.plot_parameters['FreqXAutoOne']())
+            else:
+                self.plot_panel.input_freq_xmin_two.setEnabled(not self.plot_parameters['FreqXAutoTwo']())
+                self.plot_panel.input_freq_xmax_two.setEnabled(not self.plot_parameters['FreqXAutoTwo']())
+
         self._visual_data_change(plot=plot, moving=False)
 
     def update(self, signal=None):
