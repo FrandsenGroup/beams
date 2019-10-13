@@ -138,8 +138,9 @@ class BEAMSModel:
                 color = self.color_options[0]
 
                 new_run = RunData(filename=filename, f_format=formats[filename], color=color, marker=marker)
-                if not new_run.error:
+                if not new_run.error:  # Checks if an error occurred while calculating data.
                     self.run_list.append(new_run)
+                else:
                     self.notify(PROGRAM_ERROR)
 
                 self.update_colors(color=color, used=True)

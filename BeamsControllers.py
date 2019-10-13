@@ -107,7 +107,7 @@ class ProgramController:
 
         open_file.close()
 
-    def update(self):
+    def update(self, signal):
         BeamsViews.ErrorMessageUI('There was an error during the previous action. Please try again or restart program.')
 
 
