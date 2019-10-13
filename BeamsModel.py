@@ -15,6 +15,7 @@ FILE_CHANGED = 1
 PARAMETER_CHANGED = 2
 RUN_LIST_CHANGED = 3
 RUN_DATA_CHANGED = 4
+PROGRAM_ERROR = 5
 
 
 class BEAMSModel:
@@ -33,13 +34,15 @@ class BEAMSModel:
         self.observers = {FILE_CHANGED: [],
                           PARAMETER_CHANGED: [],
                           RUN_LIST_CHANGED: [],
-                          RUN_DATA_CHANGED: []}
+                          RUN_DATA_CHANGED: [],
+                          PROGRAM_ERROR: []}
 
         # For debugging currently
         self.debugging_signals = {FILE_CHANGED: 'FILE_CHANGED',
                                   PARAMETER_CHANGED: 'PARAMETER_CHANGED',
                                   RUN_LIST_CHANGED: 'RUN_LIST_CHANGED',
-                                  RUN_DATA_CHANGED: 'RUN_DATA_CHANGED'}
+                                  RUN_DATA_CHANGED: 'RUN_DATA_CHANGED',
+                                  PROGRAM_ERROR: 'PROGRAM_ERROR'}
 
         self.color_options = ["blue", "red", "green", "orange", "purple",
                               "brown", "yellow", "gray", "olive", "cyan", "pink"]
@@ -134,8 +137,10 @@ class BEAMSModel:
 
                 color = self.color_options[0]
 
-                self.run_list.append(RunData(filename=filename, f_format=formats[filename],
-                                             color=color, marker=marker))
+                new_run = RunData(filename=filename, f_format=formats[filename], color=color, marker=marker)
+                if not new_run.error:
+                    self.run_list.append(new_run)
+                    self.notify(PROGRAM_ERROR)
 
                 self.update_colors(color=color, used=True)
                 self.update_markers(marker=marker, used=True)
@@ -237,6 +242,7 @@ class RunData:
         self.color = color
         self.filename = filename
         self.t0 = 0
+        self.error = False
 
         self.histogram_data = None
         self.asymmetry = None
@@ -247,7 +253,10 @@ class RunData:
         self.binned_time = None
 
         if BeamsUtility.check_ext(filename, '.dat'):
-            self.read_from_dat()
+            try:
+                self.read_from_dat()
+            except KeyError:
+                self.error = True
         elif BeamsUtility.check_ext(filename, '.asy'):
             self.read_from_asy()
         else:

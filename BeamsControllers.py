@@ -26,6 +26,7 @@ class ProgramController:
         # Initialize the model
         # Note: The model holds most application-relevant data and the 'business logic' of the application.
         self.model = BeamsModel.BEAMSModel()
+        self.model.observers[BeamsModel.PROGRAM_ERROR].append(self)
 
         # Initialize all the GUIs with their controllers
         # Note: The controllers are responsible for handling user input on the GUIs. The GUIs will update based on
@@ -105,6 +106,9 @@ class ProgramController:
             self.model.open_save_session(data)
 
         open_file.close()
+
+    def update(self):
+        BeamsViews.ErrorMessageUI('There was an error during the previous action. Please try again or restart program.')
 
 
 class MuFytController:
@@ -897,8 +901,7 @@ class PlotDataController:
         """ Closes the GUI and calls update_model() in the parent class FileManagerControl. """
         self.plot_data_gui.close()
 
-        update_thread = threading.Thread(target=self.model.update_runs(self.formats, plot=self.plot), daemon=True)
-        update_thread.start()
+        threading.Thread(target=self.model.update_runs(self.formats, plot=self.plot), daemon=True).start()
 
     def remove_file(self):
         """ Removes the currently selected file from the file list and from the format list. """
