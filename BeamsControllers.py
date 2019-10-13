@@ -6,24 +6,14 @@ import BeamsUtility
 # Standard Library modules
 import sys
 import os
-import subprocess
-import time
 import pickle
 import threading
 import warnings
 
 # Installed modules
 import requests
-from PyQt5 import QtWidgets, QtCore
 import numpy as np
-
-style_imported = False
-if False:
-    try:
-        import qdarkstyle
-        style_imported = True
-    except ImportError:
-        pass
+from PyQt5 import QtWidgets, QtCore
 
 
 class ProgramController:
@@ -31,10 +21,7 @@ class ProgramController:
     def __init__(self):
         self.app = QtWidgets.QApplication(sys.argv)
 
-        if style_imported:
-            self.app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
-        else:
-            self.app.setStyleSheet(BeamsViews.StyleFile('light_style.qss', 'light_style_vars.txt').style)
+        self.app.setStyleSheet(BeamsViews.StyleFile('light_style.qss', 'light_style_vars.txt').style)
 
         # Initialize the model
         # Note: The model holds most application-relevant data and the 'business logic' of the application.
@@ -413,10 +400,6 @@ class PlotController:
         self.plot_editor.check_spline.stateChanged.connect(lambda: self._visual_data_change())
         self.plot_panel.check_time_y_autoscale_one.stateChanged.connect(lambda: self._check_y_limits(plot=1))
         self.plot_panel.check_time_y_autoscale_two.stateChanged.connect(lambda: self._check_y_limits(plot=2))
-        self.plot_editor.save_button.released.connect(self._save_plots)
-
-    def _save_plots(self):
-        self.popup = SavePlotController(canvases=[self.plot_panel.canvas_one, self.plot_panel.canvas_two])
 
     def _bin_changed(self, moving=None, plot=None):
         """ Handles the bin size changing on either the slider or the text box. If one changes then
@@ -946,14 +929,37 @@ class WebServiceController:
 
         year = self.dialog.input_year.text()
         if len(year) > 0:
-            query += "year={}&".format(year)
+            if len(year) == 4:
+                try:
+                    int(year)
+                except ValueError:
+                    self.dialog.output_web.insertPlainText("Give year as 4 digits.\n")
+                    return
+                query += "year={}&".format(year)
+            else:
+                self.dialog.output_web.insertPlainText("Give year as 4 digits.\n")
+                return
 
         expt = self.dialog.input_expt.text()
         if len(expt) > 0:
+            try:
+                int(expt)
+            except ValueError:
+                self.dialog.output_web.insertPlainText("Experiment number should be an integer.\n")
+                return
             query += "expt={}&".format(expt)
 
         runs = self.dialog.input_runs.text()
         if len(runs) > 0:
+            if len(runs.split('-')) > 1 or len(runs) > 6:
+                self.dialog.output_web.insertPlainText("Run number for search can not be a range, "
+                                                       "must be single 6 digit maximum integer.\n")
+                return
+            try:
+                int(runs)
+            except ValueError:
+                self.dialog.output_web.insertPlainText("Run number must be a six digit max integer.\n")
+                return
             query += "run={}&".format(runs)
 
         return query
@@ -992,6 +998,9 @@ class WebServiceController:
 
     def query(self):
         query = self._assemble_query()
+
+        if query is None:
+            return
 
         if len(query) < 2:
             self.dialog.output_web.insertPlainText("No query parameters filled.\n")

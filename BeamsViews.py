@@ -2,13 +2,12 @@
 
 # Standard Library Modules
 import warnings
+import socket
 
 # Installed modules
 from PyQt5 import QtWidgets, QtGui, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
-
-style_imported = False
 
 
 # noinspection PyArgumentList
@@ -160,42 +159,15 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
 
         self._full_widget = QtWidgets.QWidget()
 
-        self.save_button = QtWidgets.QPushButton('Save')
         self.check_uncertain = QtWidgets.QCheckBox()
         self.check_annotation = QtWidgets.QCheckBox()
         self.check_plot_lines = QtWidgets.QCheckBox()
         self.check_spline = QtWidgets.QCheckBox()
-        self.check_autoscale_one = QtWidgets.QCheckBox()
-        self.check_autoscale_two = QtWidgets.QCheckBox()
-        self.slider_one = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        self.slider_two = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        self.input_slider_one = QtWidgets.QLineEdit()
-        self.input_slider_two = QtWidgets.QLineEdit()
-        self.input_xmin_one = QtWidgets.QLineEdit()
-        self.input_xmin_two = QtWidgets.QLineEdit()
-        self.input_xmax_one = QtWidgets.QLineEdit()
-        self.input_xmax_two = QtWidgets.QLineEdit()
-        self.input_ymin_one = QtWidgets.QLineEdit()
-        self.input_ymin_two = QtWidgets.QLineEdit()
-        self.input_ymax_one = QtWidgets.QLineEdit()
-        self.input_ymax_two = QtWidgets.QLineEdit()
 
         self._label_uncertain = QtWidgets.QLabel('Show Uncertainty')
         self._label_annotation = QtWidgets.QLabel('Show Annotations')
         self._label_plot_lines = QtWidgets.QLabel('Show Plot Lines')
         self._label_spline = QtWidgets.QLabel('FFT Spline')
-        self._label_ymin_one = QtWidgets.QLabel("YMin")
-        self._label_ymin_two = QtWidgets.QLabel("YMin")
-        self._label_ymax_one = QtWidgets.QLabel("YMax")
-        self._label_ymax_two = QtWidgets.QLabel("YMax")
-        self._label_slider_one = QtWidgets.QLabel("Time Bins (ns)")
-        self._label_slider_two = QtWidgets.QLabel("Time Bins (ns)")
-        self._label_auto_one = QtWidgets.QLabel("Plot 1 -     Auto")
-        self._label_auto_two = QtWidgets.QLabel("Plot 2 -     Auto")
-        self._label_xmin_one = QtWidgets.QLabel("XMin (\u03BCs)")
-        self._label_xmin_two = QtWidgets.QLabel("XMin (\u03BCs)")
-        self._label_xmax_one = QtWidgets.QLabel("XMax (\u03BCs)")
-        self._label_xmax_two = QtWidgets.QLabel("XMax (\u03BCs)")
 
         self._set_widget_attributes()
         self._set_widget_dimensions()
@@ -207,96 +179,11 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
         self.check_uncertain.setChecked(True)
         self.check_annotation.setChecked(True)
         self.check_spline.setChecked(False)
-        self.check_autoscale_one.setChecked(True)
-        self.check_autoscale_two.setChecked(True)
-
-        self.input_xmin_one.setText("0")
-        self.input_xmin_two.setText("0")
-        self.input_xmax_one.setText("8")
-        self.input_xmax_two.setText("0.5")
-        self.input_ymin_one.setText("-0.3")
-        self.input_ymin_two.setText("0.5")
-        self.input_ymax_one.setText("-0.5")
-        self.input_ymax_two.setText("0.5")
-        self.input_ymax_one.setEnabled(False)
-        self.input_ymax_two.setEnabled(False)
-        self.input_ymin_one.setEnabled(False)
-        self.input_ymin_two.setEnabled(False)
-
-        self.slider_one.setMinimum(0)
-        self.slider_one.setMaximum(500)
-        self.slider_one.setValue(150)
-        self.slider_one.setTickPosition(QtWidgets.QSlider.TicksBothSides)
-        self.slider_one.setTickInterval(20)
-        self.slider_two.setMinimum(0)
-        self.slider_two.setMaximum(500)
-        self.slider_two.setValue(2)
-        self.slider_two.setTickPosition(QtWidgets.QSlider.TicksBothSides)
-        self.slider_two.setTickInterval(20)
-
-        self.input_slider_one.setText(str(self.slider_one.value()))
-        self.input_slider_two.setText(str(self.slider_two.value()))
 
     def _set_widget_dimensions(self):
-        self.input_slider_one.setFixedWidth(50)
-        self.input_slider_two.setFixedWidth(50)
-        self.input_xmin_one.setFixedWidth(50)
-        self.input_xmax_one.setFixedWidth(50)
-        self.input_xmin_two.setFixedWidth(50)
-        self.input_xmax_two.setFixedWidth(50)
-        self.input_ymin_one.setFixedWidth(50)
-        self.input_ymin_two.setFixedWidth(50)
-        self.input_ymax_one.setFixedWidth(50)
-        self.input_ymax_two.setFixedWidth(50)
+        pass
 
     def _set_widget_layout(self):
-        # row_one = QtWidgets.QHBoxLayout()
-        # row_two = QtWidgets.QHBoxLayout()
-        #
-        # row_one.addWidget(self._label_auto_one)
-        # row_one.addWidget(self.check_autoscale_one)
-        # row_one.addSpacing(10)
-        # row_one.addWidget(self._label_ymin_one)
-        # row_one.addWidget(self.input_ymin_one)
-        # row_one.addSpacing(10)
-        # row_one.addWidget(self._label_ymax_one)
-        # row_one.addWidget(self.input_ymax_one)
-        # row_one.addSpacing(10)
-        # row_one.addWidget(self._label_xmin_one)
-        # row_one.addWidget(self.input_xmin_one)
-        # row_one.addSpacing(10)
-        # row_one.addWidget(self._label_xmax_one)
-        # row_one.addWidget(self.input_xmax_one)
-        # row_one.addSpacing(10)
-        # row_one.addWidget(self._label_slider_one)
-        # row_one.addWidget(self.input_slider_one)
-        # row_one.addSpacing(10)
-        # # row_one.addWidget(self.slider_one)
-        #
-        # row_two.addWidget(self._label_auto_two)
-        # row_two.addWidget(self.check_autoscale_two)
-        # row_two.addSpacing(10)
-        # row_two.addWidget(self._label_ymin_two)
-        # row_two.addWidget(self.input_ymin_two)
-        # row_two.addSpacing(10)
-        # row_two.addWidget(self._label_ymax_two)
-        # row_two.addWidget(self.input_ymax_two)
-        # row_two.addSpacing(10)
-        # row_two.addWidget(self._label_xmin_two)
-        # row_two.addWidget(self.input_xmin_two)
-        # row_two.addSpacing(10)
-        # row_two.addWidget(self._label_xmax_two)
-        # row_two.addWidget(self.input_xmax_two)
-        # row_two.addSpacing(10)
-        # row_two.addWidget(self._label_slider_two)
-        # row_two.addWidget(self.input_slider_two)
-        # row_two.addSpacing(10)
-        # row_two.addWidget(self.slider_two)
-        #
-        # col_one = QtWidgets.QVBoxLayout()
-        # col_one.addLayout(row_one)
-        # col_one.addLayout(row_two)
-        #
         col_two = QtWidgets.QVBoxLayout()
 
         row_unc = QtWidgets.QHBoxLayout()
@@ -323,14 +210,11 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
         col_two.addLayout(row_ann)
         col_thr.addLayout(row_lns)
         col_thr.addLayout(row_spl)
-        # col_two.addStretch()
 
         main_layout = QtWidgets.QHBoxLayout()
-        # main_layout.addLayout(col_one)
         main_layout.addLayout(col_two)
         main_layout.addLayout(col_thr)
         main_layout.addSpacing(15)
-        # main_layout.addWidget(self.save_button)
 
         self._full_widget.setLayout(main_layout)
 
@@ -647,11 +531,11 @@ class SinglePlotEditor(QtWidgets.QDockWidget):
         row_time_1 = QtWidgets.QHBoxLayout()
         row_time_1.addSpacing(65)
         row_time_1.addSpacing(spacing)
-        row_time_1.addWidget(self._label_time_xmax)
-        row_time_1.addWidget(self.input_time_xmax)
-        row_time_1.addSpacing(spacing)
         row_time_1.addWidget(self._label_time_xmin)
         row_time_1.addWidget(self.input_time_xmin)
+        row_time_1.addSpacing(spacing)
+        row_time_1.addWidget(self._label_time_xmax)
+        row_time_1.addWidget(self.input_time_xmax)
         row_time_1.addStretch()
         time_layout.addRow(row_time_1)
 
@@ -660,12 +544,12 @@ class SinglePlotEditor(QtWidgets.QDockWidget):
         row_time_2.addWidget(self.check_time_yauto)
         row_time_2.addSpacing(24)
         row_time_2.addSpacing(spacing)
-        row_time_2.addWidget(self._label_time_ymax)
-        row_time_2.addWidget(self.input_time_ymax)
-        row_time_2.addSpacing(23)
-        row_time_2.addSpacing(spacing)
         row_time_2.addWidget(self._label_time_ymin)
         row_time_2.addWidget(self.input_time_ymin)
+        row_time_2.addSpacing(23)
+        row_time_2.addSpacing(spacing)
+        row_time_2.addWidget(self._label_time_ymax)
+        row_time_2.addWidget(self.input_time_ymax)
         row_time_2.addStretch()
         time_layout.addRow(row_time_2)
         time_form.setLayout(time_layout)
@@ -678,11 +562,11 @@ class SinglePlotEditor(QtWidgets.QDockWidget):
         row_freq_1.addWidget(self.check_freq_xauto)
         row_freq_1.addSpacing(10)
         row_freq_1.addSpacing(spacing)
-        row_freq_1.addWidget(self._label_freq_xmax)
-        row_freq_1.addWidget(self.input_freq_xmax)
-        row_freq_1.addSpacing(spacing)
         row_freq_1.addWidget(self._label_freq_xmin)
         row_freq_1.addWidget(self.input_freq_xmin)
+        row_freq_1.addSpacing(spacing)
+        row_freq_1.addWidget(self._label_freq_xmax)
+        row_freq_1.addWidget(self.input_freq_xmax)
         row_freq_1.addStretch()
         freq_layout.addRow(row_freq_1)
 
@@ -691,12 +575,12 @@ class SinglePlotEditor(QtWidgets.QDockWidget):
         row_freq_2.addWidget(self.check_freq_yauto)
         row_freq_2.addSpacing(42)
         row_freq_2.addSpacing(spacing)
-        row_freq_2.addWidget(self._label_freq_ymax)
-        row_freq_2.addWidget(self.input_freq_ymax)
-        row_freq_2.addSpacing(31)
-        row_freq_2.addSpacing(spacing)
         row_freq_2.addWidget(self._label_freq_ymin)
         row_freq_2.addWidget(self.input_freq_ymin)
+        row_freq_2.addSpacing(31)
+        row_freq_2.addSpacing(spacing)
+        row_freq_2.addWidget(self._label_freq_ymax)
+        row_freq_2.addWidget(self.input_freq_ymax)
         row_freq_2.addStretch()
         freq_layout.addRow(row_freq_2)
         freq_form.setLayout(freq_layout)
@@ -749,27 +633,10 @@ class RunPlot(FigureCanvas):
         self.axes_freq.tick_params(axis='y', colors='white')
 
     def set_style(self, moving):
-        if style_imported:
-            self.figure.set_facecolor('#32414B')
-            self.axes_time.set_facecolor('#32414B')
-            self.axes_freq.set_facecolor('#32414B')
-            self.axes_time.spines['left'].set_color('white')
-            self.axes_time.spines['bottom'].set_color('white')
-            self.axes_time.xaxis.label.set_color('white')
-            self.axes_time.yaxis.label.set_color('white')
-            self.axes_time.tick_params(axis='x', colors='white')
-            self.axes_time.tick_params(axis='y', colors='white')
-            self.axes_freq.spines['left'].set_color('white')
-            self.axes_freq.spines['bottom'].set_color('white')
-            self.axes_freq.xaxis.label.set_color('white')
-            self.axes_freq.yaxis.label.set_color('white')
-            self.axes_freq.tick_params(axis='x', colors='white')
-            self.axes_freq.tick_params(axis='y', colors='white')
-        else:
-            self.axes_time.tick_params(axis='x', colors='black')
-            self.axes_time.tick_params(axis='y', colors='black')
-            self.axes_freq.tick_params(axis='x', colors='black')
-            self.axes_freq.tick_params(axis='y', colors='black')
+        self.axes_time.tick_params(axis='x', colors='black')
+        self.axes_time.tick_params(axis='y', colors='black')
+        self.axes_freq.tick_params(axis='x', colors='black')
+        self.axes_freq.tick_params(axis='y', colors='black')
 
         title_font_size = 12
         self.axes_time.spines['right'].set_visible(False)
@@ -908,42 +775,6 @@ class WriteDataUI(QtWidgets.QDialog):
 
 
 # noinspection PyArgumentList
-class SavePlotUI(QtWidgets.QDialog):
-    def __init__(self):
-        super(SavePlotUI, self).__init__()
-        self.setWindowTitle('Specify plot to save')
-
-        self.message = QtWidgets.QLabel('Would you like to save the left-side or right-side plots?')
-        self.left_radio = QtWidgets.QRadioButton()
-        self.right_radio = QtWidgets.QRadioButton()
-        self.save_button = QtWidgets.QPushButton('Save As')
-        self.left_label = QtWidgets.QLabel('Left')
-        self.right_label = QtWidgets.QLabel('Right')
-
-        main_layout = QtWidgets.QVBoxLayout()
-        row_one = QtWidgets.QHBoxLayout()
-        row_one.addSpacing(35)
-        row_one.addWidget(self.message)
-        row_one.setAlignment(self.message, QtCore.Qt.AlignCenter)
-        row_one.addSpacing(35)
-        row_two = QtWidgets.QHBoxLayout()
-        row_two.addStretch()
-        row_two.addWidget(self.left_label)
-        row_two.addWidget(self.left_radio)
-        row_two.addSpacing(15)
-        row_two.addWidget(self.right_label)
-        row_two.addWidget(self.right_radio)
-        row_two.addSpacing(25)
-        row_two.addWidget(self.save_button)
-        row_two.addStretch()
-        main_layout.addLayout(row_one)
-        main_layout.addSpacing(5)
-        main_layout.addLayout(row_two)
-
-        self.setLayout(main_layout)
-
-
-# noinspection PyArgumentList
 class PlotDataUI(QtWidgets.QDialog):
     def __init__(self):
         super(PlotDataUI, self).__init__()
@@ -1070,8 +901,9 @@ class WebDownloadUI(QtWidgets.QDialog):
         self.download_button = StyleOneButton('Download')
         self.search_button = StyleOneButton('Search')
         self.done_button = StyleOneButton('Done')
-        self._label_description = QtWidgets.QLabel('Provide the information below to search and/or download runs from'
-                                                   'musr.ca.')
+        self._label_description = QtWidgets.QLabel('Provide the information below to search and/or download runs from '
+                                                   'musr.ca.\n * indicates required for download. You can search'
+                                                   ' based on incomplete info.')
 
         self._set_widget_dimensions()
         self._set_widget_attributes()
@@ -1089,9 +921,9 @@ class WebDownloadUI(QtWidgets.QDialog):
         self.setFixedWidth(400)
 
     def _set_widget_attributes(self):
-        self.input_area.setPlaceholderText('Area')
-        self.input_year.setPlaceholderText('Year (YYYY)')
-        self.input_runs.setPlaceholderText('Range of Runs (N-N)')
+        self.input_area.setPlaceholderText('*Area')
+        self.input_year.setPlaceholderText('*Year (YYYY)')
+        self.input_runs.setPlaceholderText('*Range of Runs (N-N)')
         self.input_file.setPlaceholderText('Save Directory (default is current)')
         self.input_expt.setPlaceholderText('Expt #')
 
@@ -1154,6 +986,11 @@ class AddFileUI(QtWidgets.QDialog):
         self.pos_button.released.connect(lambda: self._set_type(True))
         self.neg_button.released.connect(lambda: self._set_type(False))
 
+        try:
+            socket.create_connection(("www.google.com", 80))
+        except OSError:
+            self.neg_button.setEnabled(False)
+
         col = QtWidgets.QVBoxLayout()
         col.addWidget(message)
         col.setAlignment(message, QtCore.Qt.AlignCenter)
@@ -1173,10 +1010,6 @@ class AddFileUI(QtWidgets.QDialog):
             self.file_manager.add_file_from_disk()
         else:
             self.web_manager(self.model)
-
-
-
-
 
 
 # noinspection PyArgumentList
