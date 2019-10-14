@@ -518,6 +518,7 @@ class PlotController:
             canvas.axes_freq.set_ylim(float(ymin), float(ymax))
         else:
             with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
                 canvas.axes_freq.set_ylim(0, max_mag * 1.1)
 
         if not freqxauto:
