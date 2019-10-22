@@ -362,11 +362,13 @@ class RunData:
         end_bin_two = start_bin_two + num_cross_good
 
         self.t0 = init_dif
-        return [start_bin_one, start_bin_two, end_bin_one, end_bin_two]
+
+        return [start_bin_one, start_bin_two, end_bin_one-1, end_bin_two-1]
 
     def calculate_asymmetry(self, hist_one=None, hist_two=None, bkg_one=None, bkg_two=None):
         """ Calculate asymmetry based on the overlapping 'good' area of the histograms. """
         start_bin_one, start_bin_two, end_bin_one, end_bin_two = self.calculate_start_end(hist_one, hist_two)
+
         hist_good_one = self.histogram_data.loc[start_bin_one-1:end_bin_one, hist_one].values
         hist_good_two = self.histogram_data.loc[start_bin_two-1:end_bin_two, hist_two].values
         asymmetry = ((hist_good_one - bkg_one) - (hist_good_two - bkg_two)) / \
