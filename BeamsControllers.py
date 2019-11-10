@@ -218,15 +218,13 @@ class FileManagerController:
         """ Prompts the user for and stores full file paths in model.
             Note: The change in the model will notify and result in update of GUI. See update(). """
         BeamsViews.AddFileUI(self, WebServiceController, self.model)
-        # self.popup = WebServiceController(self.model)
 
     def add_file_from_disk(self):
         # Open a dialog to prompt users for file(s)
         filenames = QtWidgets.QFileDialog.getOpenFileNames(self.file_manager, 'Add file', '/home')[0]
 
         for filename in filenames:  # Adds only the filename root (i.e. 0065156.dat) to the File Manager Panel
-            file_root = os.path.split(filename)[1]
-            self.model.update_file_list(file_path=filename, file_name=file_root)  # Store as dict in model
+            self.model.update_file_list(file_path=filename, file_name=BeamsUtility.create_file_key(filename))  # Store as dict in model
 
     def plot_file(self):
         """ Sends all checked files to the model to read.
@@ -271,10 +269,9 @@ class FileManagerController:
 
             if BeamsUtility.check_ext(full_file, '.msr'):  # Check extension of input and output files
                 out_file = os.path.splitext(full_file)[0] + '.dat'
-                out_file_root = os.path.split(out_file)[1]
 
                 if BeamsUtility.convert_msr(full_file, out_file, flags=['-v', '-all']):  # Run the MUD executable on the .msr file
-                    self.model.update_file_list(file_path=out_file, file_name=out_file_root)
+                    self.model.update_file_list(file_path=out_file, file_name=BeamsUtility.create_file_key(out_file))
 
                 else:
                     # Usually occurs when their have been changes in the .msr files
@@ -297,23 +294,16 @@ class FileManagerController:
     def update(self, signal=None):
         """ Called by the model when one of its FileManagerPanel-relevant attributes changes. """
         if signal == BeamsModel.FILE_CHANGED:  # Expects list of files to add the ListWidget in FileManagerPanel
-            # print("Updating File Manager")
-            current_files = self._get_all_files()
+            # Then checks to see if any files have been removed from the model's file list. Removes them from the view.
+            for index in range(self.file_manager.file_list.count()-1, -1, -1):
+                self.file_manager.file_list.takeItem(index)
 
             # First checks to see if any new files have been added to the model's file list. Adds them to the view.
-            for file_root in self.model.all_full_filepaths.keys():
-                if file_root not in current_files:
-                    file_item = QtWidgets.QListWidgetItem(file_root, self.file_manager.file_list)
-                    file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsUserCheckable)
-                    file_item.setCheckState(QtCore.Qt.Unchecked)
-
-            # Then checks to see if any files have been removed from the model's file list. Removes them from the view.
-            for file_root in current_files:
-                if file_root not in self.model.all_full_filepaths.keys():
-                    for index in range(self.file_manager.file_list.count()):
-                        if file_root == self.file_manager.file_list.item(index).text():
-                            self.file_manager.file_list.takeItem(index)
-                            break
+            for item in self.model.all_full_filepaths.items():
+                file_key = item[0]
+                file_item = QtWidgets.QListWidgetItem(file_key, self.file_manager.file_list)
+                file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsUserCheckable)
+                file_item.setCheckState(QtCore.Qt.Unchecked)
         else:
             raise ValueError('Unexpected Signal from Model in {}'.format(self))
 
@@ -1118,7 +1108,7 @@ class WebServiceController:
                 for chunk in response.iter_content(100000):
                     fb.write(chunk)
 
-            self.model.update_file_list(file_path=save_file, file_name=os.path.split(save_file)[1])
+            self.model.update_file_list(file_path=save_file, file_name=BeamsUtility.create_file_key(save_file))
             self.dialog.output_web.insertPlainText('Successfully downloaded {}.\n'.format(full_url))
             good += 1
 

@@ -78,7 +78,7 @@ def get_header(filename, header_rows=None):
     """ Gets the header from a .dat file. If BEAMS formatted, it creates a dictionary with
         the header data, otherwise it stores the first user-specified number of lines in a
         list of strings. """
-    if is_beams(filename):  # We are basically praying if it is BEAMS, it has the proper format. #fixthis, call errors
+    if check_ext(filename, '.dat') and is_beams(filename):  # We are basically praying if it is BEAMS, it has the proper format. #fixthis, call errors
         with open(filename) as file:
             file.readline()
             metadata = file.readline().rstrip('\n').rsplit(',')
@@ -138,6 +138,15 @@ def read_asy(filename):
         return None
 
     return data
+
+
+def create_file_key(filename):
+    header = get_header(filename)
+    file_root = os.path.split(filename)[1]
+    file_key = file_root
+    if header is not None:
+        file_key = file_key + " - " + header['Title']
+    return file_key
 
 
 def check_ext(filename, expected_ext):

@@ -5,6 +5,7 @@ import BeamsUtility
 
 # Standard Library modules
 import os
+from collections import OrderedDict
 
 # Installed modules
 import numpy as np
@@ -22,7 +23,7 @@ class BEAMSModel:
     """ Manages the data, logic and rules of the application. """
     def __init__(self):
         """Initializes the empty model"""
-        self.all_full_filepaths = {}
+        self.all_full_filepaths = OrderedDict()
         self.plot_parameters = {}
         self.used_colors = []
         self.unused_markers = dict()
@@ -172,6 +173,7 @@ class BEAMSModel:
 
             self.all_full_filepaths[file_name] = file_path
 
+        self.all_full_filepaths = OrderedDict(sorted(self.all_full_filepaths.items(), key=lambda t: t[0]))
         self.notify(FILE_CHANGED)  # Notifies the File Manager Panel
 
     def update_visibilities(self, file=None, isolate=False):
