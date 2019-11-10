@@ -1068,6 +1068,7 @@ class WebServiceController:
             self.dialog.output_web.insertPlainText("Error : {}\n".format(response.status_code))
             return
 
+        printed_response = False
         for x in response.text.split('TR>'):
             y = x.split('<TD')
             if len(y) > 2:
@@ -1081,6 +1082,10 @@ class WebServiceController:
                     self.dialog.output_web.insertPlainText('{}  Year: {}, Area: {}, '
                                                            'Expt: {}, Type: {}\n'.format(run_number, year, area,
                                                                                          expt, expt_type))
+                    printed_response = True
+                    
+        if not printed_response:
+            self.dialog.output_web.insertPlainText("No runs found.")
 
     def download(self):
         downloads = self._assemble_downloads()
