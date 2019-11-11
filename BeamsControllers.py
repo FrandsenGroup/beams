@@ -468,12 +468,12 @@ class PlotController:
                 else:
                     if not self.plot_parameters['Uncertainty']():
                         canvas.axes_time.plot(times, asymmetry, color=run.color, marker=run.marker,
-                                                                  linestyle=self.plot_parameters['LineStyle']())
+                                              linestyle=self.plot_parameters['LineStyle'](), fillstyle='none')
 
                     else:
                         canvas.axes_time.errorbar(times, asymmetry, uncertainty, color=run.color,
                                                                       linestyle=self.plot_parameters['LineStyle'](),
-                                                                      marker=run.marker)
+                                                                      marker=run.marker, fillstyle='none')
 
                     frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times,
                                                                 spline=self.plot_parameters['Spline']())
