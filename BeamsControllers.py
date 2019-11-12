@@ -612,9 +612,31 @@ class RunDisplayController:
         self.run_display.current_runs.currentRowChanged.connect(lambda: self.update_run_display())
         self.run_display.current_runs.itemChanged.connect(lambda: self.change_title())
         self.run_display.header_data.currentIndexChanged.connect(lambda: self.change_metadata())
+        self.run_display.input_alpha.returnPressed.connect(lambda: self.apply_correction())
+        self.run_display.correction_button.released.connect(lambda: self.apply_correction())
+
+    def apply_correction(self):
+        alpha = 1
+        try:
+            alpha = float(self.run_display.input_alpha.text())
+        except ValueError:
+            pass
+
+        files = []
+        for item in self.run_display.current_runs.selectedItems():
+            for run in self.model.run_list:
+                if run.f_formats['Title'] == item.text():
+                    files.append(run.filename)
+
+        self.model.correct_runs(files, alpha)
 
     def isolate_plot(self):
-        self.model.update_visibilities(file=self.run_display.output_current_file.text(), isolate=True)
+        files = []
+        for item in self.run_display.current_runs.selectedItems():
+            for run in self.model.run_list:
+                if run.f_formats['Title'] == item.text():
+                    files.append(run.filename)
+        self.model.update_visibilities(file=files, isolate=True, multiple=True)
 
     def plot_all(self):
         self.model.update_visibilities(isolate=False)
@@ -651,6 +673,7 @@ class RunDisplayController:
         self.run_display.histograms.clear()
 
         self.run_display.output_current_file.setText(self.model.run_list[index].filename)
+        self.run_display.input_alpha.setText(str(self.model.run_list[index].alpha))
         self.run_display.color_choices.setCurrentText(self.model.run_list[index].color)
         self.run_display.marker_choices.setCurrentText(self.model.marker_options[self.model.run_list[index].marker])
         self.run_display.histograms.addItems(self.model.run_list[index].f_formats['HistTitles'])
@@ -693,6 +716,8 @@ class RunDisplayController:
             self.run_display.plot_all_button.setEnabled(True)
             self.run_display.header_data.setEnabled(True)
             self.run_display.output_header_display.setEnabled(True)
+            self.run_display.correction_button.setEnabled(True)
+            self.run_display.input_alpha.setEnabled(True)
         else:
             # self.run_display.marker_choices.clear()
             # self.run_display.color_choices.clear()
@@ -705,6 +730,8 @@ class RunDisplayController:
             self.run_display.plot_all_button.setEnabled(False)
             self.run_display.header_data.setEnabled(False)
             self.run_display.output_header_display.setEnabled(False)
+            self.run_display.correction_button.setEnabled(False)
+            self.run_display.input_alpha.setEnabled(False)
 
     def update(self, signal):
         if signal == BeamsModel.RUN_LIST_CHANGED:

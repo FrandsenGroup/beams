@@ -176,14 +176,20 @@ class BEAMSModel:
         self.all_full_filepaths = OrderedDict(sorted(self.all_full_filepaths.items(), key=lambda t: t[0]))
         self.notify(FILE_CHANGED)  # Notifies the File Manager Panel
 
-    def update_visibilities(self, file=None, isolate=False):
+    def update_visibilities(self, file=None, isolate=False, multiple=False):
         """ Updates the visibility of specified plot. """
         if isolate:  # If a run is isolated, set visibility of all other runs to False
             for run in self.run_list:
-                if run.filename == file:
-                    run.visibility = True
+                if multiple:
+                    if run.filename in file:
+                        run.visibility = True
+                    else:
+                        run.visibility = False
                 else:
-                    run.visibility = False
+                    if run.filename == file:
+                        run.visibility = True
+                    else:
+                        run.visibility = False
         else:  # If no runs are isolated set all visibilities to True
             for run in self.run_list:
                 run.visibility = True
@@ -195,6 +201,13 @@ class BEAMSModel:
             if run.filename == file:
                 run.f_formats['Title'] = new_title
                 self.notify(RUN_DATA_CHANGED)
+
+    def correct_runs(self, files, alpha, beta=1):
+        for run in self.run_list:
+            if run.filename in files:
+                run.correct(alpha, beta)
+
+        self.notify(RUN_DATA_CHANGED)
 
     def open_save_session(self, run_list):
         self.run_list = run_list
@@ -246,6 +259,8 @@ class RunData:
         self.filename = filename
         self.t0 = 0
         self.error = False
+        self.alpha = 1
+        self.beta = 1
 
         self.histogram_data = None
         self.asymmetry = None
@@ -255,18 +270,21 @@ class RunData:
         self.binned_uncertainty = None
         self.binned_time = None
 
-        if BeamsUtility.check_ext(filename, '.dat'):
+        self.read_data()
+
+    def __bool__(self):
+        return self.visibility
+
+    def read_data(self):
+        if BeamsUtility.check_ext(self.filename, '.dat'):
             try:
                 self.read_from_dat()
             except KeyError:
                 self.error = True
-        elif BeamsUtility.check_ext(filename, '.asy'):
+        elif BeamsUtility.check_ext(self.filename, '.asy'):
             self.read_from_asy()
         else:
             print('Invalid file')
-
-    def __bool__(self):
-        return self.visibility
 
     def read_from_asy(self):
         self.time, self.asymmetry, self.uncertainty = BeamsUtility.read_asy(self.filename)
@@ -311,8 +329,14 @@ class RunData:
         h_one = self.histogram_data.loc[start_bin_one-1:end_bin_one, hist_one].values
         h_two = self.histogram_data.loc[start_bin_two-1:end_bin_two, hist_two].values
 
+        np.nan_to_num(h_one, copy=False)
+        np.nan_to_num(h_two, copy=False)
+
+        np.seterr(divide='ignore', invalid='ignore')  # fixme Getting errors with run in 1947, 2019, M20D, 28225
         uncertainty = np.array(np.sqrt(np.power((2 * h_one * d_two / np.power(h_two + h_one, 2)), 2) +
                                        np.power((2 * h_two * d_one / np.power(h_two + h_one, 2)), 2)))
+        np.seterr(divide='warn', invalid='warn')
+
         np.nan_to_num(uncertainty, copy=False)
 
         return uncertainty
@@ -376,6 +400,13 @@ class RunData:
         asymmetry = ((hist_good_one - bkg_one) - (hist_good_two - bkg_two)) / \
                     ((hist_good_two - bkg_two) + (hist_good_one - bkg_one))
         return asymmetry
+
+    def correct(self, alpha=1, beta=1):
+        self.read_data()
+        self.alpha = alpha
+        self.beta = beta
+        self.asymmetry = ((alpha - 1) + (alpha + 1) * self.asymmetry) / ((alpha * beta + 1) + (alpha * beta - 1) * 2)
+
 
     @staticmethod
     def calculate_fft(asymmetry, times, spline=True):
