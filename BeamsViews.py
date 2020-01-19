@@ -239,6 +239,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.correction_button = StyleTwoButton("Apply Correction")
         self.integrate_button = StyleTwoButton("Integrate")
         self.plot_all_button = StyleOneButton("Plot All Runs")
+        self.integrate_button = StyleTwoButton("Integrate")
         self.output_current_file = QtWidgets.QLineEdit()
         self.output_header_display = QtWidgets.QLineEdit()
         self.input_alpha = QtWidgets.QLineEdit()
@@ -291,6 +292,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.inspect_file_button.setFixedWidth(70)
         self.isolate_button.setFixedWidth(70)
         self.correction_button.setFixedWidth(120)
+        self.integrate_button.setFixedWidth(80)
 
     def _set_widget_layout(self):
         main_layout = QtWidgets.QVBoxLayout()
@@ -309,6 +311,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         row_thr.addWidget(self.header_data)
         row_thr.addWidget(self.output_header_display)
         row_four = QtWidgets.QHBoxLayout()
+        # row_four.addWidget(self.integrate_button)
         row_four.addWidget(self.correction_button)
         row_four.addSpacing(15)
         row_four.addWidget(self._label_alpha)

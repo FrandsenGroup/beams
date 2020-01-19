@@ -787,6 +787,8 @@ class WriterController:
         self.writer_gui.show()
 
         current_runs = [os.path.split(run.filename)[1] for run in self.model.run_list]
+        print(self.files)
+        print(current_runs)
         for file in self.files:
             if file not in current_runs:
                 message = 'Some of the files you\'ve selected haven\'t been read in yet. Would you like to now?'
@@ -842,9 +844,11 @@ class WriterController:
                         file_path = os.path.splitext(run.filename)[0] + '.asy'
 
                 if self.writer_gui.radio_binned.isChecked():
+                    print('645')
                     np.savetxt(file_path, np.c_[run.binned_time, run.binned_asymmetry, run.binned_uncertainty],
                                fmt='%2.9f, %2.4f, %2.4f', header='BEAMS\nTime, Asymmetry, Uncertainty')
                 elif self.writer_gui.radio_full.isChecked():
+                    print('649')
                     np.savetxt(file_path, np.c_[run.time, run.asymmetry, run.uncertainty],
                                fmt='%2.9f, %2.4f, %2.4f', header='BEAMS\nTime, Asymmetry, Uncertainty')
                 else:

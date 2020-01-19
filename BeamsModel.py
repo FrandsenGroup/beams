@@ -54,19 +54,6 @@ class BEAMSModel:
         self.marker_options = {v: k for k, v in self.marker_options_values.items()}
         self.unused_markers = self.marker_options.copy()
 
-    def update_markers(self, marker=None, used=False):
-        if used:
-            if marker not in self.used_markers.keys():
-                self.used_markers[marker] = self.marker_options[marker]
-            if marker in self.unused_markers.keys():
-                self.unused_markers.pop(marker)
-        else:
-            if marker not in self.unused_markers.keys():
-                self.unused_markers[marker] = self.marker_options[marker]
-            if marker in self.used_markers.keys():
-                self.used_markers.pop(marker)
-        return True
-
     def update_run_marker(self, file=None, marker=None):
         marker = self.marker_options_values[marker]
 
@@ -82,6 +69,19 @@ class BEAMSModel:
                 run.marker = marker
 
         self.notify(RUN_DATA_CHANGED)
+
+    def update_markers(self, marker=None, used=False):
+        if used:
+            if marker not in self.used_markers.keys():
+                self.used_markers[marker] = self.marker_options[marker]
+            if marker in self.unused_markers.keys():
+                self.unused_markers.pop(marker)
+        else:
+            if marker not in self.unused_markers.keys():
+                self.unused_markers[marker] = self.marker_options[marker]
+            if marker in self.used_markers.keys():
+                self.used_markers.pop(marker)
+        return True
 
     def update_colors(self, color=None, used=False, custom=False):
         """ Updates the used and un-used color lists so as to keep track of which colors are available
@@ -116,6 +116,7 @@ class BEAMSModel:
 
     def update_runs(self, formats, plot=True):
         """ Updates the list of runs by removing any old runs not selected by user and adding the new ones."""
+        print('here1')
         current_files = [file for file in self.current_formats.keys()]
         for filename in current_files:  # First checks if any old filenames are not in the new list
             if filename not in formats.keys():
@@ -148,7 +149,7 @@ class BEAMSModel:
                 self.update_markers(marker=marker, used=True)
 
                 self.current_formats.update({filename: formats[filename]})
-
+        print('here2')
         if plot:
             self.notify(RUN_DATA_CHANGED)
             self.notify(RUN_LIST_CHANGED)
@@ -250,7 +251,7 @@ class RunData:
                 uncertainty arrays.
             calculate_fft(bin_size, asymmetry, times) : Returns smoothed frequencies and magnitudes for plotting.
     """
-    def __init__(self, filename=None, f_format=None, visibility=True, color=None, marker=None):
+    def __init__(self, filename=None, f_format=None, visibility=True, color=None, marker=None, run_id=None):
         """Initialize a RunData object based on filename and format"""
         self.marker = marker
         self.f_formats = f_format
@@ -261,6 +262,7 @@ class RunData:
         self.error = False
         self.alpha = 1
         self.beta = 1
+        self.run_id
 
         self.histogram_data = None
         self.asymmetry = None
@@ -332,7 +334,7 @@ class RunData:
         np.nan_to_num(h_one, copy=False)
         np.nan_to_num(h_two, copy=False)
 
-        np.seterr(divide='ignore', invalid='ignore')  # fixme Getting errors with run in 1947, 2019, M20D, 28225
+        np.seterr(divide='ignore', invalid='ignore')  # fixme getting errors with run in 1947, 2019, M20D, 28225
         uncertainty = np.array(np.sqrt(np.power((2 * h_one * d_two / np.power(h_two + h_one, 2)), 2) +
                                        np.power((2 * h_two * d_one / np.power(h_two + h_one, 2)), 2)))
         np.seterr(divide='warn', invalid='warn')
@@ -407,7 +409,6 @@ class RunData:
         self.beta = beta
         self.asymmetry = ((alpha - 1) + (alpha + 1) * self.asymmetry) / ((alpha * beta + 1) + (alpha * beta - 1) * 2)
 
-
     @staticmethod
     def calculate_fft(asymmetry, times, spline=True):
         """ Calculates fast fourier transform on asymmetry. """
@@ -472,3 +473,366 @@ class RunData:
                                                                                           reshaped_uncertainty**2))
 
         return [self.binned_asymmetry, self.binned_time, self.binned_uncertainty]
+
+
+class StyleService:
+    def __init__(self):
+        pass
+
+
+class RunService:
+    def __init__(self):
+        self.database = Database()
+        self.current_formats = {}
+        self.all_full_filepaths = OrderedDict()
+
+        # The controllers will register themselves in this dictionary to the signals they need to be notified of.
+        self.observers = {FILE_CHANGED: [],
+                          PARAMETER_CHANGED: [],
+                          RUN_LIST_CHANGED: [],
+                          RUN_DATA_CHANGED: [],
+                          PROGRAM_ERROR: []}
+
+        # For debugging currently
+        self.debugging_signals = {FILE_CHANGED: 'FILE_CHANGED',
+                                  PARAMETER_CHANGED: 'PARAMETER_CHANGED',
+                                  RUN_LIST_CHANGED: 'RUN_LIST_CHANGED',
+                                  RUN_DATA_CHANGED: 'RUN_DATA_CHANGED',
+                                  PROGRAM_ERROR: 'PROGRAM_ERROR'}
+
+    def add_run_by_filename(self, filename, meta):
+        run = self._generate_run_data(filename, meta)
+        run = self._generate_run_style(run)
+        self.database.add_run(run)
+
+    def update_run_style(self, run_id, style_key, style_value):
+        run = self.database.get_run_by_id(run_id)
+
+    def update_run_meta(self, run_id, meta_key, meta_value):
+        run = self.database.get_run_by_id(run_id)
+        run.meta[meta_key] = meta_value
+
+    def update_run_binning(self, run_id, bin_size):
+        run = self.database.get_run_by_id(run_id)
+
+    def get_run_style(self, run_id):
+        run = self.database.get_run_by_id(run_id)
+        return run.style
+
+    def get_run_asymmetry(self, run_id):
+        run = self.database.get_run_by_id(run_id)
+        return run.asymmetry
+
+    def get_run_uncertainty(self, run_id):
+        run = self.database.get_run_by_id(run_id)
+        return run.uncertainty
+
+    def get_run_time(self, run_id):
+        run = self.database.get_run_by_id(run_id)
+        return run.time
+
+    def get_run_meta(self, run_id, meta_key=None):
+        run = self.database.get_run_by_id(run_id)
+        if meta_key is not None:
+            return run.meta[meta_key]
+        else:
+            return run.meta
+
+    def notify(self, signal):
+        """ Calls the update() function in any controller registered with the passed in signal. """
+        for controller in self.observers[signal]:
+            if 'update' in dir(controller):
+                print('Notifying {} of {}'.format(str(controller), self.debugging_signals[signal]))
+                controller.update(signal)
+
+    def _generate_run_style(self, run):
+
+
+        return run
+
+    @staticmethod
+    def _generate_run_data(filename, meta):
+        histogram_data = BeamsUtility.get_histograms(filename, skiprows=int(meta['HeaderRows']))
+        histogram_data.columns = meta['HistTitles']
+
+        hist_one_title = meta['CalcHists'][0]
+        hist_one = histogram_data[hist_one_title]
+        bkgd_one = calculate_bkgd_radiation(meta, hist_one, meta['BkgdOne'][hist_one_title],
+                                            meta['BkgdTwo'][hist_one_title])
+        hist_two_title = meta['CalcHists'][1]
+        hist_two = histogram_data[hist_two_title]
+        bkgd_two = calculate_bkgd_radiation(meta, hist_two, meta['BkgdOne'][hist_two_title],
+                                            meta['BkgdTwo'][hist_two_title])
+
+        start_bin_one, start_bin_two, end_bin_one, end_bin_two, t0 = calculate_start_end(hist_one, hist_two)
+
+        asymmetry = calculate_asymmetry(meta, hist_one, hist_two, bkgd_one, bkgd_two)
+
+        uncertainty = calculate_uncertainty(meta, hist_one, hist_two)
+
+        time = (np.arange(len(asymmetry)) * float(meta['BinSize']) / 1000) + \
+               (t0 * float(meta['BinSize']) / 1000)
+
+        new_run = Run(asymmetry, uncertainty, time, t0)
+
+        return new_run
+
+
+class RunStyler:
+    def __init__(self):
+        self.database = Database()
+
+        self.plot_parameters = {}
+        self.used_colors = []
+        self.unused_markers = dict()
+        self.used_markers = dict()
+        self.color_options = ["blue", "red", "green", "orange", "purple",
+                              "brown", "yellow", "gray", "olive", "cyan", "pink"]
+        self.marker_options_values = {'point': '.', 'triangle_down': 'v', 'triangle_up': '^', 'triangle_left': '<',
+                                      'triangle_right': '>', 'octagon': '8', 'square': 's', 'pentagon': 'p',
+                                      'plus': 'P',
+                                      'star': '*', 'hexagon_1': 'h', 'hexagon_2': 'H', 'x': 'X', 'diamond': 'D',
+                                      'thin_diamond': 'd'}
+        self.marker_options = {v: k for k, v in self.marker_options_values.items()}
+        self.unused_markers = self.marker_options.copy()
+
+    def update_markers(self, marker=None, used=False):
+        if used:
+            if marker not in self.used_markers.keys():
+                self.used_markers[marker] = self.marker_options[marker]
+            if marker in self.unused_markers.keys():
+                self.unused_markers.pop(marker)
+        else:
+            if marker not in self.unused_markers.keys():
+                self.unused_markers[marker] = self.marker_options[marker]
+            if marker in self.used_markers.keys():
+                self.used_markers.pop(marker)
+        return True
+
+    def update_colors(self, color=None, used=False, custom=False):
+        """ Updates the used and un-used color lists so as to keep track of which colors are available
+                when plotting new runs without having two runs of identical color."""
+        if not custom:  # Don't want to save custom colors in the library
+            if used:
+                if color in self.color_options:
+                    self.color_options.remove(color)
+                if color not in self.used_colors:
+                    self.used_colors.append(color)
+            else:
+                if color in self.used_colors:
+                    self.used_colors.remove(color)
+                if color not in self.color_options:
+                    self.color_options.append(color)
+        return True
+
+    def update_title(self, run_id=None, new_title=None):
+        for run in self.database.runs:
+            if run.run_id == run_id:
+                run.meta['Title'] = new_title
+
+    def update_visibilities(self, run_id=None, isolate=False, multiple=False):
+        """ Updates the visibility of specified plot. """
+        if isolate:  # If a run is isolated, set visibility of all other runs to False
+            for run in self.database.runs:
+                if multiple:
+                    if run.run_id in run_id:
+                        run.style.visibility = True
+                    else:
+                        run.style.visibility = False
+                else:
+                    if run.run_id == run_id:
+                        run.style.visibility = True
+                    else:
+                        run.style.visibility = False
+        else:  # If no runs are isolated set all visibilities to True
+            for run in self.database.runs:
+                run.style.visibility = True
+
+    def update_run_color(self, run_id=None, color=None):
+        """ Updates the color of a specific run. Calls update_colors() to update the used and available color lists. """
+        if color in self.color_options:
+            self.update_colors(color=color, used=True)
+
+        for run in self.database.runs:
+            if run.run_id == run_id:
+                if run.style.color in self.used_colors:
+                    self.update_colors(color=run.style.color, used=False)
+                if run.style.color == color:
+                    return  # No change
+                run.style.color = color
+
+    def update_run_marker(self, run_id=None, marker=None):
+        marker = self.marker_options_values[marker]
+
+        if marker in self.unused_markers.keys():
+            self.update_markers(marker=marker, used=True)
+
+        for run in self.database.runs:
+            if run.run_id == run_id:
+                if run.style.marker in self.used_markers.keys():
+                    self.update_markers(marker=run.style.marker, used=False)
+                if run.style.marker == marker:
+                    return
+                run.style.marker = marker
+
+
+class Database:
+    class __RunData:
+        def __init__(self):
+            self.runs = []
+
+    instance = None
+
+    def __init__(self):
+        if not Database.instance:
+            Database.instance = Database.__RunData()
+
+    def __getattr__(self, name):
+        return getattr(self.instance, name)
+
+    def get_run_by_filename(self, filename):
+        for run in self.runs:
+            if run.filename == filename:
+                return run
+        return None
+
+    def get_run_by_id(self, run_id):
+        for run in self.runs:
+            if run.run_id == run_id:
+                return run
+        return None
+
+    def add_run(self, run):
+        self.runs.append(run)
+
+
+class Run:
+    def __init__(self, asymmetry, uncertainty, time, t0, meta, filename, run_id):
+        self.asymmetry = asymmetry
+        self.uncertainty = uncertainty
+        self.time = time
+
+        self.t0 = t0
+        self.meta = meta
+        self.run_id = run_id
+        self.filename = filename
+        self.style = None
+
+
+class Style:
+    def __init__(self):
+        self.run_id = None
+        self.color = None
+        self.visibility = None
+        self.marker = None
+        self.title = None
+
+
+def calculate_start_end(meta, hist_one, hist_two):
+    """ Based on the T0, GoodBin1 and GoodBin2 of each histogram, determine the sections
+                to be used for the asymmetry. """
+    # Worst Case Example (nothing matches):
+    # Histogram 1: T0 is 979, GoodBin 1 is 1030, GoodBin2 is 27356
+    # Histogram 2: T0 is 982, GoodBin 1 is 1000, GoodBin2 is 27648
+    # 1)    We want to find the greater difference of the two between their T0 Bin and their GoodBin1. In this case
+    #       that would be 51 (1030 - 979) rather then 18 (1000 - 982).
+    # 2)    Add this greater separation to each histogram's T0 and this is our start bin for each histogram.
+    #       (1030 for Histogram 1 and 1033 for Histogram 2)
+    # 3)    Find the number of bins in the 'Good' area for each histogram.
+    # 4)    Choose end bins such that we only use overlapping area.
+
+    t_one = int(meta['T0'][hist_one])
+    t_two = int(meta['T0'][hist_two])
+    start_one = int(meta['GoodBinOne'][hist_one])
+    start_two = int(meta['GoodBinOne'][hist_two])
+    end_one = int(meta['GoodBinTwo'][hist_one])
+    end_two = int(meta['GoodBinTwo'][hist_two])
+
+    dif_one = start_one - t_one
+    dif_two = start_two - t_two
+
+    init_dif = dif_one if dif_one > dif_two else dif_two
+    start_bin_one = t_one + init_dif
+    start_bin_two = t_two + init_dif
+
+    num_good_one = end_one - start_bin_one
+    num_good_two = end_two - start_bin_two
+
+    num_cross_good = num_good_one if num_good_one < num_good_two else num_good_two
+    end_bin_one = start_bin_one + num_cross_good
+    end_bin_two = start_bin_two + num_cross_good
+
+    return [start_bin_one, start_bin_two, end_bin_one - 1, end_bin_two - 1, init_dif]
+
+
+def calculate_uncertainty(meta, hist_one, hist_two):
+    """ Calculates the uncertainty based on histograms. Takes two numpy arrays as input."""
+    d_one = np.sqrt(hist_one)
+    d_two = np.sqrt(hist_two)
+
+    np.nan_to_num(hist_one, copy=False)
+    np.nan_to_num(hist_two, copy=False)
+
+    np.seterr(divide='ignore', invalid='ignore')  # fixme getting errors with run in 1947, 2019, M20D, 28225
+    uncertainty = np.array(np.sqrt(np.power((2 * hist_one * d_two / np.power(hist_two + hist_one, 2)), 2) +
+                                   np.power((2 * hist_two * d_one / np.power(hist_two + hist_one, 2)), 2)))
+    np.seterr(divide='warn', invalid='warn')
+
+    np.nan_to_num(uncertainty, copy=False)
+
+    return uncertainty
+
+
+def calculate_bkgd_radiation(meta, hist, bkgd_start, bkgd_end):
+    """ Calculates the background radiation based on histogram data before positrons are being detected. """
+    background = hist[int(bkgd_start):int(bkgd_end) - 1]
+    bkg = np.mean(background)
+    return bkg
+
+
+def calculate_fft(asymmetry, times, spline=True):
+    """ Calculates fast fourier transform on asymmetry. """
+    magnitudes = np.fft.fft(asymmetry)
+    magnitudes[0] = 0
+    frequencies = abs(np.fft.fftfreq(len(magnitudes), times[1] - times[0]))
+    num_frequencies = len(frequencies)
+
+    frequencies = frequencies[0:int(np.floor(num_frequencies / 2))]
+    magnitudes = abs(magnitudes[0:int(np.floor(num_frequencies / 2))])
+
+    if spline:
+        x_smooth = np.linspace(frequencies.min(), frequencies.max(), 300)
+
+        y_smooth = sp.UnivariateSpline(frequencies, magnitudes, k=5)
+        y_smooth.set_smoothing_factor(0)
+        y_smooth = y_smooth(x_smooth)
+        return [x_smooth, y_smooth]
+    else:
+        return [frequencies, magnitudes]
+
+
+def calculate_asymmetry(meta, hist_one, hist_two, bkgd_one, bkgd_two):
+    """ Calculate asymmetry based on the overlapping 'good' area of the histograms. """
+    # hist_good_one = hist_one[start_bin_one - 1:end_bin_one]
+    # hist_good_two = hist_two[start_bin_two - 1:end_bin_two]
+    # asymmetry = ((hist_good_one - bkgd_one) - (hist_good_two - bkgd_two)) / \
+    #             ((hist_good_two - bkgd_two) + (hist_good_one - bkgd_one))
+    # return asymmetry
+    pass
+
+
+def correct_asymmetry(meta, asymmetry, alpha, beta):
+    pass
+
+
+def bin_asymmetry(meta, asymmetry, bin_size):
+    pass
+
+
+
+
+
+
+
+
+
