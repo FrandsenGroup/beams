@@ -522,8 +522,17 @@ class RunService:
             self.files.remove(filename)
         self._notify(FILE_CHANGED)
 
+    def clear_runs(self):
+        for file in self.run_id_file.keys():
+            self.remove_file(file)
+        self._notify(RUN_DATA_CHANGED)
+        self._notify(RUN_LIST_CHANGED)
+
     def add_run_by_filename(self, filename, meta, visible=False):
         """ @Param Expects a full file path. """
+        if filename in self.run_id_file.keys():
+            return self.run_id_file[filename]
+
         run = self._generate_run_data(filename, meta)
 
         run_id = uuid.uuid1()
@@ -540,6 +549,8 @@ class RunService:
         if visible:
             pass
 
+        self._notify(RUN_LIST_CHANGED)
+
         return run_id
 
     def remove_run_by_id(self, run_id):
@@ -548,10 +559,11 @@ class RunService:
         self.styler.clear_style(run.style)
         self.runs.remove(run_id)
         self.files.remove(run.filename)
-        self.run_id.file.pop(run.filename)
+        self.run_id_file.pop(run.filename)
         self.database.remove_run(run)
 
-        self.notify(RUN_LIST_CHANGED)
+        self._notify(RUN_DATA_CHANGED)
+        self._notify(RUN_LIST_CHANGED)
 
     def update_run_style(self, run_id, style_key, style_value):
         run = self.database.get_run_by_id(run_id)
@@ -560,6 +572,10 @@ class RunService:
     def update_run_meta(self, run_id, meta_key, meta_value):
         run = self.database.get_run_by_id(run_id)
         run.meta[meta_key] = meta_value
+
+    def correct_run(self, run_id, alpha, beta=1):
+        run = self.database.get_run_by_id(run_id)
+        run.asymmetry = correct_asymmetry(run.meta, run.asymmetry, alpha, beta)
 
     def get_run_by_id(self, run_id):
         return self.database.get_run_by_id(run_id)
@@ -602,6 +618,12 @@ class RunService:
     def get_run_fft(self, run_id, spline=True):
         run = self.database.get_run_by_id(run_id)
         return calculate_fft(run.asymmetry, run.time, spline)
+
+    def get_run_histogram(self, run_id, hist_title):
+        run = self.database.get_run_by_id(run_id)
+        histogram_data = BeamsUtility.get_histograms(run.filename, skiprows=int(run.meta['HeaderRows']))
+        histogram_data.columns = run.meta['HistTitles']
+        return histogram_data[hist_title]
 
     def get_run_ids(self):
         return self.runs
@@ -696,7 +718,7 @@ class RunStyler:
         elif style_key == 'Marker':
             self._update_run_marker(run, style_value)
         elif style_key == 'Visibility':
-            self._update_run_visibilities(run.run_id, style_value)
+            self._update_run_visibilities(run, style_value)
         else:
             print('Invalid Style Key')
 
@@ -763,24 +785,6 @@ class RunStyler:
         # print(self.used_colors)
         return True
 
-    def _update_run_visibilities(self, run_id=None, isolate=False, multiple=False):
-        """ Updates the visibility of specified plot. """
-        if isolate:  # If a run is isolated, set visibility of all other runs to False
-            for run in self.database.runs:
-                if multiple:
-                    if run.run_id in run_id:
-                        run.style.visibility = True
-                    else:
-                        run.style.visibility = False
-                else:
-                    if run.run_id == run_id:
-                        run.style.visibility = True
-                    else:
-                        run.style.visibility = False
-        else:  # If no runs are isolated set all visibilities to True
-            for run in self.database.runs:
-                run.style.visibility = True
-
     def _update_run_color(self, run, color):
         """ Updates the color of a specific run. Calls update_colors() to update the used and available color lists. """
         if color in self.color_options:
@@ -803,6 +807,11 @@ class RunStyler:
         if run.style.marker == marker:
             return
         run.style.marker = marker
+
+    @staticmethod
+    def _update_run_visibilities(run, visibility):
+        """ Updates the visibility of specified plot. """
+        run.style.visibility = visibility
 
     @staticmethod
     def _update_run_title(run, new_title):
