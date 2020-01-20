@@ -988,11 +988,10 @@ class WebDownloadUI(QtWidgets.QDialog):
 
 # noinspection PyArgumentList
 class AddFileUI(QtWidgets.QDialog):
-    def __init__(self, file_manager, web_manager, model):
+    def __init__(self, file_manager, web_manager):
         super(AddFileUI, self).__init__()
         self.file_manager = file_manager
         self.web_manager = web_manager
-        self.model = model
 
         self.setWindowTitle('Permission')
         message = QtWidgets.QLabel('Would you like to add files from the local file system or online.')
@@ -1029,7 +1028,7 @@ class AddFileUI(QtWidgets.QDialog):
         if x:
             self.file_manager.add_file_from_disk()
         else:
-            self.web_manager(self.model)
+            self.web_manager()
 
 
 # noinspection PyArgumentList
