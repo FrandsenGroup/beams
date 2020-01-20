@@ -36,11 +36,9 @@ class ProgramController:
         self.main_window_v = BeamsViews.MainGUIWindow()  # Builds Main Window GUI with all the connected panels
         self._set_callbacks()
 
-        self.file_manager_controller = FileManagerController(file_manager_panel=self.main_window_v.file_manager,
-                                                             service=self.service, model=self.model, parent=self)
+        self.file_manager_controller = FileManagerController(file_manager_panel=self.main_window_v.file_manager, parent=self)
         self.plot_editor_controller = PlotController(plot_editor_panel=self.main_window_v.plot_editor,
-                                                     plot_panel=self.main_window_v.plot_panel,
-                                                     service=self.service, model=self.model, parent=self)
+                                                     plot_panel=self.main_window_v.plot_panel, parent=self)
         self.run_display_controller = RunDisplayController(run_display_panel=self.main_window_v.run_display,
                                                            model=self.model, parent=self)
 
@@ -121,14 +119,13 @@ class MuFytController:
 # Model dereferenced
 class FileManagerController:
     """ Controller responsible for managing user input on the File Manager Panel. """
-    def __init__(self, file_manager_panel=None, model=None, service=None, parent=None):
+    def __init__(self, file_manager_panel=None, parent=None):
         """ Initializes the FileManagerController and sets callbacks for the GUI"""
 
-        if not file_manager_panel or not model or not parent:  # Raise error if not properly instantiated
+        if not file_manager_panel or not parent:  # Raise error if not properly instantiated
             raise AttributeError('FileManagerController did not receive all necessary inputs.')
 
         self.file_manager = file_manager_panel
-        self.model = model
         self.service = BeamsModel.RunService()
         self.service.observers[BeamsModel.FILE_CHANGED].append(self)
 
@@ -137,13 +134,8 @@ class FileManagerController:
         self.id_title_dict = dict()
         self.file_title_dict = dict()
         self.popup = None
-        self.model.observers[BeamsModel.FILE_CHANGED].append(self)
 
         self._set_callbacks()
-
-    def __repr__(self):
-        return 'FileManagerController(file_manager_panel={}, model={}, parent={})'\
-            .format(self.file_manager, self.model, self.program_controller)
 
     def __str__(self):
         return 'File Manager Controller'
@@ -189,7 +181,6 @@ class FileManagerController:
     def _prompt_histograms(self):
         """ Launches PlotDataGUI to prompt users to specify which histograms should be used
             to calculate the asymmetry. Users can change this later in the RunDisplayPanel"""
-        # fixme model update
         self.popup = PlotDataController(self.formats, plot=True)
 
     def _get_selected_files(self):
@@ -244,8 +235,7 @@ class FileManagerController:
             Note: If the model creates or alters current RunData objects the PlotPanelController will be notified.
             See update() in PlotPanelController class. """
         # Get all checked filenames then get the full file paths that are stored in the model.
-        filenames = self._get_selected_files()
-        checked_items = [self.model.all_full_filepaths[file_root] for file_root in filenames]
+        checked_items = [self.file_title_dict[title] for title in self._get_selected_files()]
 
         beams_files, other_dat, msr_files, bad_files, asy_files = BeamsUtility.check_files(checked_items)
 
@@ -329,23 +319,22 @@ class FileManagerController:
             raise ValueError('Unexpected Signal from Model in {}'.format(self))
 
 
+# Model dereferenced
 class PlotController:
-    def __init__(self, plot_editor_panel=None, plot_panel=None, model=None, service=None, parent=None):
+    def __init__(self, plot_editor_panel=None, plot_panel=None, parent=None):
         """ Initializes the PlotEditorController and sets callbacks for the GUI"""
 
-        if not plot_editor_panel or not model or not parent:  # Raise error if not properly instantiated
+        if not plot_editor_panel or not parent:  # Raise error if not properly instantiated
             raise AttributeError('PlotEditorController did not receive all necessary inputs.')
 
         self.plot_editor = plot_editor_panel
         self.plot_panel = plot_panel
-        self.model = model
         self.service = BeamsModel.RunService()
+        self.service.observers[BeamsModel.RUN_DATA_CHANGED].append(self)
+        self.canvases = [self.plot_panel.canvas_one, self.plot_panel.canvas_two]
 
         self.program_controller = parent
         self.popup = None
-
-        self.model.observers[BeamsModel.RUN_DATA_CHANGED].append(self)
-        self.canvases = [self.plot_panel.canvas_one, self.plot_panel.canvas_two]
 
         self.plot_parameters = {
                                 'TimeXMinOne': self.plot_panel.input_time_xmin_one.text,
@@ -385,12 +374,7 @@ class PlotController:
                                 'LineStyle': self._display_plot_lines
         }
 
-        self.model.plot_parameters = self.plot_parameters
         self._set_callbacks()
-
-    def __repr__(self):
-        return 'PlotEditorController(plot_editor_panel={}, model={}, parent={})'\
-            .format(self.plot_editor, self.model, self.program_controller)
 
     def __str__(self):
         return 'Plot Controller'
@@ -482,26 +466,28 @@ class PlotController:
 
         canvas.axes_time.set_xlim(float(xmin), float(xmax))
 
-        for run in self.model.run_list:
-            if run.visibility:
-                asymmetry, times, uncertainty = run.bin_data(final_bin_size=float(bin), slider_moving=moving)
+        for run in self.service.get_runs():
+            print(run.filename)
+            style = run.style
+            if style.visibility:
+                asymmetry, times, uncertainty = self.service.get_run_binned(run.run_id, float(bin), moving)
                 if moving:
-                    canvas.axes_time.plot(times, asymmetry, color=run.color, linestyle='None', marker=run.marker)
+                    canvas.axes_time.plot(times, asymmetry, color=style.color, linestyle='None', marker=style.marker)
 
                 else:
                     if not self.plot_parameters['Uncertainty']():
-                        canvas.axes_time.plot(times, asymmetry, color=run.color, marker=run.marker,
+                        canvas.axes_time.plot(times, asymmetry, color=style.color, marker=style.marker,
                                               linestyle=self.plot_parameters['LineStyle'](), fillstyle='none')
 
                     else:
-                        canvas.axes_time.errorbar(times, asymmetry, uncertainty, color=run.color,
+                        print(len(times), len(asymmetry), len(uncertainty), style.color, style.marker)
+                        canvas.axes_time.errorbar(times, asymmetry, uncertainty, color=style.color,
                                                                       linestyle=self.plot_parameters['LineStyle'](),
-                                                                      marker=run.marker, fillstyle='none')
+                                                                      marker=style.marker, fillstyle='none')
 
-                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times,
-                                                                spline=self.plot_parameters['Spline']())
+                    frequencies, magnitudes = BeamsModel.calculate_fft(asymmetry, times, self.plot_parameters['Spline']())
 
-                    canvas.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
+                    canvas.axes_freq.plot(frequencies, magnitudes, color=style.color, marker='.',
                                                                   label=self._display_annotations(run))
 
                     max_mag = np.max(magnitudes) if np.max(magnitudes) > max_mag else max_mag
@@ -544,7 +530,7 @@ class PlotController:
         canvas.axes_time.figure.canvas.draw()
 
     def _display_annotations(self, run):
-        return run.f_formats['Title'] if self.plot_parameters['Annotations']() else None
+        return run.meta['Title'] if self.plot_parameters['Annotations']() else None
 
     def _display_plot_lines(self):
         return '-' if self.plot_parameters['PlotLines']() else 'None'
@@ -602,10 +588,8 @@ class PlotController:
 
     def update(self, signal=None):
         if signal == BeamsModel.RUN_DATA_CHANGED:
-            # print("Updating the Plots")
             self._visual_data_change(moving=False)
         elif signal == BeamsModel.RUN_LIST_CHANGED:
-            # print("Updating the Plots")
             self._visual_data_change(moving=False)
 
 
@@ -950,7 +934,7 @@ class PlotDataController:
         def _add_thread():
             for file in self.formats.keys():
                 self.service.add_run_by_filename(file, self.formats[file], True)
-
+            self.service.send_signal(BeamsModel.RUN_DATA_CHANGED)
         self.plot_data_gui.close()
 
         threading.Thread(target=_add_thread(), daemon=True).start()

@@ -512,7 +512,7 @@ class RunService:
     def add_file(self, filename):
         """ @Param Expects a full file path. """
         self.files.add(filename)
-        self.notify(FILE_CHANGED)
+        self._notify(FILE_CHANGED)
 
     def remove_file(self, filename):
         """ @Param Expects a full file path. """
@@ -520,7 +520,7 @@ class RunService:
             self.remove_run_by_id(self.run_id_file[filename])
         else:
             self.files.remove(filename)
-        self.notify(FILE_CHANGED)
+        self._notify(FILE_CHANGED)
 
     def add_run_by_filename(self, filename, meta, visible=False):
         """ @Param Expects a full file path. """
@@ -540,7 +540,6 @@ class RunService:
         if visible:
             pass
 
-        self.notify(RUN_LIST_CHANGED)
         return run_id
 
     def remove_run_by_id(self, run_id):
@@ -607,13 +606,19 @@ class RunService:
     def get_run_ids(self):
         return self.runs
 
+    def get_runs(self):
+        return self.database.runs
+
     def get_run_files(self):
         return self.files
 
     def get_run_id_dict(self):
         return self.run_id_file
 
-    def notify(self, signal):
+    def send_signal(self, signal):
+        self._notify(signal)
+
+    def _notify(self, signal):
         """ Calls the update() function in any controller registered with the passed in signal. """
         for controller in self.observers[signal]:
             if 'update' in dir(controller):
@@ -625,26 +630,32 @@ class RunService:
         histogram_data = BeamsUtility.get_histograms(filename, skiprows=int(meta['HeaderRows']))
         histogram_data.columns = meta['HistTitles']
 
+        start_bin_one, start_bin_two, end_bin_one, end_bin_two, t0 = calculate_start_end(meta)
+
         hist_one_title = meta['CalcHists'][0]
-        hist_one = histogram_data[hist_one_title]
-        bkgd_one = calculate_bkgd_radiation(meta, hist_one, meta['BkgdOne'][hist_one_title],
+        hist_one = histogram_data.loc[start_bin_one-1: end_bin_one, hist_one_title].values
+        bkgd_one = calculate_bkgd_radiation(meta, histogram_data[hist_one_title], meta['BkgdOne'][hist_one_title],
                                             meta['BkgdTwo'][hist_one_title])
         hist_two_title = meta['CalcHists'][1]
-        hist_two = histogram_data[hist_two_title]
-        bkgd_two = calculate_bkgd_radiation(meta, hist_two, meta['BkgdOne'][hist_two_title],
+        hist_two = histogram_data.loc[start_bin_two-1: end_bin_two, hist_two_title].values
+        bkgd_two = calculate_bkgd_radiation(meta, histogram_data[hist_two_title], meta['BkgdOne'][hist_two_title],
                                             meta['BkgdTwo'][hist_two_title])
 
-        start_bin_one, start_bin_two, end_bin_one, end_bin_two, t0 = calculate_start_end(meta)
+        print('{} {} got hists'.format(len(hist_one), len(hist_two)))
 
         asymmetry = calculate_asymmetry(meta, hist_one, hist_two, bkgd_one, bkgd_two)
 
-        uncertainty = calculate_uncertainty(meta, hist_one, hist_two)[:len(asymmetry)]
+        print('Error in the asymmetry')
+
+        uncertainty = calculate_uncertainty(meta, hist_one, hist_two)
+
+        print(len(asymmetry), len(uncertainty))
 
         time = (np.arange(len(asymmetry)) * float(meta['BinSize']) / 1000) + \
                (t0 * float(meta['BinSize']) / 1000)
 
         new_run = Run(asymmetry, uncertainty, time, t0, meta, filename)
-        # print(asymmetry, uncertainty, time)
+        print(new_run.asymmetry, new_run.uncertainty, new_run.time)
 
         return new_run
 
@@ -941,12 +952,9 @@ def calculate_fft(asymmetry, times, spline=True):
 
 def calculate_asymmetry(meta, hist_one, hist_two, bkgd_one, bkgd_two):
     """ Calculate asymmetry based on the overlapping 'good' area of the histograms. """
-    start_bin_one, start_bin_two, end_bin_one, end_bin_two, _ = calculate_start_end(meta)
 
-    hist_good_one = hist_one[start_bin_one - 1:end_bin_one]
-    hist_good_two = hist_two[start_bin_two - 1:end_bin_two]
-    asymmetry = ((hist_good_one - bkgd_one) - (hist_good_two - bkgd_two)) / \
-                ((hist_good_two - bkgd_two) + (hist_good_one - bkgd_one))
+    asymmetry = ((hist_one - bkgd_one) - (hist_two - bkgd_two)) / \
+                ((hist_two - bkgd_two) + (hist_one - bkgd_one))
     return asymmetry
 
 
