@@ -732,8 +732,10 @@ class WriteDataUI(QtWidgets.QDialog):
         self.input_filename.setPlaceholderText('Default is [run number].asy')
         self.label_full = QtWidgets.QLabel('Full Data')
         self.label_binned = QtWidgets.QLabel('Binned Data')
+        self.label_binned_size = QtWidgets.QLabel('Bin Size')
         self.label_fft = QtWidgets.QLabel('FFT')
         self.radio_binned = QtWidgets.QRadioButton()
+        self.radio_binned_size = QtWidgets.QLineEdit()
         self.radio_full = QtWidgets.QRadioButton()
         self.radio_fft = QtWidgets.QRadioButton()
 
@@ -743,7 +745,7 @@ class WriteDataUI(QtWidgets.QDialog):
         self._set_widget_layout()
 
     def _set_widget_attributes(self):
-        self.radio_binned.setChecked(True)
+        self.radio_full.setChecked(True)
 
     def _set_widget_tooltips(self):
         pass
@@ -754,6 +756,7 @@ class WriteDataUI(QtWidgets.QDialog):
         self.write_file.setFixedWidth(80)
         self.write_all.setFixedWidth(80)
         self.done.setFixedWidth(80)
+        self.radio_binned_size.setFixedWidth(60)
 
     def _set_widget_layout(self):
         col_one = QtWidgets.QVBoxLayout()
@@ -770,6 +773,9 @@ class WriteDataUI(QtWidgets.QDialog):
         col_one.addSpacing(15)
         row_two.addWidget(self.label_binned)
         row_two.addWidget(self.radio_binned)
+        row_two.addSpacing(10)
+        row_two.addWidget(self.label_binned_size)
+        row_two.addWidget(self.radio_binned_size)
         row_two.addSpacing(10)
         row_two.addWidget(self.label_full)
         row_two.addWidget(self.radio_full)

@@ -66,7 +66,7 @@ class RunService:
             self.remove_file(file)
         self._notify(RUN_LIST_CHANGE)
 
-    def add_run_by_filename(self, filename, meta, visible=False):
+    def add_run_by_filename(self, filename, meta, visible=True):
         """ @Param Expects a full file path. """
         if filename in self.run_id_file.keys():
             return self.run_id_file[filename]
@@ -77,6 +77,7 @@ class RunService:
         run.run_id = run_id
 
         style = self.styler.create_style(run)
+        style.visibility = visible
         run.style = style
 
         self.database.add_run(run)
@@ -84,8 +85,6 @@ class RunService:
         self.run_id_file[filename] = run_id
 
         print("Adding run {} from file {} at address {}".format(run_id, filename, run))
-        if visible:
-            pass
 
         return run_id
 
@@ -97,10 +96,6 @@ class RunService:
         self.files.remove(run.filename)
         self.run_id_file.pop(run.filename)
         self.database.remove_run(run)
-
-    def correct_run(self, run_id, alpha, beta=1):
-        run = self.database.get_run_by_id(run_id)
-        run.asymmetry = correct_asymmetry(run.meta, run.asymmetry, alpha, beta)
 
     # Updating Functions
     def update_file_list(self, files, remove=False):
@@ -124,11 +119,13 @@ class RunService:
                 self.files.add(file)
 
         if run_list_changed:
+            print('Run List Changed.')
+            print(self.get_runs())
             self._notify(RUN_LIST_CHANGE)
 
         self._notify(FILE_CHANGE)
 
-    def update_run_list(self, files, metas):
+    def update_run_list(self, files, metas, visible=True):
         """
         :param files: an array of FULL file paths
         :param metas: a dictionary holding meta data for run
@@ -142,7 +139,7 @@ class RunService:
 
         for file, meta in zip(files, metas):
             if file not in self.run_id_file.keys():
-                self.add_run_by_filename(file, meta, True)
+                self.add_run_by_filename(file, meta, visible)
 
         self._notify(RUN_LIST_CHANGE)
 
@@ -179,6 +176,31 @@ class RunService:
         """
         run = self.database.get_run_by_id(run_id)
         run.meta[meta_key] = meta_value
+
+    def update_run_correction(self, run_ids, alpha):
+        for run_id in run_ids:
+            run = self.database.get_run_by_id(run_id)
+
+            histogram_data = BeamsUtility.get_histograms(run.filename, skiprows=int(run.meta['HeaderRows']))
+            histogram_data.columns = run.meta['HistTitles']
+
+            start_bin_one, start_bin_two, end_bin_one, end_bin_two, t0 = calculate_start_end(run.meta)
+
+            hist_one_title = run.meta['CalcHists'][0]
+            hist_one = histogram_data.loc[start_bin_one - 1: end_bin_one, hist_one_title].values
+            bkgd_one = calculate_bkgd_radiation(run.meta, histogram_data[hist_one_title], run.meta['BkgdOne'][hist_one_title],
+                                                run.meta['BkgdTwo'][hist_one_title])
+            hist_two_title = run.meta['CalcHists'][1]
+            hist_two = histogram_data.loc[start_bin_two - 1: end_bin_two, hist_two_title].values
+            bkgd_two = calculate_bkgd_radiation(run.meta, histogram_data[hist_two_title], run.meta['BkgdOne'][hist_two_title],
+                                                run.meta['BkgdTwo'][hist_two_title])
+
+            asymmetry = calculate_asymmetry(run.meta, hist_one, hist_two, bkgd_one, bkgd_two)
+
+            run.alpha = alpha
+            run.asymmetry = correct_asymmetry(run.meta, asymmetry, alpha)
+
+        self._notify(RUN_DATA_CHANGE)
 
     # Getter Functions
     def get_run_by_id(self, run_id):
@@ -268,21 +290,14 @@ class RunService:
         bkgd_two = calculate_bkgd_radiation(meta, histogram_data[hist_two_title], meta['BkgdOne'][hist_two_title],
                                             meta['BkgdTwo'][hist_two_title])
 
-        print('{} {} got hists'.format(len(hist_one), len(hist_two)))
-
         asymmetry = calculate_asymmetry(meta, hist_one, hist_two, bkgd_one, bkgd_two)
 
-        print('Error in the asymmetry')
-
         uncertainty = calculate_uncertainty(meta, hist_one, hist_two)
-
-        print(len(asymmetry), len(uncertainty))
 
         time = (np.arange(len(asymmetry)) * float(meta['BinSize']) / 1000) + \
                (t0 * float(meta['BinSize']) / 1000)
 
         new_run = Run(asymmetry, uncertainty, time, t0, meta, filename)
-        print(new_run.asymmetry, new_run.uncertainty, new_run.time)
 
         return new_run
 
@@ -463,9 +478,13 @@ class Run:
         self.uncertainty = np.array(uncertainty)
         self.time = np.array(time)
 
+        self.binned_asymmetries = [None, None]
+        self.binned_uncertainties = [None, None]
+        self.binned_times = [None, None]
+
         self.t0 = t0
-        self.alpha = None
-        self.beta = None
+        self.alpha = 1
+        self.beta = 1
         self.meta = meta
         self.run_id = None
         self.filename = filename
@@ -572,7 +591,9 @@ def calculate_asymmetry(meta, hist_one, hist_two, bkgd_one, bkgd_two):
     return asymmetry
 
 
-def correct_asymmetry(meta, asymmetry, alpha, beta):
+def correct_asymmetry(meta, asymmetry, alpha, beta=None):
+    if not beta:
+        beta = 1
     return ((alpha - 1) + (alpha + 1) * asymmetry) / ((alpha * beta + 1) + (alpha * beta - 1) * 2)
 
 

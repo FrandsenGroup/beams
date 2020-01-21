@@ -467,6 +467,7 @@ class PlotController:
             style = run.style
             if style.visibility:
                 asymmetry, times, uncertainty = self.service.get_run_binned(run.run_id, float(bin), moving)
+
                 if moving:
                     canvas.axes_time.plot(times, asymmetry, color=style.color, linestyle='None', marker=style.marker)
 
@@ -620,17 +621,13 @@ class RunDisplayController:
         except ValueError:
             pass
 
-        files = []
+        run_ids = []
         for item in self.run_display.current_runs.selectedItems():
             for run in self.service.get_runs():
                 if run.meta['Title'] == item.text():
-                    files.append(run.filename)
+                    run_ids.append(run.run_id)
 
-        for file in files:
-            run_id = self.service.get_run_id_by_filename(file)
-            self.service.correct_run(run_id, alpha)
-            # fixme, should be sent by service but we'll figure that out once the old model is dereferenced.
-            self.service.send_signal(BeamsModel.RUN_DATA_CHANGED)
+        self.service.update_run_correction(run_ids, alpha)
 
     def isolate_plot(self):
         selected_plots = [item.text() for item in self.run_display.current_runs.selectedItems()]
@@ -671,28 +668,22 @@ class RunDisplayController:
             self.service.update_run_style(run_id, 'Marker', self.run_display.marker_choices.currentText())
 
     def update_run_display(self):
-        print(7)
+        if len(self.service.get_runs()) == 0:
+            return
+
         self._change_selection = True
         index = self.run_display.current_runs.currentRow()
         self.run_display.histograms.clear()
 
         runs = self.service.get_runs()
-        print(8)
         styler = BeamsModel.RunStyler()
-        print(9)
 
         self.run_display.output_current_file.setText(runs[index].filename)
-        print(10)
         self.run_display.input_alpha.setText(str(runs[index].alpha))
-        print(11)
         self.run_display.color_choices.setCurrentText(runs[index].style.color)
-        print(12)
         self.run_display.marker_choices.setCurrentText(styler.marker_options[runs[index].style.marker])
-        print(13)
         self.run_display.histograms.addItems(runs[index].meta['HistTitles'])
-        print(14)
         self.update_metadata()
-        print(15)
         self._change_selection = False
 
     def update_metadata(self):
@@ -703,6 +694,9 @@ class RunDisplayController:
         self.run_display.header_data.addItems([key for key in runs[index].meta.keys()])
 
     def change_metadata(self):
+        if len(self.service.get_runs()) == 0:
+            return
+
         if self.run_display.header_data.currentText():
             runs = self.service.get_runs()
             index = self.run_display.current_runs.currentRow()
@@ -711,13 +705,16 @@ class RunDisplayController:
             self.run_display.output_header_display.setText(str(value))
 
     def change_title(self):
+        if len(self.service.get_runs()) == 0:
+            return
+
         if self.run_display.current_runs.currentItem():
             run_id = self.service.get_run_id_dict()[self.run_display.output_current_file.text()]
             self.service.update_run_style(run_id, 'Title', self.run_display.current_runs.currentItem().text())
 
     def populate_run_display(self):
         runs = self.service.get_runs()
-        if runs:
+        if len(runs) != 0:
             self.run_display.current_runs.clear()
             self.run_display.output_current_file.setText(runs[0].filename)
             self.run_display.current_runs.addItems([run.meta['Title'] for run in runs])
@@ -740,6 +737,8 @@ class RunDisplayController:
         else:
             # self.run_display.marker_choices.clear()
             # self.run_display.color_choices.clear()
+            self.run_display.header_data.clear()
+            self.run_display.current_runs.clear()
             self.run_display.histograms.clear()
             self.run_display.color_choices.setEnabled(False)
             self.run_display.isolate_button.setEnabled(False)
@@ -845,33 +844,37 @@ class WriterController:
     def write_files(self, all_files=False):
         """ Writes the user-specified run data (if they are read in) to a .dat file. """
         count = 0
-        for run_id in self.service.get_run_ids():
-            run = self.service.get_run_by_id(run_id)
-
+        for run in self.service.get_runs():
+            print(1)
             if self.writer_gui.file_list.currentText() == run.filename or \
                     (all_files and run.filename in self.files):
+                print(2)
                 if self.custom_file:
                     file_path = self.writer_gui.input_filename.text()
                     if count:
                         file_path = os.path.splitext(file_path)[0]
                         file_path += '({}).asy'.format(count)
                 else:
+                    print(3)
                     if 'RunNumber' in run.meta.keys():
                         file_path = os.path.split(run.filename)[0] + '\\' + str(run.meta['RunNumber']) + '.asy'
                     else:
                         file_path = os.path.splitext(run.filename)[0] + '.asy'
 
+                print(4)
                 if self.writer_gui.radio_binned.isChecked():
-                    # fixme need to have user decide which bin size to use since there are two plots.
-                    print('Binned writing is not supported.')
-                    # np.savetxt(file_path, np.c_[run.binned_time, run.binned_asymmetry, run.binned_uncertainty],
-                    #            fmt='%2.9f, %2.4f, %2.4f', header='BEAMS\nTime, Asymmetry, Uncertainty')
+                    bin_size = float(self.writer_gui.radio_binned_size.text())
+                    asymmetry, time, uncertainty = self.service.get_run_binned(run.run_id, bin_size, False)
+                    np.savetxt(file_path, np.c_[time, asymmetry, uncertainty],
+                               fmt='%2.9f, %2.4f, %2.4f', header='BEAMS\nTime, Asymmetry, Uncertainty')
                 elif self.writer_gui.radio_full.isChecked():
+                    print(5)
                     np.savetxt(file_path, np.c_[run.time, run.asymmetry, run.uncertainty],
                                fmt='%2.9f, %2.4f, %2.4f', header='BEAMS\nTime, Asymmetry, Uncertainty')
                 else:
                     print('FFT not supported.')
                 count += 1
+                print(6)
 
     def remove_file(self):
         self.writer_gui.file_list.removeItem(self.writer_gui.file_list.currentIndex())
@@ -943,7 +946,7 @@ class PlotDataController:
 
         files = list(self.formats.keys())
         metas = [self.formats[key] for key in self.formats.keys()]
-        threading.Thread(target=self.service.update_run_list(files, metas), daemon=True).start()
+        threading.Thread(target=self.service.update_run_list(files, metas, self.plot), daemon=True).start()
 
     def remove_file(self):
         """ Removes the currently selected file from the file list and from the format list. """
