@@ -13,13 +13,13 @@ import numpy as np
 import scipy.interpolate as sp
 
 # Signals from Model to Controllers
-FILE_CHANGED = 1
-PARAMETER_CHANGED = 2
-RUN_LIST_CHANGED = 3
-RUN_DATA_CHANGED = 4
-PROGRAM_ERROR = 5
+STYLE_CHANGE = 1
+FILE_CHANGE = 2
+RUN_LIST_CHANGE = 3
+RUN_DATA_CHANGE = 4
 
 
+# fixme, make a temp cache to hold not data relevant style changes
 class RunService:
     class __ServiceResources:
         def __init__(self):
@@ -34,18 +34,16 @@ class RunService:
             self.run_id_file = dict()
 
             # The controllers will register themselves in this dictionary to the signals they need to be notified of.
-            self.observers = {FILE_CHANGED: [],
-                              PARAMETER_CHANGED: [],
-                              RUN_LIST_CHANGED: [],
-                              RUN_DATA_CHANGED: [],
-                              PROGRAM_ERROR: []}
+            self.observers = {STYLE_CHANGE: [],
+                              FILE_CHANGE: [],
+                              RUN_DATA_CHANGE: [],
+                              RUN_LIST_CHANGE: []}
 
             # For debugging currently
-            self.debugging_signals = {FILE_CHANGED: 'FILE_CHANGED',
-                                      PARAMETER_CHANGED: 'PARAMETER_CHANGED',
-                                      RUN_LIST_CHANGED: 'RUN_LIST_CHANGED',
-                                      RUN_DATA_CHANGED: 'RUN_DATA_CHANGED',
-                                      PROGRAM_ERROR: 'PROGRAM_ERROR'}
+            self.debugging_signals = {STYLE_CHANGE: 'STYLE_CHANGE',
+                                      FILE_CHANGE: 'FILE_CHANGE',
+                                      RUN_DATA_CHANGE: 'RUN_DATA_CHANGE',
+                                      RUN_LIST_CHANGE: 'RUN_LIST_CHANGE'}
 
     instance = None
 
@@ -56,25 +54,17 @@ class RunService:
     def __getattr__(self, name):
         return getattr(self.instance, name)
 
-    def add_file(self, filename):
-        """ @Param Expects a full file path. """
-        self.files.add(filename)
-        self._notify(FILE_CHANGED)
-
     def remove_file(self, filename):
         """ @Param Expects a full file path. """
         if filename in self.run_id_file.keys():
-            print('Removing by id')
             self.remove_run_by_id(self.run_id_file[filename])
         else:
-            print('Removing from array')
             self.files.remove(filename)
 
     def clear_runs(self):
         for file in self.run_id_file.keys():
             self.remove_file(file)
-        self._notify(RUN_DATA_CHANGED)
-        self._notify(RUN_LIST_CHANGED)
+        self._notify(RUN_LIST_CHANGE)
 
     def add_run_by_filename(self, filename, meta, visible=False):
         """ @Param Expects a full file path. """
@@ -99,7 +89,51 @@ class RunService:
 
         return run_id
 
-    def load_set_of_runs(self, files, metas):
+    def remove_run_by_id(self, run_id):
+        run = self.database.get_run_by_id(run_id)
+
+        self.styler.clear_style(run.style)
+        self.runs.remove(run_id)
+        self.files.remove(run.filename)
+        self.run_id_file.pop(run.filename)
+        self.database.remove_run(run)
+
+    def correct_run(self, run_id, alpha, beta=1):
+        run = self.database.get_run_by_id(run_id)
+        run.asymmetry = correct_asymmetry(run.meta, run.asymmetry, alpha, beta)
+
+    # Updating Functions
+    def update_file_list(self, files, remove=False):
+        """
+        :param files: is an array of FULL file paths
+        :param remove: is a boolean indicating if the files should be removed from the model
+        :raises FILE_CHANGE and possible RUN_LIST_CHANGE signal: RUN_LIST_CHANGE signal if a loaded run is removed.
+        """
+        print('Update_file_list {}'.format(files))
+        run_list_changed = False
+
+        if remove:
+            for filename in files:
+                if filename in self.run_id_file.keys():
+                    self.remove_run_by_id(self.run_id_file[filename])
+                    run_list_changed = True
+                else:
+                    self.files.remove(filename)
+        else:
+            for file in files:
+                self.files.add(file)
+
+        if run_list_changed:
+            self._notify(RUN_LIST_CHANGE)
+
+        self._notify(FILE_CHANGE)
+
+    def update_run_list(self, files, metas):
+        """
+        :param files: an array of FULL file paths
+        :param metas: a dictionary holding meta data for run
+        :raises RUN_LIST_CHANGE signal:
+        """
         current_files = [file for file in self.run_id_file.keys()]
         for file in current_files:
             if file not in files:
@@ -110,31 +144,43 @@ class RunService:
             if file not in self.run_id_file.keys():
                 self.add_run_by_filename(file, meta, True)
 
-        self._notify(FILE_CHANGED)
-        self._notify(RUN_LIST_CHANGED)
-        self._notify(RUN_DATA_CHANGED)
-
-    def remove_run_by_id(self, run_id):
-        run = self.database.get_run_by_id(run_id)
-
-        self.styler.clear_style(run.style)
-        self.runs.remove(run_id)
-        self.files.remove(run.filename)
-        self.run_id_file.pop(run.filename)
-        self.database.remove_run(run)
+        self._notify(RUN_LIST_CHANGE)
 
     def update_run_style(self, run_id, style_key, style_value):
+        """
+        USE update_visible_runs() FOR UPDATING VISIBILITY STYLE
+        :param run_id: array of run IDs that will be changed
+        :param style_key: style var to be changed
+        :param style_value: value assigned to style var
+        :raises STYLE_CHANGE signal:
+        """
         run = self.database.get_run_by_id(run_id)
         self.styler.update_style(run, style_key, style_value)
+        self._notify(STYLE_CHANGE)
+
+    def update_visible_runs(self, run_ids):
+        """
+        :param run_ids: ID's of runs that will be shown on plot.
+        :raises STYLE_CHANGE signal:
+        """
+        for run in self.get_runs():
+            if run.run_id not in run_ids:
+                self.styler.update_style(run, 'Visibility', False)
+            else:
+                self.styler.update_style(run, 'Visibility', True)
+
+        self._notify(STYLE_CHANGE)
 
     def update_run_meta(self, run_id, meta_key, meta_value):
+        """
+        :param run_id: ID of the run that will be changed
+        :param meta_key: key of meta var to changed
+        :param meta_value: new value for meta var
+        """
         run = self.database.get_run_by_id(run_id)
         run.meta[meta_key] = meta_value
 
-    def correct_run(self, run_id, alpha, beta=1):
-        run = self.database.get_run_by_id(run_id)
-        run.asymmetry = correct_asymmetry(run.meta, run.asymmetry, alpha, beta)
-
+    # Getter Functions
     def get_run_by_id(self, run_id):
         return self.database.get_run_by_id(run_id)
 
@@ -195,6 +241,7 @@ class RunService:
     def get_run_id_dict(self):
         return self.run_id_file
 
+    # Protected Functions for RunService
     def send_signal(self, signal):
         self._notify(signal)
 

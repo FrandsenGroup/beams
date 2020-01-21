@@ -112,7 +112,6 @@ class MuFytController:
         pass
 
 
-# Model dereferenced.
 class FileManagerController:
     """ Controller responsible for managing user input on the File Manager Panel. """
     def __init__(self, file_manager_panel=None, parent=None):
@@ -123,7 +122,7 @@ class FileManagerController:
 
         self.file_manager = file_manager_panel
         self.service = BeamsModel.RunService()
-        self.service.observers[BeamsModel.FILE_CHANGED].append(self)
+        self.service.observers[BeamsModel.FILE_CHANGE].append(self)
 
         self.program_controller = parent
         self.formats = {}
@@ -204,10 +203,13 @@ class FileManagerController:
                 for index in range(self.file_manager.file_list.count()):
                     if file_root == self.file_manager.file_list.item(index).text():
                         self.file_manager.file_list.takeItem(index)
-                        self.service.remove_file(self.file_title_dict[file_root])
                         break
+
             if len(self._get_selected_files()) == 0:
                 self.file_manager.select_all.setChecked(False)
+
+            full_file_paths = [self.file_title_dict[title] for title in selected_files]
+            self.service.update_file_list(full_file_paths, remove=True)
 
         selected_files = self._get_selected_files()
         message = 'Are you sure you would like to remove all currently selected files?'
@@ -221,10 +223,7 @@ class FileManagerController:
     def add_file_from_disk(self):
         # Open a dialog to prompt users for file(s)
         filenames = QtWidgets.QFileDialog.getOpenFileNames(self.file_manager, 'Add file', '/home')[0]
-
-        for filename in filenames:  # Adds only the filename root (i.e. 0065156.dat) to the File Manager Panel
-            print("Adding file to service: {}".format(filename))
-            self.service.add_file(filename)
+        self.service.update_file_list(filenames, remove=False)
 
     def plot_file(self):
         """ Sends all checked files to the model to read.
@@ -259,7 +258,7 @@ class FileManagerController:
                     for index in range(self.file_manager.file_list.count()):
                         if file_root == self.file_manager.file_list.item(index).text():
                             self.file_manager.file_list.takeItem(index)
-                            self.service.remove_file(self.file_title_dict[file_root])
+                            self.service.update_file_list([self.file_title_dict[file_root]], remove=True)
                             break
 
         checked_items = self._get_selected_files()
@@ -270,7 +269,7 @@ class FileManagerController:
                 out_file = os.path.splitext(full_file)[0] + '.dat'
 
                 if BeamsUtility.convert_msr(full_file, out_file, flags=['-v', '-all']):  # Run the MUD executable on the .msr file
-                    self.service.add_file(out_file)
+                    self.service.update_file_list([out_file], remove=False)
 
                 else:
                     # Usually occurs when their have been changes in the .msr files
@@ -294,7 +293,7 @@ class FileManagerController:
 
     def update(self, signal=None):
         """ Called by the model when one of its FileManagerPanel-relevant attributes changes. """
-        if signal == BeamsModel.FILE_CHANGED:  # Expects list of files to add the ListWidget in FileManagerPanel
+        if signal == BeamsModel.FILE_CHANGE:  # Expects list of files to add the ListWidget in FileManagerPanel
             print('Got update')
             # Then checks to see if any files have been removed from the model's file list. Removes them from the view.
             for index in range(self.file_manager.file_list.count()-1, -1, -1):
@@ -316,7 +315,6 @@ class FileManagerController:
             raise ValueError('Unexpected Signal from Model in {}'.format(self))
 
 
-# Model dereferenced.
 class PlotController:
     def __init__(self, plot_editor_panel=None, plot_panel=None, parent=None):
         """ Initializes the PlotEditorController and sets callbacks for the GUI"""
@@ -327,7 +325,9 @@ class PlotController:
         self.plot_editor = plot_editor_panel
         self.plot_panel = plot_panel
         self.service = BeamsModel.RunService()
-        self.service.observers[BeamsModel.RUN_DATA_CHANGED].append(self)
+        self.service.observers[BeamsModel.RUN_DATA_CHANGE].append(self)
+        self.service.observers[BeamsModel.STYLE_CHANGE].append(self)
+        self.service.observers[BeamsModel.RUN_LIST_CHANGE].append(self)
         self.canvases = [self.plot_panel.canvas_one, self.plot_panel.canvas_two]
 
         self.program_controller = parent
@@ -464,7 +464,6 @@ class PlotController:
         canvas.axes_time.set_xlim(float(xmin), float(xmax))
 
         for run in self.service.get_runs():
-            print(run.filename)
             style = run.style
             if style.visibility:
                 asymmetry, times, uncertainty = self.service.get_run_binned(run.run_id, float(bin), moving)
@@ -477,7 +476,6 @@ class PlotController:
                                               linestyle=self.plot_parameters['LineStyle'](), fillstyle='none')
 
                     else:
-                        print(len(times), len(asymmetry), len(uncertainty), style.color, style.marker)
                         canvas.axes_time.errorbar(times, asymmetry, uncertainty, color=style.color,
                                                                       linestyle=self.plot_parameters['LineStyle'](),
                                                                       marker=style.marker, fillstyle='none')
@@ -584,18 +582,14 @@ class PlotController:
         self._visual_data_change(plot=plot, moving=False)
 
     def update(self, signal=None):
-        if signal == BeamsModel.RUN_DATA_CHANGED:
-            self._visual_data_change(moving=False)
-        elif signal == BeamsModel.RUN_LIST_CHANGED:
-            self._visual_data_change(moving=False)
+        self._visual_data_change(moving=False)
 
 
-# Model dereferenced.
 class RunDisplayController:
     def __init__(self, run_display_panel=None, parent=None):
         self.run_display = run_display_panel
         self.service = BeamsModel.RunService()
-        self.service.observers[BeamsModel.RUN_LIST_CHANGED].append(self)
+        self.service.observers[BeamsModel.RUN_LIST_CHANGE].append(self)
         self.program_controller = parent
         self.popup = None
 
@@ -640,17 +634,15 @@ class RunDisplayController:
 
     def isolate_plot(self):
         selected_plots = [item.text() for item in self.run_display.current_runs.selectedItems()]
+        visible_runs = []
         for run in self.service.get_runs():
             if run.meta['Title'] in selected_plots:
-                self.service.update_run_style(run.run_id, 'Visibility', True)
-            else:
-                self.service.update_run_style(run.run_id, 'Visibility', False)
-        self.service.send_signal(BeamsModel.RUN_DATA_CHANGED) #fixme
+                visible_runs.append(run.run_id)
+        self.service.update_visible_runs(visible_runs)
 
     def plot_all(self):
-        for run in self.service.get_runs():
-            self.service.update_run_style(run.run_id, 'Visibility', True)
-        self.service.send_signal(BeamsModel.RUN_DATA_CHANGED)  # fixme
+        visible_runs = [run.run_id for run in self.service.get_runs()]
+        self.service.update_visible_runs(visible_runs)
 
     def inspect_file(self):
         if BeamsUtility.is_found(self.run_display.output_current_file.text()):
@@ -672,13 +664,11 @@ class RunDisplayController:
         if not self._change_selection:
             run_id = self.service.get_run_id_dict()[self.run_display.output_current_file.text()]
             self.service.update_run_style(run_id, 'Color', self.run_display.color_choices.currentText())
-            self.service.send_signal(BeamsModel.RUN_DATA_CHANGED)
 
     def change_marker(self):
         if not self._change_selection:
             run_id = self.service.get_run_id_dict()[self.run_display.output_current_file.text()]
             self.service.update_run_style(run_id, 'Marker', self.run_display.marker_choices.currentText())
-            self.service.send_signal(BeamsModel.RUN_DATA_CHANGED)
 
     def update_run_display(self):
         print(7)
@@ -702,6 +692,7 @@ class RunDisplayController:
         self.run_display.histograms.addItems(runs[index].meta['HistTitles'])
         print(14)
         self.update_metadata()
+        print(15)
         self._change_selection = False
 
     def update_metadata(self):
@@ -723,7 +714,6 @@ class RunDisplayController:
         if self.run_display.current_runs.currentItem():
             run_id = self.service.get_run_id_dict()[self.run_display.output_current_file.text()]
             self.service.update_run_style(run_id, 'Title', self.run_display.current_runs.currentItem().text())
-            self.service.send_signal(BeamsModel.RUN_DATA_CHANGED)
 
     def populate_run_display(self):
         runs = self.service.get_runs()
@@ -763,11 +753,10 @@ class RunDisplayController:
             self.run_display.input_alpha.setEnabled(False)
 
     def update(self, signal):
-        if signal == BeamsModel.RUN_LIST_CHANGED:
+        if signal == BeamsModel.RUN_LIST_CHANGE:
             self.populate_run_display()
 
 
-# Model dereferenced.
 class FormatterController:
     """ FormatterController paired with FileFormatterUI prompts the user to
             specify the formats for each file.
@@ -802,7 +791,6 @@ class FormatterController:
         input_box.setEnabled(check_box.isChecked())
 
 
-# Model dereferenced.
 class WriterController:
     def __init__(self, selected_files):
         self.writer_gui = BeamsViews.WriteDataUI()
@@ -889,7 +877,6 @@ class WriterController:
         self.writer_gui.file_list.removeItem(self.writer_gui.file_list.currentIndex())
 
 
-# Model dereferenced.
 class PlotDataController:
     """ PlotDataController paired with PlotDataUI prompts the user to specify which histograms
             will be used to calculate the asymmetry for each file.
@@ -956,7 +943,7 @@ class PlotDataController:
 
         files = list(self.formats.keys())
         metas = [self.formats[key] for key in self.formats.keys()]
-        threading.Thread(target=self.service.load_set_of_runs(files, metas), daemon=True).start()
+        threading.Thread(target=self.service.update_run_list(files, metas), daemon=True).start()
 
     def remove_file(self):
         """ Removes the currently selected file from the file list and from the format list. """
@@ -975,7 +962,6 @@ class PlotDataController:
                                                        self.plot_data_gui.c_file_list.currentText()]['HistTitles'])
 
 
-# Model dereferenced.
 class SavePlotController:  # fixme just make this a smart UI in the views file, it's pretty short.
     def __init__(self, canvases=None):
         self.save_plot_gui = BeamsViews.SavePlotUI()
@@ -1017,7 +1003,6 @@ class SavePlotController:  # fixme just make this a smart UI in the views file, 
             self.save_plot_gui.close()
 
 
-# Model dereferenced.
 class WebServiceController:
     def __init__(self):
         self.dialog = BeamsViews.WebDownloadUI()
@@ -1179,8 +1164,7 @@ class WebServiceController:
                 for chunk in response.iter_content(100000):
                     fb.write(chunk)
 
-            self.service.add_file(save_file)
-            print(self.service.files)
+            self.service.update_file_list([save_file], remove=False)
 
             self.dialog.output_web.insertPlainText('Successfully downloaded {}.\n'.format(full_url))
             good += 1
