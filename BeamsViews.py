@@ -1,7 +1,6 @@
 # View for BEAMS Application
 
 # Standard Library Modules
-import warnings
 import socket
 
 # Installed modules
@@ -638,7 +637,6 @@ class RunPlot(FigureCanvas):
         self.axes_time.set_xlabel("Add '.msr', '.dat' or '.asy' files and press 'Plot' to see data.",
                                   fontsize=title_font_size)
         self.axes_time.xaxis.label.set_color("#B8B8B8")
-        # self.axes_time.set_ylabel("Asymmetry", fontsize=title_font_size)
         self.axes_time.tick_params(axis='x', colors='white')
         self.axes_time.tick_params(axis='y', colors='white')
 
@@ -673,7 +671,10 @@ class RunPlot(FigureCanvas):
         self.axes_freq.set_xlabel("Frequency (MHz)", fontsize=title_font_size)
         self.axes_freq.set_ylabel("Magnitude", fontsize=title_font_size)
         if not moving:
-            self.axes_freq.legend(loc='upper right') # fixme, move this line to the update canvas in controller
+            self.axes_freq.legend(loc='upper right')
+
+
+# noinspection PyArgumentList
 
 
 # noinspection PyArgumentList
@@ -771,6 +772,7 @@ class WriteDataUI(QtWidgets.QDialog):
         col_one.addLayout(row_one)
 
         col_one.addSpacing(15)
+        row_two.addStretch()
         row_two.addWidget(self.label_binned)
         row_two.addWidget(self.radio_binned)
         row_two.addSpacing(10)
@@ -784,6 +786,7 @@ class WriteDataUI(QtWidgets.QDialog):
         row_two.addWidget(self.radio_fft)
         row_two.addSpacing(10)
         row_two.setAlignment(QtCore.Qt.AlignLeft)
+        row_two.addStretch()
         col_one.addLayout(row_two)
         col_one.addSpacing(15)
 
@@ -1084,4 +1087,3 @@ class StyleTwoButton(QtWidgets.QPushButton):
 class StyleThreeButton(QtWidgets.QPushButton):
     def __init__(self, *args):
         super(StyleThreeButton, self).__init__(*args)
-

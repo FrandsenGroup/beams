@@ -377,3 +377,16 @@ def is_valid_format(sections=None, t0=None, header_rows=None, file_names=None):
             return 'EB'
 
     return f_format
+
+
+class MuSRFileReader:
+    class __TRIUMFFile:
+        def __init__(self):
+            pass
+
+    class __ISISFile:
+        def __init__(self):
+            pass
+
+    def __init__(self, file):
+        pass

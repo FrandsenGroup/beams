@@ -4,8 +4,6 @@
 import BeamsUtility
 
 # Standard Library modules
-import os
-from collections import OrderedDict
 import uuid
 
 # Installed modules
@@ -19,7 +17,6 @@ RUN_LIST_CHANGE = 3
 RUN_DATA_CHANGE = 4
 
 
-# fixme, make a temp cache to hold not data relevant style changes
 class RunService:
     class __ServiceResources:
         def __init__(self):
@@ -628,7 +625,8 @@ def bin_asymmetry(meta, asymmetry, time, uncertainty, t0, bin_size, slider_movin
         binned_uncertainty = 1 / binned_indices_per_bin * np.sqrt(np.apply_along_axis(np.sum, 1,
                                                                                            reshaped_uncertainty ** 2))
 
-    return [binned_asymmetry, binned_time, binned_uncertainty]
+    print(np.trapz(np.abs(binned_asymmetry), binned_time))
+    return [np.abs(binned_asymmetry), binned_time, binned_uncertainty]
 
 
 
