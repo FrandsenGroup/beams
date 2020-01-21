@@ -864,7 +864,7 @@ class WriterController:
                     np.savetxt(file_path, np.c_[run.time, run.asymmetry, run.uncertainty],
                                fmt='%2.9f, %2.4f, %2.4f', header='BEAMS\nTime, Asymmetry, Uncertainty')
                 else:
-                    print('FFT not supported..')
+                    print('FFT not supported.')
                 count += 1
 
     def remove_file(self):

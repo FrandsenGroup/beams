@@ -27,7 +27,7 @@ class RunService:
             self.styler = RunStyler()
 
             # fixme consolidate these three
-            # fixme if dnobody else needs to know the files that aren't plotted just keep them in file manager
+            # fixme if nobody else needs to know the files that aren't plotted just keep them in file manager
             # fixme there really is no reason for the files to be stored in the run service, factor it out.
             self.runs = []
             self.files = set()
