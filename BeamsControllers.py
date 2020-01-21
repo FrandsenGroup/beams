@@ -25,8 +25,7 @@ class ProgramController:
 
         # Initialize the model
         # Note: The model holds most application-relevant data and the 'business logic' of the application.
-        self.model = BeamsModel.BEAMSModel()
-        self.model.observers[BeamsModel.PROGRAM_ERROR].append(self)
+        self.service = BeamsModel.RunService()
 
         # Initialize all the GUIs with their controllers
         # Note: The controllers are responsible for handling user input on the GUIs. The GUIs will update based on
@@ -34,13 +33,10 @@ class ProgramController:
         self.main_window_v = BeamsViews.MainGUIWindow()  # Builds Main Window GUI with all the connected panels
         self._set_callbacks()
 
-        self.file_manager_controller = FileManagerController(file_manager_panel=self.main_window_v.file_manager,
-                                                             model=self.model, parent=self)
+        self.file_manager_controller = FileManagerController(file_manager_panel=self.main_window_v.file_manager, parent=self)
         self.plot_editor_controller = PlotController(plot_editor_panel=self.main_window_v.plot_editor,
-                                                     plot_panel=self.main_window_v.plot_panel,
-                                                     model=self.model, parent=self)
-        self.run_display_controller = RunDisplayController(run_display_panel=self.main_window_v.run_display,
-                                                           model=self.model, parent=self)
+                                                     plot_panel=self.main_window_v.plot_panel, parent=self)
+        self.run_display_controller = RunDisplayController(run_display_panel=self.main_window_v.run_display, parent=self)
 
         self.main_window_v.show()
         sys.exit(self.app.exec_())
@@ -118,24 +114,23 @@ class MuFytController:
 
 class FileManagerController:
     """ Controller responsible for managing user input on the File Manager Panel. """
-    def __init__(self, file_manager_panel=None, model=None, parent=None):
+    def __init__(self, file_manager_panel=None, parent=None):
         """ Initializes the FileManagerController and sets callbacks for the GUI"""
 
-        if not file_manager_panel or not model or not parent:  # Raise error if not properly instantiated
+        if not file_manager_panel or not parent:  # Raise error if not properly instantiated
             raise AttributeError('FileManagerController did not receive all necessary inputs.')
 
         self.file_manager = file_manager_panel
-        self.model = model
+        self.service = BeamsModel.RunService()
+        self.service.observers[BeamsModel.FILE_CHANGE].append(self)
+
         self.program_controller = parent
         self.formats = {}
+        self.id_title_dict = dict()
+        self.file_title_dict = dict()
         self.popup = None
-        self.model.observers[BeamsModel.FILE_CHANGED].append(self)
 
         self._set_callbacks()
-
-    def __repr__(self):
-        return 'FileManagerController(file_manager_panel={}, model={}, parent={})'\
-            .format(self.file_manager, self.model, self.program_controller)
 
     def __str__(self):
         return 'File Manager Controller'
@@ -181,7 +176,7 @@ class FileManagerController:
     def _prompt_histograms(self):
         """ Launches PlotDataGUI to prompt users to specify which histograms should be used
             to calculate the asymmetry. Users can change this later in the RunDisplayPanel"""
-        self.popup = PlotDataController(self.formats, model=self.model, plot=True)
+        self.popup = PlotDataController(self.formats, plot=True)
 
     def _get_selected_files(self):
         """ Returns all currently selected files in the File Manager Panel. """
@@ -198,6 +193,9 @@ class FileManagerController:
             files.add(self.file_manager.file_list.item(index).text())
         return files
 
+    def _get_run_id(self, title):
+        return self.id_title_dict[title]
+
     def remove_file(self):
         """ Removes the currently selected files from the file manager. """
         def remove():
@@ -205,10 +203,13 @@ class FileManagerController:
                 for index in range(self.file_manager.file_list.count()):
                     if file_root == self.file_manager.file_list.item(index).text():
                         self.file_manager.file_list.takeItem(index)
-                        self.model.update_file_list(file_root, remove=True)
                         break
+
             if len(self._get_selected_files()) == 0:
                 self.file_manager.select_all.setChecked(False)
+
+            full_file_paths = [self.file_title_dict[title] for title in selected_files]
+            self.service.update_file_list(full_file_paths, remove=True)
 
         selected_files = self._get_selected_files()
         message = 'Are you sure you would like to remove all currently selected files?'
@@ -217,22 +218,19 @@ class FileManagerController:
     def add_file(self):
         """ Prompts the user for and stores full file paths in model.
             Note: The change in the model will notify and result in update of GUI. See update(). """
-        BeamsViews.AddFileUI(self, WebServiceController, self.model)
+        BeamsViews.AddFileUI(self, WebServiceController)
 
     def add_file_from_disk(self):
         # Open a dialog to prompt users for file(s)
         filenames = QtWidgets.QFileDialog.getOpenFileNames(self.file_manager, 'Add file', '/home')[0]
-
-        for filename in filenames:  # Adds only the filename root (i.e. 0065156.dat) to the File Manager Panel
-            self.model.update_file_list(file_path=filename, file_name=BeamsUtility.create_file_key(filename))  # Store as dict in model
+        self.service.update_file_list(filenames, remove=False)
 
     def plot_file(self):
         """ Sends all checked files to the model to read.
             Note: If the model creates or alters current RunData objects the PlotPanelController will be notified.
             See update() in PlotPanelController class. """
         # Get all checked filenames then get the full file paths that are stored in the model.
-        filenames = self._get_selected_files()
-        checked_items = [self.model.all_full_filepaths[file_root] for file_root in filenames]
+        checked_items = [self.file_title_dict[title] for title in self._get_selected_files()]
 
         beams_files, other_dat, msr_files, bad_files, asy_files = BeamsUtility.check_files(checked_items)
 
@@ -260,24 +258,25 @@ class FileManagerController:
                     for index in range(self.file_manager.file_list.count()):
                         if file_root == self.file_manager.file_list.item(index).text():
                             self.file_manager.file_list.takeItem(index)
-                            self.model.update_file_list(file_root, remove=True)
+                            self.service.update_file_list([self.file_title_dict[file_root]], remove=True)
                             break
 
         checked_items = self._get_selected_files()
         for file in checked_items:
-            full_file = self.model.all_full_filepaths[file]  # Get full file path from the Model for each file
+            full_file = self.file_title_dict[file]
 
             if BeamsUtility.check_ext(full_file, '.msr'):  # Check extension of input and output files
                 out_file = os.path.splitext(full_file)[0] + '.dat'
 
                 if BeamsUtility.convert_msr(full_file, out_file, flags=['-v', '-all']):  # Run the MUD executable on the .msr file
-                    self.model.update_file_list(file_path=out_file, file_name=BeamsUtility.create_file_key(out_file))
+                    self.service.update_file_list([out_file], remove=False)
 
                 else:
                     # Usually occurs when their have been changes in the .msr files
                     message = 'Error reading .msr file.\n {} has possibly been corrupted.'.format(full_file)
                     BeamsViews.ErrorMessageUI(error_message=message)
                     return
+
         remove_msr()
         if len(self._get_selected_files()) == 0:
             self.file_manager.select_all.setChecked(False)
@@ -286,22 +285,30 @@ class FileManagerController:
     def write_file(self):
         """ Launches the Writer GUI.
             Note: The change in the model will notify and result in update of GUI. See update(). """
-        self.popup = WriterController(model=self.model, selected_files=self._get_selected_files())
+        full_selected_file_paths = [self.file_title_dict[title] for title in self._get_selected_files()]
+        self.popup = WriterController(selected_files=full_selected_file_paths)
 
     def update_model(self):
-        self.model.update_runs(self.formats)
+        self.service.add_run_by_filename(list(self.formats.keys())[0], self.formats[list(self.formats.keys())[0]])
 
     def update(self, signal=None):
         """ Called by the model when one of its FileManagerPanel-relevant attributes changes. """
-        if signal == BeamsModel.FILE_CHANGED:  # Expects list of files to add the ListWidget in FileManagerPanel
+        if signal == BeamsModel.FILE_CHANGE:  # Expects list of files to add the ListWidget in FileManagerPanel
+            print('Got update')
             # Then checks to see if any files have been removed from the model's file list. Removes them from the view.
             for index in range(self.file_manager.file_list.count()-1, -1, -1):
                 self.file_manager.file_list.takeItem(index)
 
+            self.id_title_dict = dict()
+
             # First checks to see if any new files have been added to the model's file list. Adds them to the view.
-            for item in self.model.all_full_filepaths.items():
-                file_key = item[0]
-                file_item = QtWidgets.QListWidgetItem(file_key, self.file_manager.file_list)
+            for file in self.service.get_run_files():
+                print('Service adding file to view: {}'.format(file))
+
+                file_title = BeamsUtility.create_file_key(file)
+                self.file_title_dict[file_title] = file
+
+                file_item = QtWidgets.QListWidgetItem(file_title, self.file_manager.file_list)
                 file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsUserCheckable)
                 file_item.setCheckState(QtCore.Qt.Unchecked)
         else:
@@ -309,20 +316,22 @@ class FileManagerController:
 
 
 class PlotController:
-    def __init__(self, plot_editor_panel=None, plot_panel=None, model=None, parent=None):
+    def __init__(self, plot_editor_panel=None, plot_panel=None, parent=None):
         """ Initializes the PlotEditorController and sets callbacks for the GUI"""
 
-        if not plot_editor_panel or not model or not parent:  # Raise error if not properly instantiated
+        if not plot_editor_panel or not parent:  # Raise error if not properly instantiated
             raise AttributeError('PlotEditorController did not receive all necessary inputs.')
 
         self.plot_editor = plot_editor_panel
         self.plot_panel = plot_panel
-        self.model = model
+        self.service = BeamsModel.RunService()
+        self.service.observers[BeamsModel.RUN_DATA_CHANGE].append(self)
+        self.service.observers[BeamsModel.STYLE_CHANGE].append(self)
+        self.service.observers[BeamsModel.RUN_LIST_CHANGE].append(self)
+        self.canvases = [self.plot_panel.canvas_one, self.plot_panel.canvas_two]
+
         self.program_controller = parent
         self.popup = None
-
-        self.model.observers[BeamsModel.RUN_DATA_CHANGED].append(self)
-        self.canvases = [self.plot_panel.canvas_one, self.plot_panel.canvas_two]
 
         self.plot_parameters = {
                                 'TimeXMinOne': self.plot_panel.input_time_xmin_one.text,
@@ -362,12 +371,7 @@ class PlotController:
                                 'LineStyle': self._display_plot_lines
         }
 
-        self.model.plot_parameters = self.plot_parameters
         self._set_callbacks()
-
-    def __repr__(self):
-        return 'PlotEditorController(plot_editor_panel={}, model={}, parent={})'\
-            .format(self.plot_editor, self.model, self.program_controller)
 
     def __str__(self):
         return 'Plot Controller'
@@ -459,26 +463,27 @@ class PlotController:
 
         canvas.axes_time.set_xlim(float(xmin), float(xmax))
 
-        for run in self.model.run_list:
-            if run.visibility:
-                asymmetry, times, uncertainty = run.bin_data(final_bin_size=float(bin), slider_moving=moving)
+        for run in self.service.get_runs():
+            style = run.style
+            if style.visibility:
+                asymmetry, times, uncertainty = self.service.get_run_binned(run.run_id, float(bin), moving)
+
                 if moving:
-                    canvas.axes_time.plot(times, asymmetry, color=run.color, linestyle='None', marker=run.marker)
+                    canvas.axes_time.plot(times, asymmetry, color=style.color, linestyle='None', marker=style.marker)
 
                 else:
                     if not self.plot_parameters['Uncertainty']():
-                        canvas.axes_time.plot(times, asymmetry, color=run.color, marker=run.marker,
+                        canvas.axes_time.plot(times, asymmetry, color=style.color, marker=style.marker,
                                               linestyle=self.plot_parameters['LineStyle'](), fillstyle='none')
 
                     else:
-                        canvas.axes_time.errorbar(times, asymmetry, uncertainty, color=run.color,
+                        canvas.axes_time.errorbar(times, asymmetry, uncertainty, color=style.color,
                                                                       linestyle=self.plot_parameters['LineStyle'](),
-                                                                      marker=run.marker, fillstyle='none')
+                                                                      marker=style.marker, fillstyle='none')
 
-                    frequencies, magnitudes = run.calculate_fft(asymmetry=asymmetry, times=times,
-                                                                spline=self.plot_parameters['Spline']())
+                    frequencies, magnitudes = BeamsModel.calculate_fft(asymmetry, times, self.plot_parameters['Spline']())
 
-                    canvas.axes_freq.plot(frequencies, magnitudes, color=run.color, marker='.',
+                    canvas.axes_freq.plot(frequencies, magnitudes, color=style.color, marker='.',
                                                                   label=self._display_annotations(run))
 
                     max_mag = np.max(magnitudes) if np.max(magnitudes) > max_mag else max_mag
@@ -521,7 +526,7 @@ class PlotController:
         canvas.axes_time.figure.canvas.draw()
 
     def _display_annotations(self, run):
-        return run.f_formats['Title'] if self.plot_parameters['Annotations']() else None
+        return run.meta['Title'] if self.plot_parameters['Annotations']() else None
 
     def _display_plot_lines(self):
         return '-' if self.plot_parameters['PlotLines']() else 'None'
@@ -578,22 +583,16 @@ class PlotController:
         self._visual_data_change(plot=plot, moving=False)
 
     def update(self, signal=None):
-        if signal == BeamsModel.RUN_DATA_CHANGED:
-            # print("Updating the Plots")
-            self._visual_data_change(moving=False)
-        elif signal == BeamsModel.RUN_LIST_CHANGED:
-            # print("Updating the Plots")
-            self._visual_data_change(moving=False)
+        self._visual_data_change(moving=False)
 
 
 class RunDisplayController:
-    def __init__(self, run_display_panel=None, model=None, parent=None):
+    def __init__(self, run_display_panel=None, parent=None):
         self.run_display = run_display_panel
-        self.model = model
+        self.service = BeamsModel.RunService()
+        self.service.observers[BeamsModel.RUN_LIST_CHANGE].append(self)
         self.program_controller = parent
         self.popup = None
-
-        self.model.observers[BeamsModel.RUN_LIST_CHANGED].append(self)
 
         self._set_callbacks()
         self._change_selection = False
@@ -622,24 +621,25 @@ class RunDisplayController:
         except ValueError:
             pass
 
-        files = []
+        run_ids = []
         for item in self.run_display.current_runs.selectedItems():
-            for run in self.model.run_list:
-                if run.f_formats['Title'] == item.text():
-                    files.append(run.filename)
+            for run in self.service.get_runs():
+                if run.meta['Title'] == item.text():
+                    run_ids.append(run.run_id)
 
-        self.model.correct_runs(files, alpha)
+        self.service.update_run_correction(run_ids, alpha)
 
     def isolate_plot(self):
-        files = []
-        for item in self.run_display.current_runs.selectedItems():
-            for run in self.model.run_list:
-                if run.f_formats['Title'] == item.text():
-                    files.append(run.filename)
-        self.model.update_visibilities(file=files, isolate=True, multiple=True)
+        selected_plots = [item.text() for item in self.run_display.current_runs.selectedItems()]
+        visible_runs = []
+        for run in self.service.get_runs():
+            if run.meta['Title'] in selected_plots:
+                visible_runs.append(run.run_id)
+        self.service.update_visible_runs(visible_runs)
 
     def plot_all(self):
-        self.model.update_visibilities(isolate=False)
+        visible_runs = [run.run_id for run in self.service.get_runs()]
+        self.service.update_visible_runs(visible_runs)
 
     def inspect_file(self):
         if BeamsUtility.is_found(self.run_display.output_current_file.text()):
@@ -650,58 +650,74 @@ class RunDisplayController:
             BeamsViews.ErrorMessageUI(message)
 
     def inspect_hist(self):
-        for run in self.model.run_list:
+        for run in self.service.get_runs():
             if run.filename == self.run_display.output_current_file.text():
-                histogram = run.retrieve_histogram_data(specific_hist=self.run_display.histograms.currentText()).values
+                histogram = self.service.get_run_histogram(run.run_id, self.run_display.histograms.currentText())
                 self.popup = BeamsViews.HistogramDisplay(histogram=histogram)
                 self.popup.show()
                 break
 
     def change_color(self):
         if not self._change_selection:
-            self.model.update_run_color(file=self.run_display.output_current_file.text(),
-                                    color=self.run_display.color_choices.currentText())
+            run_id = self.service.get_run_id_dict()[self.run_display.output_current_file.text()]
+            self.service.update_run_style(run_id, 'Color', self.run_display.color_choices.currentText())
 
     def change_marker(self):
         if not self._change_selection:
-            self.model.update_run_marker(file=self.run_display.output_current_file.text(),
-                                     marker=self.run_display.marker_choices.currentText())
+            run_id = self.service.get_run_id_dict()[self.run_display.output_current_file.text()]
+            self.service.update_run_style(run_id, 'Marker', self.run_display.marker_choices.currentText())
 
     def update_run_display(self):
+        if len(self.service.get_runs()) == 0:
+            return
+
         self._change_selection = True
         index = self.run_display.current_runs.currentRow()
         self.run_display.histograms.clear()
 
-        self.run_display.output_current_file.setText(self.model.run_list[index].filename)
-        self.run_display.input_alpha.setText(str(self.model.run_list[index].alpha))
-        self.run_display.color_choices.setCurrentText(self.model.run_list[index].color)
-        self.run_display.marker_choices.setCurrentText(self.model.marker_options[self.model.run_list[index].marker])
-        self.run_display.histograms.addItems(self.model.run_list[index].f_formats['HistTitles'])
+        runs = self.service.get_runs()
+        styler = BeamsModel.RunStyler()
+
+        self.run_display.output_current_file.setText(runs[index].filename)
+        self.run_display.input_alpha.setText(str(runs[index].alpha))
+        self.run_display.color_choices.setCurrentText(runs[index].style.color)
+        self.run_display.marker_choices.setCurrentText(styler.marker_options[runs[index].style.marker])
+        self.run_display.histograms.addItems(runs[index].meta['HistTitles'])
         self.update_metadata()
         self._change_selection = False
 
     def update_metadata(self):
         index = self.run_display.current_runs.currentRow()
         self.run_display.header_data.clear()
-        self.run_display.header_data.addItems([key for key in self.model.run_list[index].f_formats.keys()])
+
+        runs = self.service.get_runs()
+        self.run_display.header_data.addItems([key for key in runs[index].meta.keys()])
 
     def change_metadata(self):
+        if len(self.service.get_runs()) == 0:
+            return
+
         if self.run_display.header_data.currentText():
+            runs = self.service.get_runs()
             index = self.run_display.current_runs.currentRow()
             key = self.run_display.header_data.currentText()
-            value = self.model.run_list[index].f_formats[key]
+            value = runs[index].meta[key]
             self.run_display.output_header_display.setText(str(value))
 
     def change_title(self):
+        if len(self.service.get_runs()) == 0:
+            return
+
         if self.run_display.current_runs.currentItem():
-            self.model.update_title(file=self.run_display.output_current_file.text(),
-                                    new_title=self.run_display.current_runs.currentItem().text())
+            run_id = self.service.get_run_id_dict()[self.run_display.output_current_file.text()]
+            self.service.update_run_style(run_id, 'Title', self.run_display.current_runs.currentItem().text())
 
     def populate_run_display(self):
-        if self.model.run_list:
+        runs = self.service.get_runs()
+        if len(runs) != 0:
             self.run_display.current_runs.clear()
-            self.run_display.output_current_file.setText(self.model.run_list[0].filename)
-            self.run_display.current_runs.addItems([run.f_formats['Title'] for run in self.model.run_list])
+            self.run_display.output_current_file.setText(runs[0].filename)
+            self.run_display.current_runs.addItems([run.meta['Title'] for run in runs])
             for index in range(self.run_display.current_runs.count()):
                 item = self.run_display.current_runs.item(index)
                 item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
@@ -721,6 +737,8 @@ class RunDisplayController:
         else:
             # self.run_display.marker_choices.clear()
             # self.run_display.color_choices.clear()
+            self.run_display.header_data.clear()
+            self.run_display.current_runs.clear()
             self.run_display.histograms.clear()
             self.run_display.color_choices.setEnabled(False)
             self.run_display.isolate_button.setEnabled(False)
@@ -734,7 +752,7 @@ class RunDisplayController:
             self.run_display.input_alpha.setEnabled(False)
 
     def update(self, signal):
-        if signal == BeamsModel.RUN_LIST_CHANGED:
+        if signal == BeamsModel.RUN_LIST_CHANGE:
             self.populate_run_display()
 
 
@@ -750,6 +768,7 @@ class FormatterController:
 
         self.formatter_gui = BeamsViews.FileFormatterUI(filenames=files)
         self.parent_controller = parent
+        self.service = BeamsModel.RunService()
         self._set_callbacks()
         self.formatter_gui.show()
 
@@ -772,11 +791,11 @@ class FormatterController:
 
 
 class WriterController:
-    def __init__(self, model=None, selected_files=None):
+    def __init__(self, selected_files):
         self.writer_gui = BeamsViews.WriteDataUI()
         self.writer_gui.file_list.addItems(selected_files)
 
-        self.model = model
+        self.service = BeamsModel.RunService()
         self.files = selected_files
         self.custom_file = False
 
@@ -786,16 +805,15 @@ class WriterController:
         self._set_callbacks()
         self.writer_gui.show()
 
-        current_runs = [os.path.split(run.filename)[1] for run in self.model.run_list]
         for file in self.files:
-            if file not in current_runs:
+            if self.service.get_run_id_by_filename(file) is None:
                 message = 'Some of the files you\'ve selected haven\'t been read in yet. Would you like to now?'
                 BeamsViews.PermissionsMessageUI(message, pos_function=self.read_files,
                                                 neg_function=self.writer_gui.close)
                 break
 
     def read_files(self):
-        check_files = [self.model.all_full_filepaths[key] for key in self.files]
+        check_files = self.files
         beams_files, *_ = BeamsUtility.check_files(check_files)
         if self.formats:
             self.formats.clear()
@@ -804,7 +822,7 @@ class WriterController:
             self.formats = {file: file_format for file, file_format in
                             zip(beams_files, [BeamsUtility.get_header(file) for file in beams_files])}
 
-            self.popup = PlotDataController(self.formats, model=self.model, plot=False)
+            self.popup = PlotDataController(self.formats, plot=False)
 
     def _set_callbacks(self):
         self.writer_gui.select_folder.released.connect(lambda: self.custom_file_choice())
@@ -826,30 +844,37 @@ class WriterController:
     def write_files(self, all_files=False):
         """ Writes the user-specified run data (if they are read in) to a .dat file. """
         count = 0
-        for run in self.model.run_list:
-            if os.path.split(run.filename)[1] == self.writer_gui.file_list.currentText() or \
-                    (all_files and os.path.split(run.filename)[1] in self.files):
-
+        for run in self.service.get_runs():
+            print(1)
+            if self.writer_gui.file_list.currentText() == run.filename or \
+                    (all_files and run.filename in self.files):
+                print(2)
                 if self.custom_file:
                     file_path = self.writer_gui.input_filename.text()
                     if count:
                         file_path = os.path.splitext(file_path)[0]
                         file_path += '({}).asy'.format(count)
                 else:
-                    if 'RunNumber' in run.f_formats.keys():
-                        file_path = os.path.split(run.filename)[0] + '\\' + str(run.f_formats['RunNumber']) + '.asy'
+                    print(3)
+                    if 'RunNumber' in run.meta.keys():
+                        file_path = os.path.split(run.filename)[0] + '\\' + str(run.meta['RunNumber']) + '.asy'
                     else:
                         file_path = os.path.splitext(run.filename)[0] + '.asy'
 
+                print(4)
                 if self.writer_gui.radio_binned.isChecked():
-                    np.savetxt(file_path, np.c_[run.binned_time, run.binned_asymmetry, run.binned_uncertainty],
+                    bin_size = float(self.writer_gui.radio_binned_size.text())
+                    asymmetry, time, uncertainty = self.service.get_run_binned(run.run_id, bin_size, False)
+                    np.savetxt(file_path, np.c_[time, asymmetry, uncertainty],
                                fmt='%2.9f, %2.4f, %2.4f', header='BEAMS\nTime, Asymmetry, Uncertainty')
                 elif self.writer_gui.radio_full.isChecked():
+                    print(5)
                     np.savetxt(file_path, np.c_[run.time, run.asymmetry, run.uncertainty],
                                fmt='%2.9f, %2.4f, %2.4f', header='BEAMS\nTime, Asymmetry, Uncertainty')
                 else:
                     print('FFT not supported.')
                 count += 1
+                print(6)
 
     def remove_file(self):
         self.writer_gui.file_list.removeItem(self.writer_gui.file_list.currentIndex())
@@ -860,13 +885,13 @@ class PlotDataController:
             will be used to calculate the asymmetry for each file.
 
             Instantiated by FileManagerController class only."""
-    def __init__(self, formats=None, model=None, plot=True):
+    def __init__(self, formats=None, plot=True):
         """ Instantiates an object of the PlotDataController class, connects it to the PlotDataGUI
                 and its calling class (FileManagerController). """
 
         self.plot_data_gui = BeamsViews.PlotDataUI()
         self.plot = plot
-        self.model = model
+        self.service = BeamsModel.RunService()
         self._set_callbacks()
         self.formats = formats
         self.plot_data_gui.c_file_list.addItems([file for file in self.formats.keys()])
@@ -919,7 +944,9 @@ class PlotDataController:
         """ Closes the GUI and calls update_model() in the parent class FileManagerControl. """
         self.plot_data_gui.close()
 
-        threading.Thread(target=self.model.update_runs(self.formats, plot=self.plot), daemon=True).start()
+        files = list(self.formats.keys())
+        metas = [self.formats[key] for key in self.formats.keys()]
+        threading.Thread(target=self.service.update_run_list(files, metas, self.plot), daemon=True).start()
 
     def remove_file(self):
         """ Removes the currently selected file from the file list and from the format list. """
@@ -980,9 +1007,9 @@ class SavePlotController:  # fixme just make this a smart UI in the views file, 
 
 
 class WebServiceController:
-    def __init__(self, model):
+    def __init__(self):
         self.dialog = BeamsViews.WebDownloadUI()
-        self.model = model
+        self.service = BeamsModel.RunService()
         self._search_url = "http://musr.ca/mud/runSel.php"
         self._data_url = "http://musr.ca/mud/data/"
 
@@ -1140,7 +1167,8 @@ class WebServiceController:
                 for chunk in response.iter_content(100000):
                     fb.write(chunk)
 
-            self.model.update_file_list(file_path=save_file, file_name=BeamsUtility.create_file_key(save_file))
+            self.service.update_file_list([save_file], remove=False)
+
             self.dialog.output_web.insertPlainText('Successfully downloaded {}.\n'.format(full_url))
             good += 1
 

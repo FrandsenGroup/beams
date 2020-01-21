@@ -239,6 +239,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.correction_button = StyleTwoButton("Apply Correction")
         self.integrate_button = StyleTwoButton("Integrate")
         self.plot_all_button = StyleOneButton("Plot All Runs")
+        self.integrate_button = StyleTwoButton("Integrate")
         self.output_current_file = QtWidgets.QLineEdit()
         self.output_header_display = QtWidgets.QLineEdit()
         self.input_alpha = QtWidgets.QLineEdit()
@@ -291,6 +292,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.inspect_file_button.setFixedWidth(70)
         self.isolate_button.setFixedWidth(70)
         self.correction_button.setFixedWidth(120)
+        self.integrate_button.setFixedWidth(80)
 
     def _set_widget_layout(self):
         main_layout = QtWidgets.QVBoxLayout()
@@ -309,6 +311,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         row_thr.addWidget(self.header_data)
         row_thr.addWidget(self.output_header_display)
         row_four = QtWidgets.QHBoxLayout()
+        # row_four.addWidget(self.integrate_button)
         row_four.addWidget(self.correction_button)
         row_four.addSpacing(15)
         row_four.addWidget(self._label_alpha)
@@ -729,8 +732,10 @@ class WriteDataUI(QtWidgets.QDialog):
         self.input_filename.setPlaceholderText('Default is [run number].asy')
         self.label_full = QtWidgets.QLabel('Full Data')
         self.label_binned = QtWidgets.QLabel('Binned Data')
+        self.label_binned_size = QtWidgets.QLabel('Bin Size')
         self.label_fft = QtWidgets.QLabel('FFT')
         self.radio_binned = QtWidgets.QRadioButton()
+        self.radio_binned_size = QtWidgets.QLineEdit()
         self.radio_full = QtWidgets.QRadioButton()
         self.radio_fft = QtWidgets.QRadioButton()
 
@@ -740,7 +745,7 @@ class WriteDataUI(QtWidgets.QDialog):
         self._set_widget_layout()
 
     def _set_widget_attributes(self):
-        self.radio_binned.setChecked(True)
+        self.radio_full.setChecked(True)
 
     def _set_widget_tooltips(self):
         pass
@@ -751,6 +756,7 @@ class WriteDataUI(QtWidgets.QDialog):
         self.write_file.setFixedWidth(80)
         self.write_all.setFixedWidth(80)
         self.done.setFixedWidth(80)
+        self.radio_binned_size.setFixedWidth(60)
 
     def _set_widget_layout(self):
         col_one = QtWidgets.QVBoxLayout()
@@ -767,6 +773,9 @@ class WriteDataUI(QtWidgets.QDialog):
         col_one.addSpacing(15)
         row_two.addWidget(self.label_binned)
         row_two.addWidget(self.radio_binned)
+        row_two.addSpacing(10)
+        row_two.addWidget(self.label_binned_size)
+        row_two.addWidget(self.radio_binned_size)
         row_two.addSpacing(10)
         row_two.addWidget(self.label_full)
         row_two.addWidget(self.radio_full)
@@ -985,11 +994,10 @@ class WebDownloadUI(QtWidgets.QDialog):
 
 # noinspection PyArgumentList
 class AddFileUI(QtWidgets.QDialog):
-    def __init__(self, file_manager, web_manager, model):
+    def __init__(self, file_manager, web_manager):
         super(AddFileUI, self).__init__()
         self.file_manager = file_manager
         self.web_manager = web_manager
-        self.model = model
 
         self.setWindowTitle('Permission')
         message = QtWidgets.QLabel('Would you like to add files from the local file system or online.')
@@ -1026,7 +1034,7 @@ class AddFileUI(QtWidgets.QDialog):
         if x:
             self.file_manager.add_file_from_disk()
         else:
-            self.web_manager(self.model)
+            self.web_manager()
 
 
 # noinspection PyArgumentList
