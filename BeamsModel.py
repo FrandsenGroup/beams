@@ -84,8 +84,6 @@ class RunService:
         self.runs.append(run_id)
         self.run_id_file[filename] = run_id
 
-        print("Adding run {} from file {} at address {}".format(run_id, filename, run))
-
         return run_id
 
     def remove_run_by_id(self, run_id):
@@ -104,7 +102,6 @@ class RunService:
         :param remove: is a boolean indicating if the files should be removed from the model
         :raises FILE_CHANGE and possible RUN_LIST_CHANGE signal: RUN_LIST_CHANGE signal if a loaded run is removed.
         """
-        print('Update_file_list {}'.format(files))
         run_list_changed = False
 
         if remove:
@@ -119,8 +116,6 @@ class RunService:
                 self.files.add(file)
 
         if run_list_changed:
-            print('Run List Changed.')
-            print(self.get_runs())
             self._notify(RUN_LIST_CHANGE)
 
         self._notify(FILE_CHANGE)
@@ -380,10 +375,6 @@ class RunStyler:
                 self.unused_markers[marker] = self.marker_options[marker]
             if marker in self.used_markers.keys():
                 self.used_markers.pop(marker)
-
-        # print(self.marker_options)
-        # print(self.unused_markers)
-        # print(self.used_markers)
         return True
 
     def _update_colors(self, color=None, used=False, custom=False):
@@ -401,8 +392,6 @@ class RunStyler:
                 if color not in self.color_options:
                     self.color_options.append(color)
 
-        # print(self.color_options)
-        # print(self.used_colors)
         return True
 
     def _update_run_color(self, run, color):
@@ -640,28 +629,6 @@ def bin_asymmetry(meta, asymmetry, time, uncertainty, t0, bin_size, slider_movin
                                                                                            reshaped_uncertainty ** 2))
 
     return [binned_asymmetry, binned_time, binned_uncertainty]
-
-
-# service = RunService()
-# file_test = r"C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\MUD_Files\006515.dat"
-# meta_test = BeamsUtility.get_header(file_test)
-# meta_test['CalcHists'] = ['Back', 'Forw']
-# print(meta_test)
-#
-# run_id_test = service.add_run_by_filename(file_test, meta_test)
-# data = Database()
-# run_test = data.get_run_by_id(run_id_test)
-# print(run_test.style)
-
-# run_old_test = RunData(file_test, meta_test)
-
-# bin_a, bin_t, bin_u = service.get_run_binned(run_id_test, 100, True)
-# print(len(bin_a))
-# print(len(bin_t))
-# print(len(bin_u))
-
-# print(bin_a)
-# bin_asymmetry(run_test.meta, run_test.asymmetry, run_test.time, run_test.uncertainty, run_test.t0, 100, False)
 
 
 

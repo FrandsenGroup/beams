@@ -294,7 +294,6 @@ class FileManagerController:
     def update(self, signal=None):
         """ Called by the model when one of its FileManagerPanel-relevant attributes changes. """
         if signal == BeamsModel.FILE_CHANGE:  # Expects list of files to add the ListWidget in FileManagerPanel
-            print('Got update')
             # Then checks to see if any files have been removed from the model's file list. Removes them from the view.
             for index in range(self.file_manager.file_list.count()-1, -1, -1):
                 self.file_manager.file_list.takeItem(index)
@@ -303,8 +302,6 @@ class FileManagerController:
 
             # First checks to see if any new files have been added to the model's file list. Adds them to the view.
             for file in self.service.get_run_files():
-                print('Service adding file to view: {}'.format(file))
-
                 file_title = BeamsUtility.create_file_key(file)
                 self.file_title_dict[file_title] = file
 
@@ -845,36 +842,30 @@ class WriterController:
         """ Writes the user-specified run data (if they are read in) to a .dat file. """
         count = 0
         for run in self.service.get_runs():
-            print(1)
             if self.writer_gui.file_list.currentText() == run.filename or \
                     (all_files and run.filename in self.files):
-                print(2)
                 if self.custom_file:
                     file_path = self.writer_gui.input_filename.text()
                     if count:
                         file_path = os.path.splitext(file_path)[0]
                         file_path += '({}).asy'.format(count)
                 else:
-                    print(3)
                     if 'RunNumber' in run.meta.keys():
                         file_path = os.path.split(run.filename)[0] + '\\' + str(run.meta['RunNumber']) + '.asy'
                     else:
                         file_path = os.path.splitext(run.filename)[0] + '.asy'
 
-                print(4)
                 if self.writer_gui.radio_binned.isChecked():
                     bin_size = float(self.writer_gui.radio_binned_size.text())
                     asymmetry, time, uncertainty = self.service.get_run_binned(run.run_id, bin_size, False)
                     np.savetxt(file_path, np.c_[time, asymmetry, uncertainty],
                                fmt='%2.9f, %2.4f, %2.4f', header='BEAMS\nTime, Asymmetry, Uncertainty')
                 elif self.writer_gui.radio_full.isChecked():
-                    print(5)
                     np.savetxt(file_path, np.c_[run.time, run.asymmetry, run.uncertainty],
                                fmt='%2.9f, %2.4f, %2.4f', header='BEAMS\nTime, Asymmetry, Uncertainty')
                 else:
                     print('FFT not supported.')
                 count += 1
-                print(6)
 
     def remove_file(self):
         self.writer_gui.file_list.removeItem(self.writer_gui.file_list.currentIndex())
