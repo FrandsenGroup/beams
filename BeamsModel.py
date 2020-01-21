@@ -255,6 +255,15 @@ class RunService:
     def get_run_id_dict(self):
         return self.run_id_file
 
+    def get_run_integrations(self, run_ids):
+        return [np.trapz(run.asymmetry, run.time) for run in self.get_runs() if run.run_id in run_ids]
+
+    def get_run_temperatures(self, run_ids):
+        return [run.meta['Temperature'] for run in self.get_runs() if run.run_id in run_ids]
+
+    def get_run_fields(self, run_ids):
+        return [run.meta['Field'] for run in self.get_runs() if run.run_id in run_ids]
+
     # Protected Functions for RunService
     def send_signal(self, signal):
         self._notify(signal)

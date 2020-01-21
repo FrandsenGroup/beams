@@ -112,6 +112,7 @@ class MuFytController:
         pass
 
 
+# fixme we accidentally got rid of the ordering of the files
 class FileManagerController:
     """ Controller responsible for managing user input on the File Manager Panel. """
     def __init__(self, file_manager_panel=None, parent=None):
@@ -583,6 +584,7 @@ class PlotController:
         self._visual_data_change(moving=False)
 
 
+# fixme biggest issue is the index issue, switch that over to run_id's so it isn't delicate.
 class RunDisplayController:
     def __init__(self, run_display_panel=None, parent=None):
         self.run_display = run_display_panel
@@ -637,6 +639,18 @@ class RunDisplayController:
     def plot_all(self):
         visible_runs = [run.run_id for run in self.service.get_runs()]
         self.service.update_visible_runs(visible_runs)
+
+    def integrate_plots(self):
+        selected_plots = [item.text() for item in self.run_display.current_runs.selectedItems()]
+        selected_run_ids = []
+        for run in self.service.get_runs():
+            if run.meta['Title'] in selected_plots:  # fixme put a dict in controller?
+                selected_run_ids.append(run.run_id)
+
+        asymmetry_integrations = self.service.get_run_integrations(selected_run_ids)
+
+        # if self.run_display.integrate_choices.currentText()
+
 
     def inspect_file(self):
         if BeamsUtility.is_found(self.run_display.output_current_file.text()):
@@ -731,6 +745,7 @@ class RunDisplayController:
             self.run_display.output_header_display.setEnabled(True)
             self.run_display.correction_button.setEnabled(True)
             self.run_display.input_alpha.setEnabled(True)
+            self.run_display.integrate_choices.setEnabled(True)
         else:
             # self.run_display.marker_choices.clear()
             # self.run_display.color_choices.clear()
@@ -747,6 +762,7 @@ class RunDisplayController:
             self.run_display.output_header_display.setEnabled(False)
             self.run_display.correction_button.setEnabled(False)
             self.run_display.input_alpha.setEnabled(False)
+            self.run_display.integrate_choices.setEnabled(False)
 
     def update(self, signal):
         if signal == BeamsModel.RUN_LIST_CHANGE:

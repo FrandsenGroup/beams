@@ -238,7 +238,11 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.correction_button = StyleTwoButton("Apply Correction")
         self.integrate_button = StyleTwoButton("Integrate")
         self.plot_all_button = StyleOneButton("Plot All Runs")
+
         self.integrate_button = StyleTwoButton("Integrate")
+        self.integrate_choices = QtWidgets.QComboBox()
+        self.input_integrate_time = QtWidgets.QLineEdit()
+
         self.output_current_file = QtWidgets.QLineEdit()
         self.output_header_display = QtWidgets.QLineEdit()
         self.input_alpha = QtWidgets.QLineEdit()
@@ -281,6 +285,9 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.histograms.setEnabled(False)
         self.histograms.addItem("None")
 
+        self.integrate_choices.addItems(['Temp', 'Field'])
+        self.integrate_choices.setEnabled(False)
+
         self.current_runs.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
 
     def _set_widget_dimensions(self):
@@ -310,11 +317,14 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         row_thr.addWidget(self.header_data)
         row_thr.addWidget(self.output_header_display)
         row_four = QtWidgets.QHBoxLayout()
-        # row_four.addWidget(self.integrate_button)
         row_four.addWidget(self.correction_button)
         row_four.addSpacing(15)
         row_four.addWidget(self._label_alpha)
         row_four.addWidget(self.input_alpha)
+        row_five = QtWidgets.QHBoxLayout()
+        row_five.addWidget(self.integrate_button)
+        row_five.addWidget(self.integrate_choices)
+        row_five.addWidget(self.input_integrate_time)
 
         main_layout.addLayout(row_one)
         main_layout.addLayout(row_two)
@@ -322,6 +332,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
 
         main_layout.addWidget(self.current_runs)
         main_layout.addLayout(row_four)
+        main_layout.addLayout(row_five)
 
         main_layout.addWidget(self.plot_all_button)
 
