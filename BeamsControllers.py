@@ -952,13 +952,11 @@ class PlotDataController:
 
     def plot_formatted_files(self):
         """ Closes the GUI and calls update_model() in the parent class FileManagerControl. """
-        def _add_thread():
-            for file in self.formats.keys():
-                self.service.add_run_by_filename(file, self.formats[file], True)
-            self.service.send_signal(BeamsModel.RUN_DATA_CHANGED)
         self.plot_data_gui.close()
 
-        threading.Thread(target=_add_thread(), daemon=True).start()
+        files = list(self.formats.keys())
+        metas = [self.formats[key] for key in self.formats.keys()]
+        threading.Thread(target=self.service.load_set_of_runs(files, metas), daemon=True).start()
 
     def remove_file(self):
         """ Removes the currently selected file from the file list and from the format list. """
