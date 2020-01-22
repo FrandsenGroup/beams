@@ -612,6 +612,7 @@ class RunDisplayController:
         self.run_display.header_data.currentIndexChanged.connect(lambda: self.change_metadata())
         self.run_display.input_alpha.returnPressed.connect(lambda: self.apply_correction())
         self.run_display.correction_button.released.connect(lambda: self.apply_correction())
+        self.run_display.integrate_button.released.connect(lambda: self.integrate_plots())
 
     def apply_correction(self):
         alpha = 1
@@ -649,8 +650,18 @@ class RunDisplayController:
 
         asymmetry_integrations = self.service.get_run_integrations(selected_run_ids)
 
-        # if self.run_display.integrate_choices.currentText()
+        if self.run_display.integrate_choices.currentText() == "Field":
+            print(4)
+            x_axis = self.service.get_run_fields(selected_run_ids)
+        else:
+            print(44)
+            x_axis = self.service.get_run_temperatures(selected_run_ids)
+        print(5)
 
+        print(asymmetry_integrations, x_axis)
+        self.popup = BeamsViews.IntegrationDisplay(asymmetry_integrations,
+                                                   self.run_display.integrate_choices.currentText(), x_axis)
+        self.popup.show()
 
     def inspect_file(self):
         if BeamsUtility.is_found(self.run_display.output_current_file.text()):

@@ -455,6 +455,7 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         self.canvas.canvas_axes.plot(histogram, linestyle='None', marker='s')
 
 
+
 # noinspection PyArgumentList
 class CanvasUI(FigureCanvas):
     def __init__(self):
@@ -686,6 +687,23 @@ class RunPlot(FigureCanvas):
 
 
 # noinspection PyArgumentList
+class IntegrationDisplay(QtWidgets.QMainWindow):
+    def __init__(self, integration, x_axis, x_axis_data):
+        print(1)
+        super(IntegrationDisplay, self).__init__()
+        self._main = QtWidgets.QWidget()
+        self.setCentralWidget(self._main)
+        layout = QtWidgets.QVBoxLayout(self._main)
+
+        self.canvas = CanvasUI()
+        layout.addWidget(self.canvas)
+        self.addToolBar(NavigationToolbar(self.canvas, self))
+
+        print(2)
+        self.canvas.canvas_axes.plot(integration, x_axis_data, linestyle='None', marker='s')
+        print(3)
+        self.canvas.canvas_axes.set_xlabel('Integrated Asymmetry')
+        self.canvas.canvas_axes.set_ylabel(x_axis)
 
 
 # noinspection PyArgumentList

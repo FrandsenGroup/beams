@@ -259,10 +259,10 @@ class RunService:
         return [np.trapz(run.asymmetry, run.time) for run in self.get_runs() if run.run_id in run_ids]
 
     def get_run_temperatures(self, run_ids):
-        return [run.meta['Temperature'] for run in self.get_runs() if run.run_id in run_ids]
+        return [float(run.meta['Temperature'].split('(')[0]) for run in self.get_runs() if run.run_id in run_ids]
 
     def get_run_fields(self, run_ids):
-        return [run.meta['Field'] for run in self.get_runs() if run.run_id in run_ids]
+        return [float(run.meta['Field'].split('G')[0]) for run in self.get_runs() if run.run_id in run_ids]
 
     # Protected Functions for RunService
     def send_signal(self, signal):
@@ -634,7 +634,6 @@ def bin_asymmetry(meta, asymmetry, time, uncertainty, t0, bin_size, slider_movin
         binned_uncertainty = 1 / binned_indices_per_bin * np.sqrt(np.apply_along_axis(np.sum, 1,
                                                                                            reshaped_uncertainty ** 2))
 
-    print(np.trapz(np.abs(binned_asymmetry), binned_time))
     return [np.abs(binned_asymmetry), binned_time, binned_uncertainty]
 
 
