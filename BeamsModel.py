@@ -21,6 +21,7 @@ FIELD_KEY_TRIUMF = 'Field'
 TEMPERATURE_KEY_TRIUMF = 'Temperature'
 BIN_SIZE_KEY_TRIUMF = 'BinSize'
 TITLE_KEY_TRIUMF = 'Title'
+HIST_TITLES_KEY_TRIUMF = 'HistTitles'
 
 
 class RunService:

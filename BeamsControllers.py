@@ -112,7 +112,6 @@ class MuFytController:
         pass
 
 
-# fixme we accidentally got rid of the ordering of the files
 class FileManagerController:
     """ Controller responsible for managing user input on the File Manager Panel. """
     def __init__(self, file_manager_panel=None, parent=None):
@@ -587,7 +586,6 @@ class PlotController:
         self._visual_data_change(moving=False)
 
 
-# fixme biggest issue is the index issue, switch that over to run_id's so it isn't delicate.
 class RunDisplayController:
     def __init__(self, run_display_panel=None, parent=None):
         self.run_display = run_display_panel
@@ -595,6 +593,7 @@ class RunDisplayController:
         self.service.observers[BeamsModel.RUN_LIST_CHANGE].append(self)
         self.program_controller = parent
         self.popup = None
+        self.run_id_title = dict()
 
         self._set_callbacks()
         self._change_selection = False
@@ -681,12 +680,12 @@ class RunDisplayController:
 
     def change_color(self):
         if not self._change_selection:
-            run_id = self.service.get_run_id_dict()[self.run_display.output_current_file.text()]
+            run_id = self.run_id_title[self.run_display.current_runs.currentItem().text()]
             self.service.update_run_style(run_id, 'Color', self.run_display.color_choices.currentText())
 
     def change_marker(self):
         if not self._change_selection:
-            run_id = self.service.get_run_id_dict()[self.run_display.output_current_file.text()]
+            run_id = self.run_id_title[self.run_display.current_runs.currentItem().text()]
             self.service.update_run_style(run_id, 'Marker', self.run_display.marker_choices.currentText())
 
     def update_run_display(self):
@@ -694,36 +693,36 @@ class RunDisplayController:
             return
 
         self._change_selection = True
-        index = self.run_display.current_runs.currentRow()
+        run_id = self.run_id_title[self.run_display.current_runs.currentItem().text()]
+        run = self.service.get_run_by_id(run_id)
         self.run_display.histograms.clear()
 
-        runs = self.service.get_runs()
         styler = BeamsModel.RunStyler()
 
-        self.run_display.output_current_file.setText(runs[index].filename)
-        self.run_display.input_alpha.setText(str(runs[index].alpha))
-        self.run_display.color_choices.setCurrentText(runs[index].style.color)
-        self.run_display.marker_choices.setCurrentText(styler.marker_options[runs[index].style.marker])
-        self.run_display.histograms.addItems(runs[index].meta['HistTitles'])
+        self.run_display.output_current_file.setText(run.filename)
+        self.run_display.input_alpha.setText(str(run.alpha))
+        self.run_display.color_choices.setCurrentText(run.style.color)
+        self.run_display.marker_choices.setCurrentText(styler.marker_options[run.style.marker])
+        self.run_display.histograms.addItems(run.meta[BeamsModel.HIST_TITLES_KEY_TRIUMF])
         self.update_metadata()
         self._change_selection = False
 
     def update_metadata(self):
-        index = self.run_display.current_runs.currentRow()
+        run_id = self.run_id_title[self.run_display.current_runs.currentItem().text()]
+        run = self.service.get_run_by_id(run_id)
         self.run_display.header_data.clear()
 
-        runs = self.service.get_runs()
-        self.run_display.header_data.addItems([key for key in runs[index].meta.keys()])
+        self.run_display.header_data.addItems([key for key in run.meta.keys()])
 
     def change_metadata(self):
         if len(self.service.get_runs()) == 0:
             return
 
         if self.run_display.header_data.currentText():
-            runs = self.service.get_runs()
-            index = self.run_display.current_runs.currentRow()
+            run_id = self.run_id_title[self.run_display.current_runs.currentItem().text()]
+            run = self.service.get_run_by_id(run_id)
             key = self.run_display.header_data.currentText()
-            value = runs[index].meta[key]
+            value = run.meta[key]
             self.run_display.output_header_display.setText(str(value))
 
     def change_title(self):
@@ -731,7 +730,7 @@ class RunDisplayController:
             return
 
         if self.run_display.current_runs.currentItem():
-            run_id = self.service.get_run_id_dict()[self.run_display.output_current_file.text()]
+            run_id = self.run_id_title[self.run_display.current_runs.currentItem().text()]
             self.service.update_run_style(run_id, 'Title', self.run_display.current_runs.currentItem().text())
 
     def populate_run_display(self):
@@ -739,10 +738,16 @@ class RunDisplayController:
         if len(runs) != 0:
             self.run_display.current_runs.clear()
             self.run_display.output_current_file.setText(runs[0].filename)
-            self.run_display.current_runs.addItems([run.meta['Title'] for run in runs])
+
+            self.run_id_title = dict()
+            for run in runs:
+                self.run_id_title[run.meta[BeamsModel.TITLE_KEY_TRIUMF]] = run.run_id
+                self.run_display.current_runs.addItem(run.meta[BeamsModel.TITLE_KEY_TRIUMF])
+
             for index in range(self.run_display.current_runs.count()):
                 item = self.run_display.current_runs.item(index)
                 item.setFlags(item.flags() | QtCore.Qt.ItemIsEditable)
+
             self.run_display.current_runs.setCurrentRow(0)
 
             self.run_display.marker_choices.setEnabled(True)
