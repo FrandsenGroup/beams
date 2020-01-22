@@ -300,17 +300,20 @@ class FileManagerController:
                 self.file_manager.file_list.takeItem(index)
 
             self.id_title_dict = dict()
+            files = self.service.get_run_files()
 
             # First checks to see if any new files have been added to the model's file list. Adds them to the view.
-            for file in self.service.get_run_files():
+            file_titles = []
+            for file in files:
                 file_title = BeamsUtility.create_file_key(file)
+                file_titles.append(file_title)
                 self.file_title_dict[file_title] = file
 
-                file_item = QtWidgets.QListWidgetItem(file_title, self.file_manager.file_list)
+            file_titles = sorted(file_titles)
+            for title in file_titles:
+                file_item = QtWidgets.QListWidgetItem(title, self.file_manager.file_list)
                 file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsUserCheckable)
                 file_item.setCheckState(QtCore.Qt.Unchecked)
-        else:
-            raise ValueError('Unexpected Signal from Model in {}'.format(self))
 
 
 class PlotController:
@@ -633,7 +636,7 @@ class RunDisplayController:
         selected_plots = [item.text() for item in self.run_display.current_runs.selectedItems()]
         visible_runs = []
         for run in self.service.get_runs():
-            if run.meta['Title'] in selected_plots:
+            if run.meta[BeamsModel.TITLE_KEY_TRIUMF] in selected_plots:
                 visible_runs.append(run.run_id)
         self.service.update_visible_runs(visible_runs)
 
@@ -645,22 +648,19 @@ class RunDisplayController:
         selected_plots = [item.text() for item in self.run_display.current_runs.selectedItems()]
         selected_run_ids = []
         for run in self.service.get_runs():
-            if run.meta['Title'] in selected_plots:  # fixme put a dict in controller?
+            if run.meta[BeamsModel.TITLE_KEY_TRIUMF] in selected_plots:  # fixme put a dict in controller?
                 selected_run_ids.append(run.run_id)
 
         asymmetry_integrations = self.service.get_run_integrations(selected_run_ids)
 
         if self.run_display.integrate_choices.currentText() == "Field":
-            print(4)
-            x_axis = self.service.get_run_fields(selected_run_ids)
+            x_axis_data = self.service.get_run_fields(selected_run_ids)
+            x_axis = 'Field (G)'
         else:
-            print(44)
-            x_axis = self.service.get_run_temperatures(selected_run_ids)
-        print(5)
+            x_axis_data = self.service.get_run_temperatures(selected_run_ids)
+            x_axis = 'Temperature (K)'
 
-        print(asymmetry_integrations, x_axis)
-        self.popup = BeamsViews.IntegrationDisplay(asymmetry_integrations,
-                                                   self.run_display.integrate_choices.currentText(), x_axis)
+        self.popup = BeamsViews.IntegrationDisplay(asymmetry_integrations, x_axis, x_axis_data)
         self.popup.show()
 
     def inspect_file(self):

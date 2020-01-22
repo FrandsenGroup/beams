@@ -16,6 +16,12 @@ FILE_CHANGE = 2
 RUN_LIST_CHANGE = 3
 RUN_DATA_CHANGE = 4
 
+# Meta Keys
+FIELD_KEY_TRIUMF = 'Field'
+TEMPERATURE_KEY_TRIUMF = 'Temperature'
+BIN_SIZE_KEY_TRIUMF = 'BinSize'
+TITLE_KEY_TRIUMF = 'Title'
+
 
 class RunService:
     class __ServiceResources:
@@ -259,10 +265,10 @@ class RunService:
         return [np.trapz(run.asymmetry, run.time) for run in self.get_runs() if run.run_id in run_ids]
 
     def get_run_temperatures(self, run_ids):
-        return [float(run.meta['Temperature'].split('(')[0]) for run in self.get_runs() if run.run_id in run_ids]
+        return [float(run.meta[TEMPERATURE_KEY_TRIUMF].split('(')[0]) for run in self.get_runs() if run.run_id in run_ids]
 
     def get_run_fields(self, run_ids):
-        return [float(run.meta['Field'].split('G')[0]) for run in self.get_runs() if run.run_id in run_ids]
+        return [float(run.meta[FIELD_KEY_TRIUMF].split('G')[0]) for run in self.get_runs() if run.run_id in run_ids]
 
     # Protected Functions for RunService
     def send_signal(self, signal):
