@@ -617,38 +617,24 @@ class RunDisplayController:
         self.run_display.integrate_button.released.connect(lambda: self.integrate_plots())
 
     def apply_correction(self):
-        alpha = 1
         try:
             alpha = float(self.run_display.input_alpha.text())
         except ValueError:
-            pass
+            return
 
-        run_ids = []
-        for item in self.run_display.current_runs.selectedItems():
-            for run in self.service.get_runs():
-                if run.meta['Title'] == item.text():
-                    run_ids.append(run.run_id)
-
+        run_ids = [self.run_id_title[item.text()] for item in self.run_display.current_runs.selectedItems()]
         self.service.update_run_correction(run_ids, alpha)
 
     def isolate_plot(self):
-        selected_plots = [item.text() for item in self.run_display.current_runs.selectedItems()]
-        visible_runs = []
-        for run in self.service.get_runs():
-            if run.meta[BeamsModel.TITLE_KEY_TRIUMF] in selected_plots:
-                visible_runs.append(run.run_id)
-        self.service.update_visible_runs(visible_runs)
+        selected_run_ids = [self.run_id_title[item.text()] for item in self.run_display.current_runs.selectedItems()]
+        self.service.update_visible_runs(selected_run_ids)
 
     def plot_all(self):
-        visible_runs = [run.run_id for run in self.service.get_runs()]
+        visible_runs = [v for k, v in self.run_id_title.items()]
         self.service.update_visible_runs(visible_runs)
 
     def integrate_plots(self):
-        selected_plots = [item.text() for item in self.run_display.current_runs.selectedItems()]
-        selected_run_ids = []
-        for run in self.service.get_runs():
-            if run.meta[BeamsModel.TITLE_KEY_TRIUMF] in selected_plots:  # fixme put a dict in controller?
-                selected_run_ids.append(run.run_id)
+        selected_run_ids = [self.run_id_title[item.text()] for item in self.run_display.current_runs.selectedItems()]
 
         asymmetry_integrations = self.service.get_run_integrations(selected_run_ids)
 

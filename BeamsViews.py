@@ -340,6 +340,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self._full_widget.setLayout(main_layout)
 
 
+# fixme put the small utility canvas classes inside plot panel or canvas UI class as inner classes
 # noinspection PyArgumentList
 class PlotPanel(QtWidgets.QDockWidget):
     def __init__(self):
@@ -453,7 +454,6 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         self.addToolBar(NavigationToolbar(self.canvas, self))
 
         self.canvas.canvas_axes.plot(histogram, linestyle='None', marker='s')
-
 
 
 # noinspection PyArgumentList
@@ -689,7 +689,6 @@ class RunPlot(FigureCanvas):
 # noinspection PyArgumentList
 class IntegrationDisplay(QtWidgets.QMainWindow):
     def __init__(self, integration, x_axis, x_axis_data):
-        print(1)
         super(IntegrationDisplay, self).__init__()
         self._main = QtWidgets.QWidget()
         self.setCentralWidget(self._main)
@@ -699,9 +698,7 @@ class IntegrationDisplay(QtWidgets.QMainWindow):
         layout.addWidget(self.canvas)
         self.addToolBar(NavigationToolbar(self.canvas, self))
 
-        print(2)
         self.canvas.canvas_axes.plot(integration, x_axis_data, linestyle='None', marker='s')
-        print(3)
         self.canvas.canvas_axes.set_xlabel('Integrated Asymmetry')
         self.canvas.canvas_axes.set_ylabel(x_axis)
 

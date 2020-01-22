@@ -239,13 +239,6 @@ class RunService:
         run = self.database.get_run_by_id(run_id)
         return run.time
 
-    def get_run_meta(self, run_id, meta_key=None):
-        run = self.database.get_run_by_id(run_id)
-        if meta_key is not None:
-            return run.meta[meta_key]
-        else:
-            return run.meta
-
     def get_run_fft(self, run_id, spline=True):
         run = self.database.get_run_by_id(run_id)
         return calculate_fft(run.asymmetry, run.time, spline)
@@ -264,9 +257,6 @@ class RunService:
 
     def get_run_files(self):
         return self.files
-
-    def get_run_id_dict(self):
-        return self.run_id_file
 
     def get_run_integrations(self, run_ids):
         return [np.trapz(run.asymmetry, run.time) for run in self.get_runs() if run.run_id in run_ids]
