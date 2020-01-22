@@ -681,12 +681,12 @@ class RunDisplayController:
     def change_color(self):
         if not self._change_selection:
             run_id = self.run_id_title[self.run_display.current_runs.currentItem().text()]
-            self.service.update_run_style(run_id, 'Color', self.run_display.color_choices.currentText())
+            self.service.update_run_style(run_id, BeamsModel.STYLE_COLOR, self.run_display.color_choices.currentText())
 
     def change_marker(self):
         if not self._change_selection:
             run_id = self.run_id_title[self.run_display.current_runs.currentItem().text()]
-            self.service.update_run_style(run_id, 'Marker', self.run_display.marker_choices.currentText())
+            self.service.update_run_style(run_id, BeamsModel.STYLE_MARKER, self.run_display.marker_choices.currentText())
 
     def update_run_display(self):
         if len(self.service.get_runs()) == 0:
@@ -731,7 +731,7 @@ class RunDisplayController:
 
         if self.run_display.current_runs.currentItem():
             run_id = self.run_id_title[self.run_display.current_runs.currentItem().text()]
-            self.service.update_run_style(run_id, 'Title', self.run_display.current_runs.currentItem().text())
+            self.service.update_run_style(run_id, BeamsModel.STYLE_TITLE, self.run_display.current_runs.currentItem().text())
 
     def populate_run_display(self):
         runs = self.service.get_runs()

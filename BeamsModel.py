@@ -23,6 +23,12 @@ BIN_SIZE_KEY_TRIUMF = 'BinSize'
 TITLE_KEY_TRIUMF = 'Title'
 HIST_TITLES_KEY_TRIUMF = 'HistTitles'
 
+# Style Keys
+STYLE_TITLE = 'Title'
+STYLE_COLOR = 'Color'
+STYLE_MARKER = 'Marker'
+STYLE_VISIBILITY = 'Visibility'
+
 
 class RunService:
     class __ServiceResources:
@@ -161,9 +167,9 @@ class RunService:
         """
         for run in self.get_runs():
             if run.run_id not in run_ids:
-                self.styler.update_style(run, 'Visibility', False)
+                self.styler.update_style(run, STYLE_VISIBILITY, False)
             else:
-                self.styler.update_style(run, 'Visibility', True)
+                self.styler.update_style(run, STYLE_VISIBILITY, True)
 
         self._notify(STYLE_CHANGE)
 
@@ -339,13 +345,13 @@ class RunStyler:
         return getattr(self.instance, name)
 
     def update_style(self, run, style_key, style_value):
-        if style_key == 'Title':
+        if style_key == STYLE_TITLE:
             self._update_run_title(run, style_value)
-        elif style_key == 'Color':
+        elif style_key == STYLE_COLOR:
             self._update_run_color(run, style_value)
-        elif style_key == 'Marker':
+        elif style_key == STYLE_MARKER:
             self._update_run_marker(run, style_value)
-        elif style_key == 'Visibility':
+        elif style_key == STYLE_VISIBILITY:
             self._update_run_visibilities(run, style_value)
         else:
             print('Invalid Style Key')
