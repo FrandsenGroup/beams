@@ -287,6 +287,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
 
         self.integrate_choices.addItems(['Temp', 'Field'])
         self.integrate_choices.setEnabled(False)
+        self.integrate_button.setEnabled(False)
 
         self.current_runs.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
 
@@ -298,7 +299,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.inspect_file_button.setFixedWidth(70)
         self.isolate_button.setFixedWidth(70)
         self.correction_button.setFixedWidth(120)
-        self.integrate_button.setFixedWidth(80)
+        self.integrate_button.setFixedWidth(120)
 
     def _set_widget_layout(self):
         main_layout = QtWidgets.QVBoxLayout()
@@ -324,7 +325,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         row_five = QtWidgets.QHBoxLayout()
         row_five.addWidget(self.integrate_button)
         row_five.addWidget(self.integrate_choices)
-        row_five.addWidget(self.input_integrate_time)
+        # row_five.addWidget(self.input_integrate_time)
 
         main_layout.addLayout(row_one)
         main_layout.addLayout(row_two)
@@ -698,7 +699,7 @@ class IntegrationDisplay(QtWidgets.QMainWindow):
         layout.addWidget(self.canvas)
         self.addToolBar(NavigationToolbar(self.canvas, self))
 
-        self.canvas.canvas_axes.plot(integration, x_axis_data, linestyle='None', marker='s')
+        self.canvas.canvas_axes.plot(integration, x_axis_data, linestyle='None', marker='o')
         self.canvas.canvas_axes.set_xlabel('Integrated Asymmetry')
         self.canvas.canvas_axes.set_ylabel(x_axis)
 

@@ -748,6 +748,7 @@ class RunDisplayController:
             self.run_display.correction_button.setEnabled(True)
             self.run_display.input_alpha.setEnabled(True)
             self.run_display.integrate_choices.setEnabled(True)
+            self.run_display.integrate_button.setEnabled(True)
         else:
             # self.run_display.marker_choices.clear()
             # self.run_display.color_choices.clear()
@@ -765,6 +766,7 @@ class RunDisplayController:
             self.run_display.correction_button.setEnabled(False)
             self.run_display.input_alpha.setEnabled(False)
             self.run_display.integrate_choices.setEnabled(False)
+            self.run_display.integrate_button.setEnabled(False)
 
     def update(self, signal):
         if signal == BeamsModel.RUN_LIST_CHANGE:
