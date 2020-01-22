@@ -30,6 +30,8 @@ STYLE_MARKER = 'Marker'
 STYLE_VISIBILITY = 'Visibility'
 
 
+
+
 class RunService:
     class __ServiceResources:
         def __init__(self):
@@ -76,7 +78,7 @@ class RunService:
             self.remove_file(file)
         self._notify(RUN_LIST_CHANGE)
 
-    def add_run_by_filename(self, filename, meta, visible=True):
+    def add_run_by_filename(self, filename, meta, type=BEAMS_DAT_FILE, visible=True):
         """ @Param Expects a full file path. """
         if filename in self.run_id_file.keys():
             return self.run_id_file[filename]

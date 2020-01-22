@@ -7,7 +7,8 @@ import sys
 
 
 class InvalidFileFormat(Exception):
-    pass
+    def __init__(self, ):
+        super(InvalidFileFormat, self).__init__()
 
 
 class InvalidData(Exception):
@@ -379,14 +380,74 @@ def is_valid_format(sections=None, t0=None, header_rows=None, file_names=None):
     return f_format
 
 
-class MuSRFileReader:
-    class __TRIUMFFile:
-        def __init__(self):
-            pass
+# fixme each file needs to fall in to some sub categories, histogram file, [asym, time, unc] file, binary file
+class FileReader:
+    TRIUMF_MUD_FILE = 1
+    BEAMS_ASY_FILE = 2
+    BEAMS_DAT_FILE = 3
 
-    class __ISISFile:
-        def __init__(self):
-            pass
+    def __init__(self, file_path):
+        self.file_path = file_path
+        self.found = is_found(file_path)
+        if not self.found:
+            return
 
-    def __init__(self, file):
+        if check_ext(file_path, '.dat') and is_beams(file_path):
+            self.__file = BeamsDatFile(file_path)
+            self.type = self.BEAMS_DAT_FILE
+        elif check_ext(file_path, '.asy') and is_beams(file_path):
+            self.__file = BeamsAsyFile(file_path)
+            self.type = self.BEAMS_ASY_FILE
+        elif check_ext(file_path, '.msr'):
+            self.__file = TriumfMsrFile(file_path)
+            self.type = self.TRIUMF_MUD_FILE
+        else:
+            raise InvalidFileFormat()
+
+    def get_data(self):
+        return self.__file.get_data()
+
+    def get_meta(self):
+        return self.__file.get_meta()
+
+    def get_type(self):
+        return self.type
+
+    def get_file_path(self):
+        return self.file_path
+
+    def is_found(self):
+        return self.found
+
+
+class BeamsAsyFile:
+    def __init__(self, file_path):
+        self.file_path = file_path
+
+    def get_data(self):
+        pass
+
+    def get_meta(self):
+        pass
+
+
+class BeamsDatFile:
+    def __init__(self, file_path):
+        self.file_path = file_path
+
+    def get_data(self):
+        pass
+
+    def get_meta(self):
+        pass
+
+
+class TriumfMsrFile:
+    def __init__(self, file_path):
+        self.file_path = file_path
+
+    def get_data(self):
+        pass
+
+    def get_meta(self):
         pass

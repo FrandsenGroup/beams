@@ -750,8 +750,6 @@ class RunDisplayController:
             self.run_display.integrate_choices.setEnabled(True)
             self.run_display.integrate_button.setEnabled(True)
         else:
-            # self.run_display.marker_choices.clear()
-            # self.run_display.color_choices.clear()
             self.run_display.header_data.clear()
             self.run_display.current_runs.clear()
             self.run_display.histograms.clear()
