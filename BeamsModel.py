@@ -138,8 +138,8 @@ class RunService:
         for run_id in run_ids:
             run = self.database.get_run_by_id(run_id)
 
-            histogram_data = BeamsUtility.get_histograms(run.filename, skiprows=int(run.meta['HeaderRows']))
-            histogram_data.columns = run.meta['HistTitles']
+            file = BeamsUtility.FileReader(run.filename)
+            histogram_data = file.get_data()
 
             start_bin_one, start_bin_two, end_bin_one, end_bin_two, t0 = calculate_start_end(run.meta)
 
@@ -197,8 +197,8 @@ class RunService:
 
     def get_run_histogram(self, run_id, hist_title):
         run = self.database.get_run_by_id(run_id)
-        histogram_data = BeamsUtility.get_histograms(run.filename, skiprows=int(run.meta['HeaderRows']))
-        histogram_data.columns = run.meta['HistTitles']
+        file = BeamsUtility.FileReader(run.filename)
+        histogram_data = file.get_data()
         return histogram_data[hist_title]
 
     def get_run_ids(self):
@@ -568,7 +568,7 @@ def calculate_bkgd_radiation(meta, hist, bkgd_start, bkgd_end):
 def calculate_fft(asymmetry, times, spline=True):
     """ Calculates fast fourier transform on asymmetry. """
     magnitudes = np.fft.fft(asymmetry)
-    magnitudes[0] = 0
+    # magnitudes[0] = 0
     frequencies = abs(np.fft.fftfreq(len(magnitudes), times[1] - times[0]))
     num_frequencies = len(frequencies)
 
