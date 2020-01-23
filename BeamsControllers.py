@@ -626,11 +626,17 @@ class RunDisplayController:
                 break
 
     def change_color(self):
+        if len(self.service.get_runs()) == 0 or self.run_display.current_runs.currentItem() is None:
+            return
+
         if not self._change_selection:
             run_id = self.run_id_title[self.run_display.current_runs.currentItem().text()]
             self.service.update_run_style(run_id, BeamsModel.STYLE_COLOR, self.run_display.color_choices.currentText())
 
     def change_marker(self):
+        if len(self.service.get_runs()) == 0 or self.run_display.current_runs.currentItem() is None:
+            return
+
         if not self._change_selection:
             run_id = self.run_id_title[self.run_display.current_runs.currentItem().text()]
             self.service.update_run_style(run_id, BeamsModel.STYLE_MARKER, self.run_display.marker_choices.currentText())
@@ -648,7 +654,7 @@ class RunDisplayController:
 
         self.run_display.output_current_file.setText(run.filename)
         self.run_display.input_alpha.setText(str(run.alpha))
-        self.run_display.color_choices.setCurrentText(run.style.color)
+        self.run_display.color_choices.setCurrentText(styler.color_options[run.style.color])
         self.run_display.marker_choices.setCurrentText(styler.marker_options[run.style.marker])
 
         if run.type != BeamsUtility.FileReader.HISTOGRAM_FILE:
@@ -719,11 +725,14 @@ class RunDisplayController:
             self.run_display.integrate_choices.setEnabled(True)
             self.run_display.integrate_button.setEnabled(True)
         else:
-            self.run_display.color_choices.clear()
-            self.run_display.marker_choices.clear()
+            # self.run_display.color_choices.clear()
+            # self.run_display.marker_choices.clear()
             self.run_display.header_data.clear()
             self.run_display.current_runs.clear()
             self.run_display.histograms.clear()
+            self.run_display.output_current_file.clear()
+            self.run_display.output_header_display.clear()
+            self.run_display.input_alpha.clear()
             self.run_display.color_choices.setEnabled(False)
             self.run_display.isolate_button.setEnabled(False)
             self.run_display.histograms.setEnabled(False)
@@ -738,8 +747,7 @@ class RunDisplayController:
             self.run_display.integrate_button.setEnabled(False)
 
     def update(self, signal):
-        if signal == BeamsModel.RUN_LIST_CHANGE:
-            self.populate_run_display()
+        self.populate_run_display()
 
 
 class FormatterController:
@@ -940,8 +948,7 @@ class PlotDataController:
     def plot_formatted_files(self):
         """ Closes the GUI and calls update_model() in the parent class FileManagerControl. """
         self.plot_data_gui.close()
-
-        threading.Thread(target=self.service.update_run_list(self.files, None, self.plot), daemon=True).start()
+        threading.Thread(target=self.service.update_run_list(self.files, self.plot), daemon=True).start()
 
     def remove_file(self):
         """ Removes the currently selected file from the file list and from the format list. """

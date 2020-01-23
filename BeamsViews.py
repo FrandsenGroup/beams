@@ -273,8 +273,8 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.input_alpha.setEnabled(False)
 
         self.color_choices.setEnabled(False)
-        self.color_choices.addItems(["None", "blue", "red", "green", "orange", "purple",
-                                     "brown", "yellow", "gray", "olive", "cyan", "pink", "custom"])
+        self.color_choices.addItems(["Blue", "Red", "Purple", "Green", "Orange", "Maroon", "Pink", "Dark Blue",
+                                     "Dark Green", "Light Blue", "Light Purple", "Dark Orange", "Yellow", "Light Red", "Light Green"])
 
         self.marker_choices.setEnabled(False)
         self.marker_choices.addItems(['point', 'triangle_down', 'triangle_up', 'triangle_left',

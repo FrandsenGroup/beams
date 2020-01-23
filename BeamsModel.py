@@ -59,60 +59,6 @@ class RunService:
     def __getattr__(self, name):
         return getattr(self.instance, name)
 
-    def remove_file(self, filename):
-        """ @Param Expects a full file path. """
-        if filename in self.run_id_file.keys():
-            self.remove_run_by_id(self.run_id_file[filename])
-        else:
-            self.files.remove(filename)
-
-    def clear_runs(self):
-        for file in self.run_id_file.keys():
-            self.remove_file(file)
-        self._notify(RUN_LIST_CHANGE)
-
-    def remove_run_by_id(self, run_id):
-        run = self.database.get_run_by_id(run_id)
-
-        self.styler.clear_style(run.style)
-        self.runs.remove(run_id)
-        self.files.remove(run.filename)
-        self.run_id_file.pop(run.filename)
-        self.database.remove_run(run)
-
-    def add_run(self, file, visible=True):
-        file_path = file.get_file_path()
-
-        if file_path in self.run_id_file.keys():
-            return self.run_id_file[file_path]
-
-        if file.get_type() == BeamsUtility.FileReader.ASYMMETRY_FILE:
-            data = file.get_data()
-            meta = file.get_meta()
-
-            run = Run(data.loc[:,'Asymmetry'].values, data.loc[:,'Uncertainty'].values, data.loc[:,'Time'].values,
-                      meta, file_path, meta[BeamsUtility.T0_KEY])
-
-        elif file.get_type() == BeamsUtility.FileReader.HISTOGRAM_FILE:
-            run = self._generate_run_data(file_path, file.get_meta())
-
-        else:
-            return None
-
-        run_id = uuid.uuid1()
-        run.run_id = run_id
-        run.type = file.get_type()
-
-        style = self.styler.create_style(run)
-        style.visibility = visible
-        run.style = style
-
-        self.database.add_run(run)
-        self.runs.append(run_id)
-        self.run_id_file[file_path] = run_id
-
-        return run_id
-
     # Updating Functions
     def update_file_list(self, files, remove=False):
         """
@@ -120,12 +66,13 @@ class RunService:
         :param remove: is a boolean indicating if the files should be removed from the model
         :raises FILE_CHANGE and possible RUN_LIST_CHANGE signal: RUN_LIST_CHANGE signal if a loaded run is removed.
         """
+        print('Updating File List')
         run_list_changed = False
 
         if remove:
             for filename in files:
                 if filename in self.run_id_file.keys():
-                    self.remove_run_by_id(self.run_id_file[filename])
+                    self._remove_run_by_id(self.run_id_file[filename])
                     run_list_changed = True
                 else:
                     self.files.remove(filename)
@@ -138,24 +85,24 @@ class RunService:
 
         self._notify(FILE_CHANGE)
 
-    def update_run_list(self, files, metas=None, visible=True):
+    def update_run_list(self, files, visible=True):
         """
+        :param visible:
         :param files: an array of FULL file paths
-        :param metas: a dictionary holding meta data for run
         :raises RUN_LIST_CHANGE signal:
         """
-
+        print('Updating Run List')
         current_files = [file for file in self.run_id_file.keys()]
         new_file_paths = [new_file.get_file_path() for new_file in files]
         new_file_ext = os.path.splitext(new_file_paths[0])[1]
         for file in current_files:
             if os.path.splitext(file)[1] == new_file_ext and file not in new_file_paths:
-                self.remove_file(file)
+                self._remove_file(file)
                 self.files.add(file)
 
         for file in files:
             if file.get_file_path() not in self.run_id_file.keys():
-                self.add_run(file)
+                self._add_run(file, visible)
 
         self._notify(RUN_LIST_CHANGE)
 
@@ -167,7 +114,9 @@ class RunService:
         :param style_value: value assigned to style var
         :raises STYLE_CHANGE signal:
         """
+        print('Updating Run Style')
         run = self.database.get_run_by_id(run_id)
+        print('u1')
         self.styler.update_style(run, style_key, style_value)
         self._notify(STYLE_CHANGE)
 
@@ -176,6 +125,7 @@ class RunService:
         :param run_ids: ID's of runs that will be shown on plot.
         :raises STYLE_CHANGE signal:
         """
+        print('Updating Visible Runs')
         for run in self.get_runs():
             if run.run_id not in run_ids:
                 self.styler.update_style(run, STYLE_VISIBILITY, False)
@@ -184,16 +134,8 @@ class RunService:
 
         self._notify(STYLE_CHANGE)
 
-    def update_run_meta(self, run_id, meta_key, meta_value):
-        """
-        :param run_id: ID of the run that will be changed
-        :param meta_key: key of meta var to changed
-        :param meta_value: new value for meta var
-        """
-        run = self.database.get_run_by_id(run_id)
-        run.meta[meta_key] = meta_value
-
     def update_run_correction(self, run_ids, alpha):
+        print('Updating Run Correction')
         for run_id in run_ids:
             run = self.database.get_run_by_id(run_id)
 
@@ -273,15 +215,12 @@ class RunService:
         return [np.trapz(run.asymmetry, run.time) for run in self.get_runs() if run.run_id in run_ids]
 
     def get_run_temperatures(self, run_ids):
-        return [float(run.meta[BeamsUtility.TEMPERATURE_KEY].split('(')[0]) for run in self.get_runs() if run.run_id in run_ids]
+        return [float(run.meta[BeamsUtility.TEMPERATURE_KEY].split('(')[0].split('K')[0])for run in self.get_runs() if run.run_id in run_ids]
 
     def get_run_fields(self, run_ids):
         return [float(run.meta[BeamsUtility.FIELD_KEY].split('(')[0].split('G')[0]) for run in self.get_runs() if run.run_id in run_ids]
 
     # Protected Functions for RunService
-    def send_signal(self, signal):
-        self._notify(signal)
-
     def _notify(self, signal):
         """ Calls the update() function in any controller registered with the passed in signal. """
         for controller in self.observers[signal]:
@@ -316,6 +255,55 @@ class RunService:
 
         return new_run
 
+    def _remove_file(self, filename):
+        """ @Param Expects a full file path. """
+        if filename in self.run_id_file.keys():
+            self._remove_run_by_id(self.run_id_file[filename])
+        else:
+            self.files.remove(filename)
+
+    def _remove_run_by_id(self, run_id):
+        run = self.database.get_run_by_id(run_id)
+
+        self.styler.clear_style(run.style)
+        self.runs.remove(run_id)
+        self.files.remove(run.filename)
+        self.run_id_file.pop(run.filename)
+        self.database.remove_run(run)
+
+    def _add_run(self, file, visible=True):
+        file_path = file.get_file_path()
+
+        if file_path in self.run_id_file.keys():
+            return self.run_id_file[file_path]
+
+        if file.get_type() == BeamsUtility.FileReader.ASYMMETRY_FILE:
+            data = file.get_data()
+            meta = file.get_meta()
+
+            run = Run(data.loc[:, 'Asymmetry'].values, data.loc[:, 'Uncertainty'].values, data.loc[:, 'Time'].values,
+                      meta, file_path, meta[BeamsUtility.T0_KEY])
+
+        elif file.get_type() == BeamsUtility.FileReader.HISTOGRAM_FILE:
+            run = self._generate_run_data(file_path, file.get_meta())
+
+        else:
+            return None
+
+        run_id = uuid.uuid1()
+        run.run_id = run_id
+        run.type = file.get_type()
+
+        style = self.styler.create_style(run)
+        style.visibility = visible
+        run.style = style
+
+        self.database.add_run(run)
+        self.runs.append(run_id)
+        self.run_id_file[file_path] = run_id
+
+        return run_id
+
 
 class RunStyler:
     class __StyleResources:
@@ -323,18 +311,25 @@ class RunStyler:
             self.database = Database()
 
             self.plot_parameters = {}
-            self.used_colors = []
-            self.unused_markers = dict()
-            self.used_markers = dict()
-            self.color_options = ["blue", "red", "green", "orange", "purple",
-                                  "brown", "yellow", "gray", "olive", "cyan", "pink"]
+
+            self.color_options_values = {'Blue': '#0000ff', 'Red': '#ff0000', 'Purple': '#9900ff', 'Green': '#009933',
+                                        'Orange': '#ff9900', 'Maroon': '#800000', 'Pink': '#ff66ff', 'Dark Blue': '#000099',
+                                        'Dark Green': '#006600', 'Light Blue': '#0099ff', 'Light Purple': '#cc80ff',
+                                        'Dark Orange': '#ff6600', 'Yellow': '#ffcc00', 'Light Red': '#ff6666', 'Light Green': '#00cc66'}
+
+            self.color_options = {v: k for k, v in self.color_options_values.items()}
+            self.unused_colors = self.color_options.copy()
+            self.used_colors = dict()
+
             self.marker_options_values = {'point': '.', 'triangle_down': 'v', 'triangle_up': '^', 'triangle_left': '<',
                                           'triangle_right': '>', 'octagon': '8', 'square': 's', 'pentagon': 'p',
                                           'plus': 'P',
                                           'star': '*', 'hexagon_1': 'h', 'hexagon_2': 'H', 'x': 'X', 'diamond': 'D',
                                           'thin_diamond': 'd'}
+
             self.marker_options = {v: k for k, v in self.marker_options_values.items()}
             self.unused_markers = self.marker_options.copy()
+            self.used_markers = dict()
 
     instance = None
 
@@ -346,9 +341,11 @@ class RunStyler:
         return getattr(self.instance, name)
 
     def update_style(self, run, style_key, style_value):
+        print('u2')
         if style_key == STYLE_TITLE:
             self._update_run_title(run, style_value)
         elif style_key == STYLE_COLOR:
+            print('u3')
             self._update_run_color(run, style_value)
         elif style_key == STYLE_MARKER:
             self._update_run_marker(run, style_value)
@@ -366,9 +363,9 @@ class RunStyler:
         style.marker = list(self.unused_markers.keys())[0]
         self._update_markers(style.marker, True)
 
-        if len(self.color_options) == 0:
-            self.color_options = self.used_colors.copy()
-        style.color = self.color_options[0]
+        if len(self.unused_colors.keys()) == 0:
+            self.unused_colors = self.used_colors.copy()
+        style.color = list(self.unused_colors.keys())[0]
         self._update_colors(style.color, True)
 
         if run:
@@ -397,32 +394,40 @@ class RunStyler:
                 self.used_markers.pop(marker)
         return True
 
-    def _update_colors(self, color=None, used=False, custom=False):
+    def _update_colors(self, color=None, used=False):
         """ Updates the used and un-used color lists so as to keep track of which colors are available
                 when plotting new runs without having two runs of identical color."""
-        if not custom:  # Don't want to save custom colors in the library
-            if used:
-                if color in self.color_options:
-                    self.color_options.remove(color)
-                if color not in self.used_colors:
-                    self.used_colors.append(color)
-            else:
-                if color in self.used_colors:
-                    self.used_colors.remove(color)
-                if color not in self.color_options:
-                    self.color_options.append(color)
-
+        print(1)
+        print(self.unused_colors, self.used_colors, color)
+        if used:
+            if color not in self.used_colors.keys():
+                print(2)
+                self.used_colors[color] = self.color_options[color]
+            if color in self.unused_colors.keys():
+                print(3)
+                self.unused_colors.pop(color)
+        else:
+            if color not in self.unused_colors.keys():
+                print(4)
+                self.unused_colors[color] = self.color_options[color]
+            if color in self.used_colors.keys():
+                print(5)
+                self.used_colors.pop(color)
         return True
 
     def _update_run_color(self, run, color):
         """ Updates the color of a specific run. Calls update_colors() to update the used and available color lists. """
-        if color in self.color_options:
+        color = self.color_options_values[color]
+        print(1)
+        if color in self.unused_colors.keys():
             self._update_colors(color=color, used=True)
-
-        if run.style.color in self.used_colors:
+        print(2)
+        if run.style.color in self.used_colors.keys():
             self._update_colors(color=run.style.color, used=False)
+        print(3)
         if run.style.color == color:
-            return  # No change
+            return
+        print(4)
         run.style.color = color
 
     def _update_run_marker(self, run, marker):
