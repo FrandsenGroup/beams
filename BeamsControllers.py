@@ -690,7 +690,9 @@ class RunDisplayController:
 
         if run.type != BeamsUtility.FileReader.HISTOGRAM_FILE:
             self.run_display.histograms.setEnabled(False)
+            self.run_display.inspect_hist_button.setEnabled(False)
         else:
+            self.run_display.histograms.setEnabled(True)
             self.run_display.histograms.setEnabled(True)
             self.run_display.histograms.addItems(run.meta[BeamsUtility.HIST_TITLES_KEY])
 
@@ -1001,7 +1003,7 @@ class PlotDataController:
                     self.plot_data_gui.c_hist_two.addItems(file.get_meta()['HistTitles'])
 
 
-class SavePlotController:  # fixme just make this a smart UI in the views file, it's pretty short.
+class SavePlotController:
     def __init__(self, canvases=None):
         self.save_plot_gui = BeamsViews.SavePlotUI()
         self.canvases = canvases
