@@ -222,6 +222,9 @@ class BeamsAsyFile:
         else:
             return self.__meta
 
+    def convert(self):
+        raise InvalidFileFormat()
+
 
 class BeamsDatFile:
     HEADER_ROWS = 8
@@ -268,15 +271,67 @@ class BeamsDatFile:
         else:
             return self.__meta
 
+    def convert(self):
+        raise InvalidFileFormat()
+
 
 class TriumfMsrFile:
     def __init__(self, file_path):
         self.file_path = file_path
 
     def get_data(self):
-        pass
+        raise InvalidFileFormat()
 
     def get_meta(self):
+        # fixme, it could be useful to make a executable to get the header of an msr file
+        raise InvalidFileFormat()
+
+    def convert(self):
+        pass
+
+
+class PSIMsrFile:
+    def __int__(self, file_path):
+        self.file_path = file_path
+
+    def get_data(self):
+        raise InvalidFileFormat()
+
+    def get_meta(self):
+        # fixme, it could be useful to make a executable to get the header of an msr file
+        raise InvalidFileFormat()
+
+    def convert(self):
+        pass
+
+
+class ISISMsrFile:
+    def __init__(self, file_path):
+        self.file_path = file_path
+
+    def get_data(self):
+        raise InvalidFileFormat()
+
+    def get_meta(self):
+        # fixme, it could be useful to make a executable to get the header of an msr file
+        raise InvalidFileFormat()
+
+    def convert(self):
+        pass
+
+
+class JParcMsrFile:
+    def __int__(self, file_path):
+        self.file_path = file_path
+
+    def get_data(self):
+        raise InvalidFileFormat()
+
+    def get_meta(self):
+        # fixme, it could be useful to make a executable to get the header of an msr file
+        raise InvalidFileFormat()
+
+    def convert(self):
         pass
 
 
