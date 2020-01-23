@@ -491,10 +491,6 @@ class Run:
         self.uncertainty = np.array(uncertainty)
         self.time = np.array(time)
 
-        self.binned_asymmetries = [None, None]
-        self.binned_uncertainties = [None, None]
-        self.binned_times = [None, None]
-
         self.t0 = t0
         self.alpha = 1
         self.beta = 1

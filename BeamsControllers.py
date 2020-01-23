@@ -444,7 +444,6 @@ class PlotController:
 
     def _update_canvas(self, can_int, moving=False):
         # Get the appropriate plotting parameters for the specified canvas
-        print('Updating the canvas')
         canvas = self.canvases[can_int-1]
         xmin = self.plot_parameters['TimeXMinOne']() if can_int == 1 else self.plot_parameters['TimeXMinTwo']()
         xmax = self.plot_parameters['TimeXMaxOne']() if can_int == 1 else self.plot_parameters['TimeXMaxTwo']()
@@ -466,9 +465,7 @@ class PlotController:
         for run in self.service.get_runs():
             style = run.style
             if style.visibility:
-                print('Before binning')
                 asymmetry, times, uncertainty = self.service.get_run_binned(run.run_id, float(bin), moving)
-                print('Binned')
                 if moving:
                     canvas.axes_time.plot(times, asymmetry, color=style.color, linestyle='None', marker=style.marker)
 
@@ -841,10 +838,7 @@ class WriterController:
 
         files = self.files.copy()
         for file_path in files:
-            print(file_path)
             file = BeamsUtility.FileReader(file_path)
-            print(file)
-            print(file.get_type())
             checked_files[file.get_type()].append(file)
             if file.get_type() == BeamsUtility.FileReader.BINARY_FILE:
                 self.files.remove(file_path)
@@ -892,18 +886,23 @@ class WriterController:
                         file_path = os.path.split(run.filename)[0] + '\\' + str(run.meta['RunNumber']) + '.asy'
                     else:
                         file_path = os.path.splitext(run.filename)[0] + '.asy'
-                meta_string = \
-                                BeamsUtility.TITLE_KEY + ":" + str(run.meta[BeamsUtility.TITLE_KEY]) + "," \
-                              + BeamsUtility.BIN_SIZE_KEY + ":" + str(run.meta[BeamsUtility.BIN_SIZE_KEY]) + "," \
-                              + BeamsUtility.TEMPERATURE_KEY + ":" + str(run.meta[BeamsUtility.TEMPERATURE_KEY]) + "," \
-                              + BeamsUtility.FIELD_KEY + ":" + str(run.meta[BeamsUtility.FIELD_KEY]) + "," \
-                              + BeamsUtility.T0_KEY + ":" + str(run.t0) + "\n"
+
                 if self.writer_gui.radio_binned.isChecked():
                     bin_size = float(self.writer_gui.radio_binned_size.text())
+                    meta_string = BeamsUtility.TITLE_KEY + ":" + str(run.meta[BeamsUtility.TITLE_KEY]) + "," \
+                                  + BeamsUtility.BIN_SIZE_KEY + ":" + str(bin_size) + "," \
+                                  + BeamsUtility.TEMPERATURE_KEY + ":" + str(run.meta[BeamsUtility.TEMPERATURE_KEY]) + "," \
+                                  + BeamsUtility.FIELD_KEY + ":" + str(run.meta[BeamsUtility.FIELD_KEY]) + "," \
+                                  + BeamsUtility.T0_KEY + ":" + str(run.t0) + "\n"
                     asymmetry, time, uncertainty = self.service.get_run_binned(run.run_id, bin_size, False)
                     np.savetxt(file_path, np.c_[time, asymmetry, uncertainty],
                                fmt='%2.9f, %2.4f, %2.4f', header="BEAMS\n" + meta_string + "Time, Asymmetry, Uncertainty")
                 elif self.writer_gui.radio_full.isChecked():
+                    meta_string = BeamsUtility.TITLE_KEY + ":" + str(run.meta[BeamsUtility.TITLE_KEY]) + "," \
+                                  + BeamsUtility.BIN_SIZE_KEY + ":" + str(run.meta[BeamsUtility.BIN_SIZE_KEY]) + "," \
+                                  + BeamsUtility.TEMPERATURE_KEY + ":" + str(run.meta[BeamsUtility.TEMPERATURE_KEY]) + "," \
+                                  + BeamsUtility.FIELD_KEY + ":" + str(run.meta[BeamsUtility.FIELD_KEY]) + "," \
+                                  + BeamsUtility.T0_KEY + ":" + str(run.t0) + "\n"
                     np.savetxt(file_path, np.c_[run.time, run.asymmetry, run.uncertainty],
                                fmt='%2.9f, %2.4f, %2.4f', header="BEAMS\n" + meta_string + "Time, Asymmetry, Uncertainty")
                 else:
