@@ -226,27 +226,26 @@ class FileManagerController:
         self.service.update_file_list(filenames, remove=False)
 
     def plot_file(self):
-        """ Sends all checked files to the model to read.
-            Note: If the model creates or alters current RunData objects the PlotPanelController will be notified.
-            See update() in PlotPanelController class. """
-        # Get all checked filenames then get the full file paths that are stored in the model.
-        checked_items = [self.file_title_dict[title] for title in self._get_selected_files()]
+        checked_files = {BeamsUtility.FileReader.BINARY_FILE: [],
+                         BeamsUtility.FileReader.ASYMMETRY_FILE: [],
+                         BeamsUtility.FileReader.HISTOGRAM_FILE: []}
 
-        beams_files, other_dat, msr_files, bad_files, asy_files = BeamsUtility.check_files(checked_items)
+        for file_path in [self.file_title_dict[title] for title in self._get_selected_files()]:
+            file = BeamsUtility.FileReader(file_path)
+            checked_files[file.get_type()].append(file)
 
-        if msr_files:  # Users must give permission to read and convert .msr files to .dat
+        if len(checked_files[BeamsUtility.FileReader.BINARY_FILE]) != 0:
             message = 'MUD Files selected, would you like them to be converted?'
             BeamsViews.PermissionsMessageUI(message, pos_function=self.convert_file)
+            return
 
-        elif bad_files:  # Throw error message for unsupported file types
-            message = 'The following files are not supported or cannot be found/opened: \n{}'.format(
-                [(filename + '\n') for filename in bad_files])
-            BeamsViews.ErrorMessageUI(message)
+        if len(checked_files[BeamsUtility.FileReader.ASYMMETRY_FILE]) != 0:
+            threading.Thread(target=self.service.update_run_list(checked_files[BeamsUtility.FileReader.ASYMMETRY_FILE])).start()
 
-        elif beams_files or other_dat or asy_files:  # Collect the formats of each file to send to the model.
-            self._prompt_formats(beams_files, other_dat)
+        if len(checked_files[BeamsUtility.FileReader.HISTOGRAM_FILE]) != 0:
+            self.popup = PlotDataController(checked_files[BeamsUtility.FileReader.HISTOGRAM_FILE], plot=True)
 
-        else:  # No files were selected, inform the user.
+        if len(checked_files.values()) == 0:
             BeamsViews.ErrorMessageUI(error_message='No files selected.')
 
     def convert_file(self):
@@ -445,6 +444,7 @@ class PlotController:
 
     def _update_canvas(self, can_int, moving=False):
         # Get the appropriate plotting parameters for the specified canvas
+        print('Updating the canvas')
         canvas = self.canvases[can_int-1]
         xmin = self.plot_parameters['TimeXMinOne']() if can_int == 1 else self.plot_parameters['TimeXMinTwo']()
         xmax = self.plot_parameters['TimeXMaxOne']() if can_int == 1 else self.plot_parameters['TimeXMaxTwo']()
@@ -466,8 +466,9 @@ class PlotController:
         for run in self.service.get_runs():
             style = run.style
             if style.visibility:
+                print('Before binning')
                 asymmetry, times, uncertainty = self.service.get_run_binned(run.run_id, float(bin), moving)
-
+                print('Binned')
                 if moving:
                     canvas.axes_time.plot(times, asymmetry, color=style.color, linestyle='None', marker=style.marker)
 
@@ -675,7 +676,7 @@ class RunDisplayController:
             self.service.update_run_style(run_id, BeamsModel.STYLE_MARKER, self.run_display.marker_choices.currentText())
 
     def update_run_display(self):
-        if len(self.service.get_runs()) == 0:
+        if len(self.service.get_runs()) == 0 or self.run_display.current_runs.currentItem() is None:
             return
 
         self._change_selection = True
@@ -689,7 +690,13 @@ class RunDisplayController:
         self.run_display.input_alpha.setText(str(run.alpha))
         self.run_display.color_choices.setCurrentText(run.style.color)
         self.run_display.marker_choices.setCurrentText(styler.marker_options[run.style.marker])
-        self.run_display.histograms.addItems(run.meta[BeamsModel.HIST_TITLES_KEY_TRIUMF])
+
+        if run.type != BeamsUtility.FileReader.HISTOGRAM_FILE:
+            self.run_display.histograms.setEnabled(False)
+        else:
+            self.run_display.histograms.setEnabled(True)
+            self.run_display.histograms.addItems(run.meta[BeamsUtility.HIST_TITLES_KEY])
+
         self.update_metadata()
         self._change_selection = False
 
@@ -727,8 +734,8 @@ class RunDisplayController:
 
             self.run_id_title = dict()
             for run in runs:
-                self.run_id_title[run.meta[BeamsModel.TITLE_KEY_TRIUMF]] = run.run_id
-                self.run_display.current_runs.addItem(run.meta[BeamsModel.TITLE_KEY_TRIUMF])
+                self.run_id_title[run.meta[BeamsUtility.TITLE_KEY]] = run.run_id
+                self.run_display.current_runs.addItem(run.meta[BeamsUtility.TITLE_KEY])
 
             for index in range(self.run_display.current_runs.count()):
                 item = self.run_display.current_runs.item(index)
@@ -828,16 +835,29 @@ class WriterController:
                 break
 
     def read_files(self):
-        check_files = self.files
-        beams_files, *_ = BeamsUtility.check_files(check_files)
-        if self.formats:
-            self.formats.clear()
+        checked_files = {BeamsUtility.FileReader.BINARY_FILE: [],
+                         BeamsUtility.FileReader.ASYMMETRY_FILE: [],
+                         BeamsUtility.FileReader.HISTOGRAM_FILE: []}
 
-        if beams_files:
-            self.formats = {file: file_format for file, file_format in
-                            zip(beams_files, [BeamsUtility.get_header(file) for file in beams_files])}
+        files = self.files.copy()
+        for file_path in files:
+            print(file_path)
+            file = BeamsUtility.FileReader(file_path)
+            print(file)
+            print(file.get_type())
+            checked_files[file.get_type()].append(file)
+            if file.get_type() == BeamsUtility.FileReader.BINARY_FILE:
+                self.files.remove(file_path)
 
-            self.popup = PlotDataController(self.formats, plot=False)
+        if len(checked_files[BeamsUtility.FileReader.BINARY_FILE]) != 0:
+            BeamsViews.ErrorMessageUI(error_message='Can not write from binary file, you need to convert first.')
+
+        if len(checked_files[BeamsUtility.FileReader.ASYMMETRY_FILE]) != 0:
+            threading.Thread(target=self.service.update_run_list(checked_files[BeamsUtility.FileReader.ASYMMETRY_FILE])).start()
+
+        if len(checked_files[BeamsUtility.FileReader.HISTOGRAM_FILE]) != 0:
+            print('here')
+            self.popup = PlotDataController(checked_files[BeamsUtility.FileReader.HISTOGRAM_FILE], plot=False)
 
     def _set_callbacks(self):
         self.writer_gui.select_folder.released.connect(lambda: self.custom_file_choice())
@@ -872,15 +892,20 @@ class WriterController:
                         file_path = os.path.split(run.filename)[0] + '\\' + str(run.meta['RunNumber']) + '.asy'
                     else:
                         file_path = os.path.splitext(run.filename)[0] + '.asy'
-
+                meta_string = \
+                                BeamsUtility.TITLE_KEY + ":" + str(run.meta[BeamsUtility.TITLE_KEY]) + "," \
+                              + BeamsUtility.BIN_SIZE_KEY + ":" + str(run.meta[BeamsUtility.BIN_SIZE_KEY]) + "," \
+                              + BeamsUtility.TEMPERATURE_KEY + ":" + str(run.meta[BeamsUtility.TEMPERATURE_KEY]) + "," \
+                              + BeamsUtility.FIELD_KEY + ":" + str(run.meta[BeamsUtility.FIELD_KEY]) + "," \
+                              + BeamsUtility.T0_KEY + ":" + str(run.t0) + "\n"
                 if self.writer_gui.radio_binned.isChecked():
                     bin_size = float(self.writer_gui.radio_binned_size.text())
                     asymmetry, time, uncertainty = self.service.get_run_binned(run.run_id, bin_size, False)
                     np.savetxt(file_path, np.c_[time, asymmetry, uncertainty],
-                               fmt='%2.9f, %2.4f, %2.4f', header='BEAMS\nTime, Asymmetry, Uncertainty')
+                               fmt='%2.9f, %2.4f, %2.4f', header="BEAMS\n" + meta_string + "Time, Asymmetry, Uncertainty")
                 elif self.writer_gui.radio_full.isChecked():
                     np.savetxt(file_path, np.c_[run.time, run.asymmetry, run.uncertainty],
-                               fmt='%2.9f, %2.4f, %2.4f', header='BEAMS\nTime, Asymmetry, Uncertainty')
+                               fmt='%2.9f, %2.4f, %2.4f', header="BEAMS\n" + meta_string + "Time, Asymmetry, Uncertainty")
                 else:
                     print('FFT not supported.')
                 count += 1
@@ -894,16 +919,18 @@ class PlotDataController:
             will be used to calculate the asymmetry for each file.
 
             Instantiated by FileManagerController class only."""
-    def __init__(self, formats=None, plot=True):
+    def __init__(self, files=None, plot=True):
         """ Instantiates an object of the PlotDataController class, connects it to the PlotDataGUI
                 and its calling class (FileManagerController). """
 
         self.plot_data_gui = BeamsViews.PlotDataUI()
         self.plot = plot
         self.service = BeamsModel.RunService()
+        self.files = files
+
         self._set_callbacks()
-        self.formats = formats
-        self.plot_data_gui.c_file_list.addItems([file for file in self.formats.keys()])
+        print('here')
+        self.plot_data_gui.c_file_list.addItems([file.get_file_path() for file in self.files])
 
         self.plot_data_gui.show()
 
@@ -925,14 +952,15 @@ class PlotDataController:
 
         # If applying to all files, save the currently selected hists in each files format
         if all_files:
-            for index in range(num_files):
-                file = self.plot_data_gui.c_file_list.itemText(index)
-                self.formats[file]['CalcHists'] = calc_hists
+            for file in self.files:
+                file.get_meta()['CalcHists'] = calc_hists
 
         # Else only save it with the current file
         else:
-            file = self.plot_data_gui.c_file_list.currentText()
-            self.formats[file]['CalcHists'] = calc_hists
+            file_path = self.plot_data_gui.c_file_list.currentText()
+            for file in self.files:
+                if file.get_file_path() == file_path:
+                    file.get_meta()['CalcHists'] = calc_hists
 
             # Update the file list to display the next file.
             if self.plot_data_gui.c_file_list.currentIndex() < num_files:
@@ -953,13 +981,13 @@ class PlotDataController:
         """ Closes the GUI and calls update_model() in the parent class FileManagerControl. """
         self.plot_data_gui.close()
 
-        files = list(self.formats.keys())
-        metas = [self.formats[key] for key in self.formats.keys()]
-        threading.Thread(target=self.service.update_run_list(files, metas, self.plot), daemon=True).start()
+        threading.Thread(target=self.service.update_run_list(self.files, None, self.plot), daemon=True).start()
 
     def remove_file(self):
         """ Removes the currently selected file from the file list and from the format list. """
-        self.formats.pop(self.plot_data_gui.c_file_list.currentText())
+        for file in self.files:
+            if file.get_file_path() == self.plot_data_gui.c_file_list.currentText():
+                self.files.remove(file)
         self.plot_data_gui.c_file_list.removeItem(self.plot_data_gui.c_file_list.currentIndex())
 
     def file_changed(self):
@@ -968,10 +996,10 @@ class PlotDataController:
         self.plot_data_gui.c_hist_two.clear()
 
         if self.plot_data_gui.c_file_list.currentText():  # Stop displaying if no files left in file list
-            self.plot_data_gui.c_hist_one.addItems(self.formats[
-                                                       self.plot_data_gui.c_file_list.currentText()]['HistTitles'])
-            self.plot_data_gui.c_hist_two.addItems(self.formats[
-                                                       self.plot_data_gui.c_file_list.currentText()]['HistTitles'])
+            for file in self.files:
+                if file.get_file_path() == self.plot_data_gui.c_file_list.currentText():
+                    self.plot_data_gui.c_hist_one.addItems(file.get_meta()['HistTitles'])
+                    self.plot_data_gui.c_hist_two.addItems(file.get_meta()['HistTitles'])
 
 
 class SavePlotController:  # fixme just make this a smart UI in the views file, it's pretty short.

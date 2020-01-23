@@ -4,6 +4,7 @@
 import BeamsUtility
 
 # Standard Library modules
+import os
 import uuid
 
 # Installed modules
@@ -16,20 +17,12 @@ FILE_CHANGE = 2
 RUN_LIST_CHANGE = 3
 RUN_DATA_CHANGE = 4
 
-# Meta Keys
-FIELD_KEY_TRIUMF = 'Field'
-TEMPERATURE_KEY_TRIUMF = 'Temperature'
-BIN_SIZE_KEY_TRIUMF = 'BinSize'
-TITLE_KEY_TRIUMF = 'Title'
-HIST_TITLES_KEY_TRIUMF = 'HistTitles'
 
 # Style Keys
 STYLE_TITLE = 'Title'
 STYLE_COLOR = 'Color'
 STYLE_MARKER = 'Marker'
 STYLE_VISIBILITY = 'Visibility'
-
-
 
 
 class RunService:
@@ -78,26 +71,6 @@ class RunService:
             self.remove_file(file)
         self._notify(RUN_LIST_CHANGE)
 
-    def add_run_by_filename(self, filename, meta, type=BEAMS_DAT_FILE, visible=True):
-        """ @Param Expects a full file path. """
-        if filename in self.run_id_file.keys():
-            return self.run_id_file[filename]
-
-        run = self._generate_run_data(filename, meta)
-
-        run_id = uuid.uuid1()
-        run.run_id = run_id
-
-        style = self.styler.create_style(run)
-        style.visibility = visible
-        run.style = style
-
-        self.database.add_run(run)
-        self.runs.append(run_id)
-        self.run_id_file[filename] = run_id
-
-        return run_id
-
     def remove_run_by_id(self, run_id):
         run = self.database.get_run_by_id(run_id)
 
@@ -106,6 +79,42 @@ class RunService:
         self.files.remove(run.filename)
         self.run_id_file.pop(run.filename)
         self.database.remove_run(run)
+
+    def add_run(self, file, visible=True):
+        print(file)
+        file_path = file.get_file_path()
+
+        if file_path in self.run_id_file.keys():
+            return self.run_id_file[file_path]
+
+        if file.get_type() == BeamsUtility.FileReader.ASYMMETRY_FILE:
+            data = file.get_data()
+            meta = file.get_meta()
+
+            run = Run(data.loc[:,'Asymmetry'].values, data.loc[:,'Uncertainty'].values, data.loc[:,'Time'].values,
+                      meta, file_path, meta[BeamsUtility.T0_KEY])
+            print(run)
+
+        elif file.get_type() == BeamsUtility.FileReader.HISTOGRAM_FILE:
+            run = self._generate_run_data(file_path, file.get_meta())
+
+        else:
+            return None
+
+        run_id = uuid.uuid1()
+        run.run_id = run_id
+        run.type = file.get_type()
+
+        style = self.styler.create_style(run)
+        style.visibility = visible
+        run.style = style
+
+        self.database.add_run(run)
+        self.runs.append(run_id)
+        self.run_id_file[file_path] = run_id
+
+        print(run)
+        return run_id
 
     # Updating Functions
     def update_file_list(self, files, remove=False):
@@ -132,21 +141,25 @@ class RunService:
 
         self._notify(FILE_CHANGE)
 
-    def update_run_list(self, files, metas, visible=True):
+    def update_run_list(self, files, metas=None, visible=True):
         """
         :param files: an array of FULL file paths
         :param metas: a dictionary holding meta data for run
         :raises RUN_LIST_CHANGE signal:
         """
+
+        print(files)
         current_files = [file for file in self.run_id_file.keys()]
+        new_file_paths = [new_file.get_file_path() for new_file in files]
+        new_file_ext = os.path.splitext(new_file_paths[0])[1]
         for file in current_files:
-            if file not in files:
+            if os.path.splitext(file)[1] == new_file_ext and file not in new_file_paths:
                 self.remove_file(file)
                 self.files.add(file)
 
-        for file, meta in zip(files, metas):
-            if file not in self.run_id_file.keys():
-                self.add_run_by_filename(file, meta, visible)
+        for file in files:
+            if file.get_file_path() not in self.run_id_file.keys():
+                self.add_run(file)
 
         self._notify(RUN_LIST_CHANGE)
 
@@ -264,10 +277,10 @@ class RunService:
         return [np.trapz(run.asymmetry, run.time) for run in self.get_runs() if run.run_id in run_ids]
 
     def get_run_temperatures(self, run_ids):
-        return [float(run.meta[TEMPERATURE_KEY_TRIUMF].split('(')[0]) for run in self.get_runs() if run.run_id in run_ids]
+        return [float(run.meta[BeamsUtility.TEMPERATURE_KEY].split('(')[0]) for run in self.get_runs() if run.run_id in run_ids]
 
     def get_run_fields(self, run_ids):
-        return [float(run.meta[FIELD_KEY_TRIUMF].split('G')[0]) for run in self.get_runs() if run.run_id in run_ids]
+        return [float(run.meta[BeamsUtility.FIELD_KEY].split('G')[0]) for run in self.get_runs() if run.run_id in run_ids]
 
     # Protected Functions for RunService
     def send_signal(self, signal):
@@ -282,8 +295,8 @@ class RunService:
 
     @staticmethod
     def _generate_run_data(filename, meta):
-        histogram_data = BeamsUtility.get_histograms(filename, skiprows=int(meta['HeaderRows']))
-        histogram_data.columns = meta['HistTitles']
+        file = BeamsUtility.FileReader(filename)
+        histogram_data = file.get_data()
 
         start_bin_one, start_bin_two, end_bin_one, end_bin_two, t0 = calculate_start_end(meta)
 
@@ -303,7 +316,7 @@ class RunService:
         time = (np.arange(len(asymmetry)) * float(meta['BinSize']) / 1000) + \
                (t0 * float(meta['BinSize']) / 1000)
 
-        new_run = Run(asymmetry, uncertainty, time, t0, meta, filename)
+        new_run = Run(asymmetry, uncertainty, time, meta, filename, t0)
 
         return new_run
 
@@ -364,7 +377,7 @@ class RunStyler:
 
         if run:
             style.run_id = run.run_id
-            style.title = run.meta['Title']
+            style.title = run.meta[BeamsUtility.TITLE_KEY]
         else:
             style.run_id = 0
             style.title = "Null"
@@ -473,7 +486,7 @@ class Database:
 
 
 class Run:
-    def __init__(self, asymmetry, uncertainty, time, t0, meta, filename):
+    def __init__(self, asymmetry, uncertainty, time, meta, filename, t0, type=None):
         self.asymmetry = np.array(asymmetry)
         self.uncertainty = np.array(uncertainty)
         self.time = np.array(time)
@@ -489,6 +502,12 @@ class Run:
         self.run_id = None
         self.filename = filename
         self.style = None
+        self.type = type
+
+    def __str__(self):
+        return self.meta[BeamsUtility.TITLE_KEY] + ": len(asymmetry)=" + str(len(self.asymmetry)) \
+               + ": len(uncertainty)=" + str(len(self.uncertainty)) \
+               + ": len(time)=" + str(len(self.time))
 
 
 class Style:
@@ -599,22 +618,18 @@ def correct_asymmetry(meta, asymmetry, alpha, beta=None):
 
 def bin_asymmetry(meta, asymmetry, time, uncertainty, t0, bin_size, slider_moving):
     """ Bins the asymmetry based on user specified bin size. """
-
-    bin_full = float(meta['BinSize']) / 1000
+    bin_full = float(meta[BeamsUtility.BIN_SIZE_KEY]) / 1000
     bin_binned = float(bin_size) / 1000
     num_bins = len(asymmetry)
-
+    t0 = float(t0)
     if bin_binned <= bin_full:
         return [asymmetry, time, uncertainty]
-
     binned_indices_per_bin = int(np.round(bin_binned / bin_full))  # .floor?
     binned_indices_total = int(np.floor(num_bins / binned_indices_per_bin))
     leftover_bins = int(num_bins % binned_indices_per_bin)
     time_per_binned = binned_indices_per_bin * bin_full
 
-    binned_time = (np.arange(binned_indices_total) * time_per_binned) + (t0 * bin_full) + (
-                time_per_binned / 2)
-
+    binned_time = (np.arange(binned_indices_total) * time_per_binned) + (t0 * bin_full) + (time_per_binned / 2)
     if slider_moving:
         if leftover_bins:
             reshaped_asymmetry = np.reshape(asymmetry[:-leftover_bins],
@@ -638,8 +653,7 @@ def bin_asymmetry(meta, asymmetry, time, uncertainty, t0, bin_size, slider_movin
         binned_asymmetry = np.apply_along_axis(np.mean, 1, reshaped_asymmetry)
         binned_uncertainty = 1 / binned_indices_per_bin * np.sqrt(np.apply_along_axis(np.sum, 1,
                                                                                            reshaped_uncertainty ** 2))
-
-    return [np.abs(binned_asymmetry), binned_time, binned_uncertainty]
+    return [binned_asymmetry, binned_time, binned_uncertainty]
 
 
 

@@ -207,7 +207,7 @@ def is_beams(filename):
     """ Checks if the .dat file is BEAMS formatted (first line should read 'BEAMS'). No other checks."""
     if is_found(filename):
         with open(filename) as file:
-            if file.readline().rstrip('\n') == 'BEAMS':
+            if 'BEAMS' in file.readline().rstrip('\n'):
                 return True
     return False
 
@@ -380,11 +380,16 @@ def is_valid_format(sections=None, t0=None, header_rows=None, file_names=None):
     return f_format
 
 
-# fixme each file needs to fall in to some sub categories, histogram file, [asym, time, unc] file, binary file
 class FileReader:
-    TRIUMF_MUD_FILE = 1
-    BEAMS_ASY_FILE = 2
-    BEAMS_DAT_FILE = 3
+    # File Source
+    BEAMS = 0
+    TRIUMF = 1
+
+    # File Type
+    BINARY_FILE = 0
+    HISTOGRAM_FILE = 1
+    ASYMMETRY_FILE = 2
+    FFT_FILE = 3
 
     def __init__(self, file_path):
         self.file_path = file_path
@@ -394,15 +399,21 @@ class FileReader:
 
         if check_ext(file_path, '.dat') and is_beams(file_path):
             self.__file = BeamsDatFile(file_path)
-            self.type = self.BEAMS_DAT_FILE
+            self.type = self.HISTOGRAM_FILE
+            self.__source = self.BEAMS
         elif check_ext(file_path, '.asy') and is_beams(file_path):
             self.__file = BeamsAsyFile(file_path)
-            self.type = self.BEAMS_ASY_FILE
+            self.type = self.ASYMMETRY_FILE
+            self.__source = self.BEAMS
         elif check_ext(file_path, '.msr'):
             self.__file = TriumfMsrFile(file_path)
-            self.type = self.TRIUMF_MUD_FILE
+            self.type = self.BINARY_FILE
+            self.__source = self.TRIUMF
         else:
             raise InvalidFileFormat()
+
+    def __str__(self):
+        return str(self.__file)
 
     def get_data(self):
         return self.__file.get_data()
@@ -421,25 +432,83 @@ class FileReader:
 
 
 class BeamsAsyFile:
+    HEADER_ROWS = 3
+
     def __init__(self, file_path):
         self.file_path = file_path
+        self.__meta = None
+
+    def __str__(self):
+        return "Beams Asymmetry File: meta=" + str(self.get_meta())
 
     def get_data(self):
-        pass
+        data = pd.read_csv(self.file_path, skiprows=self.HEADER_ROWS-1)
+        data.columns = ['Time', 'Asymmetry', 'Uncertainty']
+        return data
 
     def get_meta(self):
-        pass
+        if self.__meta is None:
+            with open(self.file_path) as file:
+                file.readline()
+                metadata = file.readline().rstrip('\n').rsplit('# ')[1].rsplit(',')
+
+            metadata = [pair.rsplit(':') for pair in metadata]
+            for pair in metadata:
+                if len(pair) < 2:
+                    pair.append('n/a')
+            metadata = {pair[0]: pair[1] for pair in metadata}
+
+            # need binsize, field, temperature, t0, title. Otherwise we have no idea what this data is
+            self.__meta = metadata
+            return metadata
+        else:
+            return self.__meta
 
 
 class BeamsDatFile:
+    HEADER_ROWS = 8
+
     def __init__(self, file_path):
         self.file_path = file_path
+        self.__meta = None
+
+    def __str__(self):
+        return "Beams Data File: meta=" + str(self.get_meta())
 
     def get_data(self):
-        pass
+        meta = self.get_meta()
+        data = pd.read_csv(self.file_path, skiprows=self.HEADER_ROWS-1)
+        data.columns = meta[HIST_TITLES_KEY]
+        return data
 
     def get_meta(self):
-        pass
+        if self.__meta is None:
+            with open(self.file_path) as file:
+                file.readline()
+                metadata = file.readline().rstrip('\n').rsplit(',')
+                hist_titles = file.readline().rstrip('\n').rsplit(',')
+                background_one = file.readline().rstrip('\n').rsplit(',')
+                background_two = file.readline().rstrip('\n').rsplit(',')
+                good_bins_one = file.readline().rstrip('\n').rsplit(',')
+                good_bins_two = file.readline().rstrip('\n').rsplit(',')
+                initial_time = file.readline().rstrip('\n').rsplit(',')
+
+            metadata = [pair.rsplit(':') for pair in metadata]
+            for pair in metadata:
+                if len(pair) < 2:
+                    pair.append('n/a')
+
+            metadata = {pair[0]: pair[1] for pair in metadata}
+            metadata[HIST_TITLES_KEY] = hist_titles
+            metadata[BACKGROUND_ONE_KEY] = {k: v for k, v in zip(hist_titles, background_one)}
+            metadata[BACKGROUND_TWO_KEY] = {k: v for k, v in zip(hist_titles, background_two)}
+            metadata[GOOD_BIN_ONE_KEY] = {k: v for k, v in zip(hist_titles, good_bins_one)}
+            metadata[GOOD_BIN_TWO_KEY] = {k: v for k, v in zip(hist_titles, good_bins_two)}
+            metadata[T0_KEY] = {k: v for k, v in zip(hist_titles, initial_time)}
+            self.__meta = metadata
+            return metadata
+        else:
+            return self.__meta
 
 
 class TriumfMsrFile:
@@ -451,3 +520,16 @@ class TriumfMsrFile:
 
     def get_meta(self):
         pass
+
+
+# Meta Keys
+FIELD_KEY = 'Field'
+TEMPERATURE_KEY = 'Temperature'
+BIN_SIZE_KEY = 'BinSize'
+TITLE_KEY = 'Title'
+HIST_TITLES_KEY = 'HistTitles'
+BACKGROUND_ONE_KEY = 'BkgdOne'
+BACKGROUND_TWO_KEY = 'BkgdTwo'
+GOOD_BIN_ONE_KEY = 'GoodBinOne'
+GOOD_BIN_TWO_KEY = 'GoodBinTwo'
+T0_KEY = 'T0'
