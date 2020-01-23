@@ -344,6 +344,15 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
 # fixme put the small utility canvas classes inside plot panel or canvas UI class as inner classes
 # noinspection PyArgumentList
 class PlotPanel(QtWidgets.QDockWidget):
+    class CanvasWrapper(QtWidgets.QMainWindow):
+        def __init__(self):
+            QtWidgets.QMainWindow.__init__(self)
+            self.canvas = RunPlot()
+            self.setCentralWidget(self.canvas)
+            self.addToolBar(QtCore.Qt.TopToolBarArea, NavigationToolbar(self.canvas, self))
+            self.plot_editor = SinglePlotEditor()
+            self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.plot_editor)
+
     def __init__(self):
         super(PlotPanel, self).__init__()
         self.setTitleBarWidget(QtWidgets.QWidget())
@@ -351,8 +360,8 @@ class PlotPanel(QtWidgets.QDockWidget):
         self.setWindowTitle("Graphing Area")
         self.full_widget = QtWidgets.QWidget()
 
-        self.canvas_wrapper_one = CanvasWrapper()
-        self.canvas_wrapper_two = CanvasWrapper()
+        self.canvas_wrapper_one = self.CanvasWrapper()
+        self.canvas_wrapper_two = self.CanvasWrapper()
         self.canvas_wrapper_one.plot_editor.setWindowTitle('Plot 1 Editor')
         self.canvas_wrapper_two.plot_editor.setWindowTitle('Plot 2 Editor')
         self.canvas_one = self.canvas_wrapper_one.canvas
@@ -465,17 +474,6 @@ class CanvasUI(FigureCanvas):
         FigureCanvas.__init__(self, Figure())
 
         self.canvas_axes = self.figure.add_subplot(111, label='Canvas')
-
-
-# noinspection PyArgumentList
-class CanvasWrapper(QtWidgets.QMainWindow):
-    def __init__(self):
-        super(CanvasWrapper, self).__init__()
-        self.canvas = RunPlot()
-        self.setCentralWidget(self.canvas)
-        self.addToolBar(QtCore.Qt.TopToolBarArea, NavigationToolbar(self.canvas, self))
-        self.plot_editor = SinglePlotEditor()
-        self.addDockWidget(QtCore.Qt.BottomDockWidgetArea, self.plot_editor)
 
 
 # noinspection PyArgumentList

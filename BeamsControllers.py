@@ -21,7 +21,7 @@ class ProgramController:
     def __init__(self):
         self.app = QtWidgets.QApplication(sys.argv)
 
-        self.app.setStyleSheet(BeamsViews.StyleFile('light_style.qss', 'light_style_vars.txt').style)
+        self.app.setStyleSheet(BeamsViews.StyleFile(r'style/light_style.qss', r'style/light_style_vars.txt').style)
 
         # Initialize the model
         # Note: The model holds most application-relevant data and the 'business logic' of the application.

@@ -116,7 +116,6 @@ class RunService:
         """
         print('Updating Run Style')
         run = self.database.get_run_by_id(run_id)
-        print('u1')
         self.styler.update_style(run, style_key, style_value)
         self._notify(STYLE_CHANGE)
 
@@ -341,11 +340,9 @@ class RunStyler:
         return getattr(self.instance, name)
 
     def update_style(self, run, style_key, style_value):
-        print('u2')
         if style_key == STYLE_TITLE:
             self._update_run_title(run, style_value)
         elif style_key == STYLE_COLOR:
-            print('u3')
             self._update_run_color(run, style_value)
         elif style_key == STYLE_MARKER:
             self._update_run_marker(run, style_value)
@@ -397,37 +394,27 @@ class RunStyler:
     def _update_colors(self, color=None, used=False):
         """ Updates the used and un-used color lists so as to keep track of which colors are available
                 when plotting new runs without having two runs of identical color."""
-        print(1)
-        print(self.unused_colors, self.used_colors, color)
         if used:
             if color not in self.used_colors.keys():
-                print(2)
                 self.used_colors[color] = self.color_options[color]
             if color in self.unused_colors.keys():
-                print(3)
                 self.unused_colors.pop(color)
         else:
             if color not in self.unused_colors.keys():
-                print(4)
                 self.unused_colors[color] = self.color_options[color]
             if color in self.used_colors.keys():
-                print(5)
                 self.used_colors.pop(color)
         return True
 
     def _update_run_color(self, run, color):
         """ Updates the color of a specific run. Calls update_colors() to update the used and available color lists. """
         color = self.color_options_values[color]
-        print(1)
         if color in self.unused_colors.keys():
             self._update_colors(color=color, used=True)
-        print(2)
         if run.style.color in self.used_colors.keys():
             self._update_colors(color=run.style.color, used=False)
-        print(3)
         if run.style.color == color:
             return
-        print(4)
         run.style.color = color
 
     def _update_run_marker(self, run, marker):
