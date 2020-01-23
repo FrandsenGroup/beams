@@ -81,7 +81,6 @@ class RunService:
         self.database.remove_run(run)
 
     def add_run(self, file, visible=True):
-        print(file)
         file_path = file.get_file_path()
 
         if file_path in self.run_id_file.keys():
@@ -93,7 +92,6 @@ class RunService:
 
             run = Run(data.loc[:,'Asymmetry'].values, data.loc[:,'Uncertainty'].values, data.loc[:,'Time'].values,
                       meta, file_path, meta[BeamsUtility.T0_KEY])
-            print(run)
 
         elif file.get_type() == BeamsUtility.FileReader.HISTOGRAM_FILE:
             run = self._generate_run_data(file_path, file.get_meta())
@@ -113,7 +111,6 @@ class RunService:
         self.runs.append(run_id)
         self.run_id_file[file_path] = run_id
 
-        print(run)
         return run_id
 
     # Updating Functions
@@ -148,7 +145,6 @@ class RunService:
         :raises RUN_LIST_CHANGE signal:
         """
 
-        print(files)
         current_files = [file for file in self.run_id_file.keys()]
         new_file_paths = [new_file.get_file_path() for new_file in files]
         new_file_ext = os.path.splitext(new_file_paths[0])[1]
@@ -280,7 +276,7 @@ class RunService:
         return [float(run.meta[BeamsUtility.TEMPERATURE_KEY].split('(')[0]) for run in self.get_runs() if run.run_id in run_ids]
 
     def get_run_fields(self, run_ids):
-        return [float(run.meta[BeamsUtility.FIELD_KEY].split('G')[0]) for run in self.get_runs() if run.run_id in run_ids]
+        return [float(run.meta[BeamsUtility.FIELD_KEY].split('(')[0].split('G')[0]) for run in self.get_runs() if run.run_id in run_ids]
 
     # Protected Functions for RunService
     def send_signal(self, signal):

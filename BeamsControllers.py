@@ -126,7 +126,6 @@ class FileManagerController:
 
         self.program_controller = parent
         self.formats = {}
-        self.id_title_dict = dict()
         self.file_title_dict = dict()
         self.popup = None
 
@@ -152,32 +151,6 @@ class FileManagerController:
             else:
                 self.file_manager.file_list.item(index).setCheckState(QtCore.Qt.Unchecked)
 
-    def _prompt_formats(self, b_files, o_files):
-        """ Collects the formats of the files user selected to plot. Formats for BEAMS files can
-            all be obtained from the header. Launch Formatter to handle non-BEAMS files.
-
-            Format Example: {filename: {header:value,bin_size:value, etc...}} -> format[filename][header] = value """
-        if self.formats:
-            self.formats.clear()
-
-        # Formats from BEAMS formatted files can all be obtained from the header.
-        if b_files:
-            self.formats = {file: file_format for file, file_format in
-                            zip(b_files, [BeamsUtility.get_header(file) for file in b_files])}
-
-        # Users need to specify the formats of other .dat files through the FormatterGUI
-        if o_files:
-            self.popup = FormatterController(o_files, parent=self)
-        else:
-            # If no other .dat files to format we can prompt for histograms here.
-            # Otherwise the FormatterController will launch the GUI when all formats are specified.
-            self._prompt_histograms()
-
-    def _prompt_histograms(self):
-        """ Launches PlotDataGUI to prompt users to specify which histograms should be used
-            to calculate the asymmetry. Users can change this later in the RunDisplayPanel"""
-        self.popup = PlotDataController(self.formats, plot=True)
-
     def _get_selected_files(self):
         """ Returns all currently selected files in the File Manager Panel. """
         checked_items = set()
@@ -192,9 +165,6 @@ class FileManagerController:
         for index in range(self.file_manager.file_list.count()):
             files.add(self.file_manager.file_list.item(index).text())
         return files
-
-    def _get_run_id(self, title):
-        return self.id_title_dict[title]
 
     def remove_file(self):
         """ Removes the currently selected files from the file manager. """
@@ -287,31 +257,24 @@ class FileManagerController:
         full_selected_file_paths = [self.file_title_dict[title] for title in self._get_selected_files()]
         self.popup = WriterController(selected_files=full_selected_file_paths)
 
-    def update_model(self):
-        self.service.add_run_by_filename(list(self.formats.keys())[0], self.formats[list(self.formats.keys())[0]])
-
     def update(self, signal=None):
         """ Called by the model when one of its FileManagerPanel-relevant attributes changes. """
-        if signal == BeamsModel.FILE_CHANGE:  # Expects list of files to add the ListWidget in FileManagerPanel
-            # Then checks to see if any files have been removed from the model's file list. Removes them from the view.
-            for index in range(self.file_manager.file_list.count()-1, -1, -1):
-                self.file_manager.file_list.takeItem(index)
+        for index in range(self.file_manager.file_list.count()-1, -1, -1):
+            self.file_manager.file_list.takeItem(index)
 
-            self.id_title_dict = dict()
-            files = self.service.get_run_files()
+        files = self.service.get_run_files()
 
-            # First checks to see if any new files have been added to the model's file list. Adds them to the view.
-            file_titles = []
-            for file in files:
-                file_title = BeamsUtility.create_file_key(file)
-                file_titles.append(file_title)
-                self.file_title_dict[file_title] = file
+        file_titles = []
+        for file in files:
+            file_title = BeamsUtility.create_file_key(file)
+            file_titles.append(file_title)
+            self.file_title_dict[file_title] = file
 
-            file_titles = sorted(file_titles)
-            for title in file_titles:
-                file_item = QtWidgets.QListWidgetItem(title, self.file_manager.file_list)
-                file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsUserCheckable)
-                file_item.setCheckState(QtCore.Qt.Unchecked)
+        file_titles = sorted(file_titles)
+        for title in file_titles:
+            file_item = QtWidgets.QListWidgetItem(title, self.file_manager.file_list)
+            file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsUserCheckable)
+            file_item.setCheckState(QtCore.Qt.Unchecked)
 
 
 class PlotController:
@@ -707,7 +670,7 @@ class RunDisplayController:
         self.run_display.header_data.addItems([key for key in run.meta.keys()])
 
     def change_metadata(self):
-        if len(self.service.get_runs()) == 0:
+        if len(self.service.get_runs()) == 0 or self.run_display.current_runs.currentItem() is None:
             return
 
         if self.run_display.header_data.currentText():
@@ -718,7 +681,7 @@ class RunDisplayController:
             self.run_display.output_header_display.setText(str(value))
 
     def change_title(self):
-        if len(self.service.get_runs()) == 0:
+        if len(self.service.get_runs()) == 0 or self.run_display.current_runs.currentItem() is None:
             return
 
         if self.run_display.current_runs.currentItem():
@@ -756,6 +719,8 @@ class RunDisplayController:
             self.run_display.integrate_choices.setEnabled(True)
             self.run_display.integrate_button.setEnabled(True)
         else:
+            self.run_display.color_choices.clear()
+            self.run_display.marker_choices.clear()
             self.run_display.header_data.clear()
             self.run_display.current_runs.clear()
             self.run_display.histograms.clear()
@@ -801,10 +766,6 @@ class FormatterController:
 
     def b_skip_file(self):
         pass
-
-    def b_done_formatting(self):
-        self.formatter_gui.close()
-        self.parent_controller._prompt_histograms()
 
     @staticmethod
     def c_column_checked(check_box, input_box):
@@ -852,7 +813,6 @@ class WriterController:
             threading.Thread(target=self.service.update_run_list(checked_files[BeamsUtility.FileReader.ASYMMETRY_FILE])).start()
 
         if len(checked_files[BeamsUtility.FileReader.HISTOGRAM_FILE]) != 0:
-            print('here')
             self.popup = PlotDataController(checked_files[BeamsUtility.FileReader.HISTOGRAM_FILE], plot=False)
 
     def _set_callbacks(self):
@@ -930,7 +890,6 @@ class PlotDataController:
         self.files = files
 
         self._set_callbacks()
-        print('here')
         self.plot_data_gui.c_file_list.addItems([file.get_file_path() for file in self.files])
 
         self.plot_data_gui.show()
