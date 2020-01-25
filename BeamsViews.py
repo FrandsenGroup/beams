@@ -697,9 +697,9 @@ class IntegrationDisplay(QtWidgets.QMainWindow):
         layout.addWidget(self.canvas)
         self.addToolBar(NavigationToolbar(self.canvas, self))
 
-        self.canvas.canvas_axes.plot(integration, x_axis_data, linestyle='None', marker='o')
-        self.canvas.canvas_axes.set_xlabel('Integrated Asymmetry')
-        self.canvas.canvas_axes.set_ylabel(x_axis)
+        self.canvas.canvas_axes.plot(x_axis_data, integration, linestyle='None', marker='o')
+        self.canvas.canvas_axes.set_xlabel(x_axis)
+        self.canvas.canvas_axes.set_ylabel("Integrated Asymmetry")
 
 
 # noinspection PyArgumentList
