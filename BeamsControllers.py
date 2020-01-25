@@ -828,6 +828,18 @@ class WriterController:
         self.writer_gui.write_all.released.connect(lambda: self.write_files(all_files=True))
         self.writer_gui.skip_file.released.connect(lambda: self.remove_file())
         self.writer_gui.done.released.connect(lambda: self.writer_gui.close())
+        self.writer_gui.radio_binned.clicked.connect(lambda: self.writer_gui.set_enabled(self.writer_gui.radio_binned.isChecked()))
+        self.writer_gui.radio_full.clicked.connect(lambda: self.writer_gui.set_enabled(self.writer_gui.radio_binned.isChecked()))
+        self.writer_gui.radio_binned_size.textChanged.connect(lambda: self.bin_input_change())
+
+    def bin_input_change(self):
+        try:
+            float(self.writer_gui.radio_binned_size.text())
+            self.writer_gui.write_all.setEnabled(True)
+            self.writer_gui.write_file.setEnabled(True)
+        except ValueError:
+            self.writer_gui.write_all.setEnabled(False)
+            self.writer_gui.write_file.setEnabled(False)
 
     def custom_file_choice(self):
         """ Prompts the user for a custom file path. """
@@ -841,6 +853,8 @@ class WriterController:
 
     def write_files(self, all_files=False):
         """ Writes the user-specified run data (if they are read in) to a .dat file. """
+        self.writer_gui.set_status_message('Writing files ... ')
+
         count = 0
         for run in self.service.get_runs():
             if self.writer_gui.file_list.currentText() == run.filename or \
@@ -878,6 +892,8 @@ class WriterController:
                 else:
                     print('FFT not supported.')
                 count += 1
+
+        self.writer_gui.set_status_message('Done.')
 
     def remove_file(self):
         self.writer_gui.file_list.removeItem(self.writer_gui.file_list.currentIndex())

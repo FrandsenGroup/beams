@@ -748,6 +748,7 @@ class WriteDataUI(QtWidgets.QDialog):
         super(WriteDataUI, self).__init__()
         self.setWindowTitle('Specify options for writing data')
 
+        self.status_bar = QtWidgets.QStatusBar()
         self.file_list = QtWidgets.QComboBox()
         self.select_folder = StyleTwoButton('Custom')
         self.skip_file = StyleOneButton('Skip File')
@@ -770,8 +771,24 @@ class WriteDataUI(QtWidgets.QDialog):
         self._set_widget_dimensions()
         self._set_widget_layout()
 
+        self.set_status_message('Ready.')
+
+    def set_status_message(self, message):
+        self.status_bar.showMessage(message)
+
+    def set_enabled(self, binned):
+        if binned:
+            self.radio_binned_size.setEnabled(True)
+            self.write_file.setEnabled(False)
+            self.write_all.setEnabled(False)
+        else:
+            self.radio_binned_size.setEnabled(False)
+            self.write_file.setEnabled(True)
+            self.write_all.setEnabled(True)
+
     def _set_widget_attributes(self):
         self.radio_full.setChecked(True)
+        self.radio_binned_size.setEnabled(False)
 
     def _set_widget_tooltips(self):
         pass
@@ -815,15 +832,18 @@ class WriteDataUI(QtWidgets.QDialog):
         col_one.addLayout(row_two)
         col_one.addSpacing(15)
 
+        row_thr.addStretch()
         row_thr.addWidget(self.skip_file)
         row_thr.addSpacing(5)
         row_thr.addWidget(self.write_file)
         row_thr.addSpacing(5)
         row_thr.addWidget(self.write_all)
-        row_thr.addSpacing(20)
         row_thr.addWidget(self.done)
+        row_thr.addStretch()
         row_thr.setAlignment(QtCore.Qt.AlignLeft)
         col_one.addLayout(row_thr)
+
+        col_one.addWidget(self.status_bar)
 
         self.setLayout(col_one)
 
