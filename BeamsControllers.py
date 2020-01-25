@@ -565,6 +565,7 @@ class RunDisplayController:
         """ Sets callbacks for events in the Run Display Panel. """
         self.run_display.isolate_button.released.connect(lambda: self.isolate_plot())
         self.run_display.plot_all_button.released.connect(lambda: self.plot_all())
+        self.run_display.clear_all_button.released.connect(lambda: self.clear_all())
         self.run_display.inspect_file_button.released.connect(lambda: self.inspect_file())
         self.run_display.inspect_hist_button.released.connect(lambda: self.inspect_hist())
         self.run_display.color_choices.currentIndexChanged.connect(lambda: self.change_color())
@@ -588,6 +589,9 @@ class RunDisplayController:
     def isolate_plot(self):
         selected_run_ids = [self.run_id_title[item.text()] for item in self.run_display.current_runs.selectedItems()]
         self.service.update_visible_runs(selected_run_ids)
+
+    def clear_all(self):
+        self.service.clear_database()
 
     def plot_all(self):
         visible_runs = [v for k, v in self.run_id_title.items()]
@@ -717,6 +721,7 @@ class RunDisplayController:
             self.run_display.inspect_hist_button.setEnabled(True)
             self.run_display.inspect_file_button.setEnabled(True)
             self.run_display.plot_all_button.setEnabled(True)
+            self.run_display.clear_all_button.setEnabled(True)
             self.run_display.header_data.setEnabled(True)
             self.run_display.output_header_display.setEnabled(True)
             self.run_display.correction_button.setEnabled(True)
@@ -738,6 +743,7 @@ class RunDisplayController:
             self.run_display.inspect_hist_button.setEnabled(False)
             self.run_display.inspect_file_button.setEnabled(False)
             self.run_display.plot_all_button.setEnabled(False)
+            self.run_display.clear_all_button.setEnabled(False)
             self.run_display.header_data.setEnabled(False)
             self.run_display.output_header_display.setEnabled(False)
             self.run_display.correction_button.setEnabled(False)
@@ -1120,6 +1126,7 @@ class WebServiceController:
         return directory + "{}{}".format(BeamsUtility.get_separator(), download.split('/')[-1])
 
     def query(self):
+        self.dialog.set_status_message('Querying ... ')
         query = self._assemble_query()
 
         if query is None:
@@ -1161,7 +1168,10 @@ class WebServiceController:
         if not printed_response:
             self.dialog.output_web.insertPlainText("No runs found.")
 
+        self.dialog.set_status_message('Done.')
+
     def download(self):
+        self.dialog.set_status_message('Downloading ... ')
         downloads = self._assemble_downloads()
         if downloads is None:
             self.dialog.output_web.insertPlainText('No runs specified.\n')
@@ -1194,6 +1204,7 @@ class WebServiceController:
             good += 1
 
         self.dialog.output_web.insertPlainText('{}/{} Files downloaded successfully.\n'.format(good, len(downloads)))
+        self.dialog.set_status_message('Done.')
 
     def done(self):
         self.dialog.close()

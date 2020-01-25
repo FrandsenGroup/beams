@@ -65,6 +65,9 @@ class MainGUIWindow(QtWidgets.QMainWindow):
         file_menu.addAction(self.exit_act)
         self.menu_bar.addMenu('&Help')
 
+    def set_status_message(self, message):
+        self.setStatusTip(message)
+
 
 # noinspection PyArgumentList
 class FileManagerPanel(QtWidgets.QDockWidget):
@@ -238,6 +241,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.correction_button = StyleTwoButton("Apply Correction")
         self.integrate_button = StyleTwoButton("Integrate")
         self.plot_all_button = StyleOneButton("Plot All Runs")
+        self.clear_all_button = StyleOneButton("Clear All Runs")
 
         self.integrate_button = StyleTwoButton("Integrate")
         self.integrate_choices = QtWidgets.QComboBox()
@@ -268,13 +272,15 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.inspect_hist_button.setEnabled(False)
         self.inspect_file_button.setEnabled(False)
         self.plot_all_button.setEnabled(False)
+        self.clear_all_button.setEnabled(False)
         self.output_current_file.setEnabled(False)
         self.correction_button.setEnabled(False)
         self.input_alpha.setEnabled(False)
 
         self.color_choices.setEnabled(False)
         self.color_choices.addItems(["Blue", "Red", "Purple", "Green", "Orange", "Maroon", "Pink", "Dark Blue",
-                                     "Dark Green", "Light Blue", "Light Purple", "Dark Orange", "Yellow", "Light Red", "Light Green"])
+                                     "Dark Green", "Light Blue", "Light Purple", "Dark Orange", "Yellow", "Light Red",
+                                     "Light Green"])
 
         self.marker_choices.setEnabled(False)
         self.marker_choices.addItems(['point', 'triangle_down', 'triangle_up', 'triangle_left',
@@ -335,15 +341,18 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         main_layout.addLayout(row_four)
         main_layout.addLayout(row_five)
 
-        main_layout.addWidget(self.plot_all_button)
+        row_six = QtWidgets.QHBoxLayout()
+        row_six.addWidget(self.plot_all_button)
+        row_six.addWidget(self.clear_all_button)
+        main_layout.addLayout(row_six)
 
         # main_layout.addStretch(1)
         self._full_widget.setLayout(main_layout)
 
 
-# fixme put the small utility canvas classes inside plot panel or canvas UI class as inner classes
 # noinspection PyArgumentList
 class PlotPanel(QtWidgets.QDockWidget):
+    # noinspection PyArgumentList
     class CanvasWrapper(QtWidgets.QMainWindow):
         def __init__(self):
             QtWidgets.QMainWindow.__init__(self)
@@ -965,6 +974,7 @@ class WebDownloadUI(QtWidgets.QDialog):
     def __init__(self):
         super(WebDownloadUI, self).__init__()
 
+        self.status_bar = QtWidgets.QStatusBar()
         self.input_area = QtWidgets.QLineEdit()
         self.input_year = QtWidgets.QLineEdit()
         self.input_runs = QtWidgets.QLineEdit()
@@ -982,6 +992,9 @@ class WebDownloadUI(QtWidgets.QDialog):
         self._set_widget_dimensions()
         self._set_widget_attributes()
         self._set_widget_layout()
+
+    def set_status_message(self, message):
+        self.status_bar.showMessage(message)
 
     def _set_widget_dimensions(self):
         self.input_area.setFixedWidth(70)
@@ -1003,6 +1016,8 @@ class WebDownloadUI(QtWidgets.QDialog):
 
         self.output_web.setEnabled(True)
         self.output_web.appendPlainText('No queries or downloads attempted.\n')
+
+        self.set_status_message('Ready.')
 
     def _set_widget_layout(self):
         main_layout = QtWidgets.QVBoxLayout()
@@ -1036,6 +1051,7 @@ class WebDownloadUI(QtWidgets.QDialog):
         row_4 = QtWidgets.QHBoxLayout()
         row_4.addWidget(self.output_web)
         main_layout.addLayout(row_4)
+        main_layout.addWidget(self.status_bar)
 
         self.setLayout(main_layout)
 

@@ -60,6 +60,13 @@ class RunService:
         return getattr(self.instance, name)
 
     # Updating Functions
+    def clear_database(self):
+        run_ids = [run.run_id for run in self.database.runs]
+        for run in run_ids:
+            self._remove_run_by_id(run, True)
+
+        self._notify(RUN_LIST_CHANGE)
+
     def update_file_list(self, files, remove=False):
         """
         :param files: is an array of FULL file paths
@@ -261,12 +268,15 @@ class RunService:
         else:
             self.files.remove(filename)
 
-    def _remove_run_by_id(self, run_id):
+    def _remove_run_by_id(self, run_id, keep_file=False):
         run = self.database.get_run_by_id(run_id)
 
         self.styler.clear_style(run.style)
         self.runs.remove(run_id)
-        self.files.remove(run.filename)
+
+        if not keep_file:
+            self.files.remove(run.filename)
+
         self.run_id_file.pop(run.filename)
         self.database.remove_run(run)
 
