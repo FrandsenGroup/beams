@@ -49,6 +49,10 @@ def convert_msr(in_file, out_file, flags=None):
 
 
 def create_file_key(filename):
+    file = FileReader(filename)
+    if file.get_type() == FileReader.BINARY_FILE:
+        return os.path.split(filename)[1]
+
     header = FileReader(filename).get_meta()
     file_root = os.path.split(filename)[1]
     file_key = file_root
@@ -138,6 +142,14 @@ def parse_func(s):
     return free_set
 
 
+def get_separator():
+    if sys.platform == 'win32':
+        return "\\"
+    else:
+        return "/"
+
+
+# fixme just make this object a function, then the convert functionality make more intuitive sense.
 class FileReader:
     # File Source
     BEAMS = 0
@@ -179,6 +191,9 @@ class FileReader:
     def get_meta(self):
         return self.__file.get_meta()
 
+    def convert(self):
+        return self.__file.convert()
+
     def get_type(self):
         return self.type
 
@@ -189,7 +204,24 @@ class FileReader:
         return self.found
 
 
-class BeamsAsyFile:
+class File:
+    def get_type(self):
+        raise InvalidFileFormat()
+
+    def get_file_path(self):
+        raise InvalidFileFormat()
+
+    def get_data(self):
+        raise InvalidFileFormat()
+
+    def get_meta(self):
+        raise InvalidFileFormat()
+
+    def convert(self):
+        raise InvalidFileFormat()
+
+
+class BeamsAsyFile(File):
     HEADER_ROWS = 3
 
     def __init__(self, file_path):
@@ -226,7 +258,7 @@ class BeamsAsyFile:
         raise InvalidFileFormat()
 
 
-class BeamsDatFile:
+class BeamsDatFile(File):
     HEADER_ROWS = 8
 
     def __init__(self, file_path):
@@ -275,7 +307,8 @@ class BeamsDatFile:
         raise InvalidFileFormat()
 
 
-class TriumfMsrFile:
+# fixme have the convert functions for musr files return a new BeamsDatFile object?
+class TriumfMsrFile(File):
     def __init__(self, file_path):
         self.file_path = file_path
 
@@ -290,7 +323,7 @@ class TriumfMsrFile:
         pass
 
 
-class PSIMsrFile:
+class PSIMsrFile(File):
     def __int__(self, file_path):
         self.file_path = file_path
 
@@ -305,7 +338,7 @@ class PSIMsrFile:
         pass
 
 
-class ISISMsrFile:
+class ISISMsrFile(File):
     def __init__(self, file_path):
         self.file_path = file_path
 
@@ -320,7 +353,7 @@ class ISISMsrFile:
         pass
 
 
-class JParcMsrFile:
+class JParcMsrFile(File):
     def __int__(self, file_path):
         self.file_path = file_path
 

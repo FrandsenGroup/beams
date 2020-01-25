@@ -261,21 +261,26 @@ class FileManagerController:
         """ Called by the model when one of its FileManagerPanel-relevant attributes changes. """
         for index in range(self.file_manager.file_list.count()-1, -1, -1):
             self.file_manager.file_list.takeItem(index)
-
+        print(1)
         files = self.service.get_run_files()
 
         file_titles = []
         for file in files:
+            print(file)
             file_title = BeamsUtility.create_file_key(file)
+            print(file_title)
             file_titles.append(file_title)
+            print(file_titles)
             self.file_title_dict[file_title] = file
+            print(self.file_title_dict)
 
         file_titles = sorted(file_titles)
         for title in file_titles:
+            print(4)
             file_item = QtWidgets.QListWidgetItem(title, self.file_manager.file_list)
             file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsUserCheckable)
             file_item.setCheckState(QtCore.Qt.Unchecked)
-
+        print(5)
 
 class PlotController:
     def __init__(self, plot_editor_panel=None, plot_panel=None, parent=None):
@@ -853,7 +858,8 @@ class WriterController:
                         file_path += '({}).asy'.format(count)
                 else:
                     if 'RunNumber' in run.meta.keys():
-                        file_path = os.path.split(run.filename)[0] + '\\' + str(run.meta['RunNumber']) + '.asy'
+                        file_path = os.path.split(run.filename)[0] + BeamsUtility.get_separator() \
+                                    + str(run.meta['RunNumber']) + '.asy'
                     else:
                         file_path = os.path.splitext(run.filename)[0] + '.asy'
 
@@ -1101,7 +1107,7 @@ class WebServiceController:
         if len(directory) == 0:
             directory = os.getcwd()
 
-        return directory + "\\{}".format(download.split('/')[-1])
+        return directory + "{}{}".format(BeamsUtility.get_separator(), download.split('/')[-1])
 
     def query(self):
         query = self._assemble_query()
@@ -1167,6 +1173,7 @@ class WebServiceController:
                 continue
 
             save_file = self._assemble_save(download)
+            print(save_file)
             with open(save_file, 'wb') as fb:
                 for chunk in response.iter_content(100000):
                     fb.write(chunk)
