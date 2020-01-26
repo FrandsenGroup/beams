@@ -870,6 +870,9 @@ class PlotDataUI(QtWidgets.QDialog):
         self.b_plot = StyleOneButton('Plot')
         self.b_skip = StyleOneButton('Skip')
         self.b_cancel = StyleTwoButton('Cancel')
+        self.status_bar = QtWidgets.QStatusBar()
+
+        self.b_plot.setEnabled(False)
 
         col = QtWidgets.QVBoxLayout()
         row_1 = QtWidgets.QHBoxLayout()
@@ -886,8 +889,12 @@ class PlotDataUI(QtWidgets.QDialog):
         row_2.addWidget(self.b_cancel)
         col.addLayout(row_1)
         col.addLayout(row_2)
+        col.addWidget(self.status_bar)
 
         self.setLayout(col)
+
+    def set_status_message(self, message):
+        self.status_bar.showMessage(message)
 
 
 # noinspection PyArgumentList

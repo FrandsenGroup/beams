@@ -215,7 +215,10 @@ class FileManagerController:
         if len(checked_files[BeamsUtility.FileReader.HISTOGRAM_FILE]) != 0:
             self.popup = PlotDataController(checked_files[BeamsUtility.FileReader.HISTOGRAM_FILE], plot=True)
 
-        if len(checked_files.values()) == 0:
+        if len(checked_files[BeamsUtility.FileReader.HISTOGRAM_FILE]) == 0 \
+                and len(checked_files[BeamsUtility.FileReader.ASYMMETRY_FILE]) == 0 \
+                and len(checked_files[BeamsUtility.FileReader.BINARY_FILE]) == 0:
+
             BeamsViews.ErrorMessageUI(error_message='No files selected.')
 
     def convert_file(self):
@@ -956,6 +959,9 @@ class PlotDataController:
             if self.plot_data_gui.c_file_list.currentIndex() < num_files:
                 self.plot_data_gui.c_file_list.setCurrentIndex(self.plot_data_gui.c_file_list.currentIndex()+1)
 
+        self.plot_data_gui.b_plot.setEnabled(True)
+        self.plot_data_gui.set_status_message('Applied.')
+
     def current_histograms(self):
         """ Returns the currently selected histograms as [left histogram, right histogram]. """
         calc_hists = [self.plot_data_gui.c_hist_one.currentText(), self.plot_data_gui.c_hist_two.currentText()]
@@ -963,6 +969,8 @@ class PlotDataController:
         if calc_hists[0] == calc_hists[1]:  # Check if both histograms are the same
             message = 'Cannot calculate asymmetry from the same histograms.'
             BeamsViews.ErrorMessageUI(message)
+            self.plot_data_gui.b_plot.setEnabled(False)
+            self.plot_data_gui.set_status_message('Cannot use the same histograms.')
         else:
             return calc_hists
         return None
