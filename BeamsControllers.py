@@ -703,6 +703,9 @@ class RunDisplayController:
     def populate_run_display(self):
         runs = self.service.get_runs()
         if len(runs) != 0:
+            self.run_display.set_color_options()
+            self.run_display.set_marker_options()
+
             self.run_display.current_runs.clear()
             self.run_display.output_current_file.setText(runs[0].filename)
 
@@ -732,15 +735,16 @@ class RunDisplayController:
             self.run_display.integrate_choices.setEnabled(True)
             self.run_display.integrate_button.setEnabled(True)
         else:
-            # self.run_display.color_choices.clear()
-            # self.run_display.marker_choices.clear()
             self.run_display.header_data.clear()
             self.run_display.current_runs.clear()
             self.run_display.histograms.clear()
             self.run_display.output_current_file.clear()
             self.run_display.output_header_display.clear()
             self.run_display.input_alpha.clear()
+            self.run_display.color_choices.clear()
+            self.run_display.marker_choices.clear()
             self.run_display.color_choices.setEnabled(False)
+            self.run_display.marker_choices.setEnabled(False)
             self.run_display.isolate_button.setEnabled(False)
             self.run_display.histograms.setEnabled(False)
             self.run_display.inspect_hist_button.setEnabled(False)
@@ -1085,19 +1089,6 @@ class WebServiceController:
                 self.dialog.output_web.insertPlainText("Experiment number should be an integer.\n")
                 return
             query += "expt={}&".format(expt)
-
-        runs = self.dialog.input_runs.text()
-        if len(runs) > 0:
-            if len(runs.split('-')) > 1 or len(runs) > 6:
-                self.dialog.output_web.insertPlainText("Run number for search can not be a range, "
-                                                       "must be single 6 digit maximum integer.\n")
-                return
-            try:
-                int(runs)
-            except ValueError:
-                self.dialog.output_web.insertPlainText("Run number must be a six digit max integer.\n")
-                return
-            query += "run={}&".format(runs)
 
         return query
 

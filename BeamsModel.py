@@ -350,6 +350,9 @@ class RunStyler:
         return getattr(self.instance, name)
 
     def update_style(self, run, style_key, style_value):
+        if run is None:
+            return
+
         if style_key == STYLE_TITLE:
             self._update_run_title(run, style_value)
         elif style_key == STYLE_COLOR:

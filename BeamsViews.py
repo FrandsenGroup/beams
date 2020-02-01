@@ -262,6 +262,19 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
 
         self.setWidget(self._full_widget)
 
+    def set_color_options(self):
+        self.color_choices.clear()
+        self.color_choices.addItems(["Blue", "Red", "Purple", "Green", "Orange", "Maroon", "Pink", "Dark Blue",
+                                     "Dark Green", "Light Blue", "Light Purple", "Dark Orange", "Yellow", "Light Red",
+                                     "Light Green"])
+
+    def set_marker_options(self):
+        self.marker_choices.clear()
+        self.marker_choices.addItems(['point', 'triangle_down', 'triangle_up', 'triangle_left',
+                                      'triangle_right', 'octagon', 'square', 'pentagon', 'plus',
+                                      'star', 'hexagon_1', 'hexagon_2', 'x', 'diamond',
+                                      'thin_diamond'])
+
     def _set_widget_tooltips(self):
         self.output_header_display.setToolTip('Edits are not saved.')
 
@@ -278,15 +291,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.input_alpha.setEnabled(False)
 
         self.color_choices.setEnabled(False)
-        self.color_choices.addItems(["Blue", "Red", "Purple", "Green", "Orange", "Maroon", "Pink", "Dark Blue",
-                                     "Dark Green", "Light Blue", "Light Purple", "Dark Orange", "Yellow", "Light Red",
-                                     "Light Green"])
-
         self.marker_choices.setEnabled(False)
-        self.marker_choices.addItems(['point', 'triangle_down', 'triangle_up', 'triangle_left',
-                                      'triangle_right', 'octagon', 'square', 'pentagon', 'plus',
-                                      'star', 'hexagon_1', 'hexagon_2', 'x', 'diamond',
-                                      'thin_diamond'])
 
         self.histograms.setEnabled(False)
         self.histograms.addItem("None")
