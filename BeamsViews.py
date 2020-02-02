@@ -2,6 +2,7 @@
 
 # Standard Library Modules
 import socket
+import logging
 
 # Installed modules
 from PyQt5 import QtWidgets, QtGui, QtCore
@@ -275,31 +276,38 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
                                       'star', 'hexagon_1', 'hexagon_2', 'x', 'diamond',
                                       'thin_diamond'])
 
+    def set_enabled(self, enabled):
+        self.marker_choices.setEnabled(enabled)
+        self.color_choices.setEnabled(enabled)
+        self.isolate_button.setEnabled(enabled)
+        self.histograms.setEnabled(enabled)
+        self.inspect_hist_button.setEnabled(enabled)
+        self.inspect_file_button.setEnabled(enabled)
+        self.plot_all_button.setEnabled(enabled)
+        self.clear_all_button.setEnabled(enabled)
+        self.header_data.setEnabled(enabled)
+        self.output_header_display.setEnabled(enabled)
+        self.correction_button.setEnabled(enabled)
+        self.input_alpha.setEnabled(enabled)
+        self.integrate_choices.setEnabled(enabled)
+        self.integrate_button.setEnabled(enabled)
+
+    def clear_panel(self):
+        self.header_data.clear()
+        self.current_runs.clear()
+        self.histograms.clear()
+        self.output_current_file.clear()
+        self.output_header_display.clear()
+        self.input_alpha.clear()
+        self.color_choices.clear()
+        self.marker_choices.clear()
+
     def _set_widget_tooltips(self):
         self.output_header_display.setToolTip('Edits are not saved.')
 
     def _set_widget_attributes(self):
-        self.isolate_button.setEnabled(False)
-        self.header_data.setEnabled(False)
-        self.output_header_display.setEnabled(False)
-        self.inspect_hist_button.setEnabled(False)
-        self.inspect_file_button.setEnabled(False)
-        self.plot_all_button.setEnabled(False)
-        self.clear_all_button.setEnabled(False)
-        self.output_current_file.setEnabled(False)
-        self.correction_button.setEnabled(False)
-        self.input_alpha.setEnabled(False)
-
-        self.color_choices.setEnabled(False)
-        self.marker_choices.setEnabled(False)
-
-        self.histograms.setEnabled(False)
-        self.histograms.addItem("None")
-
+        self.set_enabled(False)
         self.integrate_choices.addItems(['Temp', 'Field'])
-        self.integrate_choices.setEnabled(False)
-        self.integrate_button.setEnabled(False)
-
         self.current_runs.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
 
     def _set_widget_dimensions(self):

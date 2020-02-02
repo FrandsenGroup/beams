@@ -6,6 +6,7 @@ import BeamsUtility
 # Standard Library modules
 import os
 import uuid
+import logging
 
 # Installed modules
 import numpy as np
@@ -25,9 +26,13 @@ STYLE_MARKER = 'Marker'
 STYLE_VISIBILITY = 'Visibility'
 
 
+logging.basicConfig(level=logging.DEBUG)
+
+
 class RunService:
     class __ServiceResources:
         def __init__(self):
+            logging.debug('BeamsModel.RunService.__ServiceResources.__init__')
             self.database = Database()
             self.styler = RunStyler()
 
@@ -53,6 +58,7 @@ class RunService:
     instance = None
 
     def __init__(self):
+        logging.debug('BeamsModel.RunService.__init__')
         if not RunService.instance:
             RunService.instance = RunService.__ServiceResources()
 
@@ -61,6 +67,7 @@ class RunService:
 
     # Updating Functions
     def clear_database(self):
+        logging.debug('BeamsModel.RunService.clear_database')
         run_ids = [run.run_id for run in self.database.runs]
         for run in run_ids:
             self._remove_run_by_id(run, True)
@@ -73,7 +80,7 @@ class RunService:
         :param remove: is a boolean indicating if the files should be removed from the model
         :raises FILE_CHANGE and possible RUN_LIST_CHANGE signal: RUN_LIST_CHANGE signal if a loaded run is removed.
         """
-        print('Updating File List')
+        logging.debug('BeamsModel.RunService.update_file_list')
         run_list_changed = False
 
         if remove:
@@ -98,7 +105,7 @@ class RunService:
         :param files: an array of FULL file paths
         :raises RUN_LIST_CHANGE signal:
         """
-        print('Updating Run List')
+        logging.debug('BeamsModel.RunService.update_run_list')
         current_files = [file for file in self.run_id_file.keys()]
         new_file_paths = [new_file.get_file_path() for new_file in files]
         new_file_ext = os.path.splitext(new_file_paths[0])[1]
@@ -121,7 +128,7 @@ class RunService:
         :param style_value: value assigned to style var
         :raises STYLE_CHANGE signal:
         """
-        print('Updating Run Style')
+        logging.debug('BeamsModel.RunService.update_run_style')
         run = self.database.get_run_by_id(run_id)
         self.styler.update_style(run, style_key, style_value)
         self._notify(STYLE_CHANGE)
@@ -131,7 +138,7 @@ class RunService:
         :param run_ids: ID's of runs that will be shown on plot.
         :raises STYLE_CHANGE signal:
         """
-        print('Updating Visible Runs')
+        logging.debug('BeamsModel.RunService.update_visible_runs')
         for run in self.get_runs():
             if run.run_id not in run_ids:
                 self.styler.update_style(run, STYLE_VISIBILITY, False)
@@ -141,7 +148,7 @@ class RunService:
         self._notify(STYLE_CHANGE)
 
     def update_run_correction(self, run_ids, alpha):
-        print('Updating Run Correction')
+        logging.debug('BeamsModel.RunService.update_run_correction')
         for run_id in run_ids:
             run = self.database.get_run_by_id(run_id)
 
@@ -168,10 +175,12 @@ class RunService:
 
     # Getter Functions
     def get_run_by_id(self, run_id):
+        logging.debug('BeamsModel.RunService.get_run_by_id')
         return self.database.get_run_by_id(run_id)
 
     def get_run_id_by_filename(self, filename):
         """ @Param Expects a full file path. """
+        logging.debug('BeamsModel.RunService.get_run_id_by_filename')
         run = self.database.get_run_by_filename(filename)
         if run is None:
             return None
@@ -179,56 +188,70 @@ class RunService:
             return run.run_id
 
     def get_run_binned(self, run_id, bin_size, keep_uncertainty):
+        logging.debug('BeamsModel.RunService.get_run_binned')
         run = self.database.get_run_by_id(run_id)
         return bin_asymmetry(run.meta, run.asymmetry, run.time, run.uncertainty, run.t0, bin_size, keep_uncertainty)
 
     def get_run_style(self, run_id):
+        logging.debug('BeamsModel.RunService.get_run_style')
         run = self.database.get_run_by_id(run_id)
         return run.style
 
     def get_run_asymmetry(self, run_id):
+        logging.debug('BeamsModel.RunService.get_run_asymmetry')
         run = self.database.get_run_by_id(run_id)
         return run.asymmetry
 
     def get_run_uncertainty(self, run_id):
+        logging.debug('BeamsModel.RunService.get_run_uncertainty')
         run = self.database.get_run_by_id(run_id)
         return run.uncertainty
 
     def get_run_time(self, run_id):
+        logging.debug('BeamsModel.RunService.get_run_time')
         run = self.database.get_run_by_id(run_id)
         return run.time
 
     def get_run_fft(self, run_id, spline=True):
+        logging.debug('BeamsModel.RunService.get_run_fft')
         run = self.database.get_run_by_id(run_id)
         return calculate_fft(run.asymmetry, run.time, spline)
 
     def get_run_histogram(self, run_id, hist_title):
+        logging.debug('BeamsModel.RunService.get_run_histogram')
         run = self.database.get_run_by_id(run_id)
         file = BeamsUtility.FileReader(run.filename)
         histogram_data = file.get_data()
         return histogram_data[hist_title]
 
     def get_run_ids(self):
+        logging.debug('BeamsModel.RunService.get_run_ids')
         return self.runs
 
     def get_runs(self):
+        logging.debug('BeamsModel.RunService.get_runs')
         return self.database.runs
 
     def get_run_files(self):
+        logging.debug('BeamsModel.RunService.get_run_files')
         return self.files
 
     def get_run_integrations(self, run_ids):
+        logging.debug('BeamsModel.RunService.get_run_integration')
         return [np.trapz(run.asymmetry, run.time) for run in self.get_runs() if run.run_id in run_ids]
 
     def get_run_temperatures(self, run_ids):
+        logging.debug('BeamsModel.RunService.get_run_temperature')
         return [float(run.meta[BeamsUtility.TEMPERATURE_KEY].split('(')[0].split('K')[0])for run in self.get_runs() if run.run_id in run_ids]
 
     def get_run_fields(self, run_ids):
+        logging.debug('BeamsModel.RunService.get_run_fields')
         return [float(run.meta[BeamsUtility.FIELD_KEY].split('(')[0].split('G')[0]) for run in self.get_runs() if run.run_id in run_ids]
 
     # Protected Functions for RunService
     def _notify(self, signal):
         """ Calls the update() function in any controller registered with the passed in signal. """
+        logging.debug('BeamsModel.RunService._notify')
         for controller in self.observers[signal]:
             if 'update' in dir(controller):
                 print('Notifying {} of {}'.format(str(controller), self.debugging_signals[signal]))
@@ -236,6 +259,7 @@ class RunService:
 
     @staticmethod
     def _generate_run_data(filename, meta):
+        logging.debug('BeamsModel.RunService._generate_run_data')
         file = BeamsUtility.FileReader(filename)
         histogram_data = file.get_data()
 
@@ -263,12 +287,14 @@ class RunService:
 
     def _remove_file(self, filename):
         """ @Param Expects a full file path. """
+        logging.debug('BeamsModel.RunService._remove_file')
         if filename in self.run_id_file.keys():
             self._remove_run_by_id(self.run_id_file[filename])
         else:
             self.files.remove(filename)
 
     def _remove_run_by_id(self, run_id, keep_file=False):
+        logging.debug('BeamsModel.RunService._remove_file_by_id')
         run = self.database.get_run_by_id(run_id)
 
         self.styler.clear_style(run.style)
@@ -281,6 +307,7 @@ class RunService:
         self.database.remove_run(run)
 
     def _add_run(self, file, visible=True):
+        logging.debug('BeamsModel.RunService._add_run')
         file_path = file.get_file_path()
 
         if file_path in self.run_id_file.keys():
@@ -317,6 +344,7 @@ class RunService:
 class RunStyler:
     class __StyleResources:
         def __init__(self):
+            logging.debug('BeamsModel.RunStyler.__StyleResources.__init__')
             self.database = Database()
 
             self.plot_parameters = {}
@@ -343,6 +371,7 @@ class RunStyler:
     instance = None
 
     def __init__(self):
+        logging.debug('BeamsModel.RunStyler.__init__')
         if not RunStyler.instance:
             RunStyler.instance = RunStyler.__StyleResources()
 
@@ -350,6 +379,7 @@ class RunStyler:
         return getattr(self.instance, name)
 
     def update_style(self, run, style_key, style_value):
+        logging.debug('BeamsModel.RunStyler.update_style')
         if run is None:
             return
 
@@ -365,6 +395,7 @@ class RunStyler:
             print('Invalid Style Key')
 
     def create_style(self, run=None):
+        logging.debug('BeamsModel.RunStyler.create_style')
         style = Style()
         style.visibility = True
 
@@ -388,10 +419,12 @@ class RunStyler:
         return style
 
     def clear_style(self, style):
+        logging.debug('BeamsModel.RunStyler.clear_style')
         self._update_colors(style.color, False)
         self._update_markers(style.marker, False)
 
     def _update_markers(self, marker=None, used=False):
+        logging.debug('BeamsModel.RunStyler._update_markers')
         if used:
             if marker not in self.used_markers.keys():
                 self.used_markers[marker] = self.marker_options[marker]
@@ -407,6 +440,7 @@ class RunStyler:
     def _update_colors(self, color=None, used=False):
         """ Updates the used and un-used color lists so as to keep track of which colors are available
                 when plotting new runs without having two runs of identical color."""
+        logging.debug('BeamsModel.RunStyler._update_colors')
         if used:
             if color not in self.used_colors.keys():
                 self.used_colors[color] = self.color_options[color]
@@ -421,6 +455,7 @@ class RunStyler:
 
     def _update_run_color(self, run, color):
         """ Updates the color of a specific run. Calls update_colors() to update the used and available color lists. """
+        logging.debug('BeamsModel.RunStyler._update_run_color')
         color = self.color_options_values[color]
         if color in self.unused_colors.keys():
             self._update_colors(color=color, used=True)
@@ -431,6 +466,7 @@ class RunStyler:
         run.style.color = color
 
     def _update_run_marker(self, run, marker):
+        logging.debug('BeamsModel.RunStyler._update_run_marker')
         marker = self.marker_options_values[marker]
 
         if marker in self.unused_markers.keys():
@@ -445,22 +481,26 @@ class RunStyler:
     @staticmethod
     def _update_run_visibilities(run, visibility):
         """ Updates the visibility of specified plot. """
+        logging.debug('BeamsModel.RunStyler._update_run_visibilities')
         run.style.visibility = visibility
 
     @staticmethod
     def _update_run_title(run, new_title):
+        logging.debug('BeamsModel.RunStyler._update_run_title')
         run.meta['Title'] = new_title
         run.style.title = new_title
 
 
 class Database:
     class __RunData:
+        logging.debug('BeamsModel.Database.__RunData.__init__')
         def __init__(self):
             self.runs = []
 
     instance = None
 
     def __init__(self):
+        logging.debug('BeamsModel.Database.__init__')
         if not Database.instance:
             Database.instance = Database.__RunData()
 
@@ -468,26 +508,31 @@ class Database:
         return getattr(self.instance, name)
 
     def get_run_by_filename(self, filename):
+        logging.debug('BeamsModel.Database.get_run_by_filename')
         for run in self.runs:
             if run.filename == filename:
                 return run
         return None
 
     def get_run_by_id(self, run_id):
+        logging.debug('BeamsModel.Database.get_run_by_id')
         for run in self.runs:
             if run.run_id == run_id:
                 return run
         return None
 
     def add_run(self, run):
+        logging.debug('BeamsModel.Database.add_run')
         self.runs.append(run)
 
     def remove_run(self, run):
+        logging.debug('BeamsModel.Database.remove_run')
         self.runs.remove(run)
 
 
 class Run:
     def __init__(self, asymmetry, uncertainty, time, meta, filename, t0, type=None):
+        logging.debug('BeamsModel.Run.__init__')
         self.asymmetry = np.array(asymmetry)
         self.uncertainty = np.array(uncertainty)
         self.time = np.array(time)
@@ -509,6 +554,7 @@ class Run:
 
 class Style:
     def __init__(self):
+        logging.debug('BeamsModel.Style.__init__')
         self.run_id = None
         self.color = None
         self.visibility = None
