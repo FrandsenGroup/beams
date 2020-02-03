@@ -83,6 +83,7 @@ class RunService:
         logging.debug('BeamsModel.RunService.update_file_list')
         run_list_changed = False
 
+        logging.error(files)
         if remove:
             for filename in files:
                 if filename in self.run_id_file.keys():
@@ -99,7 +100,7 @@ class RunService:
 
         self._notify(FILE_CHANGE)
 
-    def update_run_list(self, files, visible=True):
+    def update_run_list(self, files=None, visible=True, remove_ext=None):
         """
         :param visible:
         :param files: an array of FULL file paths
@@ -107,16 +108,24 @@ class RunService:
         """
         logging.debug('BeamsModel.RunService.update_run_list')
         current_files = [file for file in self.run_id_file.keys()]
-        new_file_paths = [new_file.get_file_path() for new_file in files]
-        new_file_ext = os.path.splitext(new_file_paths[0])[1]
-        for file in current_files:
-            if os.path.splitext(file)[1] == new_file_ext and file not in new_file_paths:
-                self._remove_file(file)
-                self.files.add(file)
+        if files:
 
-        for file in files:
-            if file.get_file_path() not in self.run_id_file.keys():
-                self._add_run(file, visible)
+            new_file_paths = [new_file.get_file_path() for new_file in files]
+            new_file_ext = os.path.splitext(new_file_paths[0])[1]
+            for file in current_files:
+                if os.path.splitext(file)[1] == new_file_ext and file not in new_file_paths:
+                    self._remove_file(file)
+                    self.files.add(file)
+
+            for file in files:
+                if file.get_file_path() not in self.run_id_file.keys():
+                    self._add_run(file, visible)
+
+        if remove_ext:
+            for file in current_files:
+                if os.path.splitext(file)[1] == remove_ext:
+                    self._remove_file(file)
+                    self.files.add(file)
 
         self._notify(RUN_LIST_CHANGE)
 

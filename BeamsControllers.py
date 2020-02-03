@@ -229,9 +229,13 @@ class FileManagerController:
 
         if len(checked_files[BeamsUtility.FileReader.ASYMMETRY_FILE]) != 0:
             threading.Thread(target=self.service.update_run_list(checked_files[BeamsUtility.FileReader.ASYMMETRY_FILE])).start()
+        else:
+            threading.Thread(target=self.service.update_run_list(remove_ext='.asy')).start()
 
         if len(checked_files[BeamsUtility.FileReader.HISTOGRAM_FILE]) != 0:
             self.popup = PlotDataController(checked_files[BeamsUtility.FileReader.HISTOGRAM_FILE], plot=True)
+        else:
+            threading.Thread(target=self.service.update_run_list(remove_ext='.dat')).start()
 
         if len(checked_files[BeamsUtility.FileReader.HISTOGRAM_FILE]) == 0 \
                 and len(checked_files[BeamsUtility.FileReader.ASYMMETRY_FILE]) == 0 \
