@@ -731,6 +731,7 @@ class RunDisplayController:
         self.run_display.header_data.clear()
 
         self.run_display.header_data.addItems([key for key in run.meta.keys()])
+        self.run_display.header_data.setCurrentText(BeamsUtility.TEMPERATURE_KEY)
 
     def change_metadata(self):
         logging.debug('BeamsControllers.RunDisplayController.change_metadata')
