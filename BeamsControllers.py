@@ -753,6 +753,7 @@ class RunDisplayController:
         logging.debug('BeamsControllers.RunDisplayController.populate_run_display')
         runs = self.service.get_runs()
         if len(runs) != 0:
+            self.run_display.clear_panel()
             self.run_display.set_color_options()
             self.run_display.set_marker_options()
 
