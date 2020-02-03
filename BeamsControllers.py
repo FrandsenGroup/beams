@@ -181,6 +181,7 @@ class FileManagerController:
     def remove_file(self):
         """ Removes the currently selected files from the file manager. """
         logging.debug('BeamsControllers.FileManagerController.remove_file')
+
         def remove():
             logging.debug('BeamsControllers.FileManagerController.remove_file.remove')
             for file_root in selected_files:

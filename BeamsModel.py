@@ -380,7 +380,7 @@ class RunStyler:
 
     def update_style(self, run, style_key, style_value):
         logging.debug('BeamsModel.RunStyler.update_style')
-        if run is None:
+        if run is None or style_key is None or style_value is None:
             return
 
         if style_key == STYLE_TITLE:
@@ -456,13 +456,20 @@ class RunStyler:
     def _update_run_color(self, run, color):
         """ Updates the color of a specific run. Calls update_colors() to update the used and available color lists. """
         logging.debug('BeamsModel.RunStyler._update_run_color')
+        print(0)
+        print(color)
+        print(color, self.color_options_values)
         color = self.color_options_values[color]
+        print(1)
         if color in self.unused_colors.keys():
             self._update_colors(color=color, used=True)
+            print(2)
         if run.style.color in self.used_colors.keys():
             self._update_colors(color=run.style.color, used=False)
+            print(3)
         if run.style.color == color:
             return
+        print(4)
         run.style.color = color
 
     def _update_run_marker(self, run, marker):
