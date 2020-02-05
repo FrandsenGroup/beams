@@ -221,10 +221,15 @@ class RunService:
         run = self.database.get_run_by_id(run_id)
         return run.time
 
-    def get_run_fft(self, run_id, spline=True):
+    def get_run_fft(self, run_id, asymmetry=None, time=None, fmin=None, fmax=None, fstep=None):
         logging.debug('BeamsModel.RunService.get_run_fft')
-        run = self.database.get_run_by_id(run_id)
-        return calculate_fft(run.asymmetry, run.time, spline)
+
+        if asymmetry is None or time is None:
+            run = self.database.get_run_by_id(run_id)
+            asymmetry = run.asymmetry
+            time = run.time
+
+        return musr_FFT(time, asymmetry, fmin, fmax, fstep)
 
     def get_run_histogram(self, run_id, hist_title):
         logging.debug('BeamsModel.RunService.get_run_histogram')
@@ -590,6 +595,7 @@ def calculate_start_end(meta):
     #       (1030 for Histogram 1 and 1033 for Histogram 2)
     # 3)    Find the number of bins in the 'Good' area for each histogram.
     # 4)    Choose end bins such that we only use overlapping area.
+    logging.debug('BeamsModel.calculate_start_end')
 
     t_one = int(meta['T0'][meta['CalcHists'][0]])
     t_two = int(meta['T0'][meta['CalcHists'][1]])
@@ -617,6 +623,7 @@ def calculate_start_end(meta):
 
 def calculate_uncertainty(meta, hist_one, hist_two):
     """ Calculates the uncertainty based on histograms. Takes two numpy arrays as input."""
+    logging.debug('BeamsModel.calculate_uncertainty')
     d_one = np.sqrt(hist_one)
     d_two = np.sqrt(hist_two)
 
@@ -635,41 +642,99 @@ def calculate_uncertainty(meta, hist_one, hist_two):
 
 def calculate_bkgd_radiation(meta, hist, bkgd_start, bkgd_end):
     """ Calculates the background radiation based on histogram data before positrons are being detected. """
+    logging.debug('BeamsModel.calculate_bkgd_radiation')
     background = hist[int(bkgd_start):int(bkgd_end) - 1]
     bkg = np.mean(background)
     return bkg
 
 
-def calculate_fft(asymmetry, times, spline=True):
-    """ Calculates fast fourier transform on asymmetry. """
-    magnitudes = np.fft.fft(asymmetry)
-    # magnitudes[0] = 0
-    frequencies = abs(np.fft.fftfreq(len(magnitudes), times[1] - times[0]))
-    num_frequencies = len(frequencies)
+def fourier_transform(x, fx, zmin=0.0, zmax=10.0, zstep=0.1): # requires even q-grid
+    """Compute the Fourier transform of a function.
+    This method uses the FFT algorithm and returns correctly spaced x and
+    y arrays on an even and specifiable grid. The input grid must be evenly
+    spaced.
+    Args:
+        x (numpy array): independent variable for function to be transformed
+        fx (numpy array): dependent variable for function to be transformed
+        zmin (float, default = 0.0): min value of conjugate independent variable
+            grid
+        zmax (float, default = 10.0): maximum value of conjugate independent
+            variable grid
+        zstep (float, default = 0.1): grid spacing for conjugate independent
+            variable
+    Returns:
+        r (numpy array): independent variable grid for transformed quantity
+        fr (numpy array): Fourier transform of fq (complex)
+    """
+    logging.debug('BeamsModel.fourier_transform')
+    lostep = int(np.ceil((zmin - 1e-8) / zstep))
+    histep = int(np.floor((zmax + 1e-8) / zstep)) + 1
+    z = np.arange(lostep,histep)*zstep
+    xstep = x[1] - x[0]
+    if (x[0]-0.01*xstep) > 0:
+        nn = int(np.round(x[0]/xstep))
+        addme = np.linspace(0.0,x[0]-xstep,nn)
+        x = np.concatenate((addme,x))
+        fx = np.concatenate((0.0*addme,fx))
+    xmaxzstep = np.pi/zstep
+    nin = len(x)
+    nbase = max([nin,histep,xmaxzstep/xstep])
+    nlog2 = int(np.ceil(np.log2(nbase)))
+    nout = 2**nlog2
+    xmaxdb = 2*nout*xstep
+    yindb=np.concatenate((fx,np.zeros(2*nout - nin)))
+    cyoutdb = np.fft.fft(yindb)*xmaxdb
+    fzdb = cyoutdb
+    zstepfine = 2*np.pi/xmaxdb
+    zfine = np.arange(nout) * zstepfine
+    fzfine = fzdb[:nout]
+    fzr = np.interp(z, zfine, np.real(fzfine))
+    fzi = np.interp(z, zfine, np.imag(fzfine))
+    if z[0]+0.0001*zstep < 0:
+        nn = int(np.round(-z[0]/zstep))
+        fzr[:nn] = 1.0*fzr[2*nn:nn:-1]
+        fzi[:nn] = -1.0*fzi[2*nn:nn:-1]
+    fz = fzr + 1j*fzi
+    return z, fz
 
-    frequencies = frequencies[0:int(np.floor(num_frequencies / 2))]
-    magnitudes = abs(magnitudes[0:int(np.floor(num_frequencies / 2))])
 
-    if spline:
-        x_smooth = np.linspace(frequencies.min(), frequencies.max(), 300)
+def musr_FFT(t, A, fmin=None, fmax=None, fstep=None):
+    """Compute the Fourier transform of a muSR asymmetry spectrum.
+    This method uses the FFT algorithm and returns correctly spaced x and
+    y arrays on an even and specifiable grid. The input grid must be evenly
+    spaced.
+    Args:
+        t (numpy array): time array of muSR spectrum to be transformed
+        A (numpy array): asymmetry array of muSR spectrum to be transformed
+        fmin (float, default = 0.0): min value of frequency grid (in MHz)
+        fmax (float, default = 10.0): max value of frequency grid (in MHz)
+        fstep (float, default = 0.1): frequency grid spacing
+    Returns:
+        f (numpy array): frequency grid (in MHz)
+        fftSq (numpy array): Square of fft of A
+    """
+    logging.debug('BeamsModel.musr_FFT')
+    fmin = fmin if fmin else 0
+    fmax = fmax if fmax else 1
+    fstep = fstep if fstep else (fmax-fmin)/100
 
-        y_smooth = sp.UnivariateSpline(frequencies, magnitudes, k=5)
-        y_smooth.set_smoothing_factor(0)
-        y_smooth = y_smooth(x_smooth)
-        return [x_smooth, y_smooth]
-    else:
-        return [frequencies, magnitudes]
+    # fourierTransform needs frequency in rad/microsecond, not MHz, which
+    # is why the factors of 2*pi are present
+    w, fft = fourier_transform(t, A, 2*np.pi*fmin, 2*np.pi*fmax, 2*np.pi*fstep)
+    fftSq = np.real(fft*np.conj(fft))
+    return w/(2*np.pi), fftSq
 
 
 def calculate_asymmetry(meta, hist_one, hist_two, bkgd_one, bkgd_two):
     """ Calculate asymmetry based on the overlapping 'good' area of the histograms. """
-
+    logging.debug('BeamsModel.calculate_asymmetry')
     asymmetry = ((hist_one - bkgd_one) - (hist_two - bkgd_two)) / \
                 ((hist_two - bkgd_two) + (hist_one - bkgd_one))
     return asymmetry
 
 
 def correct_asymmetry(meta, asymmetry, alpha, beta=None):
+    logging.debug('BeamsModel.correct_asymmetry')
     if not beta:
         beta = 1
     return ((alpha - 1) + (alpha + 1) * asymmetry) / ((alpha * beta + 1) + (alpha * beta - 1) * 2)
@@ -677,6 +742,7 @@ def correct_asymmetry(meta, asymmetry, alpha, beta=None):
 
 def bin_asymmetry(meta, asymmetry, time, uncertainty, t0, bin_size, slider_moving):
     """ Bins the asymmetry based on user specified bin size. """
+    logging.debug('BeamsModel.bin_asymmetry')
     bin_full = float(meta[BeamsUtility.BIN_SIZE_KEY]) / 1000
     bin_binned = float(bin_size) / 1000
     num_bins = len(asymmetry)

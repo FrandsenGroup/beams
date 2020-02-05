@@ -476,7 +476,7 @@ class PlotController:
                                                                       linestyle=self.plot_parameters['LineStyle'](),
                                                                       marker=style.marker, fillstyle='none')
 
-                    frequencies, magnitudes = BeamsModel.calculate_fft(asymmetry, times, self.plot_parameters['Spline']())
+                    frequencies, magnitudes = self.service.get_run_fft(run.run_id, asymmetry, times)
 
                     canvas.axes_freq.plot(frequencies, magnitudes, color=style.color, marker='.',
                                                                   label=self._display_annotations(run))

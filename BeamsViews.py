@@ -701,8 +701,8 @@ class RunPlot(FigureCanvas):
         self.axes_freq.spines['top'].set_visible(False)
         self.axes_freq.spines['left'].set_visible(True)
         self.axes_freq.spines['bottom'].set_visible(True)
-        self.axes_freq.set_xlabel("Frequency (MHz)", fontsize=title_font_size)
-        self.axes_freq.set_ylabel("Magnitude", fontsize=title_font_size)
+        self.axes_freq.set_xlabel(r'Frequency (MHz)', fontsize=title_font_size)
+        self.axes_freq.set_ylabel(r'FFT$^2$', fontsize=title_font_size)
         if not moving:
             self.axes_freq.legend(loc='upper right')
 
