@@ -26,7 +26,7 @@ STYLE_MARKER = 'Marker'
 STYLE_VISIBILITY = 'Visibility'
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.ERROR)
 
 
 class RunService:
@@ -83,7 +83,6 @@ class RunService:
         logging.debug('BeamsModel.RunService.update_file_list')
         run_list_changed = False
 
-        logging.error(files)
         if remove:
             for filename in files:
                 if filename in self.run_id_file.keys():
@@ -669,20 +668,20 @@ def fourier_transform(x, fx, zmin=0.0, zmax=10.0, zstep=0.1): # requires even q-
     logging.debug('BeamsModel.fourier_transform')
     lostep = int(np.ceil((zmin - 1e-8) / zstep))
     histep = int(np.floor((zmax + 1e-8) / zstep)) + 1
-    z = np.arange(lostep,histep)*zstep
+    z = np.arange(lostep, histep)*zstep
     xstep = x[1] - x[0]
     if (x[0]-0.01*xstep) > 0:
         nn = int(np.round(x[0]/xstep))
-        addme = np.linspace(0.0,x[0]-xstep,nn)
-        x = np.concatenate((addme,x))
-        fx = np.concatenate((0.0*addme,fx))
+        addme = np.linspace(0.0, x[0]-xstep, nn)
+        x = np.concatenate((addme, x))
+        fx = np.concatenate((0.0*addme, fx))
     xmaxzstep = np.pi/zstep
     nin = len(x)
-    nbase = max([nin,histep,xmaxzstep/xstep])
+    nbase = max([nin, histep, xmaxzstep/xstep])
     nlog2 = int(np.ceil(np.log2(nbase)))
     nout = 2**nlog2
     xmaxdb = 2*nout*xstep
-    yindb=np.concatenate((fx,np.zeros(2*nout - nin)))
+    yindb = np.concatenate((fx, np.zeros(2*nout - nin)))
     cyoutdb = np.fft.fft(yindb)*xmaxdb
     fzdb = cyoutdb
     zstepfine = 2*np.pi/xmaxdb

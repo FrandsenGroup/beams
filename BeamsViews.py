@@ -165,12 +165,10 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
         self.check_uncertain = QtWidgets.QCheckBox()
         self.check_annotation = QtWidgets.QCheckBox()
         self.check_plot_lines = QtWidgets.QCheckBox()
-        self.check_spline = QtWidgets.QCheckBox()
 
         self._label_uncertain = QtWidgets.QLabel('Show Uncertainty')
         self._label_annotation = QtWidgets.QLabel('Show Annotations')
         self._label_plot_lines = QtWidgets.QLabel('Show Plot Lines')
-        self._label_spline = QtWidgets.QLabel('FFT Spline')
 
         self._set_widget_attributes()
         self._set_widget_dimensions()
@@ -181,7 +179,6 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
     def _set_widget_attributes(self):
         self.check_uncertain.setChecked(True)
         self.check_annotation.setChecked(True)
-        self.check_spline.setChecked(False)
 
     def _set_widget_dimensions(self):
         pass
@@ -204,15 +201,10 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
         row_lns.addWidget(self.check_plot_lines)
         row_lns.addWidget(self._label_plot_lines)
         row_lns.setAlignment(QtCore.Qt.AlignLeft)
-        row_spl = QtWidgets.QHBoxLayout()
-        row_spl.addWidget(self.check_spline)
-        row_spl.addWidget(self._label_spline)
-        row_spl.setAlignment(QtCore.Qt.AlignLeft)
 
         col_two.addLayout(row_unc)
         col_two.addLayout(row_ann)
         col_thr.addLayout(row_lns)
-        col_thr.addLayout(row_spl)
 
         main_layout = QtWidgets.QHBoxLayout()
         main_layout.addLayout(col_two)
@@ -703,6 +695,7 @@ class RunPlot(FigureCanvas):
         self.axes_freq.spines['bottom'].set_visible(True)
         self.axes_freq.set_xlabel(r'Frequency (MHz)', fontsize=title_font_size)
         self.axes_freq.set_ylabel(r'FFT$^2$', fontsize=title_font_size)
+        self.axes_freq.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
         if not moving:
             self.axes_freq.legend(loc='upper right')
 

@@ -17,7 +17,7 @@ import numpy as np
 from PyQt5 import QtWidgets, QtCore
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.ERROR)
 
 
 class ProgramController:
@@ -358,7 +358,6 @@ class PlotController:
 
                                 'PlotLines': self.plot_editor.check_plot_lines.isChecked,
                                 'Annotations': self.plot_editor.check_annotation.isChecked,
-                                'Spline': self.plot_editor.check_spline.isChecked,
                                 'Uncertainty': self.plot_editor.check_uncertain.isChecked,
                                 'LineStyle': self._display_plot_lines
         }
@@ -396,7 +395,6 @@ class PlotController:
         self.plot_editor.check_annotation.stateChanged.connect(lambda: self._visual_data_change())
         self.plot_editor.check_plot_lines.stateChanged.connect(lambda: self._visual_data_change())
         self.plot_editor.check_uncertain.stateChanged.connect(lambda: self._visual_data_change())
-        self.plot_editor.check_spline.stateChanged.connect(lambda: self._visual_data_change())
         self.plot_panel.check_time_y_autoscale_one.stateChanged.connect(lambda: self._check_y_limits(1, 'TimeYAuto'))
         self.plot_panel.check_time_y_autoscale_two.stateChanged.connect(lambda: self._check_y_limits(2, 'TimeYAuto'))
         self.plot_panel.check_freq_y_autoscale_one.stateChanged.connect(lambda: self._check_y_limits(1, 'FreqYAuto'))
@@ -478,8 +476,7 @@ class PlotController:
 
                     frequencies, magnitudes = self.service.get_run_fft(run.run_id, asymmetry, times)
 
-                    canvas.axes_freq.plot(frequencies, magnitudes, color=style.color, marker='.',
-                                                                  label=self._display_annotations(run))
+                    canvas.axes_freq.plot(frequencies, magnitudes, color=style.color, label=self._display_annotations(run))
 
                     max_mag = np.max(magnitudes) if np.max(magnitudes) > max_mag else max_mag
                     max_freq = np.max(frequencies) if np.max(frequencies) > max_freq else max_freq
