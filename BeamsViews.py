@@ -15,27 +15,29 @@ class MainGUIWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super(MainGUIWindow, self).__init__()
 
-        self.setGeometry(100, 100, 1700, 900)
+        # self.setGeometry(100, 100, 1700, 900)
         self.setWindowTitle("BEAMS | Basic and Effective Analysis for Muon Spin-Spectroscopy")
         self.statusBar()
 
         # Initialize Panels in Main Window
+        
         self.file_manager = FileManagerPanel()
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.file_manager)
 
         self.run_display = RunDisplayPanel()
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.run_display)
-
+        
         self.plot_editor = PlotEditorPanel()
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.plot_editor)
-
+        
         self.mufyt_panel = MuFytPanel()
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.mufyt_panel)
-
+        
         self.plot_panel = PlotPanel()
         self.setCentralWidget(self.plot_panel)
 
         # Initialize Menu Bar for Main Window
+    
         self.menu_bar = self.menuBar()
 
         self.save_session_act = QtWidgets.QAction('&Save Session', self)
@@ -243,7 +245,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.output_current_file = QtWidgets.QLineEdit()
         self.output_header_display = QtWidgets.QLineEdit()
         self.input_alpha = QtWidgets.QLineEdit()
-        self._label_alpha = QtWidgets.QLabel("α = ")
+        self._label_alpha = QtWidgets.QLabel("\u03b1 = ")
         self._label_header_data = QtWidgets.QLabel()
         self._label_histogram = QtWidgets.QLabel()
         self._label_display = QtWidgets.QLabel("Plot a file to interact with data below\n")
@@ -548,14 +550,15 @@ class SinglePlotEditor(QtWidgets.QDockWidget):
         pass
 
     def _set_widget_dimensions(self):
-        self.input_time_xmin.setFixedWidth(50)
-        self.input_time_xmax.setFixedWidth(50)
-        self.input_time_ymin.setFixedWidth(50)
-        self.input_time_ymax.setFixedWidth(50)
-        self.input_freq_xmin.setFixedWidth(50)
-        self.input_freq_xmax.setFixedWidth(50)
-        self.input_freq_ymin.setFixedWidth(50)
-        self.input_freq_ymax.setFixedWidth(50)
+        box_size = 40
+        self.input_time_xmin.setFixedWidth(box_size)
+        self.input_time_xmax.setFixedWidth(box_size)
+        self.input_time_ymin.setFixedWidth(box_size)
+        self.input_time_ymax.setFixedWidth(box_size)
+        self.input_freq_xmin.setFixedWidth(box_size)
+        self.input_freq_xmax.setFixedWidth(box_size)
+        self.input_freq_ymin.setFixedWidth(box_size)
+        self.input_freq_ymax.setFixedWidth(box_size)
         self.input_bin.setFixedWidth(50)
 
     def _set_widget_layout(self):
@@ -571,62 +574,46 @@ class SinglePlotEditor(QtWidgets.QDockWidget):
 
         time_form = QtWidgets.QGroupBox('Time')
         time_layout = QtWidgets.QFormLayout()
+        time_grid = QtWidgets.QGridLayout()
 
-        row_time_1 = QtWidgets.QHBoxLayout()
-        row_time_1.addSpacing(65)
-        row_time_1.addSpacing(spacing)
-        row_time_1.addWidget(self._label_time_xmin)
-        row_time_1.addWidget(self.input_time_xmin)
-        row_time_1.addSpacing(spacing)
-        row_time_1.addWidget(self._label_time_xmax)
-        row_time_1.addWidget(self.input_time_xmax)
-        row_time_1.addStretch()
-        time_layout.addRow(row_time_1)
-
-        row_time_2 = QtWidgets.QHBoxLayout()
-        row_time_2.addWidget(self._label_time_yauto)
-        row_time_2.addWidget(self.check_time_yauto)
-        row_time_2.addSpacing(24)
-        row_time_2.addSpacing(spacing)
-        row_time_2.addWidget(self._label_time_ymin)
-        row_time_2.addWidget(self.input_time_ymin)
-        row_time_2.addSpacing(23)
-        row_time_2.addSpacing(spacing)
-        row_time_2.addWidget(self._label_time_ymax)
-        row_time_2.addWidget(self.input_time_ymax)
-        row_time_2.addStretch()
-        time_layout.addRow(row_time_2)
+        time_grid.addWidget(self._label_time_xmin, 0, 2)
+        time_grid.addWidget(self.input_time_xmin, 0, 3)
+        time_grid.addWidget(self._label_time_xmax, 0, 4)
+        time_grid.addWidget(self.input_time_xmax, 0, 5)
+        time_grid.addWidget(self._label_time_yauto, 1, 0)
+        time_grid.addWidget(self.check_time_yauto, 1, 1)
+        time_grid.addWidget(self._label_time_ymin, 1, 2)
+        time_grid.addWidget(self.input_time_ymin, 1, 3)
+        time_grid.addWidget(self._label_time_ymax, 1, 4)
+        time_grid.addWidget(self.input_time_ymax, 1, 5)
+        
+        temp_row = QtWidgets.QHBoxLayout()
+        temp_row.addLayout(time_grid)
+        time_layout.addRow(temp_row)
+    
         time_form.setLayout(time_layout)
 
         freq_form = QtWidgets.QGroupBox('Frequency')
         freq_layout = QtWidgets.QFormLayout()
+        freq_grid = QtWidgets.QGridLayout()
 
-        row_freq_1 = QtWidgets.QHBoxLayout()
-        row_freq_1.addWidget(self._label_freq_xauto)
-        row_freq_1.addWidget(self.check_freq_xauto)
-        row_freq_1.addSpacing(10)
-        row_freq_1.addSpacing(spacing)
-        row_freq_1.addWidget(self._label_freq_xmin)
-        row_freq_1.addWidget(self.input_freq_xmin)
-        row_freq_1.addSpacing(spacing)
-        row_freq_1.addWidget(self._label_freq_xmax)
-        row_freq_1.addWidget(self.input_freq_xmax)
-        row_freq_1.addStretch()
-        freq_layout.addRow(row_freq_1)
+        freq_grid.addWidget(self._label_freq_xauto, 0, 0)
+        freq_grid.addWidget(self.check_freq_xauto, 0, 1)
+        freq_grid.addWidget(self._label_freq_xmin, 0, 2)
+        freq_grid.addWidget(self.input_freq_xmin, 0, 3)
+        freq_grid.addWidget(self._label_freq_xmax, 0, 4)
+        freq_grid.addWidget(self.input_freq_xmax, 0, 5)
+        freq_grid.addWidget(self._label_freq_yauto, 1, 0)
+        freq_grid.addWidget(self.check_freq_yauto, 1, 1)
+        freq_grid.addWidget(self._label_freq_ymin, 1, 2)
+        freq_grid.addWidget(self.input_freq_ymin, 1, 3)
+        freq_grid.addWidget(self._label_freq_ymax, 1, 4)
+        freq_grid.addWidget(self.input_freq_ymax, 1, 5)
 
-        row_freq_2 = QtWidgets.QHBoxLayout()
-        row_freq_2.addWidget(self._label_freq_yauto)
-        row_freq_2.addWidget(self.check_freq_yauto)
-        row_freq_2.addSpacing(42)
-        row_freq_2.addSpacing(spacing)
-        row_freq_2.addWidget(self._label_freq_ymin)
-        row_freq_2.addWidget(self.input_freq_ymin)
-        row_freq_2.addSpacing(31)
-        row_freq_2.addSpacing(spacing)
-        row_freq_2.addWidget(self._label_freq_ymax)
-        row_freq_2.addWidget(self.input_freq_ymax)
-        row_freq_2.addStretch()
-        freq_layout.addRow(row_freq_2)
+        temp_row = QtWidgets.QHBoxLayout()
+        temp_row.addLayout(freq_grid)
+        freq_layout.addRow(temp_row)
+
         freq_form.setLayout(freq_layout)
 
         editor_layout = QtWidgets.QHBoxLayout()

@@ -36,13 +36,14 @@ class ProgramController:
         # Note: The controllers are responsible for handling user input on the GUIs. The GUIs will update based on
         # changes in the model
         self.main_window_v = BeamsViews.MainGUIWindow()  # Builds Main Window GUI with all the connected panels
+        
         self._set_callbacks()
 
         self.file_manager_controller = FileManagerController(file_manager_panel=self.main_window_v.file_manager, parent=self)
         self.plot_editor_controller = PlotController(plot_editor_panel=self.main_window_v.plot_editor,
                                                      plot_panel=self.main_window_v.plot_panel, parent=self)
         self.run_display_controller = RunDisplayController(run_display_panel=self.main_window_v.run_display, parent=self)
-
+	
         self.main_window_v.show()
         sys.exit(self.app.exec_())
 
