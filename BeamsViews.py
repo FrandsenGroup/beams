@@ -92,12 +92,16 @@ class FileManagerPanel(QtWidgets.QDockWidget):
         self.convert_button = StyleOneButton("Convert")
 
         # Set Widget Dimensions
+        
         self.select_all.setFixedWidth(20)
         self.import_button.setFixedWidth(25)
         self.remove_button.setFixedWidth(25)
+        self.setMaximumWidth(400)
+        '''
         self.write_button.setFixedWidth(60)
         self.plot_button.setFixedWidth(60)
         self.convert_button.setFixedWidth(60)
+        '''
 
         # Set Widget Tooltips
         self.write_button.setToolTip('Write currently plotted data to .asy files')
@@ -170,6 +174,7 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
 
         self._label_uncertain = QtWidgets.QLabel('Show Uncertainty')
         self._label_annotation = QtWidgets.QLabel('Show Annotations')
+
         self._label_plot_lines = QtWidgets.QLabel('Show Plot Lines')
 
         self._set_widget_attributes()
@@ -266,6 +271,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
     def set_marker_options(self):
         self.marker_choices.clear()
         self.marker_choices.addItems(['point', 'triangle_down', 'triangle_up', 'triangle_left',
+
                                       'triangle_right', 'octagon', 'square', 'pentagon', 'plus',
                                       'star', 'hexagon_1', 'hexagon_2', 'x', 'diamond',
                                       'thin_diamond'])
@@ -305,55 +311,42 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self.current_runs.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
 
     def _set_widget_dimensions(self):
-        self.color_choices.setFixedWidth(60)
-        self.marker_choices.setFixedWidth(60)
-        self.header_data.setFixedWidth(100)
-        self.inspect_hist_button.setFixedWidth(70)
-        self.inspect_file_button.setFixedWidth(70)
-        self.isolate_button.setFixedWidth(70)
-        self.correction_button.setFixedWidth(120)
-        self.integrate_button.setFixedWidth(120)
-
+        pass
+    
     def _set_widget_layout(self):
         main_layout = QtWidgets.QVBoxLayout()
         main_layout.addWidget(self._label_display)
         main_layout.addWidget(self.output_current_file)
-
-        row_one = QtWidgets.QHBoxLayout()
-        row_one.addWidget(self.isolate_button)
-        row_one.addWidget(self.color_choices)
-        row_one.addWidget(self.marker_choices)
-        row_two = QtWidgets.QHBoxLayout()
-        row_two.addWidget(self.inspect_hist_button)
-        row_two.addWidget(self.histograms)
-        row_thr = QtWidgets.QHBoxLayout()
-        row_thr.addWidget(self.inspect_file_button)
-        row_thr.addWidget(self.header_data)
-        row_thr.addWidget(self.output_header_display)
-        row_four = QtWidgets.QHBoxLayout()
-        row_four.addWidget(self.correction_button)
-        row_four.addSpacing(15)
-        row_four.addWidget(self._label_alpha)
-        row_four.addWidget(self.input_alpha)
-        row_five = QtWidgets.QHBoxLayout()
-        row_five.addWidget(self.integrate_button)
-        row_five.addWidget(self.integrate_choices)
-        # row_five.addWidget(self.input_integrate_time)
-
-        main_layout.addLayout(row_one)
-        main_layout.addLayout(row_two)
-        main_layout.addLayout(row_thr)
+        
+        top_options = QtWidgets.QGridLayout()
+        top_options.addWidget(self.isolate_button, 0, 0)
+        top_options.addWidget(self.color_choices, 0, 1)
+        top_options.addWidget(self.marker_choices, 0, 2)
+        top_options.addWidget(self.inspect_file_button, 1, 0)
+        top_options.addWidget(self.inspect_hist_button, 1, 1)
+        top_options.addWidget(self.histograms, 1, 2)
+        top_options.addWidget(self.header_data, 2, 0)
+        top_options.addWidget(self.output_header_display, 2, 1, 1, 2)
+        main_layout.addLayout(top_options)
 
         main_layout.addWidget(self.current_runs)
-        main_layout.addLayout(row_four)
-        main_layout.addLayout(row_five)
 
-        row_six = QtWidgets.QHBoxLayout()
-        row_six.addWidget(self.plot_all_button)
-        row_six.addWidget(self.clear_all_button)
-        main_layout.addLayout(row_six)
+        bottom_options = QtWidgets.QGridLayout()
+        bottom_options.addWidget(self.correction_button, 0, 0)
+        alpha_input_with_label = QtWidgets.QHBoxLayout()
+        alpha_input_with_label.addWidget(self._label_alpha)
+        alpha_input_with_label.addWidget(self.input_alpha)
+        bottom_options.addLayout(alpha_input_with_label, 0, 1)
+        bottom_options.addWidget(self.integrate_button, 1, 0)
+        bottom_options.addWidget(self.integrate_choices, 1, 1)
+        bottom_options.addWidget(self.plot_all_button, 2, 0)
+        bottom_options.addWidget(self.clear_all_button, 2, 1)
 
-        # main_layout.addStretch(1)
+        bottom_options.setColumnStretch(0, 50)
+        bottom_options.setColumnStretch(1, 50)
+
+        main_layout.addLayout(bottom_options)
+
         self._full_widget.setLayout(main_layout)
 
 
@@ -515,6 +508,7 @@ class SinglePlotEditor(QtWidgets.QDockWidget):
 
         self.input_time_xmin = QtWidgets.QLineEdit()
         self.input_time_xmax = QtWidgets.QLineEdit()
+
         self.input_time_ymin = QtWidgets.QLineEdit()
         self.input_time_ymax = QtWidgets.QLineEdit()
         self.check_time_yauto = QtWidgets.QCheckBox()
@@ -803,6 +797,7 @@ class WriteDataUI(QtWidgets.QDialog):
         self.done.setFixedWidth(80)
         self.radio_binned_size.setFixedWidth(60)
 
+
     def _set_widget_layout(self):
         col_one = QtWidgets.QVBoxLayout()
         row_one = QtWidgets.QHBoxLayout()
@@ -1082,6 +1077,7 @@ class AddFileUI(QtWidgets.QDialog):
 
         col = QtWidgets.QVBoxLayout()
         col.addWidget(message)
+
         col.setAlignment(message, QtCore.Qt.AlignCenter)
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.pos_button)
