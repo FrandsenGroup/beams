@@ -57,7 +57,7 @@ def create_file_key(filename):
     file_root = os.path.split(filename)[1]
     file_key = file_root
     if header is not None:
-        file_key = file_key + " - " + header['Title']
+        file_key = file_key + " - " + header[TITLE_KEY]
     return file_key
 
 
@@ -154,6 +154,7 @@ class FileReader:
     # File Source
     BEAMS = 0
     TRIUMF = 1
+    PSI = 2
 
     # File Type
     BINARY_FILE = 0
@@ -179,6 +180,10 @@ class FileReader:
             self.__file = TriumfMsrFile(file_path)
             self.type = self.BINARY_FILE
             self.__source = self.TRIUMF
+        elif check_ext(file_path, '.bin'):
+            self.__file = PSIMsrFile(file_path)
+            self.type = self.BINARY_FILE
+            self.__source = self.PSI
         else:
             raise InvalidFileFormat()
 
@@ -191,8 +196,8 @@ class FileReader:
     def get_meta(self):
         return self.__file.get_meta()
 
-    def convert(self):
-        return self.__file.convert()
+    def convert(self, out_file):
+        return self.__file.convert(out_file)
 
     def get_type(self):
         return self.type
@@ -217,7 +222,7 @@ class File:
     def get_meta(self):
         raise InvalidFileFormat()
 
-    def convert(self):
+    def convert(self, out_file):
         raise InvalidFileFormat()
 
 
@@ -253,9 +258,6 @@ class BeamsAsyFile(File):
             return metadata
         else:
             return self.__meta
-
-    def convert(self):
-        raise InvalidFileFormat()
 
 
 class BeamsDatFile(File):
@@ -303,39 +305,73 @@ class BeamsDatFile(File):
         else:
             return self.__meta
 
-    def convert(self):
-        raise InvalidFileFormat()
 
-
-# fixme have the convert functions for musr files return a new BeamsDatFile object?
 class TriumfMsrFile(File):
     def __init__(self, file_path):
         self.file_path = file_path
 
-    def get_data(self):
-        raise InvalidFileFormat()
-
     def get_meta(self):
         # fixme, it could be useful to make a executable to get the header of an msr file
         raise InvalidFileFormat()
 
-    def convert(self):
-        pass
+    def convert(self, out_file):
+        flags = ['-all']
+        if is_found(self.file_path) and check_ext(self.file_path, '.msr') and check_ext(out_file, '.dat'):
+            system_args = {'win32': [r'mud\TRIUMF_WINDOWS', self.file_path, out_file],  # Windows Syntax
+                           'linux': ['./mud/TRIUMF_LINUX', self.file_path, out_file],  # Linux Syntax
+                           'darwin': ['./mud/TRIUMF_MAC', self.file_path, out_file]}  # Mac Syntax
+
+            if sys.platform in system_args.keys():
+                args = system_args[sys.platform]
+
+                if flags:
+                    args.extend(flags)  # -v (verbose) -all (all metadata) See BEAMS_MUD.c to see other flags.
+
+                if sys.platform == 'win32':
+                    shell = True
+                else:
+                    shell = False
+            else:
+                return None  # Unrecognized system
+
+            try:
+                subprocess.check_call(args, shell=shell)
+            except subprocess.CalledProcessError:
+                return None  # Error processing file
+            else:
+                return BeamsDatFile(out_file)
+
+        return None  # Unrecognized file format
 
 
 class PSIMsrFile(File):
-    def __int__(self, file_path):
+    def __init__(self, file_path):
         self.file_path = file_path
 
-    def get_data(self):
-        raise InvalidFileFormat()
+    def convert(self, out_file):
+        if is_found(self.file_path) and check_ext(self.file_path, '.bin') and check_ext(out_file, '.dat'):
+            system_args = {'win32': [r'mud\PSI_WINDOWS', self.file_path, out_file],  # Windows Syntax
+                           'linux': ['./mud/PSI_LINUX', self.file_path, out_file],  # Linux Syntax
+                           'darwin': ['./mud/PSI_MAC', self.file_path, out_file]}  # Mac Syntax
 
-    def get_meta(self):
-        # fixme, it could be useful to make a executable to get the header of an msr file
-        raise InvalidFileFormat()
+            if sys.platform in system_args.keys():
+                args = system_args[sys.platform]
 
-    def convert(self):
-        pass
+                if sys.platform == 'win32':
+                    shell = True
+                else:
+                    shell = False
+            else:
+                return None  # Unrecognized system
+
+            try:
+                subprocess.check_call(args, shell=shell)
+            except subprocess.CalledProcessError:
+                return None  # Error processing file
+            else:
+                return BeamsDatFile(out_file)
+
+        return None  # Unrecognized file format
 
 
 class ISISMsrFile(File):
@@ -346,10 +382,9 @@ class ISISMsrFile(File):
         raise InvalidFileFormat()
 
     def get_meta(self):
-        # fixme, it could be useful to make a executable to get the header of an msr file
         raise InvalidFileFormat()
 
-    def convert(self):
+    def convert(self, out_file):
         pass
 
 
@@ -361,10 +396,9 @@ class JParcMsrFile(File):
         raise InvalidFileFormat()
 
     def get_meta(self):
-        # fixme, it could be useful to make a executable to get the header of an msr file
         raise InvalidFileFormat()
 
-    def convert(self):
+    def convert(self, out_file):
         pass
 
 
@@ -379,3 +413,7 @@ BACKGROUND_TWO_KEY = 'BkgdTwo'
 GOOD_BIN_ONE_KEY = 'GoodBinOne'
 GOOD_BIN_TWO_KEY = 'GoodBinTwo'
 T0_KEY = 'T0'
+
+
+# test_file = TriumfMsrFile(r"C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\MUD_Files\1820-Li2IrO3\027388.msr")
+# test_file.convert(r"C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\MUD_Files\1820-Li2IrO3\027388.dat")

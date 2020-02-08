@@ -252,7 +252,8 @@ class FileManagerController:
         def remove_msr():
             logging.debug('BeamsControllers.FileManagerController.convert_file.remove_msr')
             for file_root in checked_items:
-                if os.path.splitext(file_root)[1] == '.msr':
+                extension = os.path.splitext(file_root)[1]
+                if extension == '.msr' or extension == '.bin':
                     for index in range(self.file_manager.file_list.count()):
                         if file_root == self.file_manager.file_list.item(index).text():
                             self.file_manager.file_list.takeItem(index)
@@ -262,18 +263,17 @@ class FileManagerController:
         checked_items = self._get_selected_files()
         for file in checked_items:
             full_file = self.file_title_dict[file]
+            out_file = os.path.splitext(full_file)[0] + '.dat'
 
-            if BeamsUtility.check_ext(full_file, '.msr'):  # Check extension of input and output files
-                out_file = os.path.splitext(full_file)[0] + '.dat'
+            file = BeamsUtility.FileReader(full_file)
+            new_file = file.convert(out_file)
 
-                if BeamsUtility.convert_msr(full_file, out_file, flags=['-v', '-all']):  # Run the MUD executable on the .msr file
-                    self.service.update_file_list([out_file], remove=False)
+            if new_file is None:
+                message = 'Error reading binary file.\n {} has possibly been corrupted.'.format(full_file)
+                BeamsViews.ErrorMessageUI(error_message=message)
+                return
 
-                else:
-                    # Usually occurs when their have been changes in the .msr files
-                    message = 'Error reading .msr file.\n {} has possibly been corrupted.'.format(full_file)
-                    BeamsViews.ErrorMessageUI(error_message=message)
-                    return
+            self.service.update_file_list([out_file], remove=False)
 
         remove_msr()
         if len(self._get_selected_files()) == 0:
@@ -299,7 +299,6 @@ class FileManagerController:
             file_title = BeamsUtility.create_file_key(file)
             file_titles.append(file_title)
             self.file_title_dict[file_title] = file
-
         file_titles = sorted(file_titles)
         for title in file_titles:
             file_item = QtWidgets.QListWidgetItem(title, self.file_manager.file_list)

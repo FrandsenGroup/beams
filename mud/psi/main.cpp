@@ -9,7 +9,7 @@ string remove_whitespace(string newString) {
     string retString;
     for(unsigned int i = 0; i < newString.size(); i++) {
         char currentChar = newString.at(i);
-        if((isalnum(currentChar) || ispunct(currentChar)) || (isspace(currentChar) && i < newString.size()-1 && !isspace(newString.at(i+1)))) {
+        if((isalnum(currentChar) || (ispunct(currentChar)) && currentChar != ',') || (isspace(currentChar) && i < newString.size()-1 && !isspace(newString.at(i+1)))) {
             retString.push_back(currentChar);
         }
     }
