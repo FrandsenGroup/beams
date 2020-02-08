@@ -26,7 +26,7 @@ STYLE_MARKER = 'Marker'
 STYLE_VISIBILITY = 'Visibility'
 
 
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.DEBUG)
 
 
 class RunService:

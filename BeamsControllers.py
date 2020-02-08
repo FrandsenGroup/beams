@@ -597,6 +597,7 @@ class RunDisplayController:
 
         self._set_callbacks()
         self._change_selection = False
+        self._current_item = None
 
     def __str__(self):
         return 'Run Display Controller'
@@ -701,6 +702,8 @@ class RunDisplayController:
 
         self._change_selection = True
         run_id = self.run_id_title[self.run_display.current_runs.currentItem().text()]
+        self._current_item = run_id
+        print(self._current_item)
         run = self.service.get_run_by_id(run_id)
         self.run_display.histograms.clear()
 
@@ -749,8 +752,8 @@ class RunDisplayController:
             return
 
         if self.run_display.current_runs.currentItem():
-            run_id = self.run_id_title[self.run_display.current_runs.currentItem().text()]
-            self.service.update_run_style(run_id, BeamsModel.STYLE_TITLE, self.run_display.current_runs.currentItem().text())
+            self.service.update_run_style(self._current_item, BeamsModel.STYLE_TITLE,
+                                          self.run_display.current_runs.currentItem().text())
 
     def populate_run_display(self):
         logging.debug('BeamsControllers.RunDisplayController.populate_run_display')

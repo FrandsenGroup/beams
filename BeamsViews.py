@@ -16,6 +16,7 @@ class MainGUIWindow(QtWidgets.QMainWindow):
         super(MainGUIWindow, self).__init__()
 
         # self.setGeometry(100, 100, 1700, 900)
+        self.setGeometry(50, 50, 900, 900)
         self.setWindowTitle("BEAMS | Basic and Effective Analysis for Muon Spin-Spectroscopy")
         self.statusBar()
 
@@ -96,7 +97,7 @@ class FileManagerPanel(QtWidgets.QDockWidget):
         self.select_all.setFixedWidth(20)
         self.import_button.setFixedWidth(25)
         self.remove_button.setFixedWidth(25)
-        self.setMaximumWidth(400)
+        self.setMaximumWidth(350)
         '''
         self.write_button.setFixedWidth(60)
         self.plot_button.setFixedWidth(60)
@@ -181,6 +182,8 @@ class PlotEditorPanel(QtWidgets.QDockWidget):
         self._set_widget_dimensions()
         self._set_widget_layout()
 
+        self.setMaximumWidth(350)
+
         self.setWidget(self._full_widget)
 
     def _set_widget_attributes(self):
@@ -260,6 +263,8 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         self._set_widget_dimensions()
         self._set_widget_layout()
 
+        self.setMaximumWidth(350)
+
         self.setWidget(self._full_widget)
 
     def set_color_options(self):
@@ -327,6 +332,9 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         top_options.addWidget(self.histograms, 1, 2)
         top_options.addWidget(self.header_data, 2, 0)
         top_options.addWidget(self.output_header_display, 2, 1, 1, 2)
+
+        top_options.setHorizontalSpacing(10)
+
         main_layout.addLayout(top_options)
 
         main_layout.addWidget(self.current_runs)
@@ -342,8 +350,9 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         bottom_options.addWidget(self.plot_all_button, 2, 0)
         bottom_options.addWidget(self.clear_all_button, 2, 1)
 
-        bottom_options.setColumnStretch(0, 50)
-        bottom_options.setColumnStretch(1, 50)
+        bottom_options.setHorizontalSpacing(10)
+        bottom_options.setColumnStretch(0, 1)
+        bottom_options.setColumnStretch(1, 1)
 
         main_layout.addLayout(bottom_options)
 

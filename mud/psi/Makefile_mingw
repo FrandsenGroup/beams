@@ -1,0 +1,14 @@
+CC = g++
+
+testMuSR : main.o MuSR_td_PSI_bin.o  
+	$(CC) -o testMuSR main.o MuSR_td_PSI_bin.o
+
+main.o : main.cpp MuSR_td_PSI_bin.h Makefile_mingw
+	$(CC) -c main.cpp
+
+MuSR_td_PSI_bin.o : MuSR_td_PSI_bin.cpp MuSR_td_PSI_bin.h Makefile_mingw
+	$(CC) -c MuSR_td_PSI_bin.cpp
+
+clean  :
+	del testMuSR.exe main.o MuSR_td_PSI_bin.o
+
