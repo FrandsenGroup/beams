@@ -180,7 +180,7 @@ class FileReader:
             self.__file = TriumfMsrFile(file_path)
             self.type = self.BINARY_FILE
             self.__source = self.TRIUMF
-        elif check_ext(file_path, '.bin'):
+        elif check_ext(file_path, '.bin') or check_ext(file_path, '.mdu'):
             self.__file = PSIMsrFile(file_path)
             self.type = self.BINARY_FILE
             self.__source = self.PSI
@@ -349,7 +349,9 @@ class PSIMsrFile(File):
         self.file_path = file_path
 
     def convert(self, out_file):
-        if is_found(self.file_path) and check_ext(self.file_path, '.bin') and check_ext(out_file, '.dat'):
+        if is_found(self.file_path) and (check_ext(self.file_path, '.bin') or check_ext(self.file_path, '.mdu')) \
+                and check_ext(out_file, '.dat'):
+
             system_args = {'win32': [r'mud\PSI_WINDOWS', self.file_path, out_file],  # Windows Syntax
                            'linux': ['./mud/PSI_LINUX', self.file_path, out_file],  # Linux Syntax
                            'darwin': ['./mud/PSI_MAC', self.file_path, out_file]}  # Mac Syntax

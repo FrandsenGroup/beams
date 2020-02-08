@@ -253,7 +253,7 @@ class FileManagerController:
             logging.debug('BeamsControllers.FileManagerController.convert_file.remove_msr')
             for file_root in checked_items:
                 extension = os.path.splitext(file_root)[1]
-                if extension == '.msr' or extension == '.bin':
+                if extension == '.msr' or extension == '.bin' or extension == '.mdu':
                     for index in range(self.file_manager.file_list.count()):
                         if file_root == self.file_manager.file_list.item(index).text():
                             self.file_manager.file_list.takeItem(index)
