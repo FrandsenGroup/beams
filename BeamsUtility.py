@@ -21,9 +21,9 @@ def convert_msr(in_file, out_file, flags=None):
         in the mud/src folder. """
 
     if is_found(in_file) and check_ext(in_file, '.msr') and check_ext(out_file, '.dat'):
-        system_args = {'win32': ['mud\MUD', in_file, out_file],  # Windows Syntax
-                       'linux': ['./mud/MUDC', in_file, out_file],  # Linux Syntax
-                       'darwin': ['./mud/MUDM', in_file, out_file]}  # Mac Syntax
+        system_args = {'win32': ['mud\TRIUMF_WINDOWS', in_file, out_file],  # Windows Syntax
+                       'linux': ['./mud/TRIUMF_LINUX', in_file, out_file],  # Linux Syntax
+                       'darwin': ['./mud/TRIUMF_MAC', in_file, out_file]}  # Mac Syntax
 
         if sys.platform in system_args.keys():
             args = system_args[sys.platform]
