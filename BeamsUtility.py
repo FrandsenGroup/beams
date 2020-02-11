@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import subprocess
 import sys
+import traceback
 
 
 class InvalidFileFormat(Exception):
@@ -317,7 +318,7 @@ class TriumfMsrFile(File):
     def convert(self, out_file):
         flags = ['-all']
         if is_found(self.file_path) and check_ext(self.file_path, '.msr') and check_ext(out_file, '.dat'):
-            system_args = {'win32': [r'mud\TRIUMF_WINDOWS', self.file_path, out_file],  # Windows Syntax
+            system_args = {'win32': ['mud\TRIUMF_WINDOWS', self.file_path, out_file],  # Windows Syntax
                            'linux': ['./mud/TRIUMF_LINUX', self.file_path, out_file],  # Linux Syntax
                            'darwin': ['./mud/TRIUMF_MAC', self.file_path, out_file]}  # Mac Syntax
 
@@ -335,8 +336,11 @@ class TriumfMsrFile(File):
                 return None  # Unrecognized system
 
             try:
+                print(" ".join(args))
                 subprocess.check_call(args, shell=shell)
             except subprocess.CalledProcessError:
+                track = traceback.format_exc()
+                print(track)
                 return None  # Error processing file
             else:
                 return BeamsDatFile(out_file)
@@ -352,7 +356,7 @@ class PSIMsrFile(File):
         if is_found(self.file_path) and (check_ext(self.file_path, '.bin') or check_ext(self.file_path, '.mdu')) \
                 and check_ext(out_file, '.dat'):
 
-            system_args = {'win32': [r'mud\PSI_WINDOWS', self.file_path, out_file],  # Windows Syntax
+            system_args = {'win32': ['mud\PSI_WINDOWS', self.file_path, out_file],  # Windows Syntax
                            'linux': ['./mud/PSI_LINUX', self.file_path, out_file],  # Linux Syntax
                            'darwin': ['./mud/PSI_MAC', self.file_path, out_file]}  # Mac Syntax
 
@@ -367,8 +371,11 @@ class PSIMsrFile(File):
                 return None  # Unrecognized system
 
             try:
+                print(" ".join(args))
                 subprocess.check_call(args, shell=shell)
             except subprocess.CalledProcessError:
+                track = traceback.format_exc()
+                print(track)
                 return None  # Error processing file
             else:
                 return BeamsDatFile(out_file)
@@ -417,5 +424,14 @@ GOOD_BIN_TWO_KEY = 'GoodBinTwo'
 T0_KEY = 'T0'
 
 
-# test_file = TriumfMsrFile(r"C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\MUD_Files\1820-Li2IrO3\027388.msr")
-# test_file.convert(r"C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\MUD_Files\1820-Li2IrO3\027388.dat")
+# test_file = PSIMsrFile(r"C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\mud\psi\deltat_pta_gps_0001.bin")
+# test_dat_file = test_file.convert(r"C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\mud\psi\deltat_pta_gps_0001.dat")
+# print(test_dat_file.get_meta())
+#
+# test_file = PSIMsrFile(r"C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\mud\psi\pta_gps_2008_07387_14.mdu")
+# test_dat_file = test_file.convert(r"C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\mud\psi\pta_gps_2008_07387_14.dat")
+# print(test_dat_file.get_meta())
+#
+# test_file = TriumfMsrFile(r"C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\MUD_Files\1820-Cu2IrO3\006513.msr")
+# test_dat_file = test_file.convert(r"C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\MUD_Files\1820-Cu2IrO3\006513.dat")
+# print(test_dat_file.get_meta())
