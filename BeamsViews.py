@@ -37,6 +37,9 @@ class MainGUIWindow(QtWidgets.QMainWindow):
         self.plot_panel = PlotPanel()
         self.setCentralWidget(self.plot_panel)
 
+        # Set Dimensions
+        self._set_panel_dimensions()
+
         # Initialize Menu Bar for Main Window
     
         self.menu_bar = self.menuBar()
@@ -72,6 +75,12 @@ class MainGUIWindow(QtWidgets.QMainWindow):
     def set_status_message(self, message):
         self.setStatusTip(message)
 
+    def _set_panel_dimensions(self):
+        LEFT_PANEL_MAX = 280
+        self.file_manager.setMaximumWidth(LEFT_PANEL_MAX)
+        self.plot_editor.setMaximumWidth(LEFT_PANEL_MAX)
+        self.run_display.setMaximumWidth(LEFT_PANEL_MAX)
+
 
 # noinspection PyArgumentList
 class FileManagerPanel(QtWidgets.QDockWidget):
@@ -97,6 +106,7 @@ class FileManagerPanel(QtWidgets.QDockWidget):
         self.select_all.setFixedWidth(20)
         self.import_button.setFixedWidth(25)
         self.remove_button.setFixedWidth(25)
+        self.convert_button.setFixedWidth(60)
         self.setMaximumWidth(350)
         '''
         self.write_button.setFixedWidth(60)
@@ -114,7 +124,7 @@ class FileManagerPanel(QtWidgets.QDockWidget):
 
         # Layout Widgets
         hbox_one = QtWidgets.QHBoxLayout()
-        hbox_one.addWidget(self.select_all, alignment=QtCore.Qt.AlignCenter)
+        hbox_one.addWidget(self.select_all)
         hbox_one.addWidget(self.import_button)
         hbox_one.addWidget(self.remove_button)
         hbox_one.addWidget(self.convert_button)
@@ -333,7 +343,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         top_options.addWidget(self.header_data, 2, 0)
         top_options.addWidget(self.output_header_display, 2, 1, 1, 2)
 
-        top_options.setHorizontalSpacing(10)
+        top_options.setHorizontalSpacing(5)
 
         main_layout.addLayout(top_options)
 
@@ -350,7 +360,7 @@ class RunDisplayPanel(QtWidgets.QDockWidget):
         bottom_options.addWidget(self.plot_all_button, 2, 0)
         bottom_options.addWidget(self.clear_all_button, 2, 1)
 
-        bottom_options.setHorizontalSpacing(10)
+        bottom_options.setHorizontalSpacing(5)
         bottom_options.setColumnStretch(0, 1)
         bottom_options.setColumnStretch(1, 1)
 

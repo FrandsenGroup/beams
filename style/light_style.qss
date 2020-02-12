@@ -70,7 +70,6 @@ QComboBox {
     border: 1px solid @low_contrast;
     border-radius: 0px;
     padding: 1px 18px 1px 3px;
-    min-width: 6em;
 }
 
 QComboBox:editable {
