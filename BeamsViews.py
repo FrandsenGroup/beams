@@ -31,8 +31,8 @@ class MainGUIWindow(QtWidgets.QMainWindow):
         self.plot_editor = PlotEditorPanel()
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self.plot_editor)
         
-        self.mufyt_panel = MuFytPanel()
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.mufyt_panel)
+        # self.mufyt_panel = MuFytPanel()
+        # self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self.mufyt_panel)
         
         self.plot_panel = PlotPanel()
         self.setCentralWidget(self.plot_panel)
