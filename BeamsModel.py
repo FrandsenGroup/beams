@@ -514,6 +514,7 @@ class RunStyler:
 class Database:
     class __RunData:
         logging.debug('BeamsModel.Database.__RunData.__init__')
+
         def __init__(self):
             self.runs = []
 

@@ -646,7 +646,8 @@ class RunPlot(FigureCanvas):
         self._is_drawing = True
 
         FigureCanvas.__init__(self, Figure())
-        axes = self.figure.subplots(2, 1)
+        axes = self.figure.subplots(2, 1, gridspec_kw={'height_ratios': [2, 1]})
+        self.figure.set_facecolor("#f9f9fd")
 
         self.axes_time = axes[0]
         self.axes_freq = axes[1]
@@ -688,6 +689,7 @@ class RunPlot(FigureCanvas):
         self.axes_time.spines['bottom'].set_visible(True)
         self.axes_time.set_xlabel("Time (" + chr(956) + "s)", fontsize=title_font_size)
         self.axes_time.set_ylabel("Asymmetry", fontsize=title_font_size)
+        self.axes_time.set_facecolor("#f9f9fd")
 
         self.axes_freq.spines['right'].set_visible(False)
         self.axes_freq.spines['top'].set_visible(False)
@@ -696,8 +698,11 @@ class RunPlot(FigureCanvas):
         self.axes_freq.set_xlabel(r'Frequency (MHz)', fontsize=title_font_size)
         self.axes_freq.set_ylabel(r'FFT$^2$', fontsize=title_font_size)
         self.axes_freq.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+        self.axes_freq.set_facecolor("#f9f9fd")
         if not moving:
             self.axes_freq.legend(loc='upper right')
+
+        self.figure.tight_layout()
 
 
 # noinspection PyArgumentList
