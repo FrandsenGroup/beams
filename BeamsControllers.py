@@ -474,7 +474,9 @@ class PlotController:
                                                                       linestyle=self.plot_parameters['LineStyle'](),
                                                                       marker=style.marker, fillstyle='none')
 
-                    frequencies, magnitudes = self.service.get_run_fft(run.run_id, asymmetry, times)
+                    num_bins = int((float(xmax)-float(xmin))/(float(bin)/1000))
+                    start_bin = int(float(xmin)/(float(bin)/1000))
+                    frequencies, magnitudes = self.service.get_run_fft(run.run_id, asymmetry[start_bin:start_bin+num_bins], times[start_bin:start_bin+num_bins])
 
                     canvas.axes_freq.plot(frequencies, magnitudes, color=style.color, label=self._display_annotations(run))
 
@@ -1222,6 +1224,7 @@ class WebServiceController:
     def download(self):
         logging.debug('BeamsControllers.WebServiceController.download')
         self.dialog.set_status_message('Downloading ... ')
+
         downloads = self._assemble_downloads()
         if downloads is None:
             self.dialog.output_web.insertPlainText('No runs specified.\n')
