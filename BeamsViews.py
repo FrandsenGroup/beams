@@ -481,7 +481,7 @@ class PlotPanel(QtWidgets.QDockWidget):
 
 # noinspection PyArgumentList
 class HistogramDisplay(QtWidgets.QMainWindow):
-    def __init__(self, histogram=None):
+    def __init__(self, histogram, bkg1, bkg2, t0):
         super(HistogramDisplay, self).__init__()
         self._main = QtWidgets.QWidget()
         self.setCentralWidget(self._main)
@@ -492,6 +492,9 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         self.addToolBar(NavigationToolbar(self.canvas, self))
 
         self.canvas.canvas_axes.plot(histogram, linestyle='None', marker='s')
+        self.canvas.canvas_axes.axvline(x=bkg1, linewidth=1, color='r')
+        self.canvas.canvas_axes.axvline(x=bkg2, linewidth=1, color='r')
+        self.canvas.canvas_axes.axvline(x=t0, linewidth=1, color='g')
 
 
 # noinspection PyArgumentList

@@ -678,7 +678,13 @@ class RunDisplayController:
         for run in self.service.get_runs():
             if run.filename == self.run_display.output_current_file.text():
                 histogram = self.service.get_run_histogram(run.run_id, self.run_display.histograms.currentText())
-                self.popup = BeamsViews.HistogramDisplay(histogram=histogram)
+                print(run.meta['BkgdOne'][self.run_display.histograms.currentText()])
+                print(run.meta['BkgdTwo'][self.run_display.histograms.currentText()])
+                print(run.meta['T0'][self.run_display.histograms.currentText()])
+                self.popup = BeamsViews.HistogramDisplay(histogram,
+                                                         int(run.meta['BkgdOne'][self.run_display.histograms.currentText()]),
+                                                         int(run.meta['BkgdTwo'][self.run_display.histograms.currentText()]),
+                                                         int(run.meta['T0'][self.run_display.histograms.currentText()]))
                 self.popup.show()
                 break
 

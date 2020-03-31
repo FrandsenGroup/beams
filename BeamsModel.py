@@ -261,6 +261,9 @@ class RunService:
         logging.debug('BeamsModel.RunService.get_run_fields')
         return [float(run.meta[BeamsUtility.FIELD_KEY].split('(')[0].split('G')[0]) for run in self.get_runs() if run.run_id in run_ids]
 
+    def get_run_bkgd(self, run_id):
+        pass
+
     # Protected Functions for RunService
     def _notify(self, signal):
         """ Calls the update() function in any controller registered with the passed in signal. """
