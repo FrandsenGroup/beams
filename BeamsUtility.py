@@ -6,6 +6,9 @@ import sys
 import traceback
 
 
+LAST_USED_DIRECTORY = None
+
+
 class InvalidFileFormat(Exception):
     def __init__(self, ):
         super(InvalidFileFormat, self).__init__()
@@ -13,6 +16,28 @@ class InvalidFileFormat(Exception):
 
 class InvalidData(Exception):
     pass
+
+
+def load_last_used_directory():
+    with open('config.txt', 'r+') as f:
+        path = f.readline().strip()
+
+        if os.path.exists(r'{}'.format(path)) and os.path.isdir(r'{}'.format(path)):
+            return path
+        else:
+            f.truncate(0)
+            f.seek(0)
+            f.write(os.getcwd())
+            return os.getcwd()
+
+
+def set_last_used_directory(path):
+    if len(path) == 0:
+        path = "."
+
+    if os.path.exists(path) and os.path.isdir(path):
+        with open('config.txt', 'w') as f:
+            f.write(path)
 
 
 def convert_msr(in_file, out_file, flags=None):
@@ -424,14 +449,5 @@ GOOD_BIN_TWO_KEY = 'GoodBinTwo'
 T0_KEY = 'T0'
 
 
-# test_file = PSIMsrFile(r"C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\mud\psi\deltat_pta_gps_0001.bin")
-# test_dat_file = test_file.convert(r"C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\mud\psi\deltat_pta_gps_0001.dat")
-# print(test_dat_file.get_meta())
-#
-# test_file = PSIMsrFile(r"C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\mud\psi\pta_gps_2008_07387_14.mdu")
-# test_dat_file = test_file.convert(r"C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\mud\psi\pta_gps_2008_07387_14.dat")
-# print(test_dat_file.get_meta())
-#
-# test_file = TriumfMsrFile(r"C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\MUD_Files\1820-Cu2IrO3\006513.msr")
-# test_dat_file = test_file.convert(r"C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\MUD_Files\1820-Cu2IrO3\006513.dat")
-# print(test_dat_file.get_meta())
+load_last_used_directory()
+set_last_used_directory('')

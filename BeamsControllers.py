@@ -87,7 +87,7 @@ class ProgramController:
             BeamsViews.PermissionsMessageUI(message, pos_function=self.save_session)
 
         open_file_path = QtWidgets.QFileDialog.getOpenFileNames(self.main_window_v, 'Choose previous session',
-                                                                os.getcwd(), 'BEAMS(*.beams)')
+                                                                BeamsUtility.load_last_used_directory(), 'BEAMS(*.beams)')
         if open_file_path[0]:
             open_file_path = open_file_path[0][0]
         else:
@@ -210,7 +210,11 @@ class FileManagerController:
     def add_file_from_disk(self):
         # Open a dialog to prompt users for file(s)
         logging.debug('BeamsControllers.FileManagerController.add_file_from_disk')
-        filenames = QtWidgets.QFileDialog.getOpenFileNames(self.file_manager, 'Add file', '/home')[0]
+        filenames = QtWidgets.QFileDialog.getOpenFileNames(self.file_manager, 'Add file', BeamsUtility.load_last_used_directory())[0]
+        if len(filenames) > 0:
+            path = os.path.split(filenames[0])
+            BeamsUtility.set_last_used_directory(path[0])
+
         self.service.update_file_list(filenames, remove=False)
 
     def plot_file(self):
@@ -891,10 +895,13 @@ class WriterController:
         """ Prompts the user for a custom file path. """
         logging.debug('BeamsControllers.WriterController.custom_file_choice')
         saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self.writer_gui, 'Specify file',
-                                                                os.getcwd(), 'ASY(*.asy)')[0]
+                                                                BeamsUtility.load_last_used_directory(), 'ASY(*.asy)')[0]
+
         if not saved_file_path:
             return
         else:
+            path = os.path.split(saved_file_path)
+            BeamsUtility.set_last_used_directory(path[0])
             self.writer_gui.input_filename.setText(saved_file_path)
             self.custom_file = True
 
@@ -1077,10 +1084,13 @@ class SavePlotController:
             BeamsViews.ErrorMessageUI(error_message='You need to select a plot.')
             return
 
-        saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self.save_plot_gui, 'Specify file', os.getcwd(),
+        saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self.save_plot_gui, 'Specify file', BeamsUtility.load_last_used_directory(),
                                                                 filter=self.extension_filters)[0]
         if not saved_file_path:
             return
+
+        path = os.path.split(saved_file_path)
+        BeamsUtility.set_last_used_directory(path[0])
 
         try:
             figure.savefig(saved_file_path)
@@ -1267,4 +1277,5 @@ class WebServiceController:
         logging.debug('BeamsControllers.WebServiceController.save_to')
         path = QtWidgets.QFileDialog.getExistingDirectory(caption='Select directory to save MUD files to',)
         if path:
+            BeamsUtility.set_last_used_directory(path)
             self.dialog.input_file.setText(path)
