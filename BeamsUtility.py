@@ -447,7 +447,3 @@ BACKGROUND_TWO_KEY = 'BkgdTwo'
 GOOD_BIN_ONE_KEY = 'GoodBinOne'
 GOOD_BIN_TWO_KEY = 'GoodBinTwo'
 T0_KEY = 'T0'
-
-
-load_last_used_directory()
-set_last_used_directory('')
