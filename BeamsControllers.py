@@ -20,10 +20,10 @@ from PyQt5 import QtWidgets, QtCore
 logging.basicConfig(level=logging.ERROR)
 
 
-class ProgramController:
-    """ Main controller responsible for initializing and starting the application. """
+class ProgramPresenter:
+    """ Main presenter responsible for initializing and starting the application. """
     def __init__(self):
-        logging.debug('BeamsControllers.ProgramController.__init__')
+        logging.debug('BeamsPresenters.ProgramPresenter.__init__')
         self.app = QtWidgets.QApplication(sys.argv)
 
         self.app.setStyleSheet(BeamsViews.StyleFile(r'style/light_style.qss', r'style/light_style_vars.txt').style)
@@ -32,23 +32,23 @@ class ProgramController:
         # Note: The model holds most application-relevant data and the 'business logic' of the application.
         self.service = BeamsModel.RunService()
 
-        # Initialize all the GUIs with their controllers
-        # Note: The controllers are responsible for handling user input on the GUIs. The GUIs will update based on
+        # Initialize all the GUIs with their presenters
+        # Note: The presenters are responsible for handling user input on the GUIs. The GUIs will update based on
         # changes in the model
         self.main_window_v = BeamsViews.MainGUIWindow()  # Builds Main Window GUI with all the connected panels
         
         self._set_callbacks()
 
-        self.file_manager_controller = FileManagerController(file_manager_panel=self.main_window_v.file_manager, parent=self)
-        self.plot_editor_controller = PlotController(plot_editor_panel=self.main_window_v.plot_editor,
+        self.file_manager_presenter = FileManagerPresenter(file_manager_panel=self.main_window_v.file_manager, parent=self)
+        self.plot_editor_presenter = PlotPresenter(plot_editor_panel=self.main_window_v.plot_editor,
                                                      plot_panel=self.main_window_v.plot_panel, parent=self)
-        self.run_display_controller = RunDisplayController(run_display_panel=self.main_window_v.run_display, parent=self)
+        self.run_display_presenter = RunDisplayPresenter(run_display_panel=self.main_window_v.run_display, parent=self)
 	
         self.main_window_v.show()
         sys.exit(self.app.exec_())
 
     def _set_callbacks(self):
-        logging.debug('BeamsControllers.ProgramController._set_callbacks')
+        logging.debug('BeamsPresenters.ProgramPresenter._set_callbacks')
         self.main_window_v.save_session_act.triggered.connect(self.save_session)
         self.main_window_v.open_session_act.triggered.connect(self.open_session)
         self.main_window_v.add_data_act.triggered.connect(self.add_data_file)
@@ -114,26 +114,26 @@ class ProgramController:
         BeamsViews.ErrorMessageUI('There was an error during the previous action. Please try again or restart program.')
 
 
-class MuFytController:
+class MuFytPresenter:
     def __init__(self, mufyt_panel=None, model=None, parent=None):
-        logging.debug('BeamsControllers.MuFytController.__init__')
+        logging.debug('BeamsPresenters.MuFytPresenter.__init__')
         pass
 
 
-class FileManagerController:
-    """ Controller responsible for managing user input on the File Manager Panel. """
+class FileManagerPresenter:
+    """ Presenter responsible for managing user input on the File Manager Panel. """
     def __init__(self, file_manager_panel=None, parent=None):
-        """ Initializes the FileManagerController and sets callbacks for the GUI"""
-        logging.debug('BeamsControllers.FileManagerController.__init__')
+        """ Initializes the FileManagerPresenter and sets callbacks for the GUI"""
+        logging.debug('BeamsPresenters.FileManagerPresenter.__init__')
 
         if not file_manager_panel or not parent:  # Raise error if not properly instantiated
-            raise AttributeError('FileManagerController did not receive all necessary inputs.')
+            raise AttributeError('FileManagerPresenter did not receive all necessary inputs.')
 
         self.file_manager = file_manager_panel
         self.service = BeamsModel.RunService()
         self.service.observers[BeamsModel.FILE_CHANGE].append(self)
 
-        self.program_controller = parent
+        self.program_presenter = parent
         self.formats = {}
         self.file_title_dict = dict()
         self.popup = None
@@ -141,11 +141,11 @@ class FileManagerController:
         self._set_callbacks()
 
     def __str__(self):
-        return 'File Manager Controller'
+        return 'File Manager Presenter'
 
     def _set_callbacks(self):
         """ Sets the callbacks for events in the File Manager Panel. """
-        logging.debug('BeamsControllers.FileManagerController._set_callbacks')
+        logging.debug('BeamsPresenters.FileManagerPresenter._set_callbacks')
         self.file_manager.import_button.released.connect(lambda: self.add_file())
         self.file_manager.write_button.released.connect(lambda: self.write_file())
         self.file_manager.plot_button.released.connect(lambda: self.plot_file())
@@ -155,7 +155,7 @@ class FileManagerController:
 
     def _select_all(self):
         """ Selects or deselects all files based on the checked state of the select all checkbox. """
-        logging.debug('BeamsControllers.FileManagerController._select_all')
+        logging.debug('BeamsPresenters.FileManagerPresenter._select_all')
         for index in range(self.file_manager.file_list.count()):
             if self.file_manager.select_all.checkState():
                 self.file_manager.file_list.item(index).setCheckState(QtCore.Qt.Checked)
@@ -164,7 +164,7 @@ class FileManagerController:
 
     def _get_selected_files(self):
         """ Returns all currently selected files in the File Manager Panel. """
-        logging.debug('BeamsControllers.FileManagerController._get_selected_files')
+        logging.debug('BeamsPresenters.FileManagerPresenter._get_selected_files')
         checked_items = set()
         for index in range(self.file_manager.file_list.count()):
             if self.file_manager.file_list.item(index).checkState() == QtCore.Qt.Checked:
@@ -173,7 +173,7 @@ class FileManagerController:
 
     def _get_all_files(self):
         """ Returns all files in the File Manager Panel. """
-        logging.debug('BeamsControllers.FileManagerController._get_all_files')
+        logging.debug('BeamsPresenters.FileManagerPresenter._get_all_files')
         files = set()
         for index in range(self.file_manager.file_list.count()):
             files.add(self.file_manager.file_list.item(index).text())
@@ -181,10 +181,10 @@ class FileManagerController:
 
     def remove_file(self):
         """ Removes the currently selected files from the file manager. """
-        logging.debug('BeamsControllers.FileManagerController.remove_file')
+        logging.debug('BeamsPresenters.FileManagerPresenter.remove_file')
 
         def remove():
-            logging.debug('BeamsControllers.FileManagerController.remove_file.remove')
+            logging.debug('BeamsPresenters.FileManagerPresenter.remove_file.remove')
             for file_root in selected_files:
                 for index in range(self.file_manager.file_list.count()):
                     if file_root == self.file_manager.file_list.item(index).text():
@@ -204,12 +204,12 @@ class FileManagerController:
     def add_file(self):
         """ Prompts the user for and stores full file paths in model.
             Note: The change in the model will notify and result in update of GUI. See update(). """
-        logging.debug('BeamsControllers.FileManagerController.add_file')
-        BeamsViews.AddFileUI(self, WebServiceController)
+        logging.debug('BeamsPresenters.FileManagerPresenter.add_file')
+        BeamsViews.AddFileUI(self, WebServicePresenter)
 
     def add_file_from_disk(self):
         # Open a dialog to prompt users for file(s)
-        logging.debug('BeamsControllers.FileManagerController.add_file_from_disk')
+        logging.debug('BeamsPresenters.FileManagerPresenter.add_file_from_disk')
         filenames = QtWidgets.QFileDialog.getOpenFileNames(self.file_manager, 'Add file', BeamsUtility.load_last_used_directory())[0]
         if len(filenames) > 0:
             path = os.path.split(filenames[0])
@@ -218,7 +218,7 @@ class FileManagerController:
         self.service.update_file_list(filenames, remove=False)
 
     def plot_file(self):
-        logging.debug('BeamsControllers.FileManagerController.plot_file')
+        logging.debug('BeamsPresenters.FileManagerPresenter.plot_file')
         checked_files = {BeamsUtility.FileReader.BINARY_FILE: [],
                          BeamsUtility.FileReader.ASYMMETRY_FILE: [],
                          BeamsUtility.FileReader.HISTOGRAM_FILE: []}
@@ -238,7 +238,7 @@ class FileManagerController:
             threading.Thread(target=self.service.update_run_list(remove_ext='.asy')).start()
 
         if len(checked_files[BeamsUtility.FileReader.HISTOGRAM_FILE]) != 0:
-            self.popup = PlotDataController(checked_files[BeamsUtility.FileReader.HISTOGRAM_FILE], plot=True)
+            self.popup = PlotDataPresenter(checked_files[BeamsUtility.FileReader.HISTOGRAM_FILE], plot=True)
         else:
             threading.Thread(target=self.service.update_run_list(remove_ext='.dat')).start()
 
@@ -251,10 +251,10 @@ class FileManagerController:
     def convert_file(self):
         """ Converts currently selected .msr files to .dat files and saves them in the current directory.
             Note: The change in the model will notify and result in update of GUI. See update(). """
-        logging.debug('BeamsControllers.FileManagerController.convert_file')
+        logging.debug('BeamsPresenters.FileManagerPresenter.convert_file')
 
         def remove_msr():
-            logging.debug('BeamsControllers.FileManagerController.convert_file.remove_msr')
+            logging.debug('BeamsPresenters.FileManagerPresenter.convert_file.remove_msr')
             for file_root in checked_items:
                 extension = os.path.splitext(file_root)[1]
                 if extension == '.msr' or extension == '.bin' or extension == '.mdu':
@@ -287,13 +287,13 @@ class FileManagerController:
     def write_file(self):
         """ Launches the Writer GUI.
             Note: The change in the model will notify and result in update of GUI. See update(). """
-        logging.debug('BeamsControllers.FileManagerController.write_file')
+        logging.debug('BeamsPresenters.FileManagerPresenter.write_file')
         full_selected_file_paths = [self.file_title_dict[title] for title in self._get_selected_files()]
-        self.popup = WriterController(selected_files=full_selected_file_paths)
+        self.popup = WriterPresenter(selected_files=full_selected_file_paths)
 
     def update(self, signal=None):
         """ Called by the model when one of its FileManagerPanel-relevant attributes changes. """
-        logging.debug('BeamsControllers.FileManagerController.update')
+        logging.debug('BeamsPresenters.FileManagerPresenter.update')
         for index in range(self.file_manager.file_list.count()-1, -1, -1):
             self.file_manager.file_list.takeItem(index)
         files = self.service.get_run_files()
@@ -310,13 +310,13 @@ class FileManagerController:
             file_item.setCheckState(QtCore.Qt.Unchecked)
 
 
-class PlotController:
+class PlotPresenter:
     def __init__(self, plot_editor_panel=None, plot_panel=None, parent=None):
-        """ Initializes the PlotEditorController and sets callbacks for the GUI"""
-        logging.debug('BeamsControllers.PlotController.__init__')
+        """ Initializes the PlotEditorPresenter and sets callbacks for the GUI"""
+        logging.debug('BeamsPresenters.PlotPresenter.__init__')
 
         if not plot_editor_panel or not parent:  # Raise error if not properly instantiated
-            raise AttributeError('PlotEditorController did not receive all necessary inputs.')
+            raise AttributeError('PlotEditorPresenter did not receive all necessary inputs.')
 
         self.plot_editor = plot_editor_panel
         self.plot_panel = plot_panel
@@ -326,7 +326,7 @@ class PlotController:
         self.service.observers[BeamsModel.RUN_LIST_CHANGE].append(self)
         self.canvases = [self.plot_panel.canvas_one, self.plot_panel.canvas_two]
 
-        self.program_controller = parent
+        self.program_presenter = parent
         self.popup = None
 
         self.plot_parameters = {
@@ -369,11 +369,11 @@ class PlotController:
         self._set_callbacks()
 
     def __str__(self):
-        return 'Plot Controller'
+        return 'Plot Presenter'
 
     def _set_callbacks(self):
         """ Sets callbacks for events in the Plot Editor Panel. """
-        logging.debug('BeamsControllers.PlotController._set_callbacks')
+        logging.debug('BeamsPresenters.PlotPresenter._set_callbacks')
         self.plot_panel.input_time_xmin_one.returnPressed.connect(lambda: self._visual_data_change(plot=1))
         self.plot_panel.input_time_xmin_two.returnPressed.connect(lambda: self._visual_data_change(plot=2))
         self.plot_panel.input_time_xmax_one.returnPressed.connect(lambda: self._visual_data_change(plot=1))
@@ -409,7 +409,7 @@ class PlotController:
     def _bin_changed(self, moving=None, plot=None):
         """ Handles the bin size changing on either the slider or the text box. If one changes then
             the other is updated. """
-        logging.debug('BeamsControllers.PlotController._bin_changed')
+        logging.debug('BeamsPresenters.PlotPresenter._bin_changed')
         if moving:
             self.plot_panel.input_slider_one.setText(str(self.plot_parameters['SliderOne']()))
             self.plot_panel.input_slider_two.setText(str(self.plot_parameters['SliderTwo']()))
@@ -427,7 +427,7 @@ class PlotController:
 
     def _visual_data_change(self, plot=None, moving=False):
         """ Handles the changes made to Plot Editor widgets that necessitate recalculation of the Run Data. """
-        logging.debug('BeamsControllers.PlotController._visual_data_change')
+        logging.debug('BeamsPresenters.PlotPresenter._visual_data_change')
         if plot:
             if plot == 1:
                 threading.Thread(target=self._update_canvas(1, moving), daemon=True).start()
@@ -442,7 +442,7 @@ class PlotController:
 
     def _update_canvas(self, can_int, moving=False):
         # Get the appropriate plotting parameters for the specified canvas
-        logging.debug('BeamsControllers.PlotController._update_canvas')
+        logging.debug('BeamsPresenters.PlotPresenter._update_canvas')
         canvas = self.canvases[can_int-1]
         xmin = self.plot_parameters['TimeXMinOne']() if can_int == 1 else self.plot_parameters['TimeXMinTwo']()
         xmax = self.plot_parameters['TimeXMaxOne']() if can_int == 1 else self.plot_parameters['TimeXMaxTwo']()
@@ -524,15 +524,15 @@ class PlotController:
         canvas.axes_time.figure.canvas.draw()
 
     def _display_annotations(self, run):
-        logging.debug('BeamsControllers.PlotController._display_annotations')
+        logging.debug('BeamsPresenters.PlotPresenter._display_annotations')
         return run.meta['Title'] if self.plot_parameters['Annotations']() else None
 
     def _display_plot_lines(self):
-        logging.debug('BeamsControllers.PlotController._display_plot_lines')
+        logging.debug('BeamsPresenters.PlotPresenter._display_plot_lines')
         return '-' if self.plot_parameters['PlotLines']() else 'None'
 
     def _display_x_limits(self):
-        logging.debug('BeamsControllers.PlotController._display_x_limits')
+        logging.debug('BeamsPresenters.PlotPresenter._display_x_limits')
         x_min, x_max = self.plot_panel.canvas_one.axes_freq.get_xlim()
         self.plot_panel.input_freq_xmin_one.setText('{0:.3f}'.format(x_min))
         self.plot_panel.input_freq_xmax_one.setText('{0:.3f}'.format(x_max))
@@ -542,7 +542,7 @@ class PlotController:
         self.plot_panel.input_freq_xmax_two.setText('{0:.3f}'.format(x_max))
 
     def _display_y_limits(self):
-        logging.debug('BeamsControllers.PlotController._display_y_limits')
+        logging.debug('BeamsPresenters.PlotPresenter._display_y_limits')
         y_min, y_max = self.plot_panel.canvas_one.axes_time.get_ylim()
         self.plot_panel.input_time_ymin_one.setText('{0:.3f}'.format(y_min))
         self.plot_panel.input_time_ymax_one.setText('{0:.3f}'.format(y_max))
@@ -560,7 +560,7 @@ class PlotController:
         self.plot_panel.input_freq_ymax_two.setText('{0:.3f}'.format(y_max))
 
     def _check_y_limits(self, plot=None, option='TimeYAuto'):
-        logging.debug('BeamsControllers.PlotController._check_y_limits')
+        logging.debug('BeamsPresenters.PlotPresenter._check_y_limits')
         if option == 'TimeYAuto':
             if plot == 1:
                 self.plot_panel.input_time_ymin_one.setEnabled(not self.plot_parameters['TimeYAutoOne']())
@@ -586,17 +586,17 @@ class PlotController:
         self._visual_data_change(plot=plot, moving=False)
 
     def update(self, signal=None):
-        logging.debug('BeamsControllers.PlotController.update')
+        logging.debug('BeamsPresenters.PlotPresenter.update')
         self._visual_data_change(moving=False)
 
 
-class RunDisplayController:
+class RunDisplayPresenter:
     def __init__(self, run_display_panel=None, parent=None):
-        logging.debug('BeamsControllers.RunDisplayController.__init__')
+        logging.debug('BeamsPresenters.RunDisplayPresenter.__init__')
         self.run_display = run_display_panel
         self.service = BeamsModel.RunService()
         self.service.observers[BeamsModel.RUN_LIST_CHANGE].append(self)
-        self.program_controller = parent
+        self.program_presenter = parent
         self.popup = None
         self.run_id_title = dict()
 
@@ -605,11 +605,11 @@ class RunDisplayController:
         self._current_item = None
 
     def __str__(self):
-        return 'Run Display Controller'
+        return 'Run Display Presenter'
 
     def _set_callbacks(self):
         """ Sets callbacks for events in the Run Display Panel. """
-        logging.debug('BeamsControllers.RunDisplayController._set_callbacks')
+        logging.debug('BeamsPresenters.RunDisplayPresenter._set_callbacks')
         self.run_display.isolate_button.released.connect(lambda: self.isolate_plot())
         self.run_display.plot_all_button.released.connect(lambda: self.plot_all())
         self.run_display.clear_all_button.released.connect(lambda: self.clear_all())
@@ -625,7 +625,7 @@ class RunDisplayController:
         self.run_display.integrate_button.released.connect(lambda: self.integrate_plots())
 
     def apply_correction(self):
-        logging.debug('BeamsControllers.RunDisplayController.apply_correction')
+        logging.debug('BeamsPresenters.RunDisplayPresenter.apply_correction')
         try:
             alpha = float(self.run_display.input_alpha.text())
         except ValueError:
@@ -635,21 +635,21 @@ class RunDisplayController:
         self.service.update_run_correction(run_ids, alpha)
 
     def isolate_plot(self):
-        logging.debug('BeamsControllers.RunDisplayController.isolate_plots')
+        logging.debug('BeamsPresenters.RunDisplayPresenter.isolate_plots')
         selected_run_ids = [self.run_id_title[item.text()] for item in self.run_display.current_runs.selectedItems()]
         self.service.update_visible_runs(selected_run_ids)
 
     def clear_all(self):
-        logging.debug('BeamsControllers.RunDisplayController.clear_all')
+        logging.debug('BeamsPresenters.RunDisplayPresenter.clear_all')
         self.service.clear_database()
 
     def plot_all(self):
-        logging.debug('BeamsControllers.RunDisplayController.plot_all')
+        logging.debug('BeamsPresenters.RunDisplayPresenter.plot_all')
         visible_runs = [v for k, v in self.run_id_title.items()]
         self.service.update_visible_runs(visible_runs)
 
     def integrate_plots(self):
-        logging.debug('BeamsControllers.RunDisplayController.integrate_plots')
+        logging.debug('BeamsPresenters.RunDisplayPresenter.integrate_plots')
         selected_run_ids = [self.run_id_title[item.text()] for item in self.run_display.current_runs.selectedItems()]
 
         asymmetry_integrations = self.service.get_run_integrations(selected_run_ids)
@@ -665,7 +665,7 @@ class RunDisplayController:
         self.popup.show()
 
     def inspect_file(self):
-        logging.debug('BeamsControllers.RunDisplayController.inspect_file')
+        logging.debug('BeamsPresenters.RunDisplayPresenter.inspect_file')
         if BeamsUtility.is_found(self.run_display.output_current_file.text()):
             self.popup = BeamsViews.FileDisplayUI(filename=self.run_display.output_current_file.text())
             self.popup.show()
@@ -674,22 +674,18 @@ class RunDisplayController:
             BeamsViews.ErrorMessageUI(message)
 
     def inspect_hist(self):
-        logging.debug('BeamsControllers.RunDisplayController.inspect_hist')
+        logging.debug('BeamsPresenters.RunDisplayPresenter.inspect_hist')
         for run in self.service.get_runs():
             if run.filename == self.run_display.output_current_file.text():
                 histogram = self.service.get_run_histogram(run.run_id, self.run_display.histograms.currentText())
-                print(run.meta['BkgdOne'][self.run_display.histograms.currentText()])
-                print(run.meta['BkgdTwo'][self.run_display.histograms.currentText()])
-                print(run.meta['T0'][self.run_display.histograms.currentText()])
-                self.popup = BeamsViews.HistogramDisplay(histogram,
-                                                         int(run.meta['BkgdOne'][self.run_display.histograms.currentText()]),
-                                                         int(run.meta['BkgdTwo'][self.run_display.histograms.currentText()]),
-                                                         int(run.meta['T0'][self.run_display.histograms.currentText()]))
-                self.popup.show()
+                self.popup = HistogramPresenter(histogram,
+                                                int(run.meta['BkgdOne'][self.run_display.histograms.currentText()]),
+                                                int(run.meta['BkgdTwo'][self.run_display.histograms.currentText()]),
+                                                int(run.meta['T0'][self.run_display.histograms.currentText()]))
                 break
 
     def change_color(self):
-        logging.debug('BeamsControllers.RunDisplayController.change_color')
+        logging.debug('BeamsPresenters.RunDisplayPresenter.change_color')
         if self.__is_empty():
             return
 
@@ -698,7 +694,7 @@ class RunDisplayController:
             self.service.update_run_style(run_id, BeamsModel.STYLE_COLOR, self.run_display.color_choices.currentText())
 
     def change_marker(self):
-        logging.debug('BeamsControllers.RunDisplayController.change_marker')
+        logging.debug('BeamsPresenters.RunDisplayPresenter.change_marker')
         if self.__is_empty():
             return
 
@@ -707,7 +703,7 @@ class RunDisplayController:
             self.service.update_run_style(run_id, BeamsModel.STYLE_MARKER, self.run_display.marker_choices.currentText())
 
     def update_run_display(self):
-        logging.debug('BeamsControllers.RunDisplayController.update_run_display')
+        logging.debug('BeamsPresenters.RunDisplayPresenter.update_run_display')
         if self.__is_empty():
             return
 
@@ -737,7 +733,7 @@ class RunDisplayController:
         self._change_selection = False
 
     def update_metadata(self):
-        logging.debug('BeamsControllers.RunDisplayController.update_metadata')
+        logging.debug('BeamsPresenters.RunDisplayPresenter.update_metadata')
         run_id = self.run_id_title[self.run_display.current_runs.currentItem().text()]
         run = self.service.get_run_by_id(run_id)
         self.run_display.header_data.clear()
@@ -746,7 +742,7 @@ class RunDisplayController:
         self.run_display.header_data.setCurrentText(BeamsUtility.TEMPERATURE_KEY)
 
     def change_metadata(self):
-        logging.debug('BeamsControllers.RunDisplayController.change_metadata')
+        logging.debug('BeamsPresenters.RunDisplayPresenter.change_metadata')
         if self.__is_empty():
             return
 
@@ -758,7 +754,7 @@ class RunDisplayController:
             self.run_display.output_header_display.setText(str(value))
 
     def change_title(self):
-        logging.debug('BeamsControllers.RunDisplayController.change_title')
+        logging.debug('BeamsPresenters.RunDisplayPresenter.change_title')
         if self.__is_empty():
             return
 
@@ -767,7 +763,7 @@ class RunDisplayController:
                                           self.run_display.current_runs.currentItem().text())
 
     def populate_run_display(self):
-        logging.debug('BeamsControllers.RunDisplayController.populate_run_display')
+        logging.debug('BeamsPresenters.RunDisplayPresenter.populate_run_display')
         runs = self.service.get_runs()
         if len(runs) != 0:
             self.run_display.clear_panel()
@@ -793,26 +789,26 @@ class RunDisplayController:
             self.run_display.set_enabled(False)
 
     def __is_empty(self):
-        logging.debug('BeamsControllers.RunDisplayController.__is_empty')
+        logging.debug('BeamsPresenters.RunDisplayPresenter.__is_empty')
         return len(self.service.get_runs()) == 0 or self.run_display.current_runs.currentItem() is None
 
     def update(self, signal):
-        logging.debug('BeamsControllers.RunDisplayController.update')
+        logging.debug('BeamsPresenters.RunDisplayPresenter.update')
         self.populate_run_display()
 
 
-class FormatterController:
-    """ FormatterController paired with FileFormatterUI prompts the user to
+class FormatterPresenter:
+    """ FormatterPresenter paired with FileFormatterUI prompts the user to
             specify the formats for each file.
 
-            Instantiated by FileManagerController class only."""
+            Instantiated by FileManagerPresenter class only."""
     def __init__(self, files=None, parent=None):
-        if not parent or type(parent) is not FileManagerController:
-            raise AttributeError('Parameter parent=FileManagerController not passed.')
-            # FormatterController calls _prompt_histograms() in FileManagerController after GUI closes
+        if not parent or type(parent) is not FileManagerPresenter:
+            raise AttributeError('Parameter parent=FileManagerPresenter not passed.')
+            # FormatterPresenter calls _prompt_histograms() in FileManagerPresenter after GUI closes
 
         self.formatter_gui = BeamsViews.FileFormatterUI(filenames=files)
-        self.parent_controller = parent
+        self.parent_presenter = parent
         self.service = BeamsModel.RunService()
         self._set_callbacks()
         self.formatter_gui.show()
@@ -831,9 +827,9 @@ class FormatterController:
         input_box.setEnabled(check_box.isChecked())
 
 
-class WriterController:
+class WriterPresenter:
     def __init__(self, selected_files):
-        logging.debug('BeamsControllers.WriterController.__init__')
+        logging.debug('BeamsPresenters.WriterPresenter.__init__')
         self.writer_gui = BeamsViews.WriteDataUI()
         self.writer_gui.file_list.addItems(selected_files)
 
@@ -855,7 +851,7 @@ class WriterController:
                 break
 
     def read_files(self):
-        logging.debug('BeamsControllers.WriterController.read_files')
+        logging.debug('BeamsPresenters.WriterPresenter.read_files')
         checked_files = {BeamsUtility.FileReader.BINARY_FILE: [],
                          BeamsUtility.FileReader.ASYMMETRY_FILE: [],
                          BeamsUtility.FileReader.HISTOGRAM_FILE: []}
@@ -874,10 +870,10 @@ class WriterController:
             threading.Thread(target=self.service.update_run_list(checked_files[BeamsUtility.FileReader.ASYMMETRY_FILE])).start()
 
         if len(checked_files[BeamsUtility.FileReader.HISTOGRAM_FILE]) != 0:
-            self.popup = PlotDataController(checked_files[BeamsUtility.FileReader.HISTOGRAM_FILE], plot=False)
+            self.popup = PlotDataPresenter(checked_files[BeamsUtility.FileReader.HISTOGRAM_FILE], plot=False)
 
     def _set_callbacks(self):
-        logging.debug('BeamsControllers.WriterController._set_callbacks')
+        logging.debug('BeamsPresenters.WriterPresenter._set_callbacks')
         self.writer_gui.select_folder.released.connect(lambda: self.custom_file_choice())
         self.writer_gui.write_file.released.connect(lambda: self.write_files(all_files=False))
         self.writer_gui.write_all.released.connect(lambda: self.write_files(all_files=True))
@@ -888,7 +884,7 @@ class WriterController:
         self.writer_gui.radio_binned_size.textChanged.connect(lambda: self.bin_input_change())
 
     def bin_input_change(self):
-        logging.debug('BeamsControllers.WriterController.bin_input_change')
+        logging.debug('BeamsPresenters.WriterPresenter.bin_input_change')
         try:
             float(self.writer_gui.radio_binned_size.text())
             self.writer_gui.write_all.setEnabled(True)
@@ -899,7 +895,7 @@ class WriterController:
 
     def custom_file_choice(self):
         """ Prompts the user for a custom file path. """
-        logging.debug('BeamsControllers.WriterController.custom_file_choice')
+        logging.debug('BeamsPresenters.WriterPresenter.custom_file_choice')
         saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self.writer_gui, 'Specify file',
                                                                 BeamsUtility.load_last_used_directory(), 'ASY(*.asy)')[0]
 
@@ -913,7 +909,7 @@ class WriterController:
 
     def write_files(self, all_files=False):
         """ Writes the user-specified run data (if they are read in) to a .dat file. """
-        logging.debug('BeamsControllers.WriterController.write_files')
+        logging.debug('BeamsPresenters.WriterPresenter.write_files')
         self.writer_gui.set_status_message('Writing files ... ')
 
         count = 0
@@ -957,19 +953,19 @@ class WriterController:
         self.writer_gui.set_status_message('Done.')
 
     def remove_file(self):
-        logging.debug('BeamsControllers.WriterController.remove_files')
+        logging.debug('BeamsPresenters.WriterPresenter.remove_files')
         self.writer_gui.file_list.removeItem(self.writer_gui.file_list.currentIndex())
 
 
-class PlotDataController:
-    """ PlotDataController paired with PlotDataUI prompts the user to specify which histograms
+class PlotDataPresenter:
+    """ PlotDataPresenter paired with PlotDataUI prompts the user to specify which histograms
             will be used to calculate the asymmetry for each file.
 
-            Instantiated by FileManagerController class only."""
+            Instantiated by FileManagerPresenter class only."""
     def __init__(self, files=None, plot=True):
-        """ Instantiates an object of the PlotDataController class, connects it to the PlotDataGUI
-                and its calling class (FileManagerController). """
-        logging.debug('BeamsControllers.PlotDataController.__init__')
+        """ Instantiates an object of the PlotDataPresenter class, connects it to the PlotDataGUI
+                and its calling class (FileManagerPresenter). """
+        logging.debug('BeamsPresenters.PlotDataPresenter.__init__')
 
         self.plot_data_gui = BeamsViews.PlotDataUI()
         self.plot = plot
@@ -983,7 +979,7 @@ class PlotDataController:
 
     def _set_callbacks(self):
         """ Sets the callbacks for the events handled in the PlotDataGUI"""
-        logging.debug('BeamsControllers.PlotDataController._set_callbacks')
+        logging.debug('BeamsPresenters.PlotDataPresenter._set_callbacks')
         self.plot_data_gui.b_apply.released.connect(lambda: self.add_format())
         self.plot_data_gui.b_apply_all.released.connect(lambda: self.add_format(all_files=True))
         self.plot_data_gui.b_cancel.released.connect(lambda: self.plot_data_gui.close())
@@ -993,7 +989,7 @@ class PlotDataController:
 
     def add_format(self, all_files=False):
         """ Takes the currently selected histograms and adds them to the file(s) format. """
-        logging.debug('BeamsControllers.PlotDataController.add_format')
+        logging.debug('BeamsPresenters.PlotDataPresenter.add_format')
         calc_hists = self.current_histograms()
         num_files = self.plot_data_gui.c_file_list.count()
         if not calc_hists:  # If calc_hists is None user needs to choose histograms.
@@ -1020,7 +1016,7 @@ class PlotDataController:
 
     def current_histograms(self):
         """ Returns the currently selected histograms as [left histogram, right histogram]. """
-        logging.debug('BeamsControllers.PlotDataController.current_histograms')
+        logging.debug('BeamsPresenters.PlotDataPresenter.current_histograms')
         calc_hists = [self.plot_data_gui.c_hist_one.currentText(), self.plot_data_gui.c_hist_two.currentText()]
 
         if calc_hists[0] == calc_hists[1]:  # Check if both histograms are the same
@@ -1034,13 +1030,13 @@ class PlotDataController:
 
     def plot_formatted_files(self):
         """ Closes the GUI and calls update_model() in the parent class FileManagerControl. """
-        logging.debug('BeamsControllers.PlotDataController.plot_formatted_files')
+        logging.debug('BeamsPresenters.PlotDataPresenter.plot_formatted_files')
         self.plot_data_gui.close()
         threading.Thread(target=self.service.update_run_list(self.files, self.plot), daemon=True).start()
 
     def remove_file(self):
         """ Removes the currently selected file from the file list and from the format list. """
-        logging.debug('BeamsControllers.PlotDataController.remove_file')
+        logging.debug('BeamsPresenters.PlotDataPresenter.remove_file')
         for file in self.files:
             if file.get_file_path() == self.plot_data_gui.c_file_list.currentText():
                 self.files.remove(file)
@@ -1048,7 +1044,7 @@ class PlotDataController:
 
     def file_changed(self):
         """ Changes the histograms displayed to match the currently selected file. """
-        logging.debug('BeamsControllers.PlotDataController.file_changed')
+        logging.debug('BeamsPresenters.PlotDataPresenter.file_changed')
         self.plot_data_gui.c_hist_one.clear()
         self.plot_data_gui.c_hist_two.clear()
 
@@ -1059,9 +1055,9 @@ class PlotDataController:
                     self.plot_data_gui.c_hist_two.addItems(file.get_meta()['HistTitles'])
 
 
-class SavePlotController:
+class SavePlotPresenter:
     def __init__(self, canvases=None):
-        logging.debug('BeamsControllers.SavePlotController.__init__')
+        logging.debug('BeamsPresenters.SavePlotPresenter.__init__')
         self.save_plot_gui = BeamsViews.SavePlotUI()
         self.canvases = canvases
         self.extension_filters = self.get_supported_extensions()
@@ -1070,7 +1066,7 @@ class SavePlotController:
         self.save_plot_gui.show()
 
     def get_supported_extensions(self):
-        logging.debug('BeamsControllers.SavePlotController.get_supported_extensions')
+        logging.debug('BeamsPresenters.SavePlotPresenter.get_supported_extensions')
         extensions = self.canvases[0].get_supported_filetypes().keys()
         extension_filters = ";;"
         extension_list = []
@@ -1081,7 +1077,7 @@ class SavePlotController:
         return extension_filters
 
     def _save_plots(self):
-        logging.debug('BeamsControllers.SavePlotController._save_plots')
+        logging.debug('BeamsPresenters.SavePlotPresenter._save_plots')
         if self.save_plot_gui.left_radio.isChecked():  # Setting the current figure to left or right (1 or 2)
             figure = self.canvases[0].figure
         elif self.save_plot_gui.right_radio.isChecked():
@@ -1106,9 +1102,9 @@ class SavePlotController:
             self.save_plot_gui.close()
 
 
-class WebServiceController:
+class WebServicePresenter:
     def __init__(self):
-        logging.debug('BeamsControllers.WebServiceController.__init__')
+        logging.debug('BeamsPresenters.WebServicePresenter.__init__')
         self.dialog = BeamsViews.WebDownloadUI()
         self.service = BeamsModel.RunService()
         self._search_url = "http://musr.ca/mud/runSel.php"
@@ -1119,14 +1115,14 @@ class WebServiceController:
         self.dialog.show()
 
     def _set_callbacks(self):
-        logging.debug('BeamsControllers.WebServiceController._set_callbacks')
+        logging.debug('BeamsPresenters.WebServicePresenter._set_callbacks')
         self.dialog.search_button.released.connect(lambda: self.query())
         self.dialog.download_button.released.connect(lambda: self.download())
         self.dialog.done_button.released.connect(lambda: self.done())
         self.dialog.select_button.released.connect(lambda: self.save_to())
 
     def _assemble_query(self):
-        logging.debug('BeamsControllers.WebServiceController._assemble_query')
+        logging.debug('BeamsPresenters.WebServicePresenter._assemble_query')
         query = "?"
 
         area = self.dialog.input_area.text()
@@ -1158,7 +1154,7 @@ class WebServiceController:
         return query
 
     def _assemble_downloads(self):
-        logging.debug('BeamsControllers.WebServiceController._assemble_downloads')
+        logging.debug('BeamsPresenters.WebServicePresenter._assemble_downloads')
         download_string = ""
 
         area = self.dialog.input_area.text()
@@ -1183,7 +1179,7 @@ class WebServiceController:
         return [download_string + '{0:06d}.msr'.format(download) for download in range(int(runs[0]), int(runs[1])+1)]
 
     def _assemble_save(self, download):
-        logging.debug('BeamsControllers.WebServiceController._assemble_save')
+        logging.debug('BeamsPresenters.WebServicePresenter._assemble_save')
         directory = self.dialog.input_file.text()
 
         if len(directory) == 0:
@@ -1192,7 +1188,7 @@ class WebServiceController:
         return directory + "{}{}".format(BeamsUtility.get_separator(), download.split('/')[-1])
 
     def query(self):
-        logging.debug('BeamsControllers.WebServiceController.query')
+        logging.debug('BeamsPresenters.WebServicePresenter.query')
         self.dialog.set_status_message('Querying ... ')
         query = self._assemble_query()
 
@@ -1238,7 +1234,7 @@ class WebServiceController:
         self.dialog.set_status_message('Done.')
 
     def download(self):
-        logging.debug('BeamsControllers.WebServiceController.download')
+        logging.debug('BeamsPresenters.WebServicePresenter.download')
         self.dialog.set_status_message('Downloading ... ')
 
         downloads = self._assemble_downloads()
@@ -1276,12 +1272,59 @@ class WebServiceController:
         self.dialog.set_status_message('Done.')
 
     def done(self):
-        logging.debug('BeamsControllers.WebServiceController.done')
+        logging.debug('BeamsPresenters.WebServicePresenter.done')
         self.dialog.close()
 
     def save_to(self):
-        logging.debug('BeamsControllers.WebServiceController.save_to')
+        logging.debug('BeamsPresenters.WebServicePresenter.save_to')
         path = QtWidgets.QFileDialog.getExistingDirectory(caption='Select directory to save MUD files to',)
         if path:
             BeamsUtility.set_last_used_directory(path)
             self.dialog.input_file.setText(path)
+
+
+class HistogramPresenter:
+    def __init__(self, histogram, bkgd1, bkgd2, t0):
+        self.__pressed = False
+
+        self.service = BeamsModel.RunService()
+        self.dialog = BeamsViews.HistogramDisplay(histogram, bkgd1, bkgd2, t0)
+
+        self._set_callbacks()
+
+        self.dialog.show()
+
+    def _set_callbacks(self):
+        self.dialog.canvas.figure.canvas.mpl_connect('button_press_event', self._set_new_value)
+        self.dialog.canvas.figure.canvas.mpl_connect('button_release_event', self._set_new_value)
+        self.dialog.canvas.figure.canvas.mpl_connect('motion_notify_event', self._set_new_value)
+        self.dialog.button_reset.released.connect(lambda: self._reset())
+
+    def _set_new_value(self, event):
+        print(event)
+        if event.button is not None:
+            self.__pressed = True
+
+            if self.dialog.radio_bkgd_one.isChecked():
+                self.dialog.set_new_lines(bkg1=event.xdata, thick=True)
+
+            if self.dialog.radio_bkgd_two.isChecked():
+                self.dialog.set_new_lines(bkg2=event.xdata, thick=True)
+
+            if self.dialog.radio_t0.isChecked():
+                self.dialog.set_new_lines(t0=event.xdata, thick=True)
+
+        elif event.button is None and self.__pressed:
+            self.__pressed = False
+
+            if self.dialog.radio_bkgd_one.isChecked():
+                self.dialog.set_new_lines(bkg1=event.xdata, thick=False)
+
+            if self.dialog.radio_bkgd_two.isChecked():
+                self.dialog.set_new_lines(bkg2=event.xdata, thick=False)
+
+            if self.dialog.radio_t0.isChecked():
+                self.dialog.set_new_lines(t0=event.xdata, thick=False)
+
+    def _reset(self):
+        bkg1, bkg2, t0 = self.dialog.reset()

@@ -2,6 +2,6 @@
 
 import BeamsControllers
 
-program = BeamsControllers.ProgramController()
+program = BeamsControllers.ProgramPresenter()
 
 

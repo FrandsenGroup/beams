@@ -483,27 +483,113 @@ class PlotPanel(QtWidgets.QDockWidget):
 class HistogramDisplay(QtWidgets.QMainWindow):
     def __init__(self, histogram, bkg1, bkg2, t0):
         super(HistogramDisplay, self).__init__()
+        self._initial_bkg1 = bkg1
+        self._initial_bkg2 = bkg2
+        self._initial_t0 = t0
+
+        self._histogram = histogram
+        self._bkg1 = bkg1
+        self._bkg2 = bkg2
+        self._t0 = t0
+
         self._main = QtWidgets.QWidget()
         self.setCentralWidget(self._main)
-        layout = QtWidgets.QVBoxLayout(self._main)
+        self.new_layout = QtWidgets.QVBoxLayout(self._main)
 
+        self.radio_bkgd_one = QtWidgets.QRadioButton()
+        self.radio_bkgd_two = QtWidgets.QRadioButton()
+        self.radio_t0 = QtWidgets.QRadioButton()
+        self.button_reset = StyleOneButton("Reset")
         self.canvas = CanvasUI()
-        layout.addWidget(self.canvas)
-        self.addToolBar(NavigationToolbar(self.canvas, self))
 
-        self.canvas.canvas_axes.plot(histogram, linestyle='None', marker='s')
-        self.canvas.canvas_axes.axvline(x=bkg1, linewidth=1, color='r')
-        self.canvas.canvas_axes.axvline(x=bkg2, linewidth=1, color='r')
-        self.canvas.canvas_axes.axvline(x=t0, linewidth=1, color='g')
+        self._set_widget_attributes()
+        self._set_widget_dimensions()
+        self._set_widget_tooltips()
+        self._set_widget_layout()
+        self.set_new_lines()
+
+    def set_new_lines(self, bkg1=None, bkg2=None, t0=None, thick=False):
+        self.canvas.canvas_axes.clear()
+        self.canvas.canvas_axes.plot(self._histogram, linestyle='None', marker='s')
+
+        bkg1_width = 1
+        bkg2_width = 1
+        t0_width = 1
+        if bkg1 is not None:
+            self._bkg1 = bkg1
+            if thick:
+                bkg1_width = 2
+        if bkg2 is not None:
+            self._bkg2 = bkg2
+            if thick:
+                bkg2_width = 2
+        if t0 is not None:
+            self._t0 = t0
+            if thick:
+                t0_width = 2
+
+        self.canvas.canvas_axes.axvline(x=self._bkg1, linewidth=bkg1_width, color='r')
+        self.canvas.canvas_axes.axvline(x=self._bkg2, linewidth=bkg2_width, color='r')
+        self.canvas.canvas_axes.axvline(x=self._t0, linewidth=t0_width, color='g')
+        self.canvas.figure.tight_layout()
+        self.canvas.canvas_axes.figure.canvas.draw()
+
+    def reset(self):
+        self._bkg1 = self._initial_bkg1
+        self._bkg2 = self._initial_bkg2
+        self._t0 = self._initial_t0
+
+        self.canvas.canvas_axes.clear()
+        self.canvas.canvas_axes.plot(self._histogram, linestyle='None', marker='s')
+        self.canvas.canvas_axes.axvline(x=self._bkg1, linewidth=1, color='r')
+        self.canvas.canvas_axes.axvline(x=self._bkg2, linewidth=1, color='r')
+        self.canvas.canvas_axes.axvline(x=self._t0, linewidth=1, color='g')
+        self.canvas.figure.tight_layout()
+        self.canvas.canvas_axes.figure.canvas.draw()
+
+        return self._bkg1, self._bkg2, self._t0
+
+    def _set_widget_tooltips(self):
+        pass
+
+    def _set_widget_attributes(self):
+        self.radio_bkgd_one.setChecked(True)
+
+    def _set_widget_dimensions(self):
+        self.button_reset.setFixedWidth(60)
+
+    def _set_widget_layout(self):
+        radio_layout = QtWidgets.QHBoxLayout()
+        radio_layout.addSpacing(15)
+        radio_layout.addWidget(self.radio_bkgd_one)
+        radio_layout.addWidget(QtWidgets.QLabel("Background Start"))
+        radio_layout.addSpacing(25)
+        radio_layout.addWidget(self.radio_bkgd_two)
+        radio_layout.addWidget(QtWidgets.QLabel("Background End"))
+        radio_layout.addSpacing(25)
+        radio_layout.addWidget(self.radio_t0)
+        radio_layout.addWidget(QtWidgets.QLabel("T0"))
+        radio_layout.addSpacing(65)
+        radio_layout.addWidget(QtWidgets.QLabel("Select new bin on plot."))
+        radio_layout.addWidget(self.button_reset)
+        radio_layout.addStretch()
+
+        radio_form = QtWidgets.QGroupBox("Edit")
+        radio_form_layout = QtWidgets.QFormLayout()
+        radio_form_layout.addRow(radio_layout)
+        radio_form.setLayout(radio_form_layout)
+
+        self.new_layout.addWidget(radio_form)
+        self.new_layout.addWidget(self.canvas)
+        self.addToolBar(NavigationToolbar(self.canvas, self))
 
 
 # noinspection PyArgumentList
 class CanvasUI(FigureCanvas):
     def __init__(self):
-        self._draw_pending = False
-        self._is_drawing = False
+        self._draw_pending = True
+        self._is_drawing = True
         FigureCanvas.__init__(self, Figure())
-
         self.canvas_axes = self.figure.add_subplot(111, label='Canvas')
 
 
