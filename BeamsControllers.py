@@ -1279,6 +1279,7 @@ class WebServicePresenter:
 class HistogramPresenter:
     def __init__(self, histogram, run):
         self.__pressed = False
+        self.__editing = False
 
         self._run = run
         self._histogram = histogram
@@ -1301,9 +1302,13 @@ class HistogramPresenter:
         self.dialog.canvas.figure.canvas.mpl_connect('motion_notify_event', self._set_new_value)
         self.dialog.button_reset.released.connect(lambda: self._reset())
         self.dialog.button_save.released.connect(lambda: self._save())
+        self.dialog.check_editing.stateChanged.connect(lambda: self._set_enabled())
 
     def _set_new_value(self, event):
         # fixme it will break out of zoom to reset the plot, is there a way to keep this?
+        if not self.__editing:
+            return
+
         if event.button is not None:
             self.__pressed = True
 
@@ -1321,6 +1326,10 @@ class HistogramPresenter:
 
         elif event.button is None and self.__pressed:
             self.__pressed = False
+
+    def _set_enabled(self):
+        self.__editing = self.dialog.check_editing.isChecked()
+        self.dialog.set_enabled(self.dialog.check_editing.isChecked())
 
     def _reset(self):
         self._bkgd1, self._bkgd2, self._t0 = self.dialog.reset()

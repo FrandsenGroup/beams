@@ -502,6 +502,7 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         self.button_reset = StyleOneButton("Reset")
         self.button_save = StyleOneButton("Save")
         self.canvas = CanvasUI()
+        self.check_editing = QtWidgets.QCheckBox()
 
         self._set_widget_attributes()
         self._set_widget_dimensions()
@@ -555,6 +556,7 @@ class HistogramDisplay(QtWidgets.QMainWindow):
 
     def _set_widget_attributes(self):
         self.radio_bkgd_one.setChecked(True)
+        self.set_enabled(False)
 
     def _set_widget_dimensions(self):
         self.button_reset.setFixedWidth(60)
@@ -562,6 +564,7 @@ class HistogramDisplay(QtWidgets.QMainWindow):
 
     def _set_widget_layout(self):
         radio_layout = QtWidgets.QHBoxLayout()
+        radio_layout.addWidget(self.check_editing)
         radio_layout.addSpacing(15)
         radio_layout.addWidget(self.radio_bkgd_one)
         radio_layout.addWidget(QtWidgets.QLabel("Background Start"))
@@ -587,6 +590,13 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         self.new_layout.addWidget(radio_form)
         self.new_layout.addWidget(self.canvas)
         self.addToolBar(NavigationToolbar(self.canvas, self))
+
+    def set_enabled(self, enabled):
+        self.radio_bkgd_two.setEnabled(enabled)
+        self.radio_bkgd_one.setEnabled(enabled)
+        self.radio_t0.setEnabled(enabled)
+        self.button_save.setEnabled(enabled)
+        self.button_reset.setEnabled(enabled)
 
 
 # noinspection PyArgumentList
