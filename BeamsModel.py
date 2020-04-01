@@ -181,6 +181,9 @@ class RunService:
 
         self._notify(RUN_DATA_CHANGE)
 
+    def changed_run(self):
+        self._notify(RUN_LIST_CHANGE)
+
     # Getter Functions
     def get_run_by_id(self, run_id):
         logging.debug('BeamsModel.RunService.get_run_by_id')

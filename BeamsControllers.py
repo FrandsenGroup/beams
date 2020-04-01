@@ -17,12 +17,10 @@ import numpy as np
 from PyQt5 import QtWidgets, QtCore
 
 
-logging.basicConfig(level=logging.ERROR)
-
-
 class ProgramPresenter:
     """ Main presenter responsible for initializing and starting the application. """
     def __init__(self):
+        logging.disable(logging.DEBUG)
         logging.debug('BeamsPresenters.ProgramPresenter.__init__')
         self.app = QtWidgets.QApplication(sys.argv)
 
@@ -677,11 +675,7 @@ class RunDisplayPresenter:
         logging.debug('BeamsPresenters.RunDisplayPresenter.inspect_hist')
         for run in self.service.get_runs():
             if run.filename == self.run_display.output_current_file.text():
-                histogram = self.service.get_run_histogram(run.run_id, self.run_display.histograms.currentText())
-                self.popup = HistogramPresenter(histogram,
-                                                int(run.meta['BkgdOne'][self.run_display.histograms.currentText()]),
-                                                int(run.meta['BkgdTwo'][self.run_display.histograms.currentText()]),
-                                                int(run.meta['T0'][self.run_display.histograms.currentText()]))
+                self.popup = HistogramPresenter(self.run_display.histograms.currentText(), run)
                 break
 
     def change_color(self):
@@ -1284,11 +1278,18 @@ class WebServicePresenter:
 
 
 class HistogramPresenter:
-    def __init__(self, histogram, bkgd1, bkgd2, t0):
+    def __init__(self, histogram, run):
         self.__pressed = False
 
+        self._run = run
+        self._histogram = histogram
+        self._bkgd1 = int(run.meta['BkgdOne'][histogram])
+        self._bkgd2 = int(run.meta['BkgdTwo'][histogram])
+        self._t0 = int(run.meta['T0'][histogram])
+
         self.service = BeamsModel.RunService()
-        self.dialog = BeamsViews.HistogramDisplay(histogram, bkgd1, bkgd2, t0)
+        self.dialog = BeamsViews.HistogramDisplay(self.service.get_run_histogram(run.run_id, histogram),
+                                                  self._bkgd1, self._bkgd2, self._t0)
 
         self._set_callbacks()
 
@@ -1296,35 +1297,38 @@ class HistogramPresenter:
 
     def _set_callbacks(self):
         self.dialog.canvas.figure.canvas.mpl_connect('button_press_event', self._set_new_value)
-        self.dialog.canvas.figure.canvas.mpl_connect('button_release_event', self._set_new_value)
+        # fixme how to have it go thin immediately after releasing?
+        # self.dialog.canvas.figure.canvas.mpl_connect('button_release_event', self._set_new_value)
         self.dialog.canvas.figure.canvas.mpl_connect('motion_notify_event', self._set_new_value)
         self.dialog.button_reset.released.connect(lambda: self._reset())
+        self.dialog.button_save.released.connect(lambda: self._save())
 
     def _set_new_value(self, event):
-        print(event)
+        # fixme it will break out of zoom to reset the plot, is there a way to keep this?
         if event.button is not None:
             self.__pressed = True
 
-            if self.dialog.radio_bkgd_one.isChecked():
+            if self.dialog.radio_bkgd_one.isChecked() and event.xdata < self._bkgd2:
                 self.dialog.set_new_lines(bkg1=event.xdata, thick=True)
+                self._bkgd1 = event.xdata
 
-            if self.dialog.radio_bkgd_two.isChecked():
+            if self.dialog.radio_bkgd_two.isChecked() and event.xdata > self._bkgd1:
                 self.dialog.set_new_lines(bkg2=event.xdata, thick=True)
+                self._bkgd2 = event.xdata
 
             if self.dialog.radio_t0.isChecked():
                 self.dialog.set_new_lines(t0=event.xdata, thick=True)
+                self._t0 = event.xdata
 
         elif event.button is None and self.__pressed:
             self.__pressed = False
 
-            if self.dialog.radio_bkgd_one.isChecked():
-                self.dialog.set_new_lines(bkg1=event.xdata, thick=False)
-
-            if self.dialog.radio_bkgd_two.isChecked():
-                self.dialog.set_new_lines(bkg2=event.xdata, thick=False)
-
-            if self.dialog.radio_t0.isChecked():
-                self.dialog.set_new_lines(t0=event.xdata, thick=False)
-
     def _reset(self):
-        bkg1, bkg2, t0 = self.dialog.reset()
+        self._bkgd1, self._bkgd2, self._t0 = self.dialog.reset()
+
+    def _save(self):
+        self._run.meta['BkgdOne'][self._histogram] = self._bkgd1
+        self._run.meta['BkgdOne'][self._histogram] = self._bkgd2
+        self._run.meta['BkgdOne'][self._histogram] = self._t0
+        self.service.changed_run()
+        self.dialog.close()

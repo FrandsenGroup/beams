@@ -500,6 +500,7 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         self.radio_bkgd_two = QtWidgets.QRadioButton()
         self.radio_t0 = QtWidgets.QRadioButton()
         self.button_reset = StyleOneButton("Reset")
+        self.button_save = StyleOneButton("Save")
         self.canvas = CanvasUI()
 
         self._set_widget_attributes()
@@ -557,6 +558,7 @@ class HistogramDisplay(QtWidgets.QMainWindow):
 
     def _set_widget_dimensions(self):
         self.button_reset.setFixedWidth(60)
+        self.button_save.setFixedWidth(60)
 
     def _set_widget_layout(self):
         radio_layout = QtWidgets.QHBoxLayout()
@@ -571,7 +573,10 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         radio_layout.addWidget(QtWidgets.QLabel("T0"))
         radio_layout.addSpacing(65)
         radio_layout.addWidget(QtWidgets.QLabel("Select new bin on plot."))
+        radio_layout.addSpacing(65)
         radio_layout.addWidget(self.button_reset)
+        radio_layout.addSpacing(5)
+        radio_layout.addWidget(self.button_save)
         radio_layout.addStretch()
 
         radio_form = QtWidgets.QGroupBox("Edit")
