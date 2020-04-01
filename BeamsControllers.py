@@ -704,7 +704,6 @@ class RunDisplayPresenter:
         self._change_selection = True
         run_id = self.run_id_title[self.run_display.current_runs.currentItem().text()]
         self._current_item = run_id
-        print(self._current_item)
         run = self.service.get_run_by_id(run_id)
         self.run_display.histograms.clear()
 
@@ -1327,8 +1326,12 @@ class HistogramPresenter:
         self._bkgd1, self._bkgd2, self._t0 = self.dialog.reset()
 
     def _save(self):
-        self._run.meta['BkgdOne'][self._histogram] = int(self._bkgd1)
-        self._run.meta['BkgdTwo'][self._histogram] = int(self._bkgd2)
-        self._run.meta['T0'][self._histogram] = int(self._t0)
-        self.service.changed_run()
+
+        if int(self._run.meta['BkgdOne'][self._histogram]) != int(self._bkgd1) \
+                or int(self._run.meta['BkgdTwo'][self._histogram]) != int(self._bkgd2):
+            self.service.update_background(self._run.run_id, self._histogram, self._bkgd1, self._bkgd2)
+
+        if int(self._run.meta['T0'][self._histogram]) != int(self._t0):
+            self.service.update_t0(self._run.run_id, self._histogram, self._t0)
+
         self.dialog.close()

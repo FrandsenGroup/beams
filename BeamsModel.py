@@ -181,7 +181,37 @@ class RunService:
 
         self._notify(RUN_DATA_CHANGE)
 
-    def changed_run(self):
+    def update_background(self, run_id, hist, bkgd1, bkgd2):
+        run = self.get_run_by_id(run_id)
+        run.meta['BkgdOne'][hist] = int(bkgd1)
+        run.meta['BkgdTwo'][hist] = int(bkgd2)
+
+        if hist not in run.meta['CalcHists']:
+            self._notify(RUN_LIST_CHANGE)
+            return
+
+        new_run_data = self._generate_run_data(run.filename, run.meta)
+
+        run.asymmetry = new_run_data.asymmetry
+        run.uncertainty = new_run_data.uncertainty
+        run.time = new_run_data.time
+
+        self._notify(RUN_LIST_CHANGE)
+
+    def update_t0(self, run_id, hist, t0):
+        run = self.get_run_by_id(run_id)
+        run.meta['T0'][hist] = int(t0)
+
+        if hist not in run.meta['CalcHists']:
+            self._notify(RUN_LIST_CHANGE)
+            return
+
+        new_run_data = self._generate_run_data(run.filename, run.meta)
+
+        run.asymmetry = new_run_data.asymmetry
+        run.uncertainty = new_run_data.uncertainty
+        run.time = new_run_data.time
+
         self._notify(RUN_LIST_CHANGE)
 
     # Getter Functions
