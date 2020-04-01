@@ -1327,8 +1327,8 @@ class HistogramPresenter:
         self._bkgd1, self._bkgd2, self._t0 = self.dialog.reset()
 
     def _save(self):
-        self._run.meta['BkgdOne'][self._histogram] = self._bkgd1
-        self._run.meta['BkgdOne'][self._histogram] = self._bkgd2
-        self._run.meta['BkgdOne'][self._histogram] = self._t0
+        self._run.meta['BkgdOne'][self._histogram] = int(self._bkgd1)
+        self._run.meta['BkgdTwo'][self._histogram] = int(self._bkgd2)
+        self._run.meta['T0'][self._histogram] = int(self._t0)
         self.service.changed_run()
         self.dialog.close()
