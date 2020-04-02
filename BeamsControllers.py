@@ -1298,7 +1298,7 @@ class HistogramPresenter:
     def _set_callbacks(self):
         self.dialog.canvas.figure.canvas.mpl_connect('button_press_event', self._set_new_value)
         # fixme how to have it go thin immediately after releasing?
-        # self.dialog.canvas.figure.canvas.mpl_connect('button_release_event', self._set_new_value)
+        self.dialog.canvas.figure.canvas.mpl_connect('button_release_event', self._set_new_value)
         self.dialog.canvas.figure.canvas.mpl_connect('motion_notify_event', self._set_new_value)
         self.dialog.button_reset.released.connect(lambda: self._reset())
         self.dialog.button_save.released.connect(lambda: self._save())
@@ -1340,16 +1340,18 @@ class HistogramPresenter:
         if event.button is not None:
             self.__pressed = True
 
+            thick = True if event.name != 'button_release_event' else False
+
             if self.dialog.radio_bkgd_one.isChecked() and event.xdata < self._bkgd2:
-                self.dialog.set_new_lines(bkg1=int(event.xdata), thick=True)
+                self.dialog.set_new_lines(bkg1=int(event.xdata), thick=thick)
                 self._bkgd1 = event.xdata
 
             if self.dialog.radio_bkgd_two.isChecked() and event.xdata > self._bkgd1:
-                self.dialog.set_new_lines(bkg2=int(event.xdata), thick=True)
+                self.dialog.set_new_lines(bkg2=int(event.xdata), thick=thick)
                 self._bkgd2 = event.xdata
 
             if self.dialog.radio_t0.isChecked() and event.xdata > 0:
-                self.dialog.set_new_lines(t0=int(event.xdata), thick=True)
+                self.dialog.set_new_lines(t0=int(event.xdata), thick=thick)
                 self._t0 = event.xdata
 
         elif event.button is None and self.__pressed:
