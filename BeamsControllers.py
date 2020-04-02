@@ -1306,6 +1306,7 @@ class HistogramPresenter:
 
     def _set_new_value(self, event):
         # fixme it will break out of zoom to reset the plot, is there a way to keep this?
+        # fixme does resize event say the object is still zooming?
         if not self.__editing:
             return
 

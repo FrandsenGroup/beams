@@ -504,7 +504,13 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         self.button_save = StyleOneButton("Save")
         self.canvas = CanvasUI()
         self.check_editing = QtWidgets.QCheckBox()
+        self.label_explanation = QtWidgets.QLabel()
+        self.label_bkgd1 = QtWidgets.QLabel("Background Start")
+        self.label_bkgd2 = QtWidgets.QLabel("Background End")
+        self.label_t0 = QtWidgets.QLabel("T0")
 
+        self._toolbar = NavigationToolbar(self.canvas, self)
+        self.addToolBar(self._toolbar)
         self._set_widget_attributes()
         self._set_widget_dimensions()
         self._set_widget_tooltips()
@@ -564,6 +570,11 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         self.radio_bkgd_one.setChecked(True)
         self.set_enabled(False)
 
+        message = "Before moving the bars below make sure you have deselected the zoom option in the toolbar.\n" \
+                  "Then check the box to enable editing and select the bin you would like to change."
+
+        self.label_explanation.setText(message)
+
     def _set_widget_dimensions(self):
         self.button_reset.setFixedWidth(60)
         self.button_save.setFixedWidth(60)
@@ -573,15 +584,14 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         radio_layout.addWidget(self.check_editing)
         radio_layout.addSpacing(15)
         radio_layout.addWidget(self.radio_bkgd_one)
-        radio_layout.addWidget(QtWidgets.QLabel("Background Start"))
+        radio_layout.addWidget(self.label_bkgd1)
         radio_layout.addSpacing(25)
         radio_layout.addWidget(self.radio_bkgd_two)
-        radio_layout.addWidget(QtWidgets.QLabel("Background End"))
+        radio_layout.addWidget(self.label_bkgd2)
         radio_layout.addSpacing(25)
         radio_layout.addWidget(self.radio_t0)
-        radio_layout.addWidget(QtWidgets.QLabel("T0"))
+        radio_layout.addWidget(self.label_t0)
         radio_layout.addSpacing(65)
-        radio_layout.addWidget(QtWidgets.QLabel("Select new bin on plot."))
         radio_layout.addSpacing(65)
         radio_layout.addWidget(self.button_reset)
         radio_layout.addSpacing(5)
@@ -590,12 +600,13 @@ class HistogramDisplay(QtWidgets.QMainWindow):
 
         radio_form = QtWidgets.QGroupBox("Edit")
         radio_form_layout = QtWidgets.QFormLayout()
+        radio_form_layout.addWidget(self.label_explanation)
         radio_form_layout.addRow(radio_layout)
         radio_form.setLayout(radio_form_layout)
 
         self.new_layout.addWidget(radio_form)
         self.new_layout.addWidget(self.canvas)
-        self.addToolBar(NavigationToolbar(self.canvas, self))
+        self.addToolBar(self._toolbar)
 
     def set_enabled(self, enabled):
         self.radio_bkgd_two.setEnabled(enabled)
@@ -603,6 +614,14 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         self.radio_t0.setEnabled(enabled)
         self.button_save.setEnabled(enabled)
         self.button_reset.setEnabled(enabled)
+        self.label_bkgd2.setEnabled(enabled)
+        self.label_bkgd1.setEnabled(enabled)
+        self.label_t0.setEnabled(enabled)
+        # if enabled:
+        #     self.removeToolBar(self._toolbar)
+        # else:
+        #     self._toolbar = NavigationToolbar(self.canvas, self)
+        #     self.addToolBar(self._toolbar)
 
 
 # noinspection PyArgumentList
