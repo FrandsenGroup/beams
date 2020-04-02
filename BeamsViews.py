@@ -508,7 +508,11 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         self.label_bkgd1 = QtWidgets.QLabel("Background Start")
         self.label_bkgd2 = QtWidgets.QLabel("Background End")
         self.label_t0 = QtWidgets.QLabel("T0")
+        self.input_bkgd1 = QtWidgets.QLineEdit()
+        self.input_bkgd2 = QtWidgets.QLineEdit()
+        self.input_t0 = QtWidgets.QLineEdit()
 
+        self._extent = None
         self._toolbar = NavigationToolbar(self.canvas, self)
         self.addToolBar(self._toolbar)
         self._set_widget_attributes()
@@ -518,7 +522,7 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         self.set_new_lines()
 
     def set_new_lines(self, bkg1=None, bkg2=None, t0=None, thick=False):
-        self.extent = self.canvas.canvas_axes.axis()
+        self._extent = self.canvas.canvas_axes.axis()
         self.canvas.canvas_axes.clear()
         self.canvas.canvas_axes.plot(self._histogram, linestyle='None', marker='s')
 
@@ -527,22 +531,26 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         t0_width = 1
         if bkg1 is not None:
             self._bkg1 = bkg1
+            self.input_bkgd1.setText(str(bkg1))
             if thick:
                 bkg1_width = 2
         if bkg2 is not None:
             self._bkg2 = bkg2
+            self.input_bkgd2.setText(str(bkg2))
             if thick:
                 bkg2_width = 2
         if t0 is not None:
             self._t0 = t0
+            self.input_t0.setText(str(t0))
             if thick:
                 t0_width = 2
 
         self.canvas.canvas_axes.axvline(x=self._bkg1, linewidth=bkg1_width, color='r')
         self.canvas.canvas_axes.axvline(x=self._bkg2, linewidth=bkg2_width, color='r')
         self.canvas.canvas_axes.axvline(x=self._t0, linewidth=t0_width, color='g')
+
         if not self.__initial:
-            self.canvas.canvas_axes.axis(self.extent)
+            self.canvas.canvas_axes.axis(self._extent)
 
         self.canvas.canvas_axes.figure.canvas.draw()
 
@@ -564,32 +572,41 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         return self._bkg1, self._bkg2, self._t0
 
     def _set_widget_tooltips(self):
-        pass
+        self.check_editing.setToolTip("Check to enable bin changes")
 
     def _set_widget_attributes(self):
         self.radio_bkgd_one.setChecked(True)
         self.set_enabled(False)
 
-        message = "Before moving the bars below make sure you have deselected the zoom option in the toolbar.\n" \
+        message = "Before moving the bars manually below make sure you have deselected the zoom option in the toolbar.\n" \
                   "Then check the box to enable editing and select the bin you would like to change."
-
         self.label_explanation.setText(message)
+
+        self.input_bkgd1.setText(str(self._bkg1))
+        self.input_bkgd2.setText(str(self._bkg2))
+        self.input_t0.setText(str(self._t0))
 
     def _set_widget_dimensions(self):
         self.button_reset.setFixedWidth(60)
         self.button_save.setFixedWidth(60)
+        self.input_t0.setFixedWidth(30)
+        self.input_bkgd1.setFixedWidth(30)
+        self.input_bkgd2.setFixedWidth(30)
 
     def _set_widget_layout(self):
         radio_layout = QtWidgets.QHBoxLayout()
         radio_layout.addWidget(self.check_editing)
         radio_layout.addSpacing(15)
         radio_layout.addWidget(self.radio_bkgd_one)
+        radio_layout.addWidget(self.input_bkgd1)
         radio_layout.addWidget(self.label_bkgd1)
         radio_layout.addSpacing(25)
         radio_layout.addWidget(self.radio_bkgd_two)
+        radio_layout.addWidget(self.input_bkgd2)
         radio_layout.addWidget(self.label_bkgd2)
         radio_layout.addSpacing(25)
         radio_layout.addWidget(self.radio_t0)
+        radio_layout.addWidget(self.input_t0)
         radio_layout.addWidget(self.label_t0)
         radio_layout.addSpacing(65)
         radio_layout.addSpacing(65)
@@ -617,6 +634,10 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         self.label_bkgd2.setEnabled(enabled)
         self.label_bkgd1.setEnabled(enabled)
         self.label_t0.setEnabled(enabled)
+        self.input_bkgd1.setEnabled(enabled)
+        self.input_bkgd2.setEnabled(enabled)
+        self.input_t0.setEnabled(enabled)
+
         # if enabled:
         #     self.removeToolBar(self._toolbar)
         # else:

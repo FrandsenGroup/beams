@@ -1303,26 +1303,53 @@ class HistogramPresenter:
         self.dialog.button_reset.released.connect(lambda: self._reset())
         self.dialog.button_save.released.connect(lambda: self._save())
         self.dialog.check_editing.stateChanged.connect(lambda: self._set_enabled())
+        self.dialog.input_bkgd1.returnPressed.connect(lambda: self._set_new_value(None, "bkgd1",
+                                                                                  self.dialog.input_bkgd1.text()))
+        self.dialog.input_bkgd2.returnPressed.connect(lambda: self._set_new_value(None, "bkgd2",
+                                                                                  self.dialog.input_bkgd2.text()))
+        self.dialog.input_t0.returnPressed.connect(lambda: self._set_new_value(None, "t0",
+                                                                               self.dialog.input_t0.text()))
 
-    def _set_new_value(self, event):
+    def _set_new_value(self, event, input_box=None, input_value=None):
         # fixme it will break out of zoom to reset the plot, is there a way to keep this?
         # fixme does resize event say the object is still zooming?
         if not self.__editing:
+            return
+
+        if event is None:
+
+            try:
+                val = int(input_value)
+            except ValueError:
+                return
+
+            if input_box == "bkgd1" and val < self._bkgd2:
+                self.dialog.set_new_lines(bkg1=val)
+                self._bkgd1 = val
+
+            if input_box == "bkgd2" and val > self._bkgd1:
+                self.dialog.set_new_lines(bkg2=val)
+                self._bkgd2 = val
+
+            if input_box == "t0" and val > 0:
+                self.dialog.set_new_lines(t0=val)
+                self._t0 = val
+
             return
 
         if event.button is not None:
             self.__pressed = True
 
             if self.dialog.radio_bkgd_one.isChecked() and event.xdata < self._bkgd2:
-                self.dialog.set_new_lines(bkg1=event.xdata, thick=True)
+                self.dialog.set_new_lines(bkg1=int(event.xdata), thick=True)
                 self._bkgd1 = event.xdata
 
             if self.dialog.radio_bkgd_two.isChecked() and event.xdata > self._bkgd1:
-                self.dialog.set_new_lines(bkg2=event.xdata, thick=True)
+                self.dialog.set_new_lines(bkg2=int(event.xdata), thick=True)
                 self._bkgd2 = event.xdata
 
-            if self.dialog.radio_t0.isChecked():
-                self.dialog.set_new_lines(t0=event.xdata, thick=True)
+            if self.dialog.radio_t0.isChecked() and event.xdata > 0:
+                self.dialog.set_new_lines(t0=int(event.xdata), thick=True)
                 self._t0 = event.xdata
 
         elif event.button is None and self.__pressed:
