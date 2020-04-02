@@ -522,10 +522,6 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         self.set_new_lines()
 
     def set_new_lines(self, bkg1=None, bkg2=None, t0=None, thick=False):
-        self._extent = self.canvas.canvas_axes.axis()
-        self.canvas.canvas_axes.clear()
-        self.canvas.canvas_axes.plot(self._histogram, linestyle='None', marker='s')
-
         bkg1_width = 1
         bkg2_width = 1
         t0_width = 1
@@ -545,6 +541,9 @@ class HistogramDisplay(QtWidgets.QMainWindow):
             if thick:
                 t0_width = 2
 
+        self._extent = self.canvas.canvas_axes.axis()
+        self.canvas.canvas_axes.clear()
+        self.canvas.canvas_axes.plot(self._histogram, linestyle='None', marker='s')
         self.canvas.canvas_axes.axvline(x=self._bkg1, linewidth=bkg1_width, color='r')
         self.canvas.canvas_axes.axvline(x=self._bkg2, linewidth=bkg2_width, color='r')
         self.canvas.canvas_axes.axvline(x=self._t0, linewidth=t0_width, color='g')

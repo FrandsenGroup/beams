@@ -1001,7 +1001,7 @@ class PlotDataPresenter:
                     file.get_meta()['CalcHists'] = calc_hists
 
             # Update the file list to display the next file.
-            if self.plot_data_gui.c_file_list.currentIndex() < num_files:
+            if self.plot_data_gui.c_file_list.currentIndex() < num_files-1:
                 self.plot_data_gui.c_file_list.setCurrentIndex(self.plot_data_gui.c_file_list.currentIndex()+1)
 
         self.plot_data_gui.b_plot.setEnabled(True)
@@ -1297,12 +1297,13 @@ class HistogramPresenter:
 
     def _set_callbacks(self):
         self.dialog.canvas.figure.canvas.mpl_connect('button_press_event', self._set_new_value)
-        # fixme how to have it go thin immediately after releasing?
         self.dialog.canvas.figure.canvas.mpl_connect('button_release_event', self._set_new_value)
         self.dialog.canvas.figure.canvas.mpl_connect('motion_notify_event', self._set_new_value)
+
         self.dialog.button_reset.released.connect(lambda: self._reset())
         self.dialog.button_save.released.connect(lambda: self._save())
         self.dialog.check_editing.stateChanged.connect(lambda: self._set_enabled())
+
         self.dialog.input_bkgd1.returnPressed.connect(lambda: self._set_new_value(None, "bkgd1",
                                                                                   self.dialog.input_bkgd1.text()))
         self.dialog.input_bkgd2.returnPressed.connect(lambda: self._set_new_value(None, "bkgd2",
@@ -1311,11 +1312,10 @@ class HistogramPresenter:
                                                                                self.dialog.input_t0.text()))
 
     def _set_new_value(self, event, input_box=None, input_value=None):
-        # fixme it will break out of zoom to reset the plot, is there a way to keep this?
-        # fixme does resize event say the object is still zooming?
         if not self.__editing:
             return
 
+        # User pressed 'return' after editing an input box
         if event is None:
 
             try:
@@ -1337,6 +1337,7 @@ class HistogramPresenter:
 
             return
 
+        # User dragged one of the bars
         if event.button is not None:
             self.__pressed = True
 
@@ -1359,7 +1360,7 @@ class HistogramPresenter:
 
     def _set_enabled(self):
         self.__editing = self.dialog.check_editing.isChecked()
-        self.dialog.set_enabled(self.dialog.check_editing.isChecked())
+        self.dialog.set_enabled(self.__editing)
 
     def _reset(self):
         self._bkgd1, self._bkgd2, self._t0 = self.dialog.reset()
