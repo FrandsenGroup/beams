@@ -495,7 +495,7 @@ class HistogramDisplay(QtWidgets.QMainWindow):
 
         self._main = QtWidgets.QWidget()
         self.setCentralWidget(self._main)
-        self.new_layout = QtWidgets.QVBoxLayout(self._main)
+        self._new_layout = QtWidgets.QVBoxLayout(self._main)
 
         self.radio_bkgd_one = QtWidgets.QRadioButton()
         self.radio_bkgd_two = QtWidgets.QRadioButton()
@@ -565,12 +565,13 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         self.input_bkgd2.setText(str(self._initial_bkg2))
         self.input_t0.setText(str(self._initial_t0))
 
+        self._extent = self.canvas.canvas_axes.axis()
         self.canvas.canvas_axes.clear()
         self.canvas.canvas_axes.plot(self._histogram, linestyle='None', marker='s')
         self.canvas.canvas_axes.axvline(x=self._bkg1, linewidth=1, color='r')
         self.canvas.canvas_axes.axvline(x=self._bkg2, linewidth=1, color='r')
         self.canvas.canvas_axes.axvline(x=self._t0, linewidth=1, color='g')
-        self.canvas.figure.tight_layout()
+        self.canvas.canvas_axes.axis(self._extent)
         self.canvas.canvas_axes.figure.canvas.draw()
 
         return self._bkg1, self._bkg2, self._t0
@@ -625,8 +626,8 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         radio_form_layout.addRow(radio_layout)
         radio_form.setLayout(radio_form_layout)
 
-        self.new_layout.addWidget(radio_form)
-        self.new_layout.addWidget(self.canvas)
+        self._new_layout.addWidget(radio_form)
+        self._new_layout.addWidget(self.canvas)
         self.addToolBar(self._toolbar)
 
     def set_enabled(self, enabled):
@@ -641,12 +642,6 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         self.input_bkgd1.setEnabled(enabled)
         self.input_bkgd2.setEnabled(enabled)
         self.input_t0.setEnabled(enabled)
-
-        # if enabled:
-        #     self.removeToolBar(self._toolbar)
-        # else:
-        #     self._toolbar = NavigationToolbar(self.canvas, self)
-        #     self.addToolBar(self._toolbar)
 
 
 # noinspection PyArgumentList
