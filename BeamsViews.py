@@ -561,6 +561,10 @@ class HistogramDisplay(QtWidgets.QMainWindow):
         self._bkg2 = self._initial_bkg2
         self._t0 = self._initial_t0
 
+        self.input_bkgd1.setText(str(self._initial_bkg1))
+        self.input_bkgd2.setText(str(self._initial_bkg2))
+        self.input_t0.setText(str(self._initial_t0))
+
         self.canvas.canvas_axes.clear()
         self.canvas.canvas_axes.plot(self._histogram, linestyle='None', marker='s')
         self.canvas.canvas_axes.axvline(x=self._bkg1, linewidth=1, color='r')
