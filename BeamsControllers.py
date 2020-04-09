@@ -1343,7 +1343,7 @@ class HistogramPresenter:
 
             thick = True if event.name != 'button_release_event' else False
 
-            if self.dialog.radio_bkgd_one.isChecked() and event.xdata < self._bkgd2:
+            if self.dialog.radio_bkgd_one.isChecked() and self._bkgd2 > event.xdata > 0:
                 self.dialog.set_new_lines(bkg1=int(event.xdata), thick=thick)
                 self._bkgd1 = event.xdata
 

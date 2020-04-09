@@ -436,6 +436,8 @@ class JParcMsrFile(File):
         pass
 
 
+# fixme some move plotting to a factory object and plot the styles for each
+
 # Meta Keys
 FIELD_KEY = 'Field'
 TEMPERATURE_KEY = 'Temperature'
