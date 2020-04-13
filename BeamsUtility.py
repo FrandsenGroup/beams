@@ -423,6 +423,7 @@ class ISISMsrFile(File):
 
 
 class JParcMsrFile(File):
+
     def __int__(self, file_path):
         self.file_path = file_path
 
@@ -435,6 +436,15 @@ class JParcMsrFile(File):
     def convert(self, out_file):
         pass
 
+
+
+'''
+I want to be able to get a run object, 
+run.data.get('Asymmetry')
+run.plot.plot_primary(canvas.axes, time, asymmetry)
+run.file.convert()
+
+'''
 
 # fixme some move plotting to a factory object and plot the styles for each
 

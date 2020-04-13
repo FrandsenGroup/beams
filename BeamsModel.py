@@ -10,7 +10,6 @@ import logging
 
 # Installed modules
 import numpy as np
-import scipy.interpolate as sp
 
 # Signals from Model to Controllers
 STYLE_CHANGE = 1
@@ -27,6 +26,7 @@ STYLE_VISIBILITY = 'Visibility'
 
 
 logging.basicConfig(level=logging.DEBUG)
+# Utilize the strategy pattern for reading files and plotting!!!!
 
 
 class RunService:
