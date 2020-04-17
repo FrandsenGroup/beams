@@ -13,7 +13,8 @@ class BEAMS(QtWidgets.QApplication):
 
     def __init__(self):
         super(BEAMS, self).__init__(sys.argv)
-        self.setStyleSheet(main_window.StyleFile(r'style/light_style.qss', r'style/light_style_vars.txt').style)
+        self.setStyleSheet(main_window.StyleFile(r'resources/light_style.qss',
+                                                 r'resources/light_style_vars.txt').style)
         self.main_program_window = None
 
     def run(self):
@@ -23,9 +24,9 @@ class BEAMS(QtWidgets.QApplication):
 
         self.main_program_window = main_window.MainGUIWindow()
         self.main_program_window.show()
-        sys.exit(self.app.exec_())
+        sys.exit(self.exec_())
 
 
 if __name__ == '__main__':
-    program = BEAMS()
-    program.run()
+    app = BEAMS()
+    app.run()
