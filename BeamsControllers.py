@@ -41,7 +41,7 @@ class ProgramPresenter:
         self.plot_editor_presenter = PlotPresenter(plot_editor_panel=self.main_window_v.plot_editor,
                                                      plot_panel=self.main_window_v.plot_panel, parent=self)
         self.run_display_presenter = RunDisplayPresenter(run_display_panel=self.main_window_v.run_display, parent=self)
-	
+
         self.main_window_v.show()
         sys.exit(self.app.exec_())
 
