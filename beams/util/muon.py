@@ -1,8 +1,7 @@
-
-import logging
-
+# Installed Packages
 import numpy as np
 
+# BEAMS Packages
 from util import files
 
 
@@ -160,12 +159,8 @@ def calculate_muon_uncertainty(run: MuonRun):
     start_bin_one, start_bin_two, end_bin_one, end_bin_two, t0 = calculate_muon_good_histogram_limits(run)
     run.t0 = t0
 
-    try:
-        hist_one = run.data.loc[start_bin_one - 1: end_bin_one, run.meta[files.CALC_HISTS_KEY][0]].values
-        hist_two = run.data[run.meta[start_bin_two - 1: end_bin_two, files.CALC_HISTS_KEY[1]]].values
-    except KeyError:
-        logging.error("CALC_HISTS_KEY not specified.")
-        return
+    hist_one = run.data.loc[start_bin_one - 1: end_bin_one, run.meta[files.CALC_HISTS_KEY][0]].values
+    hist_two = run.data.loc[start_bin_two - 1: end_bin_two, run.meta[files.CALC_HISTS_KEY][1]].values
 
     d_one = np.sqrt(hist_one)
     d_two = np.sqrt(hist_two)
@@ -193,12 +188,8 @@ def calculate_muon_asymmetry(run: MuonRun):
     start_bin_one, start_bin_two, end_bin_one, end_bin_two, t0 = calculate_muon_good_histogram_limits(run)
     run.t0 = t0
 
-    try:
-        hist_one = run.data.loc[start_bin_one - 1: end_bin_one, run.meta[files.CALC_HISTS_KEY][0]].values
-        hist_two = run.data[run.meta[start_bin_two - 1: end_bin_two, files.CALC_HISTS_KEY[1]]].values
-    except KeyError:
-        logging.error("CALC_HISTS_KEY not specified.")
-        return
+    hist_one = run.data.loc[start_bin_one - 1: end_bin_one, run.meta[files.CALC_HISTS_KEY][0]].values
+    hist_two = run.data.loc[start_bin_two - 1: end_bin_two, run.meta[files.CALC_HISTS_KEY][1]].values
 
     bkgd_one, bkgd_two = calculate_muon_background_radiation(run)
 
@@ -229,13 +220,13 @@ def calculate_muon_background_radiation(run: MuonRun):
     hist_one_title = run.meta[files.CALC_HISTS_KEY][0]
     bkgd_one_start = run.meta[files.BACKGROUND_ONE_KEY][hist_one_title]
     bkgd_one_end = run.meta[files.BACKGROUND_TWO_KEY][hist_one_title]
-    background_one = run.data[run.meta[hist_one_title][0]][int(bkgd_one_start):int(bkgd_one_end) - 1]
+    background_one = run.data[hist_one_title][int(bkgd_one_start):int(bkgd_one_end) - 1]
     bkgd_one = np.mean(background_one)
 
     hist_two_title = run.meta[files.CALC_HISTS_KEY][1]
     bkgd_two_start = run.meta[files.BACKGROUND_ONE_KEY][hist_two_title]
     bkgd_two_end = run.meta[files.BACKGROUND_TWO_KEY][hist_two_title]
-    background_two = run.data[run.meta[hist_two_title][0]][int(bkgd_two_start):int(bkgd_two_end) - 1]
+    background_two = run.data[hist_two_title][int(bkgd_two_start):int(bkgd_two_end) - 1]
     bkgd_two = np.mean(background_two)
 
     return bkgd_one, bkgd_two
@@ -255,16 +246,12 @@ def calculate_muon_good_histogram_limits(run: MuonRun):
         t0: The initial time
     """
 
-    try:
-        t_one = int(run.meta[files.T0_KEY][run.meta[files.CALC_HISTS_KEY][0]])
-        t_two = int(run.meta[files.T0_KEY][run.meta[files.CALC_HISTS_KEY][1]])
-        start_one = int(run.meta[files.GOOD_BIN_ONE_KEY][run.meta[files.CALC_HISTS_KEY][0]])
-        start_two = int(run.meta[files.GOOD_BIN_ONE_KEY][run.meta[files.CALC_HISTS_KEY][1]])
-        end_one = int(run.meta[files.GOOD_BIN_TWO_KEY][run.meta[files.CALC_HISTS_KEY][0]])
-        end_two = int(run.meta[files.GOOD_BIN_TWO_KEY][run.meta[files.CALC_HISTS_KEY][1]])
-    except KeyError:
-        logging.error("CALC_HISTS_KEY not specified.")
-        return
+    t_one = int(run.meta[files.T0_KEY][run.meta[files.CALC_HISTS_KEY][0]])
+    t_two = int(run.meta[files.T0_KEY][run.meta[files.CALC_HISTS_KEY][1]])
+    start_one = int(run.meta[files.GOOD_BIN_ONE_KEY][run.meta[files.CALC_HISTS_KEY][0]])
+    start_two = int(run.meta[files.GOOD_BIN_ONE_KEY][run.meta[files.CALC_HISTS_KEY][1]])
+    end_one = int(run.meta[files.GOOD_BIN_TWO_KEY][run.meta[files.CALC_HISTS_KEY][0]])
+    end_two = int(run.meta[files.GOOD_BIN_TWO_KEY][run.meta[files.CALC_HISTS_KEY][1]])
 
     dif_one = start_one - t_one
     dif_two = start_two - t_two
@@ -285,7 +272,7 @@ def calculate_muon_good_histogram_limits(run: MuonRun):
 
 def calculate_muon_fft(asymmetry, time):
     """
-    Calculates the fft of the given asymmetry.
+    Calculates the fft of the given asymmetry (Thanks Ben)
 
     :param asymmetry:
     :param time:
