@@ -1,0 +1,16 @@
+@brand_zero = #009fff
+@brand_minus_one = #39b5ff
+@brand_minus_two = #65c5ff
+@brand_minus_three = #ceebfd
+@brand_plus_one = #007cc7
+@brand_plus_two = #00578b
+@background = #f9f9fd
+@low_contrast = #e5e5f2
+@lowest_contrast = #f2f3fd
+@contrast = #909090
+@high_contrast = #515151
+@highest_contrast = #363636
+@error = #db2c00
+@success = #00dba9
+
+
