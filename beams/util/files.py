@@ -36,6 +36,7 @@ BACKGROUND_TWO_KEY = 'BkgdTwo'
 GOOD_BIN_ONE_KEY = 'GoodBinOne'
 GOOD_BIN_TWO_KEY = 'GoodBinTwo'
 T0_KEY = 'T0'
+CALC_HISTS_KEY = 'CalcHists'
 
 
 class File(abc.ABC):
