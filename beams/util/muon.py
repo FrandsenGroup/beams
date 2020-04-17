@@ -36,6 +36,7 @@ def build_muon_run(data, meta) -> MuonRun:
 
     calculate_muon_asymmetry(run)
     calculate_muon_uncertainty(run)
+    calculate_muon_time(run)
 
     return run
 
@@ -55,6 +56,8 @@ def correct_muon_asymmetry(run: MuonRun, alpha=None, beta=None):
 
     if beta:
         run.beta = beta
+
+    calculate_muon_asymmetry(run)
 
     run.asymmetry = ((run.alpha - 1) + (run.alpha + 1) * run.asymmetry) / \
                     ((run.alpha * run.beta + 1) + (run.alpha * run.beta - 1) * 2)
@@ -154,10 +157,12 @@ def calculate_muon_uncertainty(run: MuonRun):
     :param run:
     :return None: The uncertainty attribute in the run is set to the calculated uncertainty
     """
+    start_bin_one, start_bin_two, end_bin_one, end_bin_two, t0 = calculate_muon_good_histogram_limits(run)
+    run.t0 = t0
 
     try:
-        hist_one = run.data[run.meta[files.CALC_HISTS_KEY][0]]
-        hist_two = run.data[run.meta[files.CALC_HISTS_KEY[1]]]
+        hist_one = run.data.loc[start_bin_one - 1: end_bin_one, run.meta[files.CALC_HISTS_KEY][0]].values
+        hist_two = run.data[run.meta[start_bin_two - 1: end_bin_two, files.CALC_HISTS_KEY[1]]].values
     except KeyError:
         logging.error("CALC_HISTS_KEY not specified.")
         return
@@ -185,10 +190,12 @@ def calculate_muon_asymmetry(run: MuonRun):
     :param run:
     :return None: The asymmetry attribute in the run is set to the calculated asymmetry
     """
+    start_bin_one, start_bin_two, end_bin_one, end_bin_two, t0 = calculate_muon_good_histogram_limits(run)
+    run.t0 = t0
 
     try:
-        hist_one = run.data[run.meta[files.CALC_HISTS_KEY][0]]
-        hist_two = run.data[run.meta[files.CALC_HISTS_KEY[1]]]
+        hist_one = run.data.loc[start_bin_one - 1: end_bin_one, run.meta[files.CALC_HISTS_KEY][0]].values
+        hist_two = run.data[run.meta[start_bin_two - 1: end_bin_two, files.CALC_HISTS_KEY[1]]].values
     except KeyError:
         logging.error("CALC_HISTS_KEY not specified.")
         return
