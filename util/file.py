@@ -39,30 +39,62 @@ T0_KEY = 'T0'
 
 
 class File(abc.ABC):
+    """
+    Abstract base class for file objects, establishes some static constants and a constructor.
+    """
+
     DATA_TYPE = None
     DATA_FORMAT = None
-    source = None
+    SOURCE = None
 
     def __init__(self, file_path):
         self.file_path = file_path
 
 
 class ConvertibleFile(File, abc.ABC):
+    """
+    Abstract base class for a convertible file object, which is any file which we can't read
+    data from directly but have to convert to a BEAMS data file.
+    """
+
     @abc.abstractmethod
     def convert(self, out_file):
-        pass
+        """
+        Takes as an argument the file path to which the converted data will be written and returns
+        a ReadableFile object referencing that file path.
+
+        :param out_file: the file path to which the converted data will be written
+        :return: ReadableFile: returns a ReadableFile object
+        :raises: ConversionError: if there is a subprocess or similar error converting the file
+        """
+        raise NotImplemented()
 
 
 class ReadableFile(File, abc.ABC):
+    """
+    Abstract base class for a readable file object, this is any file for which we can directly read
+    data with which the program can interact with.
+    """
     HEADER_ROWS = None
 
     @abc.abstractmethod
     def read_data(self):
-        pass
+        """
+        Reads the data (starting after HEADER_ROWS # of rows) and returns a structure expected for
+        the given file data type and source (handled by the RunBuilder)
+
+        :return data: An array structure expected for that file type (handled by RunBuilder)
+        """
+        raise NotImplemented()
 
     @abc.abstractmethod
     def read_meta(self):
-        pass
+        """
+        Reads HEADER_ROWS # of rows and returns the associated meta data as a dictionary.
+
+        :return meta: A dictionary of key: value pairs associated with given headers
+        """
+        raise NotImplemented()
 
 
 class TRIUMFMuonFile(ConvertibleFile):
@@ -221,7 +253,13 @@ class MuonAsymmetryFile(ReadableFile):
 
 
 def file(file_path):
-    """ Creates the appropriate File object based on the given file path. """
+    """
+    Returns a File object (ReadableFile or ConvertibleFile) for a specified file path.
+
+    :param file_path:
+    :return File: a ReadableFile or ConvertibleFile object.
+    :raises UnknownFileSource: raised when a file is specified the program is not able to handle.
+    """
     if not is_found(file_path):
         raise FileNotFoundError
 
@@ -238,11 +276,16 @@ def file(file_path):
         return PSIMuonFile(file_path)
 
     else:
-        raise InvalidFileFormat()
+        raise UnknownFileSource()
 
 
 def is_found(filename):
-    """ Checks that the file path can be successfully found and opened. """
+    """
+    Checks that the file at the path given exists.
+
+    :param filename:
+    :return boolean:
+    """
     try:
         with open(filename):
             return True
@@ -253,18 +296,42 @@ def is_found(filename):
 
 
 def check_ext(filename, expected_ext):
-    """ Checks the extension of file against the user specified extension. """
+    """
+    Checks the extension of the given file path against the given extension
+
+    :param filename:
+    :param expected_ext:
+    :return: boolean
+    """
     _, ext = os.path.splitext(filename)
     return ext == expected_ext
 
 
 def is_beams(filename):
-    """ Checks if the .dat file is BEAMS formatted (first line should read 'BEAMS'). No other checks."""
+    """
+    Checks if file is a BEAMS data file
+
+    :param filename:
+    :return boolean:
+    """
     if is_found(filename):
         with open(filename) as f:
             return 'BEAMS' in f.readline().rstrip('\n')
 
 
-class InvalidFileFormat(Exception):
-    def __init__(self, ):
-        super(InvalidFileFormat, self).__init__()
+class UnknownFileSource(Exception):
+    """
+    Raised when a user once a File object for an unknown file type, or type that the program is not
+    currently equipped to handle.
+    """
+    def __init__(self):
+        super(UnknownFileSource, self).__init__()
+
+
+class ConversionError(Exception):
+    """
+    Raised when there is an error converting a convertible file (usually caused by a subprocess error)
+    """
+    def __init__(self):
+        super(ConversionError, self).__init__()
+
