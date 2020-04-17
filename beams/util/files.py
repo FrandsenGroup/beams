@@ -51,25 +51,6 @@ class File(abc.ABC):
         self.file_path = file_path
 
 
-class ConvertibleFile(File, abc.ABC):
-    """
-    Abstract base class for a convertible file object, which is any file which we can't read
-    data from directly but have to convert to a BEAMS data file.
-    """
-
-    @abc.abstractmethod
-    def convert(self, out_file):
-        """
-        Takes as an argument the file path to which the converted data will be written and returns
-        a ReadableFile object referencing that file path.
-
-        :param out_file: the file path to which the converted data will be written
-        :return: ReadableFile: returns a ReadableFile object
-        :raises: ConversionError: if there is a subprocess or similar error converting the file
-        """
-        raise NotImplemented()
-
-
 class ReadableFile(File, abc.ABC):
     """
     Abstract base class for a readable file object, this is any file for which we can directly read
@@ -93,6 +74,25 @@ class ReadableFile(File, abc.ABC):
         Reads HEADER_ROWS # of rows and returns the associated meta data as a dictionary.
 
         :return meta: A dictionary of key: value pairs associated with given headers
+        """
+        raise NotImplemented()
+
+
+class ConvertibleFile(File, abc.ABC):
+    """
+    Abstract base class for a convertible file object, which is any file which we can't read
+    data from directly but have to convert to a readable BEAMS data file.
+    """
+
+    @abc.abstractmethod
+    def convert(self, out_file) -> ReadableFile:
+        """
+        Takes as an argument the file path to which the converted data will be written and returns
+        a ReadableFile object referencing that file path.
+
+        :param out_file: the file path to which the converted data will be written
+        :return: ReadableFile: returns a ReadableFile object
+        :raises: ConversionError: if there is a subprocess or similar error converting the file
         """
         raise NotImplemented()
 
@@ -334,4 +334,3 @@ class ConversionError(Exception):
     """
     def __init__(self):
         super(ConversionError, self).__init__()
-
