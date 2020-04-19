@@ -1,7 +1,7 @@
 # Installed Packages
 import numpy as np
 
-# BEAMS Packages
+# BEAMS Modules
 from util import files
 
 
