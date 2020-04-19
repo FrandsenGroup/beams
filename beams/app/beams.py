@@ -1,8 +1,11 @@
 
+# Standard Library Packages
 import sys
 
+# Installed Packages
 from PyQt5 import QtWidgets
 
+# BEAMS Modules
 from app import main_window
 
 
@@ -22,7 +25,7 @@ class BEAMS(QtWidgets.QApplication):
         Creates the main window and starts the application.
         """
 
-        self.main_program_window = main_window.MainGUIWindow()
+        self.main_program_window = main_window.MainWindow()
         self.main_program_window.show()
         sys.exit(self.exec_())
 
