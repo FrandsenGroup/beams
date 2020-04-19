@@ -1,3 +1,7 @@
+
+# Standard Library Packages
+import uuid
+
 # Installed Packages
 import numpy as np
 
@@ -6,9 +10,11 @@ from util import files
 
 
 class MuonRun:
-    def __init__(self, data, meta):
+    def __init__(self, data, meta, file):
         self.data = data
         self.meta = meta
+        self.file = file
+        self.id = str(uuid.uuid4())
 
         self.asymmetry = None
         self.uncertainty = None
@@ -22,16 +28,17 @@ class MuonRun:
         pass
 
 
-def build_muon_run(data, meta) -> MuonRun:
+def build_muon_run(data, meta, file) -> MuonRun:
     """
     Builds a MuonRun object (Asymmetry, Uncertainty, Time, etc) based on the given data and meta.
 
     :param data: A pandas dataframe containing the histograms with their titles as column heads.
     :param meta: A dictionary containing the meta data for the run
+    :param file: The file path of the file associated with this run
     :return run: a MuonRun object
     """
 
-    run = MuonRun(data, meta)
+    run = MuonRun(data, meta, file)
 
     calculate_muon_asymmetry(run)
     calculate_muon_uncertainty(run)
