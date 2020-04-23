@@ -5,25 +5,38 @@ import os
 import sys
 import subprocess
 import traceback
+import enum
 
 # Installed Packages
 import pandas as pd
 
 
 # File Sources
-TRIUMF = 0
-PSI = 1
-ISIS = 2
-JPARC = 3
-BEAMS = 4
+@enum.unique
+class Source(enum.Enum):
+    UNKNOWN = -1
+    TRIUMF = 0
+    PSI = 1
+    ISIS = 2
+    JPARC = 3
+    BEAMS = 4
+
 
 # File Formats
-HISTOGRAM = 0
-ASYMMETRY = 1
-BINARY = 2
+@enum.unique
+class Format(enum.Enum):
+    UNKNOWN = -1
+    HISTOGRAM = 0
+    ASYMMETRY = 1
+    BINARY = 2
+
 
 # File Data
-MUON = 0
+@enum.unique
+class DataType(enum.Enum):
+    UNKNOWN = -1
+    MUON = 0
+
 
 # Meta Keys
 FIELD_KEY = 'Field'
@@ -78,6 +91,10 @@ class ReadableFile(File, abc.ABC):
         """
         raise NotImplemented()
 
+    def __str__(self):
+        return '[ReadableFile: file_path={}, source={}, format={}, type={}]'.format(self.file_path, self.SOURCE,
+                                                                                    self.DATA_FORMAT, self.DATA_TYPE)
+
 
 class ConvertibleFile(File, abc.ABC):
     """
@@ -97,18 +114,31 @@ class ConvertibleFile(File, abc.ABC):
         """
         raise NotImplemented()
 
+    def __str__(self):
+        return '[ConvertibleFile: file_path={}, source={}, format={}, type={}]'.format(self.file_path, self.SOURCE,
+                                                                                       self.DATA_FORMAT, self.DATA_TYPE)
+
+
+class UnknownFile(File):
+    DATA_TYPE = DataType.UNKNOWN
+    DATA_FORMAT = Format.UNKNOWN
+    SOURCE = Source.UNKNOWN
+
+    def __str__(self):
+        return '[UnknownFile: file_path={}]'.format(self.file_path)
+
 
 class TRIUMFMuonFile(ConvertibleFile):
-    SOURCE = TRIUMF
-    DATA_FORMAT = BINARY
-    DATA_TYPE = MUON
+    SOURCE = Source.TRIUMF
+    DATA_FORMAT = Format.BINARY
+    DATA_TYPE = DataType.MUON
 
     def convert(self, out_file):
         flags = ['-all']
         if is_found(self.file_path) and check_ext(self.file_path, '.msr') and check_ext(out_file, '.dat'):
-            system_args = {'win32': ['mud\\TRIUMF_WINDOWS', self.file_path, out_file],  # Windows Syntax
-                           'linux': ['./mud/TRIUMF_LINUX', self.file_path, out_file],  # Linux Syntax
-                           'darwin': ['./mud/TRIUMF_MAC', self.file_path, out_file]}  # Mac Syntax
+            system_args = {'win32': ['resources\\mud\\TRIUMF_WINDOWS', self.file_path, out_file],  # Windows Syntax
+                           'linux': ['./resources/mud/TRIUMF_LINUX', self.file_path, out_file],  # Linux Syntax
+                           'darwin': ['./resources/mud/TRIUMF_MAC', self.file_path, out_file]}  # Mac Syntax
 
             if sys.platform in system_args.keys():
                 args = system_args[sys.platform]
@@ -137,17 +167,17 @@ class TRIUMFMuonFile(ConvertibleFile):
 
 
 class PSIMuonFile(ConvertibleFile):
-    SOURCE = PSI
-    DATA_FORMAT = BINARY
-    DATA_TYPE = MUON
+    SOURCE = Source.PSI
+    DATA_FORMAT = Format.BINARY
+    DATA_TYPE = DataType.MUON
 
     def convert(self, out_file):
         if is_found(self.file_path) and (check_ext(self.file_path, '.bin') or check_ext(self.file_path, '.mdu')) \
                 and check_ext(out_file, '.dat'):
 
-            system_args = {'win32': ['mud\\PSI_WINDOWS', self.file_path, out_file],  # Windows Syntax
-                           'linux': ['./mud/PSI_LINUX', self.file_path, out_file],  # Linux Syntax
-                           'darwin': ['./mud/PSI_MAC', self.file_path, out_file]}  # Mac Syntax
+            system_args = {'win32': ['resources\\mud\\PSI_WINDOWS', self.file_path, out_file],  # Windows Syntax
+                           'linux': ['./resources/mud/PSI_LINUX', self.file_path, out_file],  # Linux Syntax
+                           'darwin': ['./resources/mud/PSI_MAC', self.file_path, out_file]}  # Mac Syntax
 
             if sys.platform in system_args.keys():
                 args = system_args[sys.platform]
@@ -173,27 +203,27 @@ class PSIMuonFile(ConvertibleFile):
 
 
 class ISISMuonFile(ConvertibleFile):
-    SOURCE = ISIS
-    DATA_FORMAT = BINARY
-    DATA_TYPE = MUON
+    SOURCE = Source.ISIS
+    DATA_FORMAT = Format.BINARY
+    DATA_TYPE = DataType.MUON
 
     def convert(self, out_file):
         pass
 
 
 class JPARCMuonFile(ConvertibleFile):
-    SOURCE = JPARC
-    DATA_FORMAT = BINARY
-    DATA_TYPE = MUON
+    SOURCE = Source.JPARC
+    DATA_FORMAT = Format.BINARY
+    DATA_TYPE = DataType.MUON
 
     def convert(self, out_file):
         pass
 
 
 class MuonHistogramFile(ReadableFile):
-    SOURCE = BEAMS
-    DATA_FORMAT = HISTOGRAM
-    DATA_TYPE = MUON
+    SOURCE = Source.BEAMS
+    DATA_FORMAT = Format.HISTOGRAM
+    DATA_TYPE = DataType.MUON
     HEADER_ROWS = 8
 
     def read_data(self):
@@ -229,9 +259,9 @@ class MuonHistogramFile(ReadableFile):
 
 
 class MuonAsymmetryFile(ReadableFile):
-    SOURCE = BEAMS
-    DATA_FORMAT = ASYMMETRY
-    DATA_TYPE = MUON
+    SOURCE = Source.BEAMS
+    DATA_FORMAT = Format.ASYMMETRY
+    DATA_TYPE = DataType.MUON
     HEADER_ROWS = 3
 
     def read_data(self):
@@ -259,7 +289,6 @@ def file(file_path):
 
     :param file_path:
     :return File: a ReadableFile or ConvertibleFile object.
-    :raises UnknownFileSource: raised when a file is specified the program is not able to handle.
     """
     if not is_found(file_path):
         raise FileNotFoundError
@@ -270,14 +299,14 @@ def file(file_path):
     elif check_ext(file_path, '.asy') and is_beams(file_path):
         return MuonAsymmetryFile(file_path)
 
-    elif check_ext(file_path, 'msr'):
+    elif check_ext(file_path, '.msr'):
         return TRIUMFMuonFile(file_path)
 
     elif check_ext(file_path, '.bin') or check_ext(file_path, '.mdu'):
         return PSIMuonFile(file_path)
 
     else:
-        raise UnknownFileSource()
+        return UnknownFile(file_path)
 
 
 def is_found(filename):
