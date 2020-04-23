@@ -1,4 +1,7 @@
 
+import abc
+import enum
+
 from PyQt5 import QtWidgets
 
 
@@ -15,3 +18,9 @@ class StyleTwoButton(QtWidgets.QPushButton):
 class StyleThreeButton(QtWidgets.QPushButton):
     def __init__(self, *args):
         super(StyleThreeButton, self).__init__(*args)
+
+
+class DialogInterface(abc.ABC):
+    @staticmethod
+    def launch():
+        raise NotImplemented()
