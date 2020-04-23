@@ -1,7 +1,7 @@
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
-from app.model import RunService
+from app.panel_file_manager import FileManagerPanel
 
 
 # noinspection PyArgumentList
@@ -45,8 +45,8 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         Sets the default panels of the main window for µSR analysis.
         """
-
-        pass
+        self._file_manager = FileManagerPanel()
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self._file_manager)
 
     def set_status_message(self, message):
         """
@@ -66,7 +66,7 @@ class MainWindowPresenter:
     information to the model, update the view, etc.
     """
     def __init__(self):
-        self.service = RunService()  # Connect to Model
+        self._model = None # Connect to Model
 
 
 # noinspection PyArgumentList
