@@ -10,7 +10,7 @@ from util import files
 
 
 class MuonRun:
-    def __init__(self, data, meta, file):
+    def __init__(self, data, meta: dict, file):
         self.data = data
         self.meta = meta
         self.file = file
@@ -28,7 +28,7 @@ class MuonRun:
         pass
 
 
-def build_muon_run(data, meta, file) -> MuonRun:
+def build_muon_run_from_histogram_file(data, meta, file) -> MuonRun:
     """
     Builds a MuonRun object (Asymmetry, Uncertainty, Time, etc) based on the given data and meta.
 
