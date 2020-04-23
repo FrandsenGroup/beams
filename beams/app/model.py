@@ -1,107 +1,10 @@
 
-class RunService:
+from util import muon, files
+
+
+class MuonDataContext:
     """
-    Handles requests for data operations on runs sent by Presenter classes. Notifies observers based on data changes.
-    """
-
-    class __Observers:
-        """
-        Persistent object to store observers (rather then make the whole RunService object a singleton).
-        """
-        def __init__(self):
-            self.currentObservers = {RunService.CURRENT_RUNS_CHANGED: []}
-
-    __observers = None
-
-    CURRENT_RUNS_CHANGED = 0
-
-    def __init__(self):
-        if not RunService.__observers:
-            RunService.__observers = RunService.__Observers()
-
-        self.dao = RunDAO()
-
-    def register(self, observer, signal):
-        """
-        A class with a "update()" method may register itself as an observer of one of the RunService signals.
-        :param observer: object to be stored as an observer
-        :param signal: signal the observer is interested in
-        """
-        self.__observers.currentObservers[signal].append(observer)
-
-    def _notify(self, signal):
-        """
-        Notifies all observers of the specified signal by calling their 'update()' methods.
-        :param signal: signal that has been triggered
-        """
-        for observer in self.__observers.currentObservers[signal]:
-            observer.update()
-
-
-class RunDAO:
-    """
-    Handles simple data access operations for runs stored by the program.
-    """
-    def __init__(self):
-        self._data_store = DataStore()
-
-    def get_run_by_filename(self, filename):
-        """
-        Gets a Run object associated with the given filename.
-        :param filename: full file path associated with a run
-        :return run:
-        """
-        for run in self._data_store.runs:
-            if run.file == filename:
-                return run
-
-    def remove_run_by_filename(self, filename):
-        """
-        Removes a Run object associated with the given filename.
-        :param filename: full file path associated with a run
-        """
-        for run in self._data_store.runs:
-            if run.file == filename:
-                self._data_store.runs.remove(run)
-
-    def get_run_by_id(self, run_id):
-        """
-        Gets a Run object with the specified ID.
-        :param run_id: ID of a run
-        :return run:
-        """
-        for run in self._data_store.runs:
-            if run.file == run_id:
-                return run
-
-    def remove_run_by_id(self, run_id):
-        """
-        Removes a Run object with the specified ID
-        :param run_id: ID of a run
-        """
-        for run in self._data_store.runs:
-            if run.file == run_id:
-                self._data_store.runs.remove(run)
-
-    def add_run(self, run):
-        """
-        Adds a Run object to the data store.
-        :param run:
-        """
-        self._data_store.runs.append(run)
-
-    def clear_runs(self):
-        """
-        Clears all runs in the data store.
-        """
-        self._data_store.runs = []
-
-
-class DataStore:
-    """
-    A model object that acts purely as data storage. All data access operations are pushed to DAO objects
-    to make it a simple process to add different types of data in the future without complicating this class.
-    This class is a singleton.
+    A model object that acts purely as data storage and access object.
     """
 
     class __DataStore:
@@ -110,18 +13,161 @@ class DataStore:
         """
 
         def __init__(self):
+            self.notifier = Notifier()
             self.runs = []
 
     __instance = None
 
     def __init__(self):
-        if not DataStore.__instance:
-            DataStore.__instance = DataStore.__DataStore()
+        if not MuonDataContext.__instance:
+            MuonDataContext.__instance = MuonDataContext.__DataStore()
 
-    def __getattr__(self, name):
+    def get_run_by_filename(self, filename):
         """
-        Attribute requests are passed to the __DataStore instance.
-        :param name: name of attribute
-        :return value: value of attribute
+        Gets a Run object associated with the given filename.
+        :param filename: full file path associated with a run
+        :return run:
         """
-        return getattr(self.__instance, name)
+        for run in self.__instance.runs:
+            if run.file == filename:
+                return run
+
+    def remove_runs_by_filename(self, filenames, stop_signal=None):
+        """
+        Removes a Run object associated with the given filename.
+        :param filenames: array of full file paths associated with a run
+        :param stop_signal: optional parameter to prevent sending update signal to presenters
+        """
+        for filename in filenames:
+            for run in self.__instance.runs:
+                if run.file == filename:
+                    self.__instance.runs.remove(run)
+
+        if not stop_signal:
+            self.__instance.notifier.notify()
+
+    def get_run_by_id(self, run_id):
+        """
+        Gets a Run object with the specified ID.
+        :param run_id: ID of a run
+        :return run:
+        """
+        for run in self.__instance.runs:
+            if run.file == run_id:
+                return run
+
+    def remove_runs_by_id(self, run_ids, stop_signal=None):
+        """
+        Removes a Run object with the specified ID
+        :param run_ids: array of IDs of runs
+        :param stop_signal: optional parameter to prevent sending update signal to presenters
+        """
+        for run_id in run_ids:
+            for run in self.__instance.runs:
+                if run.file == run_id:
+                    self.__instance.runs.remove(run)
+
+        if not stop_signal:
+            self.__instance.notifier.notify()
+
+    def add_run(self, run, stop_signal=None):
+        """
+        Adds a Run object to the data store.
+        :param run:
+        :param stop_signal: optional parameter to prevent sending update signal to presenters
+        """
+        self.__instance.runs.append(run)
+
+        if not stop_signal:
+            self.__instance.notifier.notify()
+
+    def add_runs(self, runs, stop_signal=None):
+        """
+        Adds an array of run objects to the data store.
+        :param runs: array of runs
+        :param stop_signal: optional parameter to prevent sending update signal to presenters
+        """
+        self.__instance.runs.extend(runs)
+
+        if not stop_signal:
+            self.__instance.notifier.notify()
+
+    def add_run_from_histogram_file(self, histogram_file, histograms, stop_signal=None):
+
+        # for param in run_params:
+        #     run = muon.build_muon_run_from_histogram_file(param[0], param[1], param[2])
+        #     self.__instance.runs.append(run)
+
+        if not stop_signal:
+            self.__instance.notifier.notify()
+
+    def add_run_from_asymmetry_file(self, asymmetry_file, stop_signal=None):
+
+        if not stop_signal:
+            self.__instance.notifier.notify()
+
+    def clear_runs(self, stop_signal=None):
+        """
+        Clears all runs in the data store.
+        :param stop_signal: optional parameter to prevent sending update signal to presenters
+        """
+        self.__instance.runs = []
+
+        if not stop_signal:
+            self.__instance.notifier.notify()
+
+    @staticmethod
+    def subscribe(observer):
+        MuonDataContext.__instance.notifier.subscribe(observer)
+
+
+class FileContext:
+    """
+        A model object that acts purely as data storage and access object.
+        """
+
+    class __DataStore:
+        """
+        Singleton instance object to hold data.
+        """
+
+        def __init__(self):
+            self.notifier = Notifier()
+            self.files = set()
+
+    __instance = None
+
+    def __init__(self):
+        if FileContext.__instance is None:
+            FileContext.__instance = FileContext.__DataStore()
+
+    def add_files(self, files, stop_signal=None):
+        self.__instance.files.update(files)
+
+        if not stop_signal:
+            self.__instance.notifier.notify()
+
+    def remove_files(self, files, stop_signal=None):
+        self.__instance.files.difference_update(files)
+
+        if not stop_signal:
+            self.__instance.notifier.notify()
+
+    def get_files(self):
+        return self.__instance.files
+
+    @staticmethod
+    def subscribe(observer):
+        FileContext.__instance.notifier.subscribe(observer)
+
+
+class Notifier:
+    def __init__(self):
+        self.observers = []
+
+    def subscribe(self, observer):
+        self.observers.append(observer)
+
+    def notify(self):
+        for observer in self.observers:
+            observer.update()
