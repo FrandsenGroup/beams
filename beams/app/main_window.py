@@ -2,6 +2,7 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 
 from app.panel_file_manager import FileManagerPanel
+from app.panel_muon_plot import MuonPlotPanel
 
 
 # noinspection PyArgumentList
@@ -47,6 +48,9 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         self._file_manager = FileManagerPanel()
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self._file_manager)
+
+        self._plot_panel_one = MuonPlotPanel()
+        self.setCentralWidget(self._plot_panel_one)
 
     def set_status_message(self, message):
         """
