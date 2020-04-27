@@ -24,11 +24,11 @@ class MuonRun:
         self.beta = 1
         self.t0 = None
 
-    def update_bin(self):
-        pass
+    def __str__(self):
+        return '[MuonRun: ID={}, meta={}]'.format(self.id, self.meta)
 
 
-def build_muon_run_from_histogram_file(data, meta, file) -> MuonRun:
+def build_muon_run_from_histogram_file(file, meta=None) -> MuonRun:
     """
     Builds a MuonRun object (Asymmetry, Uncertainty, Time, etc) based on the given data and meta.
 
@@ -37,6 +37,9 @@ def build_muon_run_from_histogram_file(data, meta, file) -> MuonRun:
     :param file: The file path of the file associated with this run
     :return run: a MuonRun object
     """
+    reader = files.file(file)
+    data = reader.read_data()
+    meta = meta if meta else reader.read_meta()
 
     run = MuonRun(data, meta, file)
 
@@ -44,6 +47,25 @@ def build_muon_run_from_histogram_file(data, meta, file) -> MuonRun:
     calculate_muon_uncertainty(run)
     calculate_muon_time(run)
 
+    print(run)
+    print(run.asymmetry)
+    print(run.uncertainty)
+    return run
+
+
+def build_muon_run_from_asymmetry_file(file, meta=None) -> MuonRun:
+    reader = files.file(file)
+    data = reader.read_data()
+    meta = meta if meta else reader.read_meta()
+
+    run = MuonRun(None, meta, file)
+    run.asymmetry = data.loc[:, 'Asymmetry'].values
+    run.uncertainty = data.loc[:, 'Uncertainty'].values
+    run.time = data.loc[:, 'Time'].values
+
+    print(run)
+    print(run.asymmetry)
+    print(run.uncertainty)
     return run
 
 
