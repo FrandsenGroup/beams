@@ -5,8 +5,10 @@ from PyQt5 import QtWidgets, QtCore
 
 from util import widgets, files
 from app.model import FileContext, MuonDataContext
-from app.dialog_misc import AddFileDialog
+from app.dialog_misc import AddFileDialog, WarningMessageDialog
 from app.dialog_musr_download import MusrDownloadDialog
+from app.dialog_plot_file import PlotFileDialog
+from app.dialog_write_data import WriteDataDialog
 from app.beams import BEAMS
 
 
@@ -192,10 +194,28 @@ class FileManagerPanelPresenter:
         self._model.convert_files(self._view.get_checked_items())
 
     def _plot_file_clicked(self):
-        pass
+        file_paths = self._model.get_file_paths_from_titles(self._view.get_checked_items())
+
+        muon_files = []
+        for file_path in file_paths:
+            reader = files.file(file_path)
+            if reader.DATA_TYPE == files.DataType.MUON:
+                muon_files.append(file_path)
+
+            if reader.DATA_FORMAT == files.Format.BINARY or reader.DATA_FORMAT == files.Format.UNKNOWN:
+                WarningMessageDialog.launch(["Files selected which can not be plotted."])
+                return
+
+        if muon_files:
+            PlotFileDialog.launch([muon_files])
 
     def _write_file_clicked(self):
-        pass
+        current_items = self._model.get_file_paths_from_titles(self._view.get_checked_items())
+
+        if current_items:
+            WriteDataDialog.launch([current_items])
+        else:
+            WarningMessageDialog.launch(["No files selected."])
 
     def _select_all_checked(self):
         """
@@ -232,6 +252,9 @@ class FileManagerPanelModel:
         self._title_to_file_path = {}
         self._observer = observer
 
+    def get_file_paths_from_titles(self, titles):
+        return [self._title_to_file_path[title] for title in titles]
+
     def remove_files(self, file_paths):
         self._file_context.remove_files([self._title_to_file_path[title] for title in file_paths])
 
@@ -242,7 +265,7 @@ class FileManagerPanelModel:
         for file_path in file_paths:
             file_reader = files.file(file_path)
             if file_reader.SOURCE == files.Source.BEAMS:
-                title = file_reader.read_meta()[files.TITLE_KEY]
+                title = os.path.split(file_path)[1] + " - " + file_reader.read_meta()[files.TITLE_KEY]
                 if title not in self._title_to_file_path.keys():
                     self._title_to_file_path[title] = file_path
             else:
@@ -269,7 +292,7 @@ class FileManagerPanelModel:
                 out_file = os.path.splitext(self._title_to_file_path[title])[0] + '.dat'
                 file_reader = file_reader.convert(out_file)
 
-                title = file_reader.read_meta()[files.TITLE_KEY]
+                title = os.path.split(out_file)[1] + " - " + file_reader.read_meta()[files.TITLE_KEY]
                 titles.append(title)
                 self._title_to_file_path[title] = file_reader.file_path
 
