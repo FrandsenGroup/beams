@@ -107,7 +107,7 @@ QComboBox::drop-down {
 }
 
 QComboBox::down-arrow {
-    image: url(style/icons/down_arrow.jpg);
+    image: url(resources/icons/down_arrow.jpg);
 }
 
 QComboBox::down-arrow:on { /* shift the arrow when popup is open */
