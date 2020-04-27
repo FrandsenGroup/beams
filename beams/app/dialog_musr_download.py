@@ -17,7 +17,7 @@ class MusrDownloadDialog(QtWidgets.QDialog):
         NEW_FILES = 1
         NO_NEW_FILES = 2
 
-    def __init__(self):
+    def __init__(self, args=None):
         super(MusrDownloadDialog, self).__init__()
 
         self.status_bar = QtWidgets.QStatusBar()
@@ -125,8 +125,8 @@ class MusrDownloadDialog(QtWidgets.QDialog):
         self.output_web.insertPlainText(message)
 
     @staticmethod
-    def launch():
-        dialog = MusrDownloadDialog()
+    def launch(args=None):
+        dialog = MusrDownloadDialog(args)
         return dialog.exec()
 
 
@@ -141,10 +141,10 @@ class MusrDownloadDialogPresenter:
         self._set_callbacks()
 
     def _set_callbacks(self):
-        self._view.search_button.released.connect(lambda: self.query())
-        self._view.download_button.released.connect(lambda: self.download())
-        self._view.done_button.released.connect(lambda: self.done())
-        self._view.select_button.released.connect(lambda: self.save_to())
+        self._view.search_button.released.connect(lambda: self._search_clicked())
+        self._view.download_button.released.connect(lambda: self._download_clicked())
+        self._view.done_button.released.connect(lambda: self._done_clicked())
+        self._view.select_button.released.connect(lambda: self._save_to_clicked())
 
     def _assemble_query(self):
         query = "?"
@@ -214,7 +214,7 @@ class MusrDownloadDialogPresenter:
 
         return directory + "{}{}".format(separator, download.split('/')[-1])
 
-    def query(self):
+    def _search_clicked(self):
         self._view.set_status_message('Querying ... ')
         query = self._assemble_query()
 
@@ -259,7 +259,7 @@ class MusrDownloadDialogPresenter:
 
         self._view.set_status_message('Done.')
 
-    def download(self):
+    def _download_clicked(self):
         self._view.set_status_message('Downloading ... ')
 
         downloads = self._assemble_downloads()
@@ -295,14 +295,14 @@ class MusrDownloadDialogPresenter:
         self._view.log_message('{}/{} Files downloaded successfully.\n'.format(good, len(downloads)))
         self._view.set_status_message('Done.')
 
-    def done(self):
+    def _done_clicked(self):
         if self._new_files:
             self._view.done(MusrDownloadDialog.Codes.NEW_FILES)
         else:
             self._view.done(MusrDownloadDialog.Codes.NO_NEW_FILES)
 
     # noinspection PyCallByClass
-    def save_to(self):
+    def _save_to_clicked(self):
         path = QtWidgets.QFileDialog.getExistingDirectory(self._view, 'Select directory to save MUD files to',
                                                           BEAMS.load_last_used_directory(),
                                                           options=QtWidgets.QFileDialog.ShowDirsOnly)
