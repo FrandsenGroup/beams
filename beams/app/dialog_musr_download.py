@@ -6,9 +6,9 @@ import sys
 import requests
 from PyQt5 import QtWidgets
 
-from util import widgets
+from app.util import widgets
 from app.beams import BEAMS
-from app.model import FileContext
+from app.model.model import FileContext
 
 
 # noinspection PyArgumentList

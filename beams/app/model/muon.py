@@ -6,7 +6,7 @@ import uuid
 import numpy as np
 
 # BEAMS Modules
-from util import files
+from app.model import files
 
 
 class MuonRun:
@@ -47,9 +47,6 @@ def build_muon_run_from_histogram_file(file, meta=None) -> MuonRun:
     calculate_muon_uncertainty(run)
     calculate_muon_time(run)
 
-    print(run)
-    print(run.asymmetry)
-    print(run.uncertainty)
     return run
 
 
@@ -62,10 +59,8 @@ def build_muon_run_from_asymmetry_file(file, meta=None) -> MuonRun:
     run.asymmetry = data.loc[:, 'Asymmetry'].values
     run.uncertainty = data.loc[:, 'Uncertainty'].values
     run.time = data.loc[:, 'Time'].values
+    run.t0 = run.meta[files.T0_KEY]
 
-    print(run)
-    print(run.asymmetry)
-    print(run.uncertainty)
     return run
 
 
@@ -85,7 +80,12 @@ def correct_muon_asymmetry(run: MuonRun, alpha=None, beta=None):
     if beta:
         run.beta = beta
 
-    calculate_muon_asymmetry(run)
+    reader = files.file(run.file)
+    if reader.DATA_FORMAT == files.Format.HISTOGRAM:
+        calculate_muon_asymmetry(run)
+    elif reader.DATA_FORMAT == files.Format.ASYMMETRY:
+        data = reader.read_data()
+        run.asymmetry = data.loc[:, 'Asymmetry'].values
 
     run.asymmetry = ((run.alpha - 1) + (run.alpha + 1) * run.asymmetry) / \
                     ((run.alpha * run.beta + 1) + (run.alpha * run.beta - 1) * 2)
@@ -99,7 +99,6 @@ def bin_muon_asymmetry(run: MuonRun, new_bin):
     :param new_bin: The bin size of the new asymmetry in nano-seconds
     :return asymmetry: The binned asymmetry
     """
-
     bin_full = float(run.meta[files.BIN_SIZE_KEY]) / 1000
     bin_binned = float(new_bin) / 1000
     num_bins = len(run.asymmetry)
@@ -175,6 +174,7 @@ def bin_muon_time(run: MuonRun, new_bin):
     binned_indices_total = int(np.floor(num_bins / binned_indices_per_bin))
     time_per_binned = binned_indices_per_bin * bin_full
 
+    times = (np.arange(binned_indices_total) * time_per_binned) + (t0 * bin_full) + (time_per_binned / 2)
     return (np.arange(binned_indices_total) * time_per_binned) + (t0 * bin_full) + (time_per_binned / 2)
 
 
@@ -318,7 +318,11 @@ def calculate_muon_fft(asymmetry, time):
     low_step = int(np.ceil((z_min - 1e-8) / z_step))
     high_step = int(np.floor((z_max + 1e-8) / z_step)) + 1
     z = np.arange(low_step, high_step) * z_step
-    x_step = time[1] - time[0]
+
+    try:
+        x_step = time[1] - time[0]
+    except IndexError:
+        return [0], [0]
 
     if (time[0] - 0.01 * x_step) > 0:
         nn = int(np.round(time[0] / x_step))
@@ -352,3 +356,7 @@ def calculate_muon_fft(asymmetry, time):
     fft = np.real(fz * np.conj(fz))
 
     return z, fft
+
+
+def calculate_muon_integration(run: MuonRun):
+    return np.trapz(run.asymmetry, run.time)

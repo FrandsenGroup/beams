@@ -4,11 +4,12 @@ import os
 from PyQt5 import QtWidgets, QtCore
 import numpy as np
 
-from util import widgets, files, muon
-from app.model import MuonDataContext
+from app.util import widgets
+from app.model.model import MuonDataContext
+from app.model import muon, files
 from app.beams import BEAMS
 from app.dialog_plot_file import PlotFileDialog
-from app.dialog_misc import WarningMessageDialog, PermissionsMessageDialog
+from app.dialog_misc import PermissionsMessageDialog
 
 
 # noinspection PyArgumentList

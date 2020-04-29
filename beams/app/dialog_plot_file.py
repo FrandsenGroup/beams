@@ -3,8 +3,9 @@ import enum
 
 from PyQt5 import QtWidgets
 
-from util import widgets, files
-from app.model import MuonDataContext
+from app.util import widgets
+from app.model.model import MuonDataContext, PlotContext
+from app.model import files
 from app.dialog_misc import WarningMessageDialog
 
 
@@ -203,6 +204,7 @@ class PlotFileDialogModel:
     def __init__(self, file_paths):
         self._formats = {}
         self._context = MuonDataContext()
+        self._plot_context = PlotContext()
 
         self._files = file_paths
         self.histogram_files = []
@@ -247,12 +249,25 @@ class PlotFileDialogModel:
         if not self.asymmetry_files and not self.histogram_files:
             return
 
-        for file_path in self.histogram_files:
+        loaded_files = self._context.get_loaded_run_files()
+        remove_files = [file for file in loaded_files
+                        if file not in self.histogram_files and file not in self.asymmetry_files]
+        remove_ids = [self._context.get_run_by_filename(file).id for file in remove_files]
+        self._context.remove_runs_by_filename(remove_files, stop_signal=True)
+        for run_id in remove_ids:
+            self._plot_context.clear_plot_parameters(run_id, stop_signal=True)
+
+        unloaded_histogram_files = [file for file in self.histogram_files if file not in loaded_files]
+        unloaded_asymmetry_files = [file for file in self.asymmetry_files if file not in loaded_files]
+
+        for file_path in unloaded_histogram_files:
             self._context.add_run_from_histogram_file(file_path,
                                                       meta=self._formats[file_path], stop_signal=True)
+            self._plot_context.add_style_for_run(self._context.get_run_by_filename(file_path), True, True, True)
 
-        for file_path in self.asymmetry_files:
+        for file_path in unloaded_asymmetry_files:
             self._context.add_run_from_asymmetry_file(file_path, stop_signal=True)
+            self._plot_context.add_style_for_run(self._context.get_run_by_filename(file_path), True, True, True)
 
         self._context.send_signal()
 

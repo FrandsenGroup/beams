@@ -1,7 +1,7 @@
 
 from enum import Enum
 
-from util import muon, files
+from app.model import muon, files
 
 
 class MuonDataContext:
@@ -23,6 +23,9 @@ class MuonDataContext:
     def __init__(self):
         if not MuonDataContext.__instance:
             MuonDataContext.__instance = MuonDataContext.__DataStore()
+
+    def get_runs(self):
+        return self.__instance.runs
 
     def get_run_by_filename(self, filename):
         """
@@ -54,8 +57,9 @@ class MuonDataContext:
         :param run_id: ID of a run
         :return run:
         """
+
         for run in self.__instance.runs:
-            if run.file == run_id:
+            if run.id == run_id:
                 return run
 
     def remove_runs_by_id(self, run_ids, stop_signal=None):
@@ -71,6 +75,17 @@ class MuonDataContext:
 
         if not stop_signal:
             self.__instance.notifier.notify()
+
+    def get_loaded_run_files(self):
+        return [run.file for run in self.__instance.runs]
+
+    def get_run_id_by_filename(self, filenames):
+        run_ids = []
+        for filename in filenames:
+            for run in self.__instance.runs:
+                if run.file == filename:
+                    run_ids.append(run.id)
+        return run_ids
 
     def add_run(self, run, stop_signal=None):
         """
@@ -114,6 +129,14 @@ class MuonDataContext:
         :param stop_signal: optional parameter to prevent sending update signal to presenters
         """
         self.__instance.runs = []
+
+        if not stop_signal:
+            self.__instance.notifier.notify()
+
+    def apply_correction_to_runs_by_id(self, run_ids, alpha, beta=None, stop_signal=None):
+        for run_id in run_ids:
+            run = self.get_run_by_id(run_id)
+            muon.correct_muon_asymmetry(run, alpha, beta)
 
         if not stop_signal:
             self.__instance.notifier.notify()
@@ -193,26 +216,68 @@ class PlotContext:
         LINE_COLOR = 7
         MARKER_COLOR = 8
         FILLSTYLE = 9
+        DEFAULT_COLOR = 10
+        LINESTYLE = 11
+        LINE_WIDTH = 12
+        MARKER_SIZE = 13
+        ERRORBAR_STYLE = 14
+        ERRORBAR_COLOR = 15
+        ERRORBAR_WIDTH = 16
 
     __instance = None
 
-    _color_options_values = {'Blue': '#0000ff', 'Red': '#ff0000', 'Purple': '#9900ff', 'Green': '#009933',
+    color_options_values = {'Blue': '#0000ff', 'Red': '#ff0000', 'Purple': '#9900ff', 'Green': '#009933',
                             'Orange': '#ff9900', 'Maroon': '#800000', 'Pink': '#ff66ff', 'Dark Blue': '#000099',
                             'Dark Green': '#006600', 'Light Blue': '#0099ff', 'Light Purple': '#cc80ff',
                             'Dark Orange': '#ff6600', 'Yellow': '#ffcc00', 'Light Red': '#ff6666',
                             'Light Green': '#00cc66'}
+    color_options = {v: k for k, v in color_options_values.items()}
 
-    _color_options = {v: k for k, v in _color_options_values.items()}
-    _unused_colors = _color_options.copy()
+    color_options_extra_values = {'Default': 'Default', 'Blue': '#0000ff', 'Red': '#ff0000', 'Purple': '#9900ff',
+                                  'Orange': '#ff9900', 'Maroon': '#800000', 'Pink': '#ff66ff', 'Dark Blue': '#000099',
+                                  'Dark Green': '#006600', 'Light Blue': '#0099ff', 'Light Purple': '#cc80ff',
+                                  'Dark Orange': '#ff6600', 'Yellow': '#ffcc00', 'Light Red': '#ff6666',
+                                  'Light Green': '#00cc66', 'Green': '#009933'}
+
+    color_options_extra = {v: k for k, v in color_options_extra_values.items()}
+
+    marker_options_values = {'point': '.', 'triangle_down': 'v', 'triangle_up': '^', 'triangle_left': '<',
+                              'triangle_right': '>', 'octagon': '8', 'square': 's', 'pentagon': 'p',
+                              'plus': 'P',
+                              'star': '*', 'hexagon_1': 'h', 'hexagon_2': 'H', 'x': 'X', 'diamond': 'D',
+                              'thin_diamond': 'd'}
+
+    marker_options = {v: k for k, v in marker_options_values.items()}
+
+    linestyle_options_values = {'Solid': '-', 'Dashed': '--', 'Dash-Dot': '-.', 'Dotted': ':', 'None': ''}
+
+    linestyle_options = {v: k for k, v in linestyle_options_values.items()}
+
+    line_width_options_values = {'Very Thin': 1, 'Thin': 2, 'Medium': 3, 'Thick': 4, 'Very Thick': 5}
+
+    line_width_options = {v: k for k, v in line_width_options_values.items()}
+
+    marker_size_options_values = {'Very Thin': 1, 'Thin': 2, 'Medium': 3, 'Thick': 4, 'Very Thick': 5}
+
+    marker_size_options = {v: k for k, v in marker_size_options_values.items()}
+
+    fillstyle_options_values = {'Full': 'full', 'Left': 'left', 'Right': 'right', 'Bottom': 'bottom',
+                         'Top': 'top', 'None': 'none'}
+
+    fillstyle_options = {v: k for k, v in fillstyle_options_values.items()}
+
+    errorbar_styles_values = {'Caps': 'Caps', 'No Caps': 'No Caps', 'No Bars': 'No Bars'}
+
+    errorbar_styles = {v: k for k, v in errorbar_styles_values.items()}
+
+    errorbar_width_values = {'Very Thin': 1, 'Thin': 2, 'Medium': 3, 'Thick': 4, 'Very Thick': 5}
+
+    errorbar_width = {v: k for k, v in errorbar_width_values.items()}
+
+    _unused_colors = color_options.copy()
     _used_colors = dict()
 
-    _marker_options_values = {'point': '.', 'triangle_down': 'v', 'triangle_up': '^', 'triangle_left': '<',
-                             'triangle_right': '>', 'octagon': '8', 'square': 's', 'pentagon': 'p',
-                             'plus': 'P',
-                             'star': '*', 'hexagon_1': 'h', 'hexagon_2': 'H', 'x': 'X', 'diamond': 'D',
-                             'thin_diamond': 'd'}
-
-    _marker_options = {v: k for k, v in _marker_options_values.items()}
+    _marker_options = {v: k for k, v in marker_options_values.items()}
     _unused_markers = _marker_options.copy()
     _used_markers = dict()
 
@@ -221,17 +286,21 @@ class PlotContext:
             PlotContext.__instance = PlotContext.__DataStore()
 
     def get_style_by_run_id(self, run_id):
-        return self.__instance.styles[run_id]
+        try:
+            return self.__instance.styles[run_id]
+        except KeyError:
+            return None
 
     def get_visible_styles(self):
-        visible_styles = set()
-        for style in self.__instance.styles:
+        visible_styles = []
+        for key in self.__instance.styles:
+            style = self.__instance.styles[key]
             if style[PlotContext.Keys.VISIBLE]:
-                visible_styles.add(style)
+                visible_styles.append(style)
         return visible_styles
 
     def add_style_for_run(self, run, visible=True, error_bars=True, stop_signal=False):
-        if self.get_style_by_run_id(run.run_id):
+        if self.get_style_by_run_id(run.id):
             return
 
         if len(self._unused_markers.keys()) == 0:
@@ -245,61 +314,102 @@ class PlotContext:
         self._update_colors(color, True)
 
         style = dict()
-        style[PlotContext.Keys.ID] = run.run_id
+        style[PlotContext.Keys.ID] = run.id
         style[PlotContext.Keys.LABEL] = run.meta[files.TITLE_KEY]
         style[PlotContext.Keys.ERROR_BARS] = error_bars
         style[PlotContext.Keys.VISIBLE] = visible
         style[PlotContext.Keys.LINE] = 'none'
         style[PlotContext.Keys.MARKER] = marker
-        style[PlotContext.Keys.LINE_COLOR] = color
-        style[PlotContext.Keys.MARKER_COLOR] = color
+        style[PlotContext.Keys.LINE_COLOR] = 'Default'
+        style[PlotContext.Keys.MARKER_COLOR] = 'Default'
         style[PlotContext.Keys.FILLSTYLE] = 'none'
+        style[PlotContext.Keys.DEFAULT_COLOR] = color
+        style[PlotContext.Keys.LINESTYLE] = ''
+        style[PlotContext.Keys.LINE_WIDTH] = 3
+        style[PlotContext.Keys.MARKER_SIZE] = 3
+        style[PlotContext.Keys.ERRORBAR_STYLE] = 'No Caps'
+        style[PlotContext.Keys.ERRORBAR_COLOR] = 'Default'
+        style[PlotContext.Keys.ERRORBAR_WIDTH] = 3
 
-        self.__instance.styles[run.run_id] = style
+        self.__instance.styles[run.id] = style
 
         if not stop_signal:
             self.__instance.notifier.notify()
 
-    def change_color_for_run(self, run, color, stop_signal=None):
-        color = self._color_options_values[color]
+    def change_color_for_run(self, run_id, color, stop_signal=None):
+        style = self.get_style_by_run_id(run_id)
+        color = self.color_options_values[color]
         if color in self._unused_colors.keys():
             self._update_colors(color=color, used=True)
-        if run.style.color in self._used_colors.keys():
-            self._update_colors(color=run.style.color, used=False)
-        if run.style.color == color:
+        if style[PlotContext.Keys.DEFAULT_COLOR] in self._used_colors.keys():
+            self._update_colors(color=style[PlotContext.Keys.DEFAULT_COLOR], used=False)
+        if style[PlotContext.Keys.DEFAULT_COLOR] == color:
             return
 
-        style = self.get_style_by_run_id(run.run_id)
-        style[PlotContext.Keys.MARKER_COLOR] = color
-        style[PlotContext.Keys.LINE_COLOR] = color
+        style[PlotContext.Keys.DEFAULT_COLOR] = color
+        style[PlotContext.Keys.LINE_COLOR] = 'Default'
+        style[PlotContext.Keys.ERRORBAR_COLOR] = 'Default'
+        style[PlotContext.Keys.MARKER_COLOR] = 'Default'
 
         if not stop_signal:
             self.__instance.notifier.notify()
 
-    def change_marker_for_run(self, run, marker, stop_signal=None):
-        marker = self._marker_options_values[marker]
-
+    def change_marker_for_run(self, run_id, marker, stop_signal=None):
+        style = self.get_style_by_run_id(run_id)
+        marker = self.marker_options_values[marker]
         if marker in self._unused_markers.keys():
             self._update_markers(marker=marker, used=True)
 
-        if run.style.marker in self._used_markers.keys():
-            self._update_markers(marker=run.style.marker, used=False)
-        if run.style.marker == marker:
+        if style[PlotContext.Keys.MARKER] in self._used_markers.keys():
+            self._update_markers(marker=style[PlotContext.Keys.MARKER], used=False)
+        if style[PlotContext.Keys.MARKER] == marker:
             return
 
-        style = self.get_style_by_run_id(run.run_id)
+        style = self.get_style_by_run_id(run_id)
         style[PlotContext.Keys.MARKER] = marker
 
         if not stop_signal:
             self.__instance.notifier.notify()
 
     def change_visibilities(self, visible, run_id=None, stop_signal=None):
-        if run_id:
-            style = self.get_style_by_run_id(run_id)
-            style[PlotContext.Keys.VISIBLE] = visible
-        else:
-            for style in self.__instance.styles:
+        if run_id is not None:
+            for rid in run_id:
+                style = self.get_style_by_run_id(rid)
                 style[PlotContext.Keys.VISIBLE] = visible
+        else:
+            for style in self.__instance.styles.values():
+                style[PlotContext.Keys.VISIBLE] = visible
+
+        if not stop_signal:
+            self.__instance.notifier.notify()
+
+    def change_style_parameter(self, run_ids, key, option_key, stop_signal=None):
+        for run_id in run_ids:
+            style = self.get_style_by_run_id(run_id)
+
+            if style is None:
+                return
+
+            if key == PlotContext.Keys.LINESTYLE:
+                style[key] = self.linestyle_options_values[option_key]
+            elif key == PlotContext.Keys.ERRORBAR_COLOR or \
+                    key == PlotContext.Keys.MARKER_COLOR or \
+                    key == PlotContext.Keys.LINE_COLOR:
+                style[key] = self.color_options_extra_values[option_key]
+            elif key == PlotContext.Keys.ERRORBAR_WIDTH:
+                style[key] = self.errorbar_width_values[option_key]
+            elif key == PlotContext.Keys.LINE_WIDTH:
+                style[key] = self.line_width_options_values[option_key]
+            elif key == PlotContext.Keys.MARKER_SIZE:
+                style[key] = self.marker_size_options_values[option_key]
+            elif key == PlotContext.Keys.ERRORBAR_STYLE:
+                style[key] = self.errorbar_styles_values[option_key]
+            elif key == PlotContext.Keys.MARKER:
+                self.change_marker_for_run(run_id, option_key, True)
+            elif key == PlotContext.Keys.FILLSTYLE:
+                style[key] = self.fillstyle_options_values[option_key]
+            elif key == PlotContext.Keys.DEFAULT_COLOR:
+                self.change_color_for_run(run_id, option_key, True)
 
         if not stop_signal:
             self.__instance.notifier.notify()
@@ -310,6 +420,9 @@ class PlotContext:
 
         if not stop_signal:
             self.__instance.notifier.notify()
+
+    def get_styles(self):
+        return self.__instance.styles
 
     def _update_markers(self, marker, used):
         if used:
@@ -327,12 +440,12 @@ class PlotContext:
     def _update_colors(self, color, used):
         if used:
             if color not in self._used_colors.keys():
-                self._used_colors[color] = self._color_options[color]
+                self._used_colors[color] = self.color_options[color]
             if color in self._unused_colors.keys():
                 self._unused_colors.pop(color)
         else:
             if color not in self._unused_colors.keys():
-                self._unused_colors[color] = self._color_options[color]
+                self._unused_colors[color] = self.color_options[color]
             if color in self._used_colors.keys():
                 self._used_colors.pop(color)
         return True
@@ -340,14 +453,14 @@ class PlotContext:
     def clear_plot_parameters(self, run_id=None, stop_signal=None):
         if run_id:
             style = self.get_style_by_run_id(run_id)
-            self.__instance.styles.remove(style)
+            self.__instance.styles.pop(run_id)
             self._update_markers(style[PlotContext.Keys.MARKER], False)
-            self._update_colors(style[PlotContext.Keys.MARKER_COLOR], False)
+            self._update_colors(style[PlotContext.Keys.DEFAULT_COLOR], False)
         else:
             for style in self.__instance.styles:
                 self._update_markers(style[PlotContext.Keys.MARKER], False)
-                self._update_colors(style[PlotContext.Keys.MARKER_COLOR], False)
-            self.__instance.styles = set()
+                self._update_colors(style[PlotContext.Keys.DEFAULT_COLOR], False)
+            self.__instance.styles = dict()
 
         if not stop_signal:
             self.__instance.notifier.notify()

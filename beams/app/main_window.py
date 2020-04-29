@@ -3,6 +3,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 
 from app.panel_file_manager import FileManagerPanel
 from app.panel_muon_plot import MuonPlotPanel
+from app.panel_run_display import MuonRunPanel
 
 
 # noinspection PyArgumentList
@@ -16,7 +17,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super(MainWindow, self).__init__(flags=QtCore.Qt.WindowFlags())
         self.presenter = MainWindowPresenter()  # Connect to Presenter
 
-        self.setGeometry(50, 50, 900, 900)
+        self.setGeometry(50, 50, 950, 950)
         self.setWindowTitle("BEAMS | Basic and Effective Analysis for Muon Spin-Spectroscopy")
         self.statusBar()
 
@@ -47,10 +48,19 @@ class MainWindow(QtWidgets.QMainWindow):
         Sets the default panels of the main window for µSR analysis.
         """
         self._file_manager = FileManagerPanel()
+        self._file_manager.setFixedHeight(200)
+        self._file_manager.setFixedWidth(280)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self._file_manager)
 
         self._plot_panel_one = MuonPlotPanel()
-        self.setCentralWidget(self._plot_panel_one)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self._plot_panel_one, QtCore.Qt.Horizontal)
+
+        self._plot_panel_two = MuonPlotPanel()
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self._plot_panel_two, QtCore.Qt.Horizontal)
+
+        self._run_panel = MuonRunPanel()
+        self._run_panel.setFixedWidth(280)
+        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self._run_panel)
 
     def set_status_message(self, message):
         """

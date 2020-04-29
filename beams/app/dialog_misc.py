@@ -3,8 +3,10 @@ import socket
 import enum
 
 from PyQt5 import QtWidgets, QtCore
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
+from matplotlib.figure import Figure
 
-from util import widgets
+from app.util import widgets
 
 
 # noinspection PyArgumentList
@@ -136,4 +138,73 @@ class PermissionsMessageDialog(QtWidgets.QDialog):
     @staticmethod
     def launch(args):
         dialog = PermissionsMessageDialog(args)
+        return dialog.exec()
+
+
+# noinspection PyArgumentList
+class IntegrationDisplayDialog(QtWidgets.QDialog):
+    class IntegrationCanvas(FigureCanvas):
+        def __init__(self):
+            self._draw_pending = True
+            self._is_drawing = True
+            FigureCanvas.__init__(self, Figure())
+            self.canvas_axes = self.figure.add_subplot(111, label='Canvas')
+
+    class IntegrationToolbar(NavigationToolbar2QT):
+        # only display the buttons we need
+        NavigationToolbar2QT.toolitems = (
+            ('Home', 'Reset original view', 'home', 'home'),
+            ('Back', 'Back to previous view', 'back', 'back'),
+            ('Forward', 'Forward to next view', 'forward', 'forward'),
+            # (None, None, None, None),
+            ('Pan', 'Pan axes with left mouse, zoom with right', 'move', 'pan'),
+            ('Zoom', 'Zoom to rectangle', 'zoom_to_rect', 'zoom'),
+            # ('Subplots', 'Configure subplots', 'subplots', 'configure_subplots'),
+            # (None, None, None, None),
+            ('Save', 'Save the figure', 'filesave', 'save_figure'),
+        )
+
+    def __init__(self, args):
+        integration = args[0]
+        x_axis_label = args[1]
+        x_axis_data = args[2]
+
+        super(IntegrationDisplayDialog, self).__init__()
+        self._main = QtWidgets.QMainWindow()
+        self.canvas = IntegrationDisplayDialog.IntegrationCanvas()
+        self._main.addToolBar(IntegrationDisplayDialog.IntegrationToolbar(self.canvas, self._main))
+
+        layout = QtWidgets.QVBoxLayout()
+        self._main.setCentralWidget(self.canvas)
+        layout.addWidget(self._main)
+        self.setLayout(layout)
+
+        self.canvas.canvas_axes.plot(x_axis_data, integration, linestyle='None', marker='o')
+        self.canvas.canvas_axes.set_xlabel(x_axis_label)
+        self.canvas.canvas_axes.set_ylabel("Integrated Asymmetry")
+
+    @staticmethod
+    def launch(args):
+        dialog = IntegrationDisplayDialog(args)
+        return dialog.exec()
+
+
+# noinspection PyArgumentList
+class FileDisplayDialog(QtWidgets.QDialog):
+    def __init__(self, args):
+        super(FileDisplayDialog, self).__init__()
+        self.setWindowTitle(args[0])
+
+        text_edit = QtWidgets.QPlainTextEdit()
+        text_edit.setPlainText(args[1])
+        text_edit.setWordWrapMode(False)
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(text_edit)
+
+        self.setLayout(layout)
+        self.setGeometry(500, 300, 400, 400)
+
+    @staticmethod
+    def launch(args):
+        dialog = FileDisplayDialog(args)
         return dialog.exec()

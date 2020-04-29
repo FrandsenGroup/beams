@@ -3,9 +3,10 @@ import os
 
 from PyQt5 import QtWidgets, QtCore
 
-from util import widgets, files
-from app.model import FileContext, MuonDataContext
-from app.dialog_misc import AddFileDialog, WarningMessageDialog
+from app.util import widgets
+from app.model.model import FileContext, MuonDataContext, PlotContext
+from app.model import files
+from app.dialog_misc import AddFileDialog, WarningMessageDialog, PermissionsMessageDialog
 from app.dialog_musr_download import MusrDownloadDialog
 from app.dialog_plot_file import PlotFileDialog
 from app.dialog_write_data import WriteDataDialog
@@ -188,7 +189,12 @@ class FileManagerPanelPresenter:
             MusrDownloadDialog.launch()
 
     def _remove_file_clicked(self):
-        self._model.remove_files(self._view.get_checked_items())
+        checked_items = self._view.get_checked_items()
+
+        code = PermissionsMessageDialog.launch(["Remove {} file(s)?".format(len(checked_items))])
+
+        if code == PermissionsMessageDialog.Codes.OKAY:
+            self._model.remove_files(checked_items)
 
     def _convert_file_clicked(self):
         self._model.convert_files(self._view.get_checked_items())
@@ -239,6 +245,7 @@ class FileManagerPanelPresenter:
         self._view.add_items(self._model.get_file_titles())
 
     def update(self):
+        print('Updating the File Manager')
         self._view.clear_items()
         self._view.add_items(self._model.get_file_titles())
 
@@ -247,6 +254,7 @@ class FileManagerPanelModel:
     def __init__(self, observer=None):
         self._data_context = MuonDataContext()
         self._file_context = FileContext()
+        self._plot_context = PlotContext()
         self._file_context.subscribe(self)
 
         self._title_to_file_path = {}
@@ -255,11 +263,14 @@ class FileManagerPanelModel:
     def get_file_paths_from_titles(self, titles):
         return [self._title_to_file_path[title] for title in titles]
 
-    def remove_files(self, file_paths):
-        self._file_context.remove_files([self._title_to_file_path[title] for title in file_paths])
-
-        for title in file_paths:
-            self._title_to_file_path.pop(title)
+    def remove_files(self, titles):
+        files_to_remove = [self._title_to_file_path[title] for title in titles]
+        for file_path in files_to_remove:
+            run = self._data_context.get_run_by_filename(file_path)
+            if run is not None:
+                self._plot_context.clear_plot_parameters(run.id, stop_signal=True)
+        self._file_context.remove_files(files_to_remove)
+        self._data_context.remove_runs_by_filename(files_to_remove)
 
     def add_files(self, file_paths):
         for file_path in file_paths:

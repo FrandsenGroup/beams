@@ -1,16 +1,33 @@
 
 import threading
+import warnings
 
 from PyQt5 import QtWidgets, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
+import numpy as np
 
-from util import muon
-from app.model import PlotContext, MuonDataContext
+from app.model.model import PlotContext, MuonDataContext
+from app.model import muon
+from app.dialog_misc import WarningMessageDialog
 
 
 # noinspection PyArgumentList
 class MuonPlotPanel(QtWidgets.QDockWidget):
+    # noinspection PyArgumentList
+    class PlotToolbar(NavigationToolbar2QT):
+        NavigationToolbar2QT.toolitems = (
+            ('Home', 'Reset original view', 'home', 'home'),
+            ('Back', 'Back to previous view', 'back', 'back'),
+            ('Forward', 'Forward to next view', 'forward', 'forward'),
+            # (None, None, None, None),
+            ('Pan', 'Pan axes with left mouse, zoom with right', 'move', 'pan'),
+            ('Zoom', 'Zoom to rectangle', 'zoom_to_rect', 'zoom'),
+            # ('Subplots', 'Configure subplots', 'subplots', 'configure_subplots'),
+            # (None, None, None, None),
+            ('Save', 'Save the figure', 'filesave', 'save_figure'),
+        )
+
     # noinspection PyArgumentList
     class PlotDisplay(FigureCanvas):
         def __init__(self):
@@ -238,11 +255,20 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
         self._display = MuonPlotPanel.PlotDisplay()
         self._control = MuonPlotPanel.PlotControl()
 
+        self._control.setFixedHeight(130)
+
+        # This insanity is all because dock widgets can't have toolbars.
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self._display)
         layout.addWidget(self._control)
-        widget = QtWidgets.QWidget()
-        widget.setLayout(layout)
+        dock_central_widget = QtWidgets.QWidget()
+        dock_central_widget.setLayout(layout)
+        dock_widget = QtWidgets.QDockWidget()
+        dock_widget.setTitleBarWidget(QtWidgets.QWidget())
+        dock_widget.setWidget(dock_central_widget)
+        widget = QtWidgets.QMainWindow()
+        widget.setCentralWidget(dock_widget)
+        widget.addToolBar(QtCore.Qt.TopToolBarArea, MuonPlotPanel.PlotToolbar(self._display, widget))
         self.setWidget(widget)
 
         self._presenter = MuonPlotPanelPresenter(self)
@@ -264,6 +290,11 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
         self._control.slider_bin.sliderMoved.connect(lambda: slot(moving=True))
         self._control.slider_bin.sliderReleased.connect(lambda: slot(moving=False))
         self._control.input_bin.returnPressed.connect(lambda: slot(moving=False))
+
+    def connect_check_parameters_to_slot(self, slot):
+        self._control.check_freq_yauto.stateChanged.connect(lambda: slot())
+        self._control.check_freq_xauto.stateChanged.connect(lambda: slot())
+        self._control.check_time_yauto.stateChanged.connect(lambda: slot())
 
     def get_max_time(self):
         return float(self._control.input_time_xmax.text())
@@ -287,13 +318,13 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
         return float(self._control.input_freq_ymax.text())
 
     def get_min_fft(self):
-        return float(self._control.input_freq_ymin.tex())
+        return float(self._control.input_freq_ymin.text())
 
     def get_bin_from_input(self):
         return float(self._control.input_bin.text())
 
     def get_bin_from_slider(self):
-        return float(self._control.slider_bin.text())
+        return float(self._control.slider_bin.value())
 
     def is_asymmetry_auto(self):
         return self._control.check_time_yauto.isChecked()
@@ -304,29 +335,41 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
     def is_freq_auto(self):
         return self._control.check_freq_xauto.isChecked()
 
+    def set_enabled_asymmetry_auto(self, enabled):
+        self._control.input_time_ymin.setEnabled(enabled)
+        self._control.input_time_ymax.setEnabled(enabled)
+
+    def set_enabled_frequency_auto(self, enabled):
+        self._control.input_freq_xmin.setEnabled(enabled)
+        self._control.input_freq_xmax.setEnabled(enabled)
+
+    def set_enabled_fft_auto(self, enabled):
+        self._control.input_freq_ymin.setEnabled(enabled)
+        self._control.input_freq_ymax.setEnabled(enabled)
+
     def set_max_time(self, value):
-        self._control.input_time_xmax.setText(str(value))
+        self._control.input_time_xmax.setText('{0:.3f}'.format(value))
 
     def set_min_time(self, value):
-        self._control.input_time_xmin.setText(str(value))
+        self._control.input_time_xmin.setText('{0:.3f}'.format(value))
 
     def set_max_freq(self, value):
-        self._control.input_freq_xmax.setText(str(value))
+        self._control.input_freq_xmax.setText('{0:.3f}'.format(value))
 
     def set_min_freq(self, value):
-        self._control.input_freq_xmin.setText(str(value))
+        self._control.input_freq_xmin.setText('{0:.3f}'.format(value))
 
     def set_max_asymmetry(self, value):
-        self._control.input_time_ymax.setText(str(value))
+        self._control.input_time_ymax.setText('{0:.3f}'.format(value))
 
     def set_min_asymmetry(self, value):
-        self._control.input_time_ymin.setText(str(value))
+        self._control.input_time_ymin.setText('{0:.3f}'.format(value))
 
     def set_max_fft(self, value):
-        self._control.input_freq_ymax.setText(str(value))
+        self._control.input_freq_ymax.setText('{0:.1f}'.format(value))
 
     def set_min_fft(self, value):
-        self._control.input_freq_ymin.setText(str(value))
+        self._control.input_freq_ymin.setText('{0:.1f}'.format(value))
 
     def set_bin_input(self, value):
         self._control.input_bin.setText(str(value))
@@ -335,7 +378,7 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
         self._control.slider_bin.setValue(int(value))
 
     def plot_asymmetry(self, time, asymmetry, uncertainty, color, marker, linestyle, fillstyle):
-        if uncertainty:
+        if uncertainty is not None:
             self._display.axes_time.errorbar(time, asymmetry, uncertainty, color=color, marker=marker,
                                              linestyle=linestyle, fillstyle=fillstyle)
         else:
@@ -345,27 +388,87 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
     def plot_fft(self, frequencies, fft, color, label):
         self._display.axes_freq.plot(frequencies, fft, color=color, label=label)
 
-    def _set_asymmetry_plot_limits(self):
-        pass
+    def set_asymmetry_plot_limits(self, max_asymmetry, min_asymmetry):
+        if not self.is_asymmetry_auto():
+            try:
+                y_min = self.get_min_asymmetry()
+                y_max = self.get_max_asymmetry()
+            except ValueError:
+                WarningMessageDialog.launch(["Invalid asymmetry limits."])
+                return
+            self._display.axes_time.set_ylim(y_min, y_max)
+        else:
+            y_min = min_asymmetry - abs(min_asymmetry * 0.1)
+            y_max = max_asymmetry + abs(max_asymmetry * 0.1)
+            self._display.axes_time.set_ylim(y_min, y_max)
+            self.set_min_asymmetry(y_min)
+            self.set_max_asymmetry(y_max)
 
-    def _set_fft_plot_limits(self):
-        pass
+        try:
+            x_min = self.get_min_time()
+            x_max = self.get_max_time()
+        except ValueError:
+            WarningMessageDialog.launch(["Invalid asymmetry limits."])
+            return
+        self._display.axes_time.set_xlim(x_min, x_max)
 
-    def _display_x_limits(self):
-        pass
+    def set_fft_plot_limits(self, max_fft):
+        if not self.is_fft_auto():
+            try:
+                y_min = self.get_min_fft()
+                y_max = self.get_max_fft()
+            except ValueError:
+                WarningMessageDialog.launch(["Invalid frequency limits."])
+                return
+            self._display.axes_freq.set_ylim(y_min, y_max)
+        else:
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                self._display.axes_freq.set_ylim(0, max_fft * 1.1)
+            self.set_min_fft(0)
+            self.set_max_fft(max_fft * 1.1)
 
-    def _display_y_limits(self):
-        pass
+        if not self.is_freq_auto():
+            try:
+                x_min = self.get_min_freq()
+                x_max = self.get_max_freq()
+            except ValueError:
+                WarningMessageDialog.launch(["Invalid frequency limits."])
+                return
+            self._display.axes_freq.set_xlim(x_min, x_max)
+        else:
+            x_min, x_max = self._display.axes_freq.get_xlim()
+            self.set_min_freq(x_min)
+            self.set_max_freq(x_max)
+
+    def finish_plotting(self, remove_legend=False):
+        self._display.set_style(remove_legend)
+        self._display.axes_time.figure.canvas.draw()
+
+    def start_plotting(self):
+        self._display.axes_time.clear()
+        self._display.axes_freq.clear()
+
+    def set_blank(self):
+        self._display.set_blank()
+        self._display.axes_time.figure.canvas.draw()
 
 
 class MuonPlotPanelPresenter:
     def __init__(self, view: MuonPlotPanel):
         self._view = view
         self._model = MuonPlotPanelModel(self)
+        self._set_callbacks()
 
     def _set_callbacks(self):
         self._view.connect_plot_parameters_to_slot(self._plot_parameter_changed)
         self._view.connect_bin_parameters_to_slot(self._bin_parameter_changed)
+        self._view.connect_check_parameters_to_slot(self._check_parameter_changed)
+
+    def _check_parameter_changed(self):
+        self._view.set_enabled_asymmetry_auto(not self._view.is_asymmetry_auto())
+        self._view.set_enabled_frequency_auto(not self._view.is_freq_auto())
+        self._view.set_enabled_fft_auto(not self._view.is_fft_auto())
 
     def _plot_parameter_changed(self):
         threading.Thread(target=self._update_canvas(fast=False), daemon=True).start()
@@ -375,7 +478,7 @@ class MuonPlotPanelPresenter:
             value = self._view.get_bin_from_slider()
             self._view.set_bin_input(value)
 
-            if value % 5 != 0:  # fixme, do we still need or want this? Check if it has a significant effect.
+            if value % 5 != 0:  # fixme
                 return
 
         else:
@@ -385,20 +488,50 @@ class MuonPlotPanelPresenter:
 
     def _update_canvas(self, fast=False):
         data = self._model.get_visible_run_data(self._view.get_bin_from_input(), fast)
+        self._view.start_plotting()
+        if len(data.items()) == 0:
+            self._view.set_blank()
+            return
 
-        for style, time, asymmetry, uncertainty, frequencies, fft in data.items():
+        max_asymmetry = -1
+        min_asymmetry = 1
+        max_fft = 0
+        min_time = self._view.get_min_time()
+        max_time = self._view.get_max_time()
+        bin_size = self._view.get_bin_from_input()
+
+        for style, time, asymmetry, uncertainty in data.values():
+            # We have to do this logic because Matplotlib is not good at setting good default plot limits
+            frac_start = float(min_time) / (time[len(time) - 1] - time[0])
+            frac_end = float(max_time) / (time[len(time) - 1] - time[0])
+            start_index = int(np.floor(len(asymmetry) * frac_start))
+            end_index = int(np.floor(len(asymmetry) * frac_end))
+            local_max = np.max(asymmetry[start_index:end_index])
+            max_asymmetry = local_max if local_max > max_asymmetry else max_asymmetry
+            local_min = np.min(asymmetry[start_index:end_index])
+            min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
+
             self._view.plot_asymmetry(time, asymmetry, uncertainty,
-                                      style[PlotContext.Keys.LINE_COLOR],
+                                      style[PlotContext.Keys.DEFAULT_COLOR],
                                       style[PlotContext.Keys.MARKER],
                                       style[PlotContext.Keys.LINE],
                                       style[PlotContext.Keys.FILLSTYLE])
 
             if not fast:
+                frequencies, fft = self._model.get_fft_data(time, asymmetry, min_time, max_time, bin_size)
+                local_max = np.max(fft)
+                max_fft = local_max if local_max > max_fft else max_fft
+
                 self._view.plot_fft(frequencies, fft,
-                                    style[PlotContext.Keys.LINE_COLOR],
+                                    style[PlotContext.Keys.DEFAULT_COLOR],
                                     style[PlotContext.Keys.LABEL])
 
+        self._view.set_asymmetry_plot_limits(max_asymmetry, min_asymmetry)
+        self._view.set_fft_plot_limits(max_fft)
+        self._view.finish_plotting(fast)
+
     def update(self):
+        print('Updating the Plot Panel')
         threading.Thread(target=self._update_canvas(fast=False), daemon=True).start()
 
 
@@ -420,13 +553,23 @@ class MuonPlotPanelModel:
             asymmetry = muon.bin_muon_asymmetry(run, bin_size)
             time = muon.bin_muon_time(run, bin_size)
             uncertainty = None if fast else muon.bin_muon_uncertainty(run, bin_size)
-            frequencies, fft = None, None if fast else muon.calculate_muon_fft(asymmetry, time)
-            full_data[run.run_id] = [style, time, asymmetry, uncertainty, frequencies, fft]
+            full_data[run.id] = [style, time, asymmetry, uncertainty]
 
         return full_data
 
+    def get_fft_data(self, time, asymmetry, xmin, xmax, bin_size):
+        num_bins = self.get_num_bins(xmin, xmax, bin_size)
+        start_bin = self.get_start_bin(xmin, bin_size)
+        return muon.calculate_muon_fft(asymmetry[start_bin:start_bin + num_bins], time[start_bin:start_bin + num_bins])
+
+    def get_num_bins(self, xmin, xmax, bin_size):
+        return int((float(xmax)-float(xmin))/(float(bin_size)/1000))
+
+    def get_start_bin(self, xmin, bin_size):
+        return int(float(xmin) / (float(bin_size) / 1000))
+
     def update(self):
-        pass
+        self.notify()
 
     def notify(self):
         self._observer.update()
