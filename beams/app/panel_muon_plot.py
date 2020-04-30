@@ -270,7 +270,7 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
         widget.setCentralWidget(dock_widget)
         widget.addToolBar(QtCore.Qt.TopToolBarArea, MuonPlotPanel.PlotToolbar(self._display, widget))
         self.setWidget(widget)
-
+        self.setEnabled(False)
         self._presenter = MuonPlotPanelPresenter(self)
 
     def connect_plot_parameters_to_slot(self, slot):
@@ -450,6 +450,7 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
         self._display.axes_freq.clear()
 
     def set_blank(self):
+        self.setEnabled(False)
         self._display.set_blank()
         self._display.axes_time.figure.canvas.draw()
 
@@ -492,6 +493,8 @@ class MuonPlotPanelPresenter:
         if len(data.items()) == 0:
             self._view.set_blank()
             return
+        else:
+            self._view.setEnabled(True)
 
         max_asymmetry = -1
         min_asymmetry = 1

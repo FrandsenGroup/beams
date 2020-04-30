@@ -4,6 +4,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 from app.util import widgets
+from app.dialog_misc import WarningMessageDialog
 from app.model.model import MuonDataContext
 
 
@@ -38,7 +39,7 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         self._initial_t0 = args[2]
 
         self.histogram = args[3]
-        self.histogram_label = args[4]
+        self.histogram_label = args[5]
         self._bkg1 = args[0]
         self._bkg2 = args[1]
         self._t0 = args[2]
@@ -71,12 +72,11 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         self._set_widget_dimensions()
         self._set_widget_tooltips()
         self._set_widget_layout()
-        self.set_new_lines()
-
         self._main.setCentralWidget(widget)
         layout = QtWidgets.QVBoxLayout(self)
         layout.addWidget(self._main)
 
+        self.set_new_lines()
         self._presenter = HistogramDisplayPresenter(self)
 
     def set_new_lines(self, bkg1=None, bkg2=None, t0=None, thick=False):
@@ -199,6 +199,36 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         self.input_bkgd2.setEnabled(enabled)
         self.input_t0.setEnabled(enabled)
 
+    def get_input_bkgd1(self):
+        return int(self.input_bkgd1.text())
+
+    def get_input_bkgd2(self):
+        return int(self.input_bkgd2.text())
+
+    def get_input_t0(self):
+        return int(self.input_t0.text())
+
+    def get_bkgd1(self):
+        return self._bkg1
+
+    def get_bkgd2(self):
+        return self._bkg2
+
+    def get_t0(self):
+        return self._t0
+
+    def is_bkgd1(self):
+        return self.radio_bkgd_one.isChecked()
+
+    def is_bkgd2(self):
+        return self.radio_bkgd_two.isChecked()
+
+    def is_t0(self):
+        return self.radio_t0.isChecked()
+
+    def is_editing(self):
+        return self.check_editing.isChecked()
+
     @staticmethod
     def launch(args):
         dialog = HistogramDisplayDialog(args)
@@ -214,25 +244,67 @@ class HistogramDisplayPresenter:
         self._run = self._context.get_run_by_id(self._view.run_id)
         self._histogram = self._view.histogram
         self._histogram_label = self._view.histogram_label
+        self._set_callbacks()
 
     def _set_callbacks(self):
-        pass
+        self._view.canvas.figure.canvas.mpl_connect('button_press_event', self._mouse_interaction)
+        self._view.canvas.figure.canvas.mpl_connect('button_release_event', self._mouse_interaction)
+        self._view.canvas.figure.canvas.mpl_connect('motion_notify_event', self._mouse_interaction)
+        self._view.button_reset.released.connect(self._reset_clicked)
+        self._view.button_save.released.connect(self._save_clicked)
+        self._view.check_editing.stateChanged.connect(self._editing_checked)
+        self._view.input_t0.returnPressed.connect(lambda: self._input_changed('t0', self._view.get_input_t0()))
+        self._view.input_bkgd1.returnPressed.connect(lambda: self._input_changed('bkgd1', self._view.get_input_bkgd1()))
+        self._view.input_bkgd2.returnPressed.connect(lambda: self._input_changed('bkgd2', self._view.get_input_bkgd2()))
 
-    def _mouse_interaction(self):
-        pass
+    def _mouse_interaction(self, event):
+        if not self.__editing:
+            return
+
+        if event.button is not None:
+            self.__pressed = True
+
+            thick = True if event.name != 'button_release_event' else False
+
+            if self._view.is_bkgd1() and self._view.get_bkgd2() > event.xdata > 0:
+                self._view.set_new_lines(bkg1=int(event.xdata), thick=thick)
+
+            elif self._view.is_bkgd2() and event.xdata > self._view.get_bkgd1():
+                self._view.set_new_lines(bkg2=int(event.xdata), thick=thick)
+
+            elif self._view.is_t0() and event.xdata > 0:
+                self._view.set_new_lines(t0=int(event.xdata), thick=thick)
+
+        elif event.button is None and self.__pressed:
+            self.__pressed = False
 
     def _reset_clicked(self):
-        pass
+        self._view.reset()
 
     def _save_clicked(self):
-        pass
+        self._run.meta['BkgdOne'][self._histogram_label] = self._view.get_bkgd1()
+        self._run.meta['BkgdTwo'][self._histogram_label] = self._view.get_bkgd2()
+        self._run.meta['T0'][self._histogram_label] = self._view.get_t0()
+        self._view.done(0)
+        self._context.reload_run_by_id(self._run.id)
 
     def _editing_checked(self):
-        pass
+        self.__editing = self._view.is_editing()
+        self._view.set_enabled(self.__editing)
 
-    def _option_changed(self):
-        pass
+    def _input_changed(self, input_box, input_value):
+        try:
+            val = int(input_value)
+        except ValueError:
+            WarningMessageDialog.launch(["Invalid input. Should be an integer."])
+            return
 
-    def _input_changed(self):
-        pass
+        if input_box == "bkgd1" and val < self._view.get_input_bkgd2():
+            self._view.set_new_lines(bkg1=val)
+
+        if input_box == "bkgd2" and val > self._view.get_input_bkgd1():
+            self._view.set_new_lines(bkg2=val)
+
+        if input_box == "t0" and val > 0:
+            self._view.set_new_lines(t0=val)
 

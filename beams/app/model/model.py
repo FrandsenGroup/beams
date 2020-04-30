@@ -79,6 +79,25 @@ class MuonDataContext:
     def get_loaded_run_files(self):
         return [run.file for run in self.__instance.runs]
 
+    def reload_run_by_id(self, run_id, stop_signal=None):
+        run = self.get_run_by_id(run_id)
+        reader = files.file(run.file)
+
+        if reader.DATA_FORMAT == files.Format.ASYMMETRY:
+            new_run = muon.build_muon_run_from_asymmetry_file(run.file, run.meta)
+        elif reader.DATA_FORMAT == files.Format.HISTOGRAM:
+            new_run = muon.build_muon_run_from_histogram_file(run.file, run.meta)
+        else:
+            return
+
+        new_run.id = run.id
+        for i, run2 in enumerate(self.__instance.runs):
+            if run2.id == run.id:
+                self.__instance.runs[i] = new_run
+
+        if not stop_signal:
+            self.__instance.notifier.notify()
+
     def get_run_id_by_filename(self, filenames):
         run_ids = []
         for filename in filenames:

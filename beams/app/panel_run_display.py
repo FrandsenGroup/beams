@@ -260,6 +260,11 @@ class MuonRunPanel(QtWidgets.QDockWidget):
     def add_run_titles(self, run_titles):
         self.run_list.addItems(run_titles)
 
+    def remove_run_titles(self, run_titles):
+        for i in range(self.run_list.count()-1, -1, -1):
+            if self.run_list.item(i).text() in run_titles:
+                self.run_list.takeItem(i)
+
     def get_run_titles(self):
         return [self.run_list.item(i).text() for i in range(self.run_list.count())]
 
@@ -524,7 +529,12 @@ class MuonRunPanelPresenter:
 
     def _see_histogram_clicked(self):
         run = list(self._runs.values())[0]
-        HistogramDisplayDialog.launch([2, 4, 5, [0,1,2,3,4,5,6,7,8], run.run_id, self._view.get_histogram_label()])
+        file = files.file(run.file)
+        histogram_label = self._view.get_histogram_label()
+        bkgd1 = int(run.meta['BkgdOne'][histogram_label])
+        bkgd2 = int(run.meta['BkgdTwo'][histogram_label])
+        t0 = int(run.meta['T0'][histogram_label])
+        HistogramDisplayDialog.launch([bkgd1, bkgd2, t0, file.read_data()[histogram_label], run.id, histogram_label])
 
     def _plot_parameter_changed(self, key, value):
         selected_items = self._view.get_selected_titles()
@@ -657,12 +667,15 @@ class MuonRunPanelPresenter:
 
         current_titles = self._view.get_run_titles()
         new_titles = [title for title in run_titles if title not in current_titles]
+        old_titles = [title for title in current_titles if title not in run_titles]
         self._view.add_run_titles(new_titles)
+        self._view.remove_run_titles(old_titles)
 
         if not self._view.isEnabled():
             self._view.setEnabled(True)
             self._view.set_first_selected()
-            self._populate_settings()
+
+        self._populate_settings()
 
 
 class MuonRunPanelModel:
@@ -677,6 +690,9 @@ class MuonRunPanelModel:
 
     def get_current_titles(self):
         return [run.meta[files.TITLE_KEY] for run in self._data_context.get_runs()]
+
+    def get_current_run_ids(self):
+        return [run.id for run in self._data_context.get_runs()]
 
     def get_run_by_title(self, titles):
         runs = dict()
