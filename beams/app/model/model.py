@@ -276,7 +276,7 @@ class PlotContext:
 
     line_width_options = {v: k for k, v in line_width_options_values.items()}
 
-    marker_size_options_values = {'Very Thin': 1, 'Thin': 2, 'Medium': 3, 'Thick': 4, 'Very Thick': 5}
+    marker_size_options_values = {'Very Thin': 1, 'Thin': 3, 'Medium': 5, 'Thick': 6, 'Very Thick': 9}
 
     marker_size_options = {v: k for k, v in marker_size_options_values.items()}
 
@@ -344,11 +344,11 @@ class PlotContext:
         style[PlotContext.Keys.FILLSTYLE] = 'none'
         style[PlotContext.Keys.DEFAULT_COLOR] = color
         style[PlotContext.Keys.LINESTYLE] = ''
-        style[PlotContext.Keys.LINE_WIDTH] = 3
-        style[PlotContext.Keys.MARKER_SIZE] = 3
+        style[PlotContext.Keys.LINE_WIDTH] = 1
+        style[PlotContext.Keys.MARKER_SIZE] = 5
         style[PlotContext.Keys.ERRORBAR_STYLE] = 'No Caps'
         style[PlotContext.Keys.ERRORBAR_COLOR] = 'Default'
-        style[PlotContext.Keys.ERRORBAR_WIDTH] = 3
+        style[PlotContext.Keys.ERRORBAR_WIDTH] = 1
 
         self.__instance.styles[run.id] = style
 

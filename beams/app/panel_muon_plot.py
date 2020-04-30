@@ -377,13 +377,22 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
     def set_bin_slider(self, value):
         self._control.slider_bin.setValue(int(value))
 
-    def plot_asymmetry(self, time, asymmetry, uncertainty, color, marker, linestyle, fillstyle):
+    def plot_asymmetry(self, time, asymmetry, uncertainty, color, marker_color, line_color, errorbar_color,
+                       linestyle, marker, errorbar_style, fillstyle, line_width, marker_size, errorbar_width):
+
+        marker_color = color if marker_color == 'Default' else marker_color
+        line_color = color if line_color == 'Default' else line_color
+        errorbar_color = color if errorbar_color == 'Default' else errorbar_color
+
         if uncertainty is not None:
-            self._display.axes_time.errorbar(time, asymmetry, uncertainty, color=color, marker=marker,
-                                             linestyle=linestyle, fillstyle=fillstyle)
+            print(uncertainty)
+            self._display.axes_time.errorbar(time, asymmetry, uncertainty, mfc=marker_color, mec=marker_color,
+                                             color=color, linestyle=linestyle, marker=marker, fillstyle=fillstyle,
+                                             linewidth=line_width, markersize=marker_size, elinewidth=errorbar_width)
         else:
-            self._display.axes_time.plot(time, asymmetry, color=color, marker=marker, linestyle=linestyle,
-                                         fillstyle=fillstyle)
+            self._display.axes_time.plot(time, asymmetry, mfc=marker_color, mec=marker_color, color=color,
+                                         linestyle=linestyle, marker=marker, fillstyle=fillstyle, linewidth=line_width,
+                                         markersize=marker_size)
 
     def plot_fft(self, frequencies, fft, color, label):
         self._display.axes_freq.plot(frequencies, fft, color=color, label=label)
@@ -515,10 +524,17 @@ class MuonPlotPanelPresenter:
             min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
 
             self._view.plot_asymmetry(time, asymmetry, uncertainty,
-                                      style[PlotContext.Keys.DEFAULT_COLOR],
-                                      style[PlotContext.Keys.MARKER],
-                                      style[PlotContext.Keys.LINE],
-                                      style[PlotContext.Keys.FILLSTYLE])
+                                      color=style[PlotContext.Keys.DEFAULT_COLOR],
+                                      marker=style[PlotContext.Keys.MARKER],
+                                      linestyle=style[PlotContext.Keys.LINESTYLE],
+                                      fillstyle=style[PlotContext.Keys.FILLSTYLE],
+                                      marker_color=style[PlotContext.Keys.MARKER_COLOR],
+                                      marker_size=style[PlotContext.Keys.MARKER_SIZE],
+                                      line_color=style[PlotContext.Keys.LINE_COLOR],
+                                      line_width=style[PlotContext.Keys.LINE_WIDTH],
+                                      errorbar_color=style[PlotContext.Keys.ERRORBAR_COLOR],
+                                      errorbar_style=style[PlotContext.Keys.ERRORBAR_STYLE],
+                                      errorbar_width=style[PlotContext.Keys.ERRORBAR_WIDTH])
 
             if not fast:
                 frequencies, fft = self._model.get_fft_data(time, asymmetry, min_time, max_time, bin_size)
