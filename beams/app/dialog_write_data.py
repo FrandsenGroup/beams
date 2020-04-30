@@ -7,7 +7,6 @@ import numpy as np
 from app.util import widgets
 from app.model.model import MuonDataContext
 from app.model import muon, files
-from app.beams import BEAMS
 from app.dialog_plot_file import PlotFileDialog
 from app.dialog_misc import PermissionsMessageDialog
 
@@ -219,13 +218,13 @@ class WriteDataDialogPresenter:
     def _save_to_clicked(self):
         # noinspection PyCallByClass,PyArgumentList
         saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self._view, 'Specify file',
-                                                                BEAMS.load_last_used_directory(), 'ASY(*.asy)')[0]
+                                                                files.load_last_used_directory(), 'ASY(*.asy)')[0]
 
         if not saved_file_path:
             return
         else:
             path = os.path.split(saved_file_path)
-            BEAMS.set_last_used_directory(path[0])
+            files.set_last_used_directory(path[0])
             self._view.set_file_path(saved_file_path)
 
     def _skip_clicked(self):

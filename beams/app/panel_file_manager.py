@@ -10,7 +10,6 @@ from app.dialog_misc import AddFileDialog, WarningMessageDialog, PermissionsMess
 from app.dialog_musr_download import MusrDownloadDialog
 from app.dialog_plot_file import PlotFileDialog
 from app.dialog_write_data import WriteDataDialog
-from app.beams import BEAMS
 
 
 # noinspection PyArgumentList
@@ -235,10 +234,10 @@ class FileManagerPanelPresenter:
     def _get_files_from_system(self):
         # noinspection PyArgumentList
         filenames = QtWidgets.QFileDialog.getOpenFileNames(self._view, 'Add file',
-                                                           BEAMS.load_last_used_directory())[0]
+                                                           files.load_last_used_directory())[0]
         if len(filenames) > 0:
             path = os.path.split(filenames[0])
-            BEAMS.set_last_used_directory(path[0])
+            files.set_last_used_directory(path[0])
 
         self._model.add_files(filenames)
         self._view.clear_items()

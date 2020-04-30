@@ -364,3 +364,30 @@ class ConversionError(Exception):
     """
     def __init__(self):
         super(ConversionError, self).__init__()
+
+
+def set_last_used_directory(path):
+    if len(path) == 0:
+        path = "."
+
+    if os.path.exists(path) and os.path.isdir(path):
+        with open(r'beams/app/resources/config.txt', 'w') as f:
+            f.write(path)
+
+
+def load_last_used_directory():
+
+    try:
+        with open(r'beams/app/resources/config.txt', 'r+') as f:
+            path = f.readline().strip()
+
+            if os.path.exists(r'{}'.format(path)) and os.path.isdir(r'{}'.format(path)):
+                return path
+            else:
+                f.truncate(0)
+                f.seek(0)
+                f.write(os.getcwd())
+    except FileNotFoundError:
+        set_last_used_directory(os.getcwd())
+
+    return os.getcwd()

@@ -7,8 +7,8 @@ import requests
 from PyQt5 import QtWidgets
 
 from app.util import widgets
-from app.beams import BEAMS
 from app.model.model import FileContext
+from app.model import files
 
 
 # noinspection PyArgumentList
@@ -304,8 +304,8 @@ class MusrDownloadDialogPresenter:
     # noinspection PyCallByClass
     def _save_to_clicked(self):
         path = QtWidgets.QFileDialog.getExistingDirectory(self._view, 'Select directory to save MUD files to',
-                                                          BEAMS.load_last_used_directory(),
+                                                          files.load_last_used_directory(),
                                                           options=QtWidgets.QFileDialog.ShowDirsOnly)
         if path:
-            BEAMS.set_last_used_directory(path)
+            files.set_last_used_directory(path)
             self._view.set_file(path)

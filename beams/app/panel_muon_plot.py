@@ -386,7 +386,6 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
         marker_face_color = marker_color if fillstyle != 'none' else 'none'
 
         if uncertainty is not None and errorbar_style != 'none':
-            print(errorbar_style)
             self._display.axes_time.errorbar(time, asymmetry, uncertainty, mfc=marker_face_color, mec=marker_color,
                                              color=color, linestyle=linestyle, marker=marker, fillstyle=fillstyle,
                                              linewidth=line_width, markersize=marker_size, elinewidth=errorbar_width,
