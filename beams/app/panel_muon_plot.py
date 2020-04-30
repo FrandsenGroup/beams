@@ -383,14 +383,16 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
         marker_color = color if marker_color == 'Default' else marker_color
         line_color = color if line_color == 'Default' else line_color
         errorbar_color = color if errorbar_color == 'Default' else errorbar_color
+        marker_face_color = marker_color if fillstyle != 'none' else 'none'
 
-        if uncertainty is not None:
-            print(uncertainty)
-            self._display.axes_time.errorbar(time, asymmetry, uncertainty, mfc=marker_color, mec=marker_color,
+        if uncertainty is not None and errorbar_style != 'none':
+            print(errorbar_style)
+            self._display.axes_time.errorbar(time, asymmetry, uncertainty, mfc=marker_face_color, mec=marker_color,
                                              color=color, linestyle=linestyle, marker=marker, fillstyle=fillstyle,
-                                             linewidth=line_width, markersize=marker_size, elinewidth=errorbar_width)
+                                             linewidth=line_width, markersize=marker_size, elinewidth=errorbar_width,
+                                             ecolor=errorbar_color, capsize=errorbar_style)
         else:
-            self._display.axes_time.plot(time, asymmetry, mfc=marker_color, mec=marker_color, color=color,
+            self._display.axes_time.plot(time, asymmetry, mfc=marker_face_color, mec=marker_color, color=color,
                                          linestyle=linestyle, marker=marker, fillstyle=fillstyle, linewidth=line_width,
                                          markersize=marker_size)
 

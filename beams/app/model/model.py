@@ -285,7 +285,7 @@ class PlotContext:
 
     fillstyle_options = {v: k for k, v in fillstyle_options_values.items()}
 
-    errorbar_styles_values = {'Caps': 'Caps', 'No Caps': 'No Caps', 'No Bars': 'No Bars'}
+    errorbar_styles_values = {'Caps': 4, 'No Caps': 0, 'No Bars': 'none'}
 
     errorbar_styles = {v: k for k, v in errorbar_styles_values.items()}
 
@@ -346,7 +346,7 @@ class PlotContext:
         style[PlotContext.Keys.LINESTYLE] = ''
         style[PlotContext.Keys.LINE_WIDTH] = 1
         style[PlotContext.Keys.MARKER_SIZE] = 5
-        style[PlotContext.Keys.ERRORBAR_STYLE] = 'No Caps'
+        style[PlotContext.Keys.ERRORBAR_STYLE] = 0
         style[PlotContext.Keys.ERRORBAR_COLOR] = 'Default'
         style[PlotContext.Keys.ERRORBAR_WIDTH] = 1
 
