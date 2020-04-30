@@ -107,7 +107,7 @@ QComboBox::drop-down {
 }
 
 QComboBox::down-arrow {
-    image: url(style/icons/down_arrow.jpg);
+    image: url(beams/app/resources/icons/down_arrow.jpg);
 }
 
 QComboBox::down-arrow:on { /* shift the arrow when popup is open */
@@ -117,61 +117,4 @@ QComboBox::down-arrow:on { /* shift the arrow when popup is open */
 
 QListWidget::item:selected:!active {
     background: @low_contrast;
-}
-
-QCheckBox {
-    spacing: 5px;
-}
-
-QCheckBox::indicator {
-    width: 13px;
-    height: 13px;
-}
-
-QCheckBox::indicator:unchecked {
-    image: url(style/icons/checkbox_empty.jpg);
-}
-
-QCheckBox::indicator:unchecked:hover {
-    image: url(style/icons/checkbox_unchecked_hover_2.jpg);
-}
-
-QCheckBox::indicator:unchecked:pressed {
-    image: url(style/icons/checkbox_unchecked_pressed_2.jpg);
-}
-
-QCheckBox::indicator:checked {
-    image: url(style/icons/checkbox_checked_2.jpg);
-}
-
-QCheckBox::indicator:checked:hover {
-    image: url(style/icons/checkbox_checked_hover_2.jpg);
-}
-
-QCheckBox::indicator:checked:pressed {
-    image: url(style/icons/checkbox_checked_pressed.jpg);
-}
-
-QListView::indicator:unchecked {
-    image: url(style/icons/checkbox_empty.jpg);
-}
-
-QListView::indicator:unchecked:hover {
-    image: url(style/icons/checkbox_unchecked_hover_2.jpg);
-}
-
-QListView::indicator:unchecked:pressed {
-    image: url(style/icons/checkbox_unchecked_pressed_2.jpg);
-}
-
-QListView::indicator:checked {
-    image: url(style/icons/checkbox_checked_2.jpg);
-}
-
-QListView::indicator:checked:hover {
-    image: url(style/icons/checkbox_checked_hover_2.jpg);
-}
-
-QListView::indicator:checked:pressed {
-    image: url(style/icons/checkbox_checked_pressed.jpg);
 }
