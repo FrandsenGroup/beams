@@ -136,9 +136,9 @@ class TRIUMFMuonFile(ConvertibleFile):
     def convert(self, out_file):
         flags = ['-all']
         if is_found(self.file_path) and check_ext(self.file_path, '.msr') and check_ext(out_file, '.dat'):
-            system_args = {'win32': ['resources\\mud\\TRIUMF_WINDOWS', self.file_path, out_file],  # Windows Syntax
-                           'linux': ['./resources/mud/TRIUMF_LINUX', self.file_path, out_file],  # Linux Syntax
-                           'darwin': ['./resources/mud/TRIUMF_MAC', self.file_path, out_file]}  # Mac Syntax
+            system_args = {'win32': ['beams\\app\\resources\\mud\\TRIUMF_WINDOWS', self.file_path, out_file],  # Windows Syntax
+                           'linux': ['./beams/app/resources/mud/TRIUMF_LINUX', self.file_path, out_file],  # Linux Syntax
+                           'darwin': ['./beams/app/resources/mud/TRIUMF_MAC', self.file_path, out_file]}  # Mac Syntax
 
             if sys.platform in system_args.keys():
                 args = system_args[sys.platform]
@@ -175,9 +175,9 @@ class PSIMuonFile(ConvertibleFile):
         if is_found(self.file_path) and (check_ext(self.file_path, '.bin') or check_ext(self.file_path, '.mdu')) \
                 and check_ext(out_file, '.dat'):
 
-            system_args = {'win32': ['resources\\mud\\PSI_WINDOWS', self.file_path, out_file],  # Windows Syntax
-                           'linux': ['./resources/mud/PSI_LINUX', self.file_path, out_file],  # Linux Syntax
-                           'darwin': ['./resources/mud/PSI_MAC', self.file_path, out_file]}  # Mac Syntax
+            system_args = {'win32': ['beams\\app\\resources\\mud\\PSI_WINDOWS', self.file_path, out_file],  # Windows Syntax
+                           'linux': ['./beams/app/resources/mud/PSI_LINUX', self.file_path, out_file],  # Linux Syntax
+                           'darwin': ['./beams/app/resources/mud/PSI_MAC', self.file_path, out_file]}  # Mac Syntax
 
             if sys.platform in system_args.keys():
                 args = system_args[sys.platform]
