@@ -30,7 +30,7 @@ $ pip install -r requirements.txt
 ```
 - Start BEAMS with the following
 ```shell
-$ python main.py
+$ python beams
 ```
 
 ## Usage
