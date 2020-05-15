@@ -500,7 +500,7 @@ class MuonRunPanelPresenter:
     def _meta_key_changed(self):
         meta_key = self._view.get_meta_key()
         if len(meta_key) > 0 and self._runs is not None and not self.__populating_settings:
-            self._view.set_header_display(list(self._runs.values())[0].meta[meta_key])
+            self._view.set_header_display(str(list(self._runs.values())[0].meta[meta_key]))
 
     def _apply_correction_clicked(self):
         titles = self._view.get_selected_titles()
