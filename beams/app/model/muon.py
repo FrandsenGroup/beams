@@ -6,7 +6,7 @@ import uuid
 import numpy as np
 
 # BEAMS Modules
-from app.model import files
+from app.model import files, fit
 
 
 class MuonRun:
@@ -19,6 +19,7 @@ class MuonRun:
         self.asymmetry = None
         self.uncertainty = None
         self.time = None
+        self.fit = fit.Fit()
 
         self.alpha = 1
         self.beta = 1
@@ -46,6 +47,8 @@ def build_muon_run_from_histogram_file(file, meta=None) -> MuonRun:
     calculate_muon_asymmetry(run)
     calculate_muon_uncertainty(run)
     calculate_muon_time(run)
+
+    print(run.time)
 
     return run
 
@@ -174,7 +177,6 @@ def bin_muon_time(run: MuonRun, new_bin):
     binned_indices_total = int(np.floor(num_bins / binned_indices_per_bin))
     time_per_binned = binned_indices_per_bin * bin_full
 
-    times = (np.arange(binned_indices_total) * time_per_binned) + (t0 * bin_full) + (time_per_binned / 2)
     return (np.arange(binned_indices_total) * time_per_binned) + (t0 * bin_full) + (time_per_binned / 2)
 
 
@@ -233,7 +235,7 @@ def calculate_muon_time(run: MuonRun):
     :param run:
     :return:
     """
-
+    print(run.t0)
     run.time = (np.arange(len(run.asymmetry)) * float(run.meta[files.BIN_SIZE_KEY]) / 1000) + \
                (run.t0 * float(run.meta[files.BIN_SIZE_KEY]) / 1000)
 

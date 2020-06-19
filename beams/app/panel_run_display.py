@@ -1,8 +1,8 @@
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 
 from app.model.model import PlotContext, MuonDataContext
-from app.model import files, muon
+from app.model import files, muon, fit
 from app.dialog_misc import WarningMessageDialog, IntegrationDisplayDialog, FileDisplayDialog
 from app.dialog_histogram_display import HistogramDisplayDialog
 from app.util import widgets
@@ -53,8 +53,6 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             layout.addWidget(self.all_color_options, 0, 1)
             layout.addWidget(QtWidgets.QLabel("Linestyle"), 1, 0)
             layout.addWidget(self.linestyle_options, 1, 1)
-            # layout.addWidget(QtWidgets.QLabel("Line Color"), 2, 0)
-            # layout.addWidget(self.line_color_options, 2, 1)
             layout.addWidget(QtWidgets.QLabel("Line Width"), 3, 0)
             layout.addWidget(self.line_width_options, 3, 1)
             layout.addWidget(QtWidgets.QLabel("Marker Style"), 4, 0)
@@ -88,6 +86,7 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             self.meta_key_options = QtWidgets.QComboBox()
             self.meta_value_display = QtWidgets.QLineEdit()
             self.apply_correction_button = widgets.StyleTwoButton("Apply")
+            self.fit_button = widgets.StyleTwoButton("Fit")
             self.alpha_input = QtWidgets.QLineEdit()
             self.integrate_button = widgets.StyleTwoButton("Integrate")
             self.integrate_options = QtWidgets.QComboBox()
@@ -141,6 +140,11 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             layout.addLayout(row)
             layout.addSpacing(spacing)
 
+            row = QtWidgets.QHBoxLayout()
+            row.addWidget(self.fit_button)
+            layout.addLayout(row)
+            layout.addSpacing(spacing)
+
             form_layout = QtWidgets.QFormLayout()
             form_layout.addItem(layout)
 
@@ -150,6 +154,56 @@ class MuonRunPanel(QtWidgets.QDockWidget):
     class Annotations(QtWidgets.QGroupBox):
         def __init__(self):
             super(MuonRunPanel.Annotations, self).__init__("Applies to current selected run")
+
+    # noinspection PyArgumentList
+    class FitSettings(QtWidgets.QGroupBox):
+        def __init__(self):
+            super(MuonRunPanel.FitSettings, self).__init__("Applies to current selected run")
+
+            self.expression_input = QtWidgets.QLineEdit()
+            self.analyze_button = widgets.StyleTwoButton("Analyze")
+            self.variable_table = QtWidgets.QTableWidget()
+            self.fit_button = widgets.StyleOneButton("Fit")
+
+            self._set_widget_dimensions()
+            self._set_widget_attributes()
+            self._set_widget_layout()
+
+        def _set_widget_dimensions(self):
+            self.analyze_button.setFixedWidth(60)
+
+        def _set_widget_attributes(self):
+            self.variable_table.setEnabled(False)
+            self.fit_button.setEnabled(False)
+
+            self.variable_table.setColumnCount(3)
+            self.variable_table.setHorizontalHeaderLabels(['Initial', '<', '>'])
+
+            header = self.variable_table.horizontalHeader()
+            header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+            header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
+            header.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
+
+        def _set_widget_layout(self):
+            spacing = 10
+            layout = QtWidgets.QVBoxLayout()
+
+            row = QtWidgets.QHBoxLayout()
+            row.addWidget(self.expression_input)
+            row.addSpacing(5)
+            row.addWidget(self.analyze_button)
+            layout.addLayout(row)
+            layout.addSpacing(spacing)
+
+            layout.addWidget(self.variable_table)
+            layout.addSpacing(spacing)
+
+            layout.addWidget(self.fit_button)
+
+            form_layout = QtWidgets.QFormLayout()
+            form_layout.addItem(layout)
+
+            self.setLayout(form_layout)
 
     def __init__(self):
         super(MuonRunPanel, self).__init__()
@@ -161,10 +215,12 @@ class MuonRunPanel(QtWidgets.QDockWidget):
         self.clear_all_button = widgets.StyleTwoButton("Clear All")
         self.plot_settings = MuonRunPanel.PlotSettings()
         self.data_settings = MuonRunPanel.DataSettings()
+        self.fit_settings = MuonRunPanel.FitSettings()
         self.annotations = MuonRunPanel.Annotations()
 
         self.data_settings_box = widgets.CollapsibleBox("Run Data Settings")
         self.plot_settings_box = widgets.CollapsibleBox("Run Plot Settings")
+        self.fit_settings_box = widgets.CollapsibleBox("Fit Settings")
         self.annotations_box = widgets.CollapsibleBox("Run Annotations")
 
         self._scroll = QtWidgets.QScrollArea()
@@ -176,12 +232,15 @@ class MuonRunPanel(QtWidgets.QDockWidget):
 
         self.setEnabled(False)
 
+        self.add_fit_row('x')
+
     def _set_widget_attributes(self):
         self.run_list.setMinimumHeight(300)
         self.run_list.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.data_settings_box.toggle_button.pressed.connect(lambda: self._toggle_boxes('data'))
         self.plot_settings_box.toggle_button.pressed.connect(lambda: self._toggle_boxes('plot'))
         self.annotations_box.toggle_button.pressed.connect(lambda: self._toggle_boxes('annotate'))
+        self.fit_settings_box.toggle_button.pressed.connect(lambda: self._toggle_boxes('fit'))
 
     def _toggle_boxes(self, box_id):
         if box_id != 'plot' and self.plot_settings_box.is_open():
@@ -190,11 +249,15 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             self.annotations_box.on_pressed()
         elif box_id != 'data' and self.data_settings_box.is_open():
             self.data_settings_box.on_pressed()
+        elif box_id != 'fit' and self.fit_settings_box.is_open():
+            self.fit_settings_box.on_pressed()
 
         if box_id == 'plot':
             self.plot_settings_box.on_pressed()
         elif box_id == 'data':
             self.data_settings_box.on_pressed()
+        elif box_id == 'fit':
+            self.fit_settings_box.on_pressed()
         else:
             self.annotations_box.on_pressed()
 
@@ -209,15 +272,17 @@ class MuonRunPanel(QtWidgets.QDockWidget):
 
         top_layout.addWidget(self.run_list)
 
-        # top_widget = QtWidgets.QWidget()
-        # top_widget.setLayout(top_layout)
-
         bottom_layout = QtWidgets.QVBoxLayout()
 
         box = QtWidgets.QVBoxLayout()
         box.addWidget(self.data_settings)
         self.data_settings_box.setContentLayout(box)
         bottom_layout.addWidget(self.data_settings_box)
+
+        box = QtWidgets.QVBoxLayout()
+        box.addWidget(self.fit_settings)
+        self.fit_settings_box.setContentLayout(box)
+        bottom_layout.addWidget(self.fit_settings_box)
 
         box = QtWidgets.QVBoxLayout()
         box.addWidget(self.plot_settings)
@@ -230,11 +295,6 @@ class MuonRunPanel(QtWidgets.QDockWidget):
         bottom_layout.addWidget(self.annotations_box)
 
         bottom_layout.addStretch()
-
-        # bottom_widget = QtWidgets.QWidget()
-        # bottom_widget.setLayout(layout)
-        # self._scroll.setWidgetResizable(True)
-        # self._scroll.setWidget(bottom_widget)
 
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(top_layout)
@@ -256,6 +316,8 @@ class MuonRunPanel(QtWidgets.QDockWidget):
                 self.plot_settings_box.on_pressed()
             elif self.annotations_box.is_open():
                 self.annotations_box.on_pressed()
+            elif self.fit_settings_box.is_open():
+                self.fit_settings_box.on_pressed()
 
     def add_run_titles(self, run_titles):
         self.run_list.addItems(run_titles)
@@ -288,8 +350,37 @@ class MuonRunPanel(QtWidgets.QDockWidget):
     def get_integration_type(self):
         return self.data_settings.integrate_options.currentText()
 
+    def get_fit_expression(self):
+        return self.fit_settings.expression_input.text()
+
     def clear_titles(self):
         self.run_list.clear()
+
+    def clear_variables(self):
+        self.fit_settings.variable_table.setRowCount(0)
+
+    def add_fit_row(self, variable):
+        row_count = self.fit_settings.variable_table.rowCount()
+        self.fit_settings.variable_table.insertRow(row_count)
+
+        name = QtWidgets.QTableWidgetItem()
+        initial = QtWidgets.QTableWidgetItem()
+        lower_bound = QtWidgets.QTableWidgetItem()
+        upper_bound = QtWidgets.QTableWidgetItem()
+
+        name.setText(variable)
+        initial.setText("1")
+        lower_bound.setText("-Inf")
+        upper_bound.setText("Inf")
+
+        # self.fit_settings.variable_table.setItem(row_count, 0, name)
+        self.fit_settings.variable_table.setVerticalHeaderItem(row_count, name)
+        self.fit_settings.variable_table.setItem(row_count, 0, initial)
+        self.fit_settings.variable_table.setItem(row_count, 1, lower_bound)
+        self.fit_settings.variable_table.setItem(row_count, 2, upper_bound)
+
+        vertical_header = self.fit_settings.variable_table.verticalHeader()
+        # vertical_header.
 
     def set_first_selected(self):
         self.run_list.setCurrentRow(0)
@@ -430,6 +521,10 @@ class MuonRunPanel(QtWidgets.QDockWidget):
     def set_enabled_file(self, enabled):
         self.data_settings.see_file_button.setEnabled(enabled)
 
+    def set_enabled_fit(self, enabled):
+        self.fit_settings.variable_table.setEnabled(enabled)
+        self.fit_settings.fit_button.setEnabled(enabled)
+
 
 class MuonRunPanelPresenter:
     def __init__(self, view: MuonRunPanel):
@@ -445,11 +540,14 @@ class MuonRunPanelPresenter:
         self._view.isolate_button.released.connect(self._isolate_clicked)
         self._view.plot_all_button.released.connect(self._plot_all_clicked)
         self._view.clear_all_button.released.connect(self._clear_all_clicked)
+        self._view.data_settings.fit_button.released.connect(self._fit_clicked)
         self._view.data_settings.meta_key_options.currentTextChanged.connect(self._meta_key_changed)
         self._view.data_settings.apply_correction_button.released.connect(self._apply_correction_clicked)
         self._view.data_settings.see_file_button.released.connect(self._see_file_clicked)
         self._view.data_settings.see_histogram_button.released.connect(self._see_histogram_clicked)
         self._view.data_settings.integrate_button.released.connect(self._integrate_clicked)
+        self._view.fit_settings.analyze_button.released.connect(self._analyze_clicked)
+        self._view.fit_settings.fit_button.released.connect(self._fit_clicked)
         self._view.plot_settings.all_color_options.currentTextChanged.connect(
             lambda: self._plot_parameter_changed(PlotContext.Keys.DEFAULT_COLOR,
                                                  self._view.plot_settings.all_color_options.currentText()))
@@ -483,6 +581,23 @@ class MuonRunPanelPresenter:
         self._view.plot_settings.errorbar_width_options.currentTextChanged.connect(
             lambda: self._plot_parameter_changed(PlotContext.Keys.ERRORBAR_WIDTH,
                                                  self._view.plot_settings.errorbar_width_options.currentText()))
+
+    def _analyze_clicked(self):
+        expression = self._view.get_fit_expression()
+
+        ind, variables = self._model.parse_expression(expression)
+        if ind is None or variables is None:
+            self._view.set_enabled_fit(False)
+            WarningMessageDialog.launch(["Invalid Expression. Must have form similar to f(x) = a*x^2"])
+            return
+
+        self._view.clear_variables()
+        for var in variables:
+            self._view.add_fit_row(var)
+        self._view.set_enabled_fit(True)
+
+    def _fit_clicked(self):
+        self._model.get_fit(None, None, self._view.get_selected_titles())
 
     def _isolate_clicked(self):
         self._model.set_visibility_for_runs(True, self._view.get_selected_titles(), True)
@@ -739,6 +854,29 @@ class MuonRunPanelModel:
         run_ids = [run.id for run in self.get_run_by_title(titles).values()]
         runs = [self._data_context.get_run_by_id(run_id) for run_id in run_ids]
         return [float(run.meta[files.FIELD_KEY].split('(')[0].split('G')[0]) for run in runs]
+
+    def get_fit(self, expression, variables, titles):
+        run_ids = [run.id for run in self.get_run_by_title(titles).values()]
+        run = self._data_context.get_run_by_id(run_ids[0])
+        bin_size = 150
+        asymmetry = muon.bin_muon_asymmetry(run, bin_size)
+        time = muon.bin_muon_time(run, bin_size)
+        uncertainty = muon.bin_muon_uncertainty(run, bin_size)
+        print(type(asymmetry), len(asymmetry), len(run.asymmetry))
+        print(type(time), len(time), len(run.time))
+        print(type(uncertainty), len(uncertainty), len(run.uncertainty))
+        run.fit = fit.fit(None, time, asymmetry, uncertainty, None)
+        self._data_context.send_signal()
+
+    def parse_expression(self, expression):
+        if fit.is_valid_expression(expression):
+            ind, exp = fit.split_expression(expression)
+            vars = fit.parse(exp)
+            if ind in vars:
+                vars.remove(ind)
+            return ind, vars
+        else:
+            return None, None
 
     def update(self):
         self._runs = self._data_context.get_runs()

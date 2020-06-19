@@ -377,7 +377,7 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
     def set_bin_slider(self, value):
         self._control.slider_bin.setValue(int(value))
 
-    def plot_asymmetry(self, time, asymmetry, uncertainty, color, marker_color, line_color, errorbar_color,
+    def plot_asymmetry(self, time, asymmetry, uncertainty, fit, color, marker_color, line_color, errorbar_color,
                        linestyle, marker, errorbar_style, fillstyle, line_width, marker_size, errorbar_width):
 
         marker_color = color if marker_color == 'Default' else marker_color
@@ -390,6 +390,11 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
                                              color=color, linestyle=linestyle, marker=marker, fillstyle=fillstyle,
                                              linewidth=line_width, markersize=marker_size, elinewidth=errorbar_width,
                                              ecolor=errorbar_color, capsize=errorbar_style)
+            if fit is not None:
+                min_values = len(time) if len(time) < len(fit) else len(fit)
+                self._display.axes_time.plot(time[:min_values], fit[:min_values], color=color, linestyle='-',
+                                             marker='None')
+
         else:
             self._display.axes_time.plot(time, asymmetry, mfc=marker_face_color, mec=marker_color, color=color,
                                          linestyle=linestyle, marker=marker, fillstyle=fillstyle, linewidth=line_width,
@@ -513,7 +518,7 @@ class MuonPlotPanelPresenter:
         max_time = self._view.get_max_time()
         bin_size = self._view.get_bin_from_input()
 
-        for style, time, asymmetry, uncertainty in data.values():
+        for style, time, asymmetry, uncertainty, fit in data.values():
             # We have to do this logic because Matplotlib is not good at setting good default plot limits
             frac_start = float(min_time) / (time[len(time) - 1] - time[0])
             frac_end = float(max_time) / (time[len(time) - 1] - time[0])
@@ -524,7 +529,10 @@ class MuonPlotPanelPresenter:
             local_min = np.min(asymmetry[start_index:end_index])
             min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
 
-            self._view.plot_asymmetry(time, asymmetry, uncertainty,
+            if not fast:
+                pass
+
+            self._view.plot_asymmetry(time, asymmetry, uncertainty, fit,
                                       color=style[PlotContext.Keys.DEFAULT_COLOR],
                                       marker=style[PlotContext.Keys.MARKER],
                                       linestyle=style[PlotContext.Keys.LINESTYLE],
@@ -573,7 +581,14 @@ class MuonPlotPanelModel:
             asymmetry = muon.bin_muon_asymmetry(run, bin_size)
             time = muon.bin_muon_time(run, bin_size)
             uncertainty = None if fast else muon.bin_muon_uncertainty(run, bin_size)
-            full_data[run.id] = [style, time, asymmetry, uncertainty]
+
+            if run.fit.is_fitted:
+                
+                fit = run.fit.fit
+            else:
+                fit = None
+
+            full_data[run.id] = [style, time, asymmetry, uncertainty, fit]
 
         return full_data
 
