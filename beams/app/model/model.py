@@ -1,7 +1,7 @@
 
 from enum import Enum
 
-from app.model import muon, files
+from app.model import muon, files, fit
 
 
 class MuonDataContext:
@@ -156,6 +156,22 @@ class MuonDataContext:
         for run_id in run_ids:
             run = self.get_run_by_id(run_id)
             muon.correct_muon_asymmetry(run, alpha, beta)
+
+        if not stop_signal:
+            self.__instance.notifier.notify()
+
+    def set_fit_data_for_runs(self, run_ids, expression, independent_variable, variables, stop_signal=None):
+        for run_id in run_ids:
+            new_fit = fit.Fit()
+            new_fit.expression = expression
+            new_fit.independent_variable = independent_variable
+            new_fit.free_variables = variables
+            new_fit.is_fitted = True
+
+            run = self.get_run_by_id(run_id)
+            run.fit = new_fit
+
+            print(run.fit)
 
         if not stop_signal:
             self.__instance.notifier.notify()

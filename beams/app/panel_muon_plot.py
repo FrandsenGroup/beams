@@ -8,7 +8,7 @@ from matplotlib.figure import Figure
 import numpy as np
 
 from app.model.model import PlotContext, MuonDataContext
-from app.model import muon
+from app.model import muon, fit
 from app.dialog_misc import WarningMessageDialog
 
 
@@ -390,15 +390,15 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
                                              color=color, linestyle=linestyle, marker=marker, fillstyle=fillstyle,
                                              linewidth=line_width, markersize=marker_size, elinewidth=errorbar_width,
                                              ecolor=errorbar_color, capsize=errorbar_style)
-            if fit is not None:
-                min_values = len(time) if len(time) < len(fit) else len(fit)
-                self._display.axes_time.plot(time[:min_values], fit[:min_values], color=color, linestyle='-',
-                                             marker='None')
 
         else:
             self._display.axes_time.plot(time, asymmetry, mfc=marker_face_color, mec=marker_color, color=color,
                                          linestyle=linestyle, marker=marker, fillstyle=fillstyle, linewidth=line_width,
                                          markersize=marker_size)
+
+        if fit is not None:
+            self._display.axes_time.plot(time, fit, color=color, linestyle='-',
+                                         marker='None')
 
     def plot_fft(self, frequencies, fft, color, label):
         self._display.axes_freq.plot(frequencies, fft, color=color, label=label)
@@ -582,13 +582,21 @@ class MuonPlotPanelModel:
             time = muon.bin_muon_time(run, bin_size)
             uncertainty = None if fast else muon.bin_muon_uncertainty(run, bin_size)
 
-            if run.fit.is_fitted:
-                
-                fit = run.fit.fit
-            else:
-                fit = None
+            if run.fit.is_fitted and not fast:
+                if not run.fit.fit_calculated:
+                    pars, cov, lambda_expression = fit.fit(run.fit.expression, time, asymmetry, uncertainty,
+                                                           run.fit.free_variables, run.fit.independent_variable)
+                    run.fit.parameters = pars
+                    run.fit.cov = cov
+                    run.fit.lambda_expression = lambda_expression
 
-            full_data[run.id] = [style, time, asymmetry, uncertainty, fit]
+                    run_fit = lambda_expression(time, *pars)
+                else:
+                    run_fit = run.fit.lambda_expression(time, *run.fit.parameters)
+            else:
+                run_fit = None
+
+            full_data[run.id] = [style, time, asymmetry, uncertainty, run_fit]
 
         return full_data
 

@@ -2,16 +2,22 @@
 import sympy as sp
 import numpy as np
 from scipy.optimize import least_squares, curve_fit
-import matplotlib.pyplot as plt
 
 
 class Fit:
     def __init__(self):
         self.is_fitted = False
+        self.fit_calculated = False  # If this is false then it will optimize again
+        self.full_function = None
+        self.independent_variable = None
+        self.expression = None
+        self.free_variables = None
+        self.parameters = None
+        self.cov = None
+        self.lambda_expression = None
 
-        self.fit_expression = None
-        self.fit_variables = None
-        self.fit = None
+    def __str__(self):
+        return "Fit=[\n\tExpression={}\n\tIndependent={}\n\tVariables={}\n]".format(self.expression, self.independent_variable, self.free_variables)
 
 
 def parse(s):
@@ -119,37 +125,36 @@ def split_expression(expression):
         return None
 
 
-def fit(expression, time, asymmetry, uncertainty, variables):
-    def residual(params, tArray, data, dataErr):
-        calc = lambda_expression(*params, tArray)  # params unpacks the params list into individual pieces
-        for i, n in enumerate(dataErr):
-            if n == 0:
-                dataErr[i] = 0.1
-        return (data - calc) / dataErr**2
+def fit(expression, time, asymmetry, uncertainty, variables: dict, independent_variable):
 
-    var_func = "a0*cos(2*pi*f*t+phi)*2.718**(-lam*t)"
-    variables = {'a0': 1, 'f': 1, 'phi': 1, 'lam': 1}
-    var_list_1 = ['t']
-    var_list_1.extend(list(variables.keys()))
-    var_list_2 = list(variables.values())
+    var_names = [independent_variable]
+    var_names.extend([var for var in variables.keys()])
+    var_guesses = [float(data[0]) for data in variables.values()]
+    var_lowers = [data[1] for data in variables.values()]
+    var_uppers = [data[2] for data in variables.values()]
 
-    print('func = {}\nvar_list_1 = {}\nvar_list_2 = {}'.format(var_func, var_list_1, var_list_2))
+    for i, bound in enumerate(var_lowers):
+        if bound.lower() == '-inf' or bound.lower() == '-infinity':
+            var_lowers[i] = -np.inf
+        else:
+            var_lowers[i] = float(bound)
 
-    new_fit = Fit()
-    lambda_expression = sp.lambdify(var_list_1, sp.sympify(var_func), "numpy")
+    for i, bound in enumerate(var_uppers):
+        if bound.lower() == 'inf' or bound.lower() == 'infinity':
+            var_uppers[i] = np.inf
+        else:
+            var_uppers[i] = float(bound)
+
+    print("Expression={}\nIndependent={}\nVariables={}\nGuesses={}\nLowers={}\nUppers={}".format(expression, independent_variable, var_names, var_guesses, var_lowers, var_uppers))
+
+    lambda_expression = sp.lambdify(var_names, sp.sympify(expression), "numpy")
 
     pars, cov = curve_fit(f=lambda_expression, xdata=time, ydata=asymmetry, maxfev=3000,
-                          bounds=([0.5, 0.1, -30, 0], [1.5, 3, 30, 50]))
+                          bounds=(var_lowers, var_uppers), p0=var_guesses)
 
-    print('curve fit = {}, {}'.format(pars, cov))
+    print("Fit={}\nCov={}\n".format(pars, cov))
 
-    new_fit.fit = lambda_expression(np.array(time), *pars)
-    new_fit.fit_expression = lambda_expression
-    new_fit.fit_variables = variables
-    new_fit.is_fitted = True
-
-    print(new_fit.fit)
-    return new_fit
+    return pars, cov, lambda_expression
 
 
 # def func(x, a, b, c):
@@ -175,7 +180,7 @@ def fit(expression, time, asymmetry, uncertainty, variables):
 # plt.show()
 
 
-var_func = "AS(t) = a0*cos(2*pi*f*t+phi)*2.718**(-lam*t)"
-
-ind, exp = split_expression(var_func)
-print("Function = {}\nIndependent Variable = {}\nExpression = {}\nFree Constants = {}".format(var_func, ind, exp, parse(exp)))
+# var_func = "AS(t) = a0*cos(2*pi*f*t+phi)*2.718**(-lam*t)"
+#
+# ind, exp = split_expression(var_func)
+# print("Function = {}\nIndependent Variable = {}\nExpression = {}\nFree Constants = {}".format(var_func, ind, exp, parse(exp)))

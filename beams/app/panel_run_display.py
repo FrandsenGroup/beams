@@ -158,12 +158,13 @@ class MuonRunPanel(QtWidgets.QDockWidget):
     # noinspection PyArgumentList
     class FitSettings(QtWidgets.QGroupBox):
         def __init__(self):
-            super(MuonRunPanel.FitSettings, self).__init__("Applies to current selected run")
+            super(MuonRunPanel.FitSettings, self).__init__("Applies to all selected runs")
 
             self.expression_input = QtWidgets.QLineEdit()
             self.analyze_button = widgets.StyleTwoButton("Analyze")
             self.variable_table = QtWidgets.QTableWidget()
             self.fit_button = widgets.StyleOneButton("Fit")
+            self.recalculate = QtWidgets.QCheckBox()
 
             self._set_widget_dimensions()
             self._set_widget_attributes()
@@ -175,6 +176,7 @@ class MuonRunPanel(QtWidgets.QDockWidget):
         def _set_widget_attributes(self):
             self.variable_table.setEnabled(False)
             self.fit_button.setEnabled(False)
+            self.recalculate.setChecked(False)
 
             self.variable_table.setColumnCount(3)
             self.variable_table.setHorizontalHeaderLabels(['Initial', '<', '>'])
@@ -199,6 +201,13 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             layout.addSpacing(spacing)
 
             layout.addWidget(self.fit_button)
+            layout.addSpacing(spacing)
+
+            # row = QtWidgets.QHBoxLayout()
+            # row.addWidget(self.recalculate)
+            # row.addWidget(QtWidgets.QLabel("Recalculate on bin change?"))
+            # row.addStretch()
+            # layout.addLayout(row)
 
             form_layout = QtWidgets.QFormLayout()
             form_layout.addItem(layout)
@@ -231,8 +240,6 @@ class MuonRunPanel(QtWidgets.QDockWidget):
         self._presenter = MuonRunPanelPresenter(self)
 
         self.setEnabled(False)
-
-        self.add_fit_row('x')
 
     def _set_widget_attributes(self):
         self.run_list.setMinimumHeight(300)
@@ -353,6 +360,20 @@ class MuonRunPanel(QtWidgets.QDockWidget):
     def get_fit_expression(self):
         return self.fit_settings.expression_input.text()
 
+    def get_variable_data(self):
+        variables = {}
+
+        for i in range(self.fit_settings.variable_table.rowCount()):
+
+            name = self.fit_settings.variable_table.verticalHeaderItem(i).text()
+            initial = self.fit_settings.variable_table.item(i, 0).text()
+            lower = self.fit_settings.variable_table.item(i, 1).text()
+            upper = self.fit_settings.variable_table.item(i, 2).text()
+
+            variables[name] = [initial, lower, upper]
+
+        return variables
+
     def clear_titles(self):
         self.run_list.clear()
 
@@ -379,8 +400,8 @@ class MuonRunPanel(QtWidgets.QDockWidget):
         self.fit_settings.variable_table.setItem(row_count, 1, lower_bound)
         self.fit_settings.variable_table.setItem(row_count, 2, upper_bound)
 
-        vertical_header = self.fit_settings.variable_table.verticalHeader()
-        # vertical_header.
+        # vertical_header = self.fit_settings.variable_table.verticalHeaderItem(row_count)
+        # print(vertical_header.text())
 
     def set_first_selected(self):
         self.run_list.setCurrentRow(0)
@@ -585,7 +606,7 @@ class MuonRunPanelPresenter:
     def _analyze_clicked(self):
         expression = self._view.get_fit_expression()
 
-        ind, variables = self._model.parse_expression(expression)
+        ind, variables, _ = self._model.parse_expression(expression)
         if ind is None or variables is None:
             self._view.set_enabled_fit(False)
             WarningMessageDialog.launch(["Invalid Expression. Must have form similar to f(x) = a*x^2"])
@@ -596,8 +617,13 @@ class MuonRunPanelPresenter:
             self._view.add_fit_row(var)
         self._view.set_enabled_fit(True)
 
+        self._view.get_variable_data()
+
     def _fit_clicked(self):
-        self._model.get_fit(None, None, self._view.get_selected_titles())
+        variables = self._view.get_variable_data()
+        function = self._view.get_fit_expression()
+        ind, _, expression = self._model.parse_expression(function)
+        self._model.get_fit(ind, expression, variables, self._view.get_selected_titles())
 
     def _isolate_clicked(self):
         self._model.set_visibility_for_runs(True, self._view.get_selected_titles(), True)
@@ -855,18 +881,9 @@ class MuonRunPanelModel:
         runs = [self._data_context.get_run_by_id(run_id) for run_id in run_ids]
         return [float(run.meta[files.FIELD_KEY].split('(')[0].split('G')[0]) for run in runs]
 
-    def get_fit(self, expression, variables, titles):
+    def get_fit(self, independent_variable, expression, variables, titles):
         run_ids = [run.id for run in self.get_run_by_title(titles).values()]
-        run = self._data_context.get_run_by_id(run_ids[0])
-        bin_size = 150
-        asymmetry = muon.bin_muon_asymmetry(run, bin_size)
-        time = muon.bin_muon_time(run, bin_size)
-        uncertainty = muon.bin_muon_uncertainty(run, bin_size)
-        print(type(asymmetry), len(asymmetry), len(run.asymmetry))
-        print(type(time), len(time), len(run.time))
-        print(type(uncertainty), len(uncertainty), len(run.uncertainty))
-        run.fit = fit.fit(None, time, asymmetry, uncertainty, None)
-        self._data_context.send_signal()
+        self._data_context.set_fit_data_for_runs(run_ids, expression, independent_variable, variables)
 
     def parse_expression(self, expression):
         if fit.is_valid_expression(expression):
@@ -874,9 +891,9 @@ class MuonRunPanelModel:
             vars = fit.parse(exp)
             if ind in vars:
                 vars.remove(ind)
-            return ind, vars
+            return ind, vars, exp
         else:
-            return None, None
+            return None, None, None
 
     def update(self):
         self._runs = self._data_context.get_runs()
