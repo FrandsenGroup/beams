@@ -127,6 +127,9 @@ def split_expression(expression):
 
 def fit(expression, time, asymmetry, uncertainty, variables: dict, independent_variable):
 
+    def error():
+        pass
+
     var_names = [independent_variable]
     var_names.extend([var for var in variables.keys()])
     var_guesses = [float(data[0]) for data in variables.values()]
@@ -149,10 +152,13 @@ def fit(expression, time, asymmetry, uncertainty, variables: dict, independent_v
 
     lambda_expression = sp.lambdify(var_names, sp.sympify(expression), "numpy")
 
-    pars, cov = curve_fit(f=lambda_expression, xdata=time, ydata=asymmetry, maxfev=3000,
+    pars, cov = curve_fit(f=lambda_expression, xdata=time, ydata=asymmetry, maxfev=10000,
                           bounds=(var_lowers, var_uppers), p0=var_guesses)
 
     print("Fit={}\nCov={}\n".format(pars, cov))
+
+    for p, k in zip(pars, variables.keys()):
+        variables[k][0] = p
 
     return pars, cov, lambda_expression
 

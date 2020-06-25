@@ -161,7 +161,7 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             super(MuonRunPanel.FitSettings, self).__init__("Applies to all selected runs")
 
             self.expression_input = QtWidgets.QLineEdit()
-            self.analyze_button = widgets.StyleTwoButton("Analyze")
+            self.analyze_button = widgets.StyleTwoButton("Check")
             self.variable_table = QtWidgets.QTableWidget()
             self.fit_button = widgets.StyleOneButton("Fit")
             self.recalculate = QtWidgets.QCheckBox()
@@ -546,6 +546,14 @@ class MuonRunPanel(QtWidgets.QDockWidget):
         self.fit_settings.variable_table.setEnabled(enabled)
         self.fit_settings.fit_button.setEnabled(enabled)
 
+    def set_parameter_values(self, variable, value):
+        for i in range(self.fit_settings.variable_table.rowCount()):
+            if self.fit_settings.variable_table.verticalHeaderItem(i).text() == variable:
+                item = QtWidgets.QTableWidgetItem()
+                item.setText('{:8.6f}'.format(value))
+                self.fit_settings.variable_table.takeItem(i, 0)
+                self.fit_settings.variable_table.setItem(i, 0, item)
+
 
 class MuonRunPanelPresenter:
     def __init__(self, view: MuonRunPanel):
@@ -624,6 +632,11 @@ class MuonRunPanelPresenter:
         function = self._view.get_fit_expression()
         ind, _, expression = self._model.parse_expression(function)
         self._model.get_fit(ind, expression, variables, self._view.get_selected_titles())
+        variables = self._model.get_run_fit_parameters(self._view.get_selected_titles())[0].free_variables
+
+        for k, v in variables.items():
+            print(k, v)
+            self._view.set_parameter_values(k, v[0])
 
     def _isolate_clicked(self):
         self._model.set_visibility_for_runs(True, self._view.get_selected_titles(), True)
@@ -875,6 +888,11 @@ class MuonRunPanelModel:
         run_ids = [run.id for run in self.get_run_by_title(titles).values()]
         runs = [self._data_context.get_run_by_id(run_id) for run_id in run_ids]
         return [float(run.meta[files.TEMPERATURE_KEY].split('(')[0].split('K')[0]) for run in runs]
+
+    def get_run_fit_parameters(self, titles):
+        run_ids = [run.id for run in self.get_run_by_title(titles).values()]
+        runs = [self._data_context.get_run_by_id(run_id) for run_id in run_ids]
+        return [run.fit for run in runs]
 
     def get_run_fields(self, titles):
         run_ids = [run.id for run in self.get_run_by_title(titles).values()]
