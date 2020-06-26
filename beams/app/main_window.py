@@ -61,6 +61,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self._plot_panel_two.set_bin_slider(2)
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self._plot_panel_two, QtCore.Qt.Horizontal)
 
+        # self._plot_panel_three = MuonPlotPanel()
+        # self._plot_panel_three.set_max_time(10)
+        # self._plot_panel_three.set_bin_input(150)
+        # self._plot_panel_three.set_bin_slider(150)
+        # self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self._plot_panel_three, QtCore.Qt.Horizontal)
+
         self._run_panel = MuonRunPanel()
         self._run_panel.setFixedWidth(280)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self._run_panel)

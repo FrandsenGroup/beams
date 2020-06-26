@@ -168,7 +168,6 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             self.analyze_button = widgets.StyleTwoButton("Check")
             self.variable_table = QtWidgets.QTableWidget()
             self.fit_button = widgets.StyleOneButton("Fit")
-            self.recalculate = QtWidgets.QCheckBox()
 
             self._set_widget_dimensions()
             self._set_widget_attributes()
@@ -180,10 +179,10 @@ class MuonRunPanel(QtWidgets.QDockWidget):
         def _set_widget_attributes(self):
             self.variable_table.setEnabled(False)
             self.fit_button.setEnabled(False)
-            self.recalculate.setChecked(False)
 
             self.variable_table.setColumnCount(3)
             self.variable_table.setHorizontalHeaderLabels(['Initial', '<', '>'])
+            self.expression_input.setText("f(t) = ")
 
             header = self.variable_table.horizontalHeader()
             header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
@@ -206,12 +205,6 @@ class MuonRunPanel(QtWidgets.QDockWidget):
 
             layout.addWidget(self.fit_button)
             layout.addSpacing(spacing)
-
-            # row = QtWidgets.QHBoxLayout()
-            # row.addWidget(self.recalculate)
-            # row.addWidget(QtWidgets.QLabel("Recalculate on bin change?"))
-            # row.addStretch()
-            # layout.addLayout(row)
 
             form_layout = QtWidgets.QFormLayout()
             form_layout.addItem(layout)
