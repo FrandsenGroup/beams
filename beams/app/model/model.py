@@ -258,6 +258,7 @@ class PlotContext:
         ERRORBAR_STYLE = 14
         ERRORBAR_COLOR = 15
         ERRORBAR_WIDTH = 16
+        FIT_COLOR = 17
 
     __instance = None
 
@@ -365,6 +366,7 @@ class PlotContext:
         style[PlotContext.Keys.ERRORBAR_STYLE] = 0
         style[PlotContext.Keys.ERRORBAR_COLOR] = 'Default'
         style[PlotContext.Keys.ERRORBAR_WIDTH] = 1
+        style[PlotContext.Keys.FIT_COLOR] = 'Default'
 
         self.__instance.styles[run.id] = style
 
@@ -385,6 +387,7 @@ class PlotContext:
         style[PlotContext.Keys.LINE_COLOR] = 'Default'
         style[PlotContext.Keys.ERRORBAR_COLOR] = 'Default'
         style[PlotContext.Keys.MARKER_COLOR] = 'Default'
+        style[PlotContext.Keys.FIT_COLOR] = 'Default'
 
         if not stop_signal:
             self.__instance.notifier.notify()
@@ -429,7 +432,8 @@ class PlotContext:
                 style[key] = self.linestyle_options_values[option_key]
             elif key == PlotContext.Keys.ERRORBAR_COLOR or \
                     key == PlotContext.Keys.MARKER_COLOR or \
-                    key == PlotContext.Keys.LINE_COLOR:
+                    key == PlotContext.Keys.LINE_COLOR or \
+                    key == PlotContext.Keys.FIT_COLOR:
                 style[key] = self.color_options_extra_values[option_key]
             elif key == PlotContext.Keys.ERRORBAR_WIDTH:
                 style[key] = self.errorbar_width_values[option_key]

@@ -18,6 +18,7 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             self.all_color_options = QtWidgets.QComboBox()
             self.linestyle_options = QtWidgets.QComboBox()
             self.line_color_options = QtWidgets.QComboBox()
+            self.fit_color_options = QtWidgets.QComboBox()
             self.line_width_options = QtWidgets.QComboBox()
             self.marker_options = QtWidgets.QComboBox()
             self.marker_color_options = QtWidgets.QComboBox()
@@ -36,6 +37,7 @@ class MuonRunPanel(QtWidgets.QDockWidget):
 
         def _set_widget_attributes(self):
             self.all_color_options.addItems(PlotContext.color_options_values.keys())
+            self.fit_color_options.addItems(PlotContext.color_options_extra_values.keys())
             self.linestyle_options.addItems(PlotContext.linestyle_options_values.keys())
             self.line_color_options.addItems(PlotContext.color_options_extra_values.keys())
             self.line_width_options.addItems(PlotContext.line_width_options_values.keys())
@@ -69,6 +71,8 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             layout.addWidget(self.errorbar_color_options, 9, 1)
             layout.addWidget(QtWidgets.QLabel("Errorbar Width"), 10, 0)
             layout.addWidget(self.errorbar_width_options, 10, 1)
+            layout.addWidget(QtWidgets.QLabel("Fit Line Color"), 11, 0)
+            layout.addWidget(self.fit_color_options, 11, 1)
 
             form_layout = QtWidgets.QFormLayout()
             form_layout.addItem(layout)
@@ -464,6 +468,14 @@ class MuonRunPanel(QtWidgets.QDockWidget):
 
         self.plot_settings.marker_color_options.setCurrentText(color)
 
+    def set_fit_color(self, color):
+        if color == "*":
+            self._check_add_star(self.plot_settings.fit_color_options, False)
+        else:
+            self._check_add_star(self.plot_settings.fit_color_options, True)
+
+        self.plot_settings.fit_color_options.setCurrentText(color)
+
     def set_marker_size(self, size):
         if size == "*":
             self._check_add_star(self.plot_settings.marker_size_options, False)
@@ -610,6 +622,9 @@ class MuonRunPanelPresenter:
         self._view.plot_settings.errorbar_width_options.currentTextChanged.connect(
             lambda: self._plot_parameter_changed(PlotContext.Keys.ERRORBAR_WIDTH,
                                                  self._view.plot_settings.errorbar_width_options.currentText()))
+        self._view.plot_settings.fit_color_options.currentTextChanged.connect(
+            lambda: self._plot_parameter_changed(PlotContext.Keys.FIT_COLOR,
+                                                 self._view.plot_settings.fit_color_options.currentText()))
 
     def _analyze_clicked(self):
         expression = self._view.get_fit_expression()
@@ -635,7 +650,6 @@ class MuonRunPanelPresenter:
         variables = self._model.get_run_fit_parameters(self._view.get_selected_titles())[0].free_variables
 
         for k, v in variables.items():
-            print(k, v)
             self._view.set_parameter_values(k, v[0])
 
     def _isolate_clicked(self):
@@ -716,6 +730,7 @@ class MuonRunPanelPresenter:
         self._view.set_default_color(PlotContext.color_options[style[PlotContext.Keys.DEFAULT_COLOR]])
         self._view.set_alpha(run.alpha)
         self._view.set_errorbar_color(PlotContext.color_options_extra[style[PlotContext.Keys.ERRORBAR_COLOR]])
+        self._view.set_fit_color(PlotContext.color_options_extra[style[PlotContext.Keys.FIT_COLOR]])
         self._view.set_errorbar_style(PlotContext.errorbar_styles[style[PlotContext.Keys.ERRORBAR_STYLE]])
         self._view.set_errorbar_width(PlotContext.errorbar_width[style[PlotContext.Keys.ERRORBAR_WIDTH]])
         self._view.set_fillstyle(PlotContext.fillstyle_options[style[PlotContext.Keys.FILLSTYLE]])
@@ -761,6 +776,13 @@ class MuonRunPanelPresenter:
             self._view.set_errorbar_color("*")
         else:
             self._view.set_errorbar_color(values.pop())
+
+        values = {PlotContext.color_options_extra[style[PlotContext.Keys.FIT_COLOR]] for style in
+                  self._styles.values()}
+        if len(values) > 1:
+            self._view.set_fit_color("*")
+        else:
+            self._view.set_fit_color(values.pop())
 
         values = {PlotContext.errorbar_styles[style[PlotContext.Keys.ERRORBAR_STYLE]] for style in self._styles.values()}
         if len(values) > 1:
