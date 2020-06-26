@@ -267,8 +267,5 @@ def fit_lm(expression, time, asymmetry, uncertainty, variables: dict, independen
 # plt.legend()
 # plt.show()
 
-
-var_func = "AS(t) = a0*cos(2*pi*f*t+phi)*2.718**(-lam*t)"
-print(parse(var_func))
 # ind, exp = split_expression(var_func)
 # print("Function = {}\nIndependent Variable = {}\nExpression = {}\nFree Constants = {}".format(var_func, ind, exp, parse(exp)))

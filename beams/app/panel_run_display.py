@@ -246,7 +246,7 @@ class MuonRunPanel(QtWidgets.QDockWidget):
         self.setEnabled(False)
 
     def _set_widget_attributes(self):
-        self.run_list.setMinimumHeight(300)
+        self.run_list.setMaximumHeight(160)
         self.run_list.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.data_settings_box.toggle_button.pressed.connect(lambda: self._toggle_boxes('data'))
         self.plot_settings_box.toggle_button.pressed.connect(lambda: self._toggle_boxes('plot'))
@@ -646,7 +646,10 @@ class MuonRunPanelPresenter:
         variables = self._view.get_variable_data()
         function = self._view.get_fit_expression()
         ind, _, expression = self._model.parse_expression(function)
-        self._model.get_fit(ind, expression, variables, self._view.get_selected_titles())
+        try:
+            self._model.get_fit(ind, expression, variables, self._view.get_selected_titles())
+        except ValueError:
+            WarningMessageDialog.launch(["Invalid input."])
         variables = self._model.get_run_fit_parameters(self._view.get_selected_titles())[0].free_variables
 
         for k, v in variables.items():
