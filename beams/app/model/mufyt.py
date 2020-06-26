@@ -28,7 +28,7 @@ def parse(s):
     oper_set = ('+', '-', '/', '*', '(', ')', '[', ']', '{', '}', '^', '!')
     key_1_char_set = ('e', 'i')
     key_2_char_set = ('pi')
-    key_3_char_set = ('sin', 'cos', 'tan')
+    key_3_char_set = ('sin', 'cos', 'tan', 'exp')
     key_4_char_set = ('sinh', 'cosh', 'tanh')
 
     free_set = set()
@@ -55,9 +55,10 @@ def parse(s):
             elif s[i:i + 2].lower() in key_2_char_set:
                 skip_chars = 1
                 continue
-            elif s[i].lower() in key_1_char_set and (s[i + 1] in oper_set or s[i + 1].isspace()):
+            elif len(free_variable) == 0 and s[i].lower() in key_1_char_set and (s[i + 1] in oper_set or s[i + 1].isspace()):
                 continue
             else:
+                print('adding character {}'.format(character))
                 free_variable.append(character)
 
         elif character.isdigit():
@@ -168,6 +169,7 @@ def fit(expression, time, asymmetry, uncertainty, variables: dict, independent_v
 
 def fit_least_squares(expression, time, asymmetry, uncertainty, variables: dict, independent_variable):
 
+    # Since we divide by the uncertainty which has zeros I replace the occasional zero with the value before it.
     uncertainty = np.array([u if u != 0 else uncertainty[i-1] for i, u in enumerate(uncertainty)])
 
     def residual(parameters, t, a, u):
@@ -266,7 +268,7 @@ def fit_lm(expression, time, asymmetry, uncertainty, variables: dict, independen
 # plt.show()
 
 
-# var_func = "AS(t) = a0*cos(2*pi*f*t+phi)*2.718**(-lam*t)"
-#
+var_func = "AS(t) = a0*cos(2*pi*f*t+phi)*2.718**(-lam*t)"
+print(parse(var_func))
 # ind, exp = split_expression(var_func)
 # print("Function = {}\nIndependent Variable = {}\nExpression = {}\nFree Constants = {}".format(var_func, ind, exp, parse(exp)))
