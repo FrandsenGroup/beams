@@ -130,6 +130,9 @@ def fit(expression, time, asymmetry, uncertainty, variables: dict, independent_v
     def error():
         pass
 
+    if expression is not None:
+        return fit_least_squares(expression, time, asymmetry, uncertainty, variables, independent_variable)
+
     var_names = [independent_variable]
     var_names.extend([var for var in variables.keys()])
     var_guesses = [float(data[0]) for data in variables.values()]
@@ -148,14 +151,91 @@ def fit(expression, time, asymmetry, uncertainty, variables: dict, independent_v
         else:
             var_uppers[i] = float(bound)
 
-    print("Expression={}\nIndependent={}\nVariables={}\nGuesses={}\nLowers={}\nUppers={}".format(expression, independent_variable, var_names, var_guesses, var_lowers, var_uppers))
+    # print("Expression={}\nIndependent={}\nVariables={}\nGuesses={}\nLowers={}\nUppers={}".format(expression, independent_variable, var_names, var_guesses, var_lowers, var_uppers))
 
     lambda_expression = sp.lambdify(var_names, sp.sympify(expression), "numpy")
 
     pars, cov = curve_fit(f=lambda_expression, xdata=time, ydata=asymmetry, maxfev=10000,
                           bounds=(var_lowers, var_uppers), p0=var_guesses)
 
-    print("Fit={}\nCov={}\n".format(pars, cov))
+    # print("Fit={}\nCov={}\n".format(pars, cov))
+
+    for p, k in zip(pars, variables.keys()):
+        variables[k][0] = p
+
+    return pars, cov, lambda_expression
+
+
+def fit_least_squares(expression, time, asymmetry, uncertainty, variables: dict, independent_variable):
+
+    uncertainty = np.array([u if u != 0 else uncertainty[i-1] for i, u in enumerate(uncertainty)])
+
+    def residual(parameters, t, a, u):
+        calc = lambda_expression(*parameters, t)
+        return (a - calc) / u
+
+    var_names = [independent_variable]
+    var_names.extend([var for var in variables.keys()])
+    var_guesses = [float(data[0]) for data in variables.values()]
+    var_lowers = [data[1] for data in variables.values()]
+    var_uppers = [data[2] for data in variables.values()]
+
+    for i, bound in enumerate(var_lowers):
+        if bound.lower() == '-inf' or bound.lower() == '-infinity':
+            var_lowers[i] = -np.inf
+        else:
+            var_lowers[i] = float(bound)
+
+    for i, bound in enumerate(var_uppers):
+        if bound.lower() == 'inf' or bound.lower() == 'infinity':
+            var_uppers[i] = np.inf
+        else:
+            var_uppers[i] = float(bound)
+
+    lambda_expression = sp.lambdify(var_names, sp.sympify(expression), "numpy")
+
+    try:
+        pars = least_squares(fun=residual, x0=var_guesses, bounds=(var_lowers, var_uppers), args=(time, asymmetry, uncertainty)).x
+    except ValueError:
+        return var_guesses, None, lambda_expression
+
+    for p, k in zip(pars, variables.keys()):
+        variables[k][0] = p
+
+    return pars, None, lambda_expression
+
+
+def fit_lm(expression, time, asymmetry, uncertainty, variables: dict, independent_variable):
+
+    def error():
+        pass
+
+    var_names = [independent_variable]
+    var_names.extend([var for var in variables.keys()])
+    var_guesses = [float(data[0]) for data in variables.values()]
+    var_lowers = [data[1] for data in variables.values()]
+    var_uppers = [data[2] for data in variables.values()]
+
+    for i, bound in enumerate(var_lowers):
+        if bound.lower() == '-inf' or bound.lower() == '-infinity':
+            var_lowers[i] = -np.inf
+        else:
+            var_lowers[i] = float(bound)
+
+    for i, bound in enumerate(var_uppers):
+        if bound.lower() == 'inf' or bound.lower() == 'infinity':
+            var_uppers[i] = np.inf
+        else:
+            var_uppers[i] = float(bound)
+
+    # print("Expression={}\nIndependent={}\nVariables={}\nGuesses={}\nLowers={}\nUppers={}".format(expression, independent_variable, var_names, var_guesses, var_lowers, var_uppers))
+
+    lambda_expression = sp.lambdify(var_names, sp.sympify(expression), "numpy")
+
+    pars, cov = curve_fit(f=lambda_expression, xdata=time, ydata=asymmetry, maxfev=10000,
+                          bounds=(var_lowers, var_uppers), p0=var_guesses)
+
+    # print("Fit={}\nCov={}\n".format(pars, cov))
 
     for p, k in zip(pars, variables.keys()):
         variables[k][0] = p

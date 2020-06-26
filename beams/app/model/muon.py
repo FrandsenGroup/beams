@@ -6,7 +6,7 @@ import uuid
 import numpy as np
 
 # BEAMS Modules
-from app.model import files, fit
+from app.model import files, mufyt
 
 
 class MuonRun:
@@ -19,7 +19,7 @@ class MuonRun:
         self.asymmetry = None
         self.uncertainty = None
         self.time = None
-        self.fit = fit.Fit()
+        self.fit = mufyt.Fit()
 
         self.alpha = 1
         self.beta = 1

@@ -2,7 +2,7 @@
 from PyQt5 import QtWidgets, QtCore
 
 from app.model.model import PlotContext, MuonDataContext
-from app.model import files, muon, fit
+from app.model import files, muon, mufyt
 from app.dialog_misc import WarningMessageDialog, IntegrationDisplayDialog, FileDisplayDialog
 from app.dialog_histogram_display import HistogramDisplayDialog
 from app.util import widgets
@@ -926,9 +926,9 @@ class MuonRunPanelModel:
         self._data_context.set_fit_data_for_runs(run_ids, expression, independent_variable, variables)
 
     def parse_expression(self, expression):
-        if fit.is_valid_expression(expression):
-            ind, exp = fit.split_expression(expression)
-            vars = fit.parse(exp)
+        if mufyt.is_valid_expression(expression):
+            ind, exp = mufyt.split_expression(expression)
+            vars = mufyt.parse(exp)
             if ind in vars:
                 vars.remove(ind)
             return ind, vars, exp

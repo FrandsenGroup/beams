@@ -8,7 +8,7 @@ from matplotlib.figure import Figure
 import numpy as np
 
 from app.model.model import PlotContext, MuonDataContext
-from app.model import muon, fit
+from app.model import muon, mufyt
 from app.dialog_misc import WarningMessageDialog
 
 
@@ -586,8 +586,8 @@ class MuonPlotPanelModel:
 
             if run.fit.is_fitted and not fast:
                 if not run.fit.fit_calculated:
-                    pars, cov, lambda_expression = fit.fit(run.fit.expression, time, asymmetry, uncertainty,
-                                                           run.fit.free_variables, run.fit.independent_variable)
+                    pars, cov, lambda_expression = mufyt.fit(run.fit.expression, time, asymmetry, uncertainty,
+                                                             run.fit.free_variables, run.fit.independent_variable)
                     run.fit.parameters = pars
                     run.fit.cov = cov
                     run.fit.lambda_expression = lambda_expression
