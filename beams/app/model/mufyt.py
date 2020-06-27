@@ -1,7 +1,40 @@
 
+import traceback
+
 import sympy as sp
 import numpy as np
 from scipy.optimize import least_squares, curve_fit
+
+DELTA = "\u0394"
+LAMBDA = "\u03BB"
+BETA = "\u03B2"
+SIGMA = "\u03C3"
+ALPHA = "\u03B1"
+PHI = "\u03D5"
+
+SIMPLE_EXPONENTIAL = "f(t) = exp(-\u03BB*t)"
+STRETCHED_EXPONENTIAL = "f(t) = exp(-(\u03BB*t)**\u03B2)"
+SIMPLE_GAUSSIAN = "f(t) = exp(-1/2*(\u03C3*t)**2)"
+GAUSSIAN_KT = "f(t) = 1/3 + 2/3*(1 - (\u03C3*t)**2)*exp(-1/2*(\u03C3*t)**2)"
+LORENTZIAN_KT = "f(t) = 1/3 + 2/3*(1 - \u03BB*t)*exp(-\u03BB*t)"
+COMBINED_KT = "f(t) = 1/3 + 2/3*(1-\u03C3**2*t**2-\u03BB*t)*exp(-\u03C3**2*t**2/2-\u03BB*t)"
+STRETCHED_KT = "f(t) = 1/3 + 2/3(1-(\u03C3*t)**\u03B2)*exp(-(\u03C3*t)**\u03B2/\u03B2"
+COSINE = "f(t) = cos(2*pi*v*t + pi*\u03D5/180)"
+INTERNAL_COSINE = "f(t) = \u03B1*cos(2*pi*v*t + pi*\u03D5/180)*exp(-\u03BB*t) + (1-\u03B1)*exp(-\u03BB*t)"
+BESSEL = "f(t) = j0*(2*pi*v*t + pi*\u03D5/180)"
+INTERNAL_BESSEL = "f(t) = \u03B1*j0*(2*pi*v*t + pi*\u03D5/180)*exp(-\u03BB*t) + (1-\u03B1)*exp(-\u03BB*t)"
+
+EQUATION_DICTIONARY = {"Simple Exponential": SIMPLE_EXPONENTIAL,
+                       "Stretched Exponential": STRETCHED_EXPONENTIAL,
+                       "Simple Gaussian": SIMPLE_GAUSSIAN,
+                       "Gaussian KT": GAUSSIAN_KT,
+                       "Lorentzian KT": LORENTZIAN_KT,
+                       "Combined KT": COMBINED_KT,
+                       "Stretched KT": STRETCHED_KT,
+                       "Cosine": COSINE,
+                       "Internal Cosine": INTERNAL_COSINE,
+                       "Bessel": BESSEL,
+                       "Internal Bessel": INTERNAL_BESSEL}
 
 
 class Fit:
@@ -14,6 +47,7 @@ class Fit:
         self.free_variables = None
         self.parameters = None
         self.cov = None
+        self.include_alpha = True
         self.lambda_expression = None
 
     def __str__(self):
@@ -58,7 +92,6 @@ def parse(s):
             elif len(free_variable) == 0 and s[i].lower() in key_1_char_set and (s[i + 1] in oper_set or s[i + 1].isspace()):
                 continue
             else:
-                print('adding character {}'.format(character))
                 free_variable.append(character)
 
         elif character.isdigit():
@@ -91,6 +124,7 @@ def is_valid_expression(expression):
                             sp.sympify(expression[j+1:])
                             return True
                         except Exception:
+                            traceback.print_exc()
                             return False
             else:
                 independent_variable += c
@@ -127,44 +161,7 @@ def split_expression(expression):
 
 
 def fit(expression, time, asymmetry, uncertainty, variables: dict, independent_variable):
-
-    def error():
-        pass
-
-    if expression is not None:
-        return fit_least_squares(expression, time, asymmetry, uncertainty, variables, independent_variable)
-
-    var_names = [independent_variable]
-    var_names.extend([var for var in variables.keys()])
-    var_guesses = [float(data[0]) for data in variables.values()]
-    var_lowers = [data[1] for data in variables.values()]
-    var_uppers = [data[2] for data in variables.values()]
-
-    for i, bound in enumerate(var_lowers):
-        if bound.lower() == '-inf' or bound.lower() == '-infinity':
-            var_lowers[i] = -np.inf
-        else:
-            var_lowers[i] = float(bound)
-
-    for i, bound in enumerate(var_uppers):
-        if bound.lower() == 'inf' or bound.lower() == 'infinity':
-            var_uppers[i] = np.inf
-        else:
-            var_uppers[i] = float(bound)
-
-    # print("Expression={}\nIndependent={}\nVariables={}\nGuesses={}\nLowers={}\nUppers={}".format(expression, independent_variable, var_names, var_guesses, var_lowers, var_uppers))
-
-    lambda_expression = sp.lambdify(var_names, sp.sympify(expression), "numpy")
-
-    pars, cov = curve_fit(f=lambda_expression, xdata=time, ydata=asymmetry, maxfev=10000,
-                          bounds=(var_lowers, var_uppers), p0=var_guesses)
-
-    # print("Fit={}\nCov={}\n".format(pars, cov))
-
-    for p, k in zip(pars, variables.keys()):
-        variables[k][0] = p
-
-    return pars, cov, lambda_expression
+    return fit_least_squares(expression, time, asymmetry, uncertainty, variables, independent_variable)
 
 
 def fit_least_squares(expression, time, asymmetry, uncertainty, variables: dict, independent_variable):

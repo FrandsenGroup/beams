@@ -167,7 +167,16 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             self.expression_input = QtWidgets.QLineEdit()
             self.analyze_button = widgets.StyleTwoButton("Check")
             self.variable_table = QtWidgets.QTableWidget()
-            self.fit_button = widgets.StyleOneButton("Fit")
+            self.fit_button = widgets.StyleOneButton("Refine")
+            self.alpha_check = QtWidgets.QCheckBox()
+            self.equation_choices = QtWidgets.QComboBox()
+            self.plot_initial = widgets.StyleOneButton("Plot Fit")
+            self.insert_sigma = widgets.StyleTwoButton(mufyt.SIGMA)
+            self.insert_lambda = widgets.StyleTwoButton(mufyt.LAMBDA)
+            self.insert_beta = widgets.StyleTwoButton(mufyt.BETA)
+            self.insert_delta = widgets.StyleTwoButton(mufyt.DELTA)
+            self.insert_alpha = widgets.StyleTwoButton(mufyt.ALPHA)
+            self.insert_phi = widgets.StyleTwoButton(mufyt.PHI)
 
             self._set_widget_dimensions()
             self._set_widget_attributes()
@@ -176,13 +185,24 @@ class MuonRunPanel(QtWidgets.QDockWidget):
         def _set_widget_dimensions(self):
             self.analyze_button.setFixedWidth(60)
 
+            insert_key_width = 20
+            self.insert_alpha.setFixedWidth(insert_key_width)
+            self.insert_beta.setFixedWidth(insert_key_width)
+            self.insert_delta.setFixedWidth(insert_key_width)
+            self.insert_lambda.setFixedWidth(insert_key_width)
+            self.insert_phi.setFixedWidth(insert_key_width)
+            self.insert_sigma.setFixedWidth(insert_key_width)
+
         def _set_widget_attributes(self):
             self.variable_table.setEnabled(False)
             self.fit_button.setEnabled(False)
+            self.plot_initial.setEnabled(False)
+            self.alpha_check.setChecked(True)
 
             self.variable_table.setColumnCount(3)
             self.variable_table.setHorizontalHeaderLabels(['Initial', '<', '>'])
             self.expression_input.setText("f(t) = ")
+            self.equation_choices.addItems(mufyt.EQUATION_DICTIONARY.keys())
 
             header = self.variable_table.horizontalHeader()
             header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
@@ -194,16 +214,51 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             layout = QtWidgets.QVBoxLayout()
 
             row = QtWidgets.QHBoxLayout()
+            row.addWidget(self.alpha_check)
+            row.addSpacing(5)
+            row.addWidget(QtWidgets.QLabel("Include Alpha"))
+            row.addStretch()
+            layout.addLayout(row)
+            layout.addSpacing(spacing)
+
+            row = QtWidgets.QHBoxLayout()
+            row.addWidget(self.equation_choices)
+            row.addSpacing(5)
+            row.addWidget(QtWidgets.QLabel(""))
+            row.addStretch()
+            layout.addLayout(row)
+            layout.addSpacing(spacing)
+
+            row = QtWidgets.QHBoxLayout()
             row.addWidget(self.expression_input)
             row.addSpacing(5)
             row.addWidget(self.analyze_button)
             layout.addLayout(row)
             layout.addSpacing(spacing)
 
+            row = QtWidgets.QHBoxLayout()
+            row.addWidget(self.insert_sigma)
+            row.addSpacing(2)
+            row.addWidget(self.insert_phi)
+            row.addSpacing(2)
+            row.addWidget(self.insert_lambda)
+            row.addSpacing(2)
+            row.addWidget(self.insert_delta)
+            row.addSpacing(2)
+            row.addWidget(self.insert_beta)
+            row.addSpacing(2)
+            row.addWidget(self.insert_alpha)
+            layout.addLayout(row)
+            layout.addSpacing(spacing)
+
             layout.addWidget(self.variable_table)
             layout.addSpacing(spacing)
 
-            layout.addWidget(self.fit_button)
+            row = QtWidgets.QHBoxLayout()
+            row.addWidget(self.plot_initial)
+            row.addSpacing(5)
+            row.addWidget(self.fit_button)
+            layout.addLayout(row)
             layout.addSpacing(spacing)
 
             form_layout = QtWidgets.QFormLayout()
@@ -356,6 +411,31 @@ class MuonRunPanel(QtWidgets.QDockWidget):
 
     def get_fit_expression(self):
         return self.fit_settings.expression_input.text()
+
+    def insert_character_at_cursor(self, character):
+        current_string = self.fit_settings.expression_input.text()
+
+        if len(current_string) == 0:
+            self.fit_settings.expression_input.setText(character)
+            return
+
+        position = self.fit_settings.expression_input.cursorPosition()
+
+        if len(current_string) == position:
+            current_string += character
+            self.fit_settings.expression_input.setText(current_string)
+            return
+
+        new_string = ""
+        for i, c in enumerate(current_string):
+            if i == position:
+                new_string += character
+            new_string += c
+
+        self.fit_settings.expression_input.setText(new_string)
+
+    def get_current_equation(self):
+        return self.fit_settings.equation_choices.currentText()
 
     def get_variable_data(self):
         variables = {}
@@ -550,12 +630,19 @@ class MuonRunPanel(QtWidgets.QDockWidget):
     def set_enabled_fit(self, enabled):
         self.fit_settings.variable_table.setEnabled(enabled)
         self.fit_settings.fit_button.setEnabled(enabled)
+        self.fit_settings.plot_initial.setEnabled(enabled)
+
+    def set_expression(self, expression):
+        self.fit_settings.expression_input.setText(expression)
 
     def set_parameter_values(self, variable, value):
         for i in range(self.fit_settings.variable_table.rowCount()):
             if self.fit_settings.variable_table.verticalHeaderItem(i).text() == variable:
                 item = QtWidgets.QTableWidgetItem()
-                item.setText('{:8.6f}'.format(value))
+                try:
+                    item.setText('{:8.6f}'.format(value))
+                except ValueError:
+                    item.setText(value)
                 self.fit_settings.variable_table.takeItem(i, 0)
                 self.fit_settings.variable_table.setItem(i, 0, item)
 
@@ -618,6 +705,20 @@ class MuonRunPanelPresenter:
         self._view.plot_settings.fit_color_options.currentTextChanged.connect(
             lambda: self._plot_parameter_changed(PlotContext.Keys.FIT_COLOR,
                                                  self._view.plot_settings.fit_color_options.currentText()))
+        self._view.fit_settings.equation_choices.currentTextChanged.connect(self._equation_changed)
+        self._view.fit_settings.insert_alpha.clicked.connect(lambda: self._insert_key_clicked(mufyt.ALPHA))
+        self._view.fit_settings.insert_beta.clicked.connect(lambda: self._insert_key_clicked(mufyt.BETA))
+        self._view.fit_settings.insert_delta.clicked.connect(lambda: self._insert_key_clicked(mufyt.DELTA))
+        self._view.fit_settings.insert_lambda.clicked.connect(lambda: self._insert_key_clicked(mufyt.LAMBDA))
+        self._view.fit_settings.insert_phi.clicked.connect(lambda: self._insert_key_clicked(mufyt.PHI))
+        self._view.fit_settings.insert_sigma.clicked.connect(lambda: self._insert_key_clicked(mufyt.SIGMA))
+
+    def _insert_key_clicked(self, key):
+        self._view.insert_character_at_cursor(key)
+
+    def _equation_changed(self):
+        equation_title = self._view.get_current_equation()
+        self._view.set_expression(mufyt.EQUATION_DICTIONARY[equation_title])
 
     def _analyze_clicked(self):
         expression = self._view.get_fit_expression()
