@@ -11,6 +11,7 @@ BETA = "\u03B2"
 SIGMA = "\u03C3"
 ALPHA = "\u03B1"
 PHI = "\u03D5"
+PI = "\u03C0"
 
 SIMPLE_EXPONENTIAL = "f(t) = exp(-\u03BB*t)"
 STRETCHED_EXPONENTIAL = "f(t) = exp(-(\u03BB*t)**\u03B2)"
@@ -19,10 +20,10 @@ GAUSSIAN_KT = "f(t) = 1/3 + 2/3*(1 - (\u03C3*t)**2)*exp(-1/2*(\u03C3*t)**2)"
 LORENTZIAN_KT = "f(t) = 1/3 + 2/3*(1 - \u03BB*t)*exp(-\u03BB*t)"
 COMBINED_KT = "f(t) = 1/3 + 2/3*(1-\u03C3**2*t**2-\u03BB*t)*exp(-\u03C3**2*t**2/2-\u03BB*t)"
 STRETCHED_KT = "f(t) = 1/3 + 2/3(1-(\u03C3*t)**\u03B2)*exp(-(\u03C3*t)**\u03B2/\u03B2"
-COSINE = "f(t) = cos(2*pi*v*t + pi*\u03D5/180)"
-INTERNAL_COSINE = "f(t) = \u03B1*cos(2*pi*v*t + pi*\u03D5/180)*exp(-\u03BB*t) + (1-\u03B1)*exp(-\u03BB*t)"
-BESSEL = "f(t) = j0*(2*pi*v*t + pi*\u03D5/180)"
-INTERNAL_BESSEL = "f(t) = \u03B1*j0*(2*pi*v*t + pi*\u03D5/180)*exp(-\u03BB*t) + (1-\u03B1)*exp(-\u03BB*t)"
+COSINE = "f(t) = cos(2*\u03C0*v*t + \u03C0*\u03D5/180)"
+INTERNAL_COSINE = "f(t) = \u03B1*cos(2*\u03C0*v*t + \u03C0*\u03D5/180)*exp(-\u03BB*t) + (1-\u03B1)*exp(-\u03BB*t)"
+BESSEL = "f(t) = j0*(2*\u03C0*v*t + \u03C0*\u03D5/180)"
+INTERNAL_BESSEL = "f(t) = \u03B1*j0*(2*\u03C0*v*t + \u03C0*\u03D5/180)*exp(-\u03BB*t) + (1-\u03B1)*exp(-\u03BB*t)"
 
 EQUATION_DICTIONARY = {"Simple Exponential": SIMPLE_EXPONENTIAL,
                        "Stretched Exponential": STRETCHED_EXPONENTIAL,
@@ -60,7 +61,7 @@ def parse(s):
     # Add to these sets any keywords you want to be recognized as not variables.
     # Keep keywords lowercase, user input will be cast to lowercase for comparison.
     oper_set = ('+', '-', '/', '*', '(', ')', '[', ']', '{', '}', '^', '!')
-    key_1_char_set = ('e', 'i')
+    key_1_char_set = ('e', 'i', '\u03C0')
     key_2_char_set = ('pi')
     key_3_char_set = ('sin', 'cos', 'tan', 'exp')
     key_4_char_set = ('sinh', 'cosh', 'tanh')
@@ -161,7 +162,18 @@ def split_expression(expression):
 
 
 def fit(expression, time, asymmetry, uncertainty, variables: dict, independent_variable):
-    return fit_least_squares(expression, time, asymmetry, uncertainty, variables, independent_variable)
+
+    expression_string = ""
+
+    for c in expression:
+        if c == '\u03C0':
+            expression_string += "pi"
+        elif c == '^':
+            expression_string += "**"
+        else:
+            expression_string += c
+
+    return fit_least_squares(expression_string, time, asymmetry, uncertainty, variables, independent_variable)
 
 
 def fit_least_squares(expression, time, asymmetry, uncertainty, variables: dict, independent_variable):

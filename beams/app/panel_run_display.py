@@ -177,6 +177,7 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             self.insert_delta = widgets.StyleTwoButton(mufyt.DELTA)
             self.insert_alpha = widgets.StyleTwoButton(mufyt.ALPHA)
             self.insert_phi = widgets.StyleTwoButton(mufyt.PHI)
+            self.insert_pi = widgets.StyleOneButton(mufyt.PI)
 
             self._set_widget_dimensions()
             self._set_widget_attributes()
@@ -186,6 +187,7 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             self.analyze_button.setFixedWidth(60)
 
             insert_key_width = 20
+            self.insert_pi.setFixedWidth(insert_key_width)
             self.insert_alpha.setFixedWidth(insert_key_width)
             self.insert_beta.setFixedWidth(insert_key_width)
             self.insert_delta.setFixedWidth(insert_key_width)
@@ -201,8 +203,8 @@ class MuonRunPanel(QtWidgets.QDockWidget):
 
             self.variable_table.setColumnCount(3)
             self.variable_table.setHorizontalHeaderLabels(['Initial', '<', '>'])
-            self.expression_input.setText("f(t) = ")
             self.equation_choices.addItems(mufyt.EQUATION_DICTIONARY.keys())
+            self.expression_input.setText(mufyt.EQUATION_DICTIONARY[self.equation_choices.currentText()])
 
             header = self.variable_table.horizontalHeader()
             header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
@@ -237,6 +239,8 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             layout.addSpacing(spacing)
 
             row = QtWidgets.QHBoxLayout()
+            row.addWidget(self.insert_pi)
+            row.addSpacing(2)
             row.addWidget(self.insert_sigma)
             row.addSpacing(2)
             row.addWidget(self.insert_phi)
@@ -712,6 +716,7 @@ class MuonRunPanelPresenter:
         self._view.fit_settings.insert_lambda.clicked.connect(lambda: self._insert_key_clicked(mufyt.LAMBDA))
         self._view.fit_settings.insert_phi.clicked.connect(lambda: self._insert_key_clicked(mufyt.PHI))
         self._view.fit_settings.insert_sigma.clicked.connect(lambda: self._insert_key_clicked(mufyt.SIGMA))
+        self._view.fit_settings.insert_pi.clicked.connect(lambda: self._insert_key_clicked(mufyt.PI))
 
     def _insert_key_clicked(self, key):
         self._view.insert_character_at_cursor(key)
