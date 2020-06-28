@@ -160,13 +160,14 @@ class MuonDataContext:
         if not stop_signal:
             self.__instance.notifier.notify()
 
-    def set_fit_data_for_runs(self, run_ids, expression, independent_variable, variables, stop_signal=None):
+    def set_fit_data_for_runs(self, run_ids, expression, independent_variable, variables, refine, stop_signal=None):
         for run_id in run_ids:
             new_fit = mufyt.Fit()
             new_fit.expression = expression
             new_fit.independent_variable = independent_variable
             new_fit.free_variables = variables
             new_fit.is_fitted = True
+            new_fit.refine = refine
 
             run = self.get_run_by_id(run_id)
             run.fit = new_fit

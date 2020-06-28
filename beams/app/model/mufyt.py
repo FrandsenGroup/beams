@@ -14,12 +14,12 @@ PHI = "\u03D5"
 PI = "\u03C0"
 
 SIMPLE_EXPONENTIAL = "f(t) = exp(-\u03BB*t)"
-STRETCHED_EXPONENTIAL = "f(t) = exp(-(\u03BB*t)**\u03B2)"
-SIMPLE_GAUSSIAN = "f(t) = exp(-1/2*(\u03C3*t)**2)"
-GAUSSIAN_KT = "f(t) = 1/3 + 2/3*(1 - (\u03C3*t)**2)*exp(-1/2*(\u03C3*t)**2)"
+STRETCHED_EXPONENTIAL = "f(t) = exp(-(\u03BB*t)^\u03B2)"
+SIMPLE_GAUSSIAN = "f(t) = exp(-1/2*(\u03C3*t)^2)"
+GAUSSIAN_KT = "f(t) = 1/3 + 2/3*(1 - (\u03C3*t)^2)*exp(-1/2*(\u03C3*t)^2)"
 LORENTZIAN_KT = "f(t) = 1/3 + 2/3*(1 - \u03BB*t)*exp(-\u03BB*t)"
-COMBINED_KT = "f(t) = 1/3 + 2/3*(1-\u03C3**2*t**2-\u03BB*t)*exp(-\u03C3**2*t**2/2-\u03BB*t)"
-STRETCHED_KT = "f(t) = 1/3 + 2/3(1-(\u03C3*t)**\u03B2)*exp(-(\u03C3*t)**\u03B2/\u03B2"
+COMBINED_KT = "f(t) = 1/3 + 2/3*(1-\u03C3^2*t^2-\u03BB*t)*exp(-\u03C3^2*t^2/2-\u03BB*t)"
+STRETCHED_KT = "f(t) = 1/3 + 2/3(1-(\u03C3*t)^\u03B2)*exp(-(\u03C3*t)^\u03B2/\u03B2"
 COSINE = "f(t) = cos(2*\u03C0*v*t + \u03C0*\u03D5/180)"
 INTERNAL_COSINE = "f(t) = \u03B1*cos(2*\u03C0*v*t + \u03C0*\u03D5/180)*exp(-\u03BB*t) + (1-\u03B1)*exp(-\u03BB*t)"
 BESSEL = "f(t) = j0*(2*\u03C0*v*t + \u03C0*\u03D5/180)"
@@ -50,6 +50,7 @@ class Fit:
         self.cov = None
         self.include_alpha = True
         self.lambda_expression = None
+        self.refine = True
 
     def __str__(self):
         return "Fit=[\n\tExpression={}\n\tIndependent={}\n\tVariables={}\n]".format(self.expression, self.independent_variable, self.free_variables)
@@ -90,7 +91,7 @@ def parse(s):
             elif s[i:i + 2].lower() in key_2_char_set:
                 skip_chars = 1
                 continue
-            elif len(free_variable) == 0 and s[i].lower() in key_1_char_set and (s[i + 1] in oper_set or s[i + 1].isspace()):
+            elif len(free_variable) == 0 and (s[i] in key_1_char_set or s[i].lower() in key_1_char_set) and (i == len(s) - 1 or s[i + 1] in oper_set or s[i + 1].isspace()):
                 continue
             else:
                 free_variable.append(character)
@@ -174,6 +175,26 @@ def fit(expression, time, asymmetry, uncertainty, variables: dict, independent_v
             expression_string += c
 
     return fit_least_squares(expression_string, time, asymmetry, uncertainty, variables, independent_variable)
+
+
+def lambdify(expression, variables: dict, independent_variable):
+    expression_string = ""
+
+    for c in expression:
+        if c == '\u03C0':
+            expression_string += "pi"
+        elif c == '^':
+            expression_string += "**"
+        else:
+            expression_string += c
+
+    var_names = [independent_variable]
+    var_names.extend([var for var in variables.keys()])
+    var_guesses = [float(data[0]) for data in variables.values()]
+
+    lambda_expression = sp.lambdify(var_names, sp.sympify(expression), "numpy")
+
+    return var_guesses, None, lambda_expression
 
 
 def fit_least_squares(expression, time, asymmetry, uncertainty, variables: dict, independent_variable):

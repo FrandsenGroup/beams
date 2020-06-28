@@ -673,6 +673,17 @@ class MuonRunPanelPresenter:
         self._view.data_settings.integrate_button.released.connect(self._integrate_clicked)
         self._view.fit_settings.analyze_button.released.connect(self._analyze_clicked)
         self._view.fit_settings.fit_button.released.connect(self._fit_clicked)
+        self._view.fit_settings.equation_choices.currentTextChanged.connect(self._equation_changed)
+        self._view.fit_settings.plot_initial.clicked.connect(self._plot_initial_fit)
+        self._view.fit_settings.insert_alpha.clicked.connect(lambda: self._insert_key_clicked(mufyt.ALPHA))
+        self._view.fit_settings.insert_beta.clicked.connect(lambda: self._insert_key_clicked(mufyt.BETA))
+        self._view.fit_settings.insert_delta.clicked.connect(lambda: self._insert_key_clicked(mufyt.DELTA))
+        self._view.fit_settings.insert_lambda.clicked.connect(lambda: self._insert_key_clicked(mufyt.LAMBDA))
+        self._view.fit_settings.insert_phi.clicked.connect(lambda: self._insert_key_clicked(mufyt.PHI))
+        self._view.fit_settings.insert_sigma.clicked.connect(lambda: self._insert_key_clicked(mufyt.SIGMA))
+        self._view.fit_settings.insert_pi.clicked.connect(lambda: self._insert_key_clicked(mufyt.PI))
+        self._view.fit_settings.expression_input.textChanged.connect(lambda: self._view.set_enabled_fit(False))
+
         self._view.plot_settings.all_color_options.currentTextChanged.connect(
             lambda: self._plot_parameter_changed(PlotContext.Keys.DEFAULT_COLOR,
                                                  self._view.plot_settings.all_color_options.currentText()))
@@ -709,14 +720,6 @@ class MuonRunPanelPresenter:
         self._view.plot_settings.fit_color_options.currentTextChanged.connect(
             lambda: self._plot_parameter_changed(PlotContext.Keys.FIT_COLOR,
                                                  self._view.plot_settings.fit_color_options.currentText()))
-        self._view.fit_settings.equation_choices.currentTextChanged.connect(self._equation_changed)
-        self._view.fit_settings.insert_alpha.clicked.connect(lambda: self._insert_key_clicked(mufyt.ALPHA))
-        self._view.fit_settings.insert_beta.clicked.connect(lambda: self._insert_key_clicked(mufyt.BETA))
-        self._view.fit_settings.insert_delta.clicked.connect(lambda: self._insert_key_clicked(mufyt.DELTA))
-        self._view.fit_settings.insert_lambda.clicked.connect(lambda: self._insert_key_clicked(mufyt.LAMBDA))
-        self._view.fit_settings.insert_phi.clicked.connect(lambda: self._insert_key_clicked(mufyt.PHI))
-        self._view.fit_settings.insert_sigma.clicked.connect(lambda: self._insert_key_clicked(mufyt.SIGMA))
-        self._view.fit_settings.insert_pi.clicked.connect(lambda: self._insert_key_clicked(mufyt.PI))
 
     def _insert_key_clicked(self, key):
         self._view.insert_character_at_cursor(key)
@@ -740,6 +743,15 @@ class MuonRunPanelPresenter:
         self._view.set_enabled_fit(True)
 
         self._view.get_variable_data()
+
+    def _plot_initial_fit(self):
+        variables = self._view.get_variable_data()
+        function = self._view.get_fit_expression()
+        ind, _, expression = self._model.parse_expression(function)
+        try:
+            self._model.set_initial_fit_parameters(ind, expression, variables, self._view.get_selected_titles())
+        except ValueError:
+            WarningMessageDialog.launch(["Invalid input."])
 
     def _fit_clicked(self):
         variables = self._view.get_variable_data()
@@ -1025,7 +1037,11 @@ class MuonRunPanelModel:
 
     def get_fit(self, independent_variable, expression, variables, titles):
         run_ids = [run.id for run in self.get_run_by_title(titles).values()]
-        self._data_context.set_fit_data_for_runs(run_ids, expression, independent_variable, variables)
+        self._data_context.set_fit_data_for_runs(run_ids, expression, independent_variable, variables, True)
+
+    def set_initial_fit_parameters(self, independent_variable, expression, variables, titles):
+        run_ids = [run.id for run in self.get_run_by_title(titles).values()]
+        self._data_context.set_fit_data_for_runs(run_ids, expression, independent_variable, variables, False)
 
     def parse_expression(self, expression):
         if mufyt.is_valid_expression(expression):

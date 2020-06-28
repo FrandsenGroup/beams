@@ -585,7 +585,7 @@ class MuonPlotPanelModel:
             uncertainty = None if fast else muon.bin_muon_uncertainty(run, bin_size)
 
             if run.fit.is_fitted and not fast:
-                if not run.fit.fit_calculated:
+                if run.fit.refine:
                     pars, cov, lambda_expression = mufyt.fit(run.fit.expression, time, asymmetry, uncertainty,
                                                              run.fit.free_variables, run.fit.independent_variable)
                     run.fit.parameters = pars
@@ -594,7 +594,12 @@ class MuonPlotPanelModel:
 
                     run_fit = lambda_expression(time, *pars)
                 else:
-                    run_fit = run.fit.lambda_expression(time, *run.fit.parameters)
+                    pars, _, lambda_expression = mufyt.lambdify(run.fit.expression, run.fit.free_variables,
+                                                                run.fit.independent_variable)
+                    run.fit.parameters = pars
+                    run.fit.lambda_expression = lambda_expression
+
+                    run_fit = run.fit.lambda_expression(time, *pars)
             else:
                 run_fit = None
 
