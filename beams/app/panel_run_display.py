@@ -211,6 +211,17 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
             header.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
 
+            self.insert_pi.setToolTip("Pi (value, not a variable)")
+            self.insert_sigma.setToolTip("Insert sigma")
+            self.insert_phi.setToolTip("Insert phi")
+            self.insert_lambda.setToolTip("Insert lambda")
+            self.insert_delta.setToolTip("Insert delta")
+            self.insert_beta.setToolTip("Insert beta")
+            self.insert_alpha.setToolTip("Insert alpha")
+            self.fit_button.setToolTip("Refine parameters and plot fit")
+            self.plot_initial.setToolTip("Plot with initial parameters")
+            self.analyze_button.setToolTip("Check expression is valid and pull out variables")
+
         def _set_widget_layout(self):
             spacing = 10
             layout = QtWidgets.QVBoxLayout()
