@@ -178,6 +178,7 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             self.insert_alpha = widgets.StyleTwoButton(mufyt.ALPHA)
             self.insert_phi = widgets.StyleTwoButton(mufyt.PHI)
             self.insert_pi = widgets.StyleOneButton(mufyt.PI)
+            self.insert_naught = widgets.StyleTwoButton(mufyt.NAUGHT)
 
             self._set_widget_dimensions()
             self._set_widget_attributes()
@@ -194,6 +195,7 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             self.insert_lambda.setFixedWidth(insert_key_width)
             self.insert_phi.setFixedWidth(insert_key_width)
             self.insert_sigma.setFixedWidth(insert_key_width)
+            self.insert_naught.setFixedWidth(insert_key_width)
 
         def _set_widget_attributes(self):
             self.variable_table.setEnabled(False)
@@ -220,6 +222,7 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             self.insert_alpha.setToolTip("Insert alpha")
             self.fit_button.setToolTip("Refine parameters and plot fit")
             self.plot_initial.setToolTip("Plot with initial parameters")
+            self.insert_naught.setToolTip("Insert naught")
             self.analyze_button.setToolTip("Check expression is valid and pull out variables")
 
         def _set_widget_layout(self):
@@ -263,6 +266,8 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             row.addWidget(self.insert_beta)
             row.addSpacing(2)
             row.addWidget(self.insert_alpha)
+            row.addSpacing(2)
+            row.addWidget(self.insert_naught)
             layout.addLayout(row)
             layout.addSpacing(spacing)
 
@@ -693,6 +698,7 @@ class MuonRunPanelPresenter:
         self._view.fit_settings.insert_phi.clicked.connect(lambda: self._insert_key_clicked(mufyt.PHI))
         self._view.fit_settings.insert_sigma.clicked.connect(lambda: self._insert_key_clicked(mufyt.SIGMA))
         self._view.fit_settings.insert_pi.clicked.connect(lambda: self._insert_key_clicked(mufyt.PI))
+        self._view.fit_settings.insert_naught.clicked.connect(lambda: self._insert_key_clicked(mufyt.NAUGHT))
         self._view.fit_settings.expression_input.textChanged.connect(lambda: self._view.set_enabled_fit(False))
 
         self._view.plot_settings.all_color_options.currentTextChanged.connect(
@@ -738,6 +744,7 @@ class MuonRunPanelPresenter:
     def _equation_changed(self):
         equation_title = self._view.get_current_equation()
         self._view.set_expression(mufyt.EQUATION_DICTIONARY[equation_title])
+        self._analyze_clicked()
 
     def _analyze_clicked(self):
         expression = self._view.get_fit_expression()
