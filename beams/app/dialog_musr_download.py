@@ -129,7 +129,6 @@ class MusrDownloadDialog(QtWidgets.QDialog):
 
     def set_if_empty(self, expt_new, year_new, area_new):
         area = self.get_area()
-        print(area)
         if len(area) == 0:
             self.input_area.setText(area_new)
 
@@ -385,8 +384,6 @@ class MusrDownloadDialogPresenter:
         self._download(downloads)
 
     def _download(self, downloads):
-        print(downloads)
-
         good = 0
         new_files = []
         for i, download in enumerate(downloads):
