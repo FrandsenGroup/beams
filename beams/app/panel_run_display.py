@@ -831,10 +831,12 @@ class MuonRunPanelPresenter:
         run = list(self._runs.values())[0]
         file = files.file(run.file)
         histogram_label = self._view.get_histogram_label()
-        bkgd1 = int(run.meta['BkgdOne'][histogram_label])
-        bkgd2 = int(run.meta['BkgdTwo'][histogram_label])
+        bkgd1 = int(run.meta[files.BACKGROUND_ONE_KEY][histogram_label])
+        bkgd2 = int(run.meta[files.BACKGROUND_TWO_KEY][histogram_label])
+        goodbin1 = int(run.meta[files.GOOD_BIN_ONE_KEY][histogram_label])
+        goodbin2 = int(run.meta[files.GOOD_BIN_TWO_KEY][histogram_label])
         t0 = int(run.meta['T0'][histogram_label])
-        HistogramDisplayDialog.launch([bkgd1, bkgd2, t0, file.read_data()[histogram_label], run.id, histogram_label])
+        HistogramDisplayDialog.launch([bkgd1, bkgd2, t0, file.read_data()[histogram_label], run.id, histogram_label, goodbin1, goodbin2])
 
     def _plot_parameter_changed(self, key, value):
         selected_items = self._view.get_selected_titles()

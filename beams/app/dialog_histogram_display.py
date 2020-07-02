@@ -4,6 +4,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 from app.util import widgets
+from app.model import files
 from app.dialog_misc import WarningMessageDialog
 from app.model.model import MuonDataContext
 
@@ -37,12 +38,16 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         self._initial_bkg1 = args[0]
         self._initial_bkg2 = args[1]
         self._initial_t0 = args[2]
+        self._initial_goodbin1 = args[6]
+        self._initial_goodbin2 = args[7]
 
         self.histogram = args[3]
         self.histogram_label = args[5]
         self._bkg1 = args[0]
         self._bkg2 = args[1]
         self._t0 = args[2]
+        self._goodbin1 = args[6]
+        self._goodbin2 = args[7]
 
         self.run_id = args[4]
 
@@ -53,6 +58,8 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         self.radio_bkgd_one = QtWidgets.QRadioButton()
         self.radio_bkgd_two = QtWidgets.QRadioButton()
         self.radio_t0 = QtWidgets.QRadioButton()
+        self.radio_goodbin1 = QtWidgets.QRadioButton()
+        self.radio_goodbin2 = QtWidgets.QRadioButton()
         self.button_reset = widgets.StyleOneButton("Reset")
         self.button_save = widgets.StyleOneButton("Save")
         self.canvas = HistogramDisplayDialog.HistogramCanvas()
@@ -61,9 +68,13 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         self.label_bkgd1 = QtWidgets.QLabel("Background Start")
         self.label_bkgd2 = QtWidgets.QLabel("Background End")
         self.label_t0 = QtWidgets.QLabel("T0")
+        self.label_goodbin1 = QtWidgets.QLabel("Good Bin Start")
+        self.label_goodbin2 = QtWidgets.QLabel("Good Bin End")
         self.input_bkgd1 = QtWidgets.QLineEdit()
         self.input_bkgd2 = QtWidgets.QLineEdit()
         self.input_t0 = QtWidgets.QLineEdit()
+        self.input_goodbin1 = QtWidgets.QLineEdit()
+        self.input_goodbin2 = QtWidgets.QLineEdit()
 
         self._extent = None
         self._toolbar = HistogramDisplayDialog.HistogramToolbar(self.canvas, self._main)
@@ -79,10 +90,12 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         self.set_new_lines()
         self._presenter = HistogramDisplayPresenter(self)
 
-    def set_new_lines(self, bkg1=None, bkg2=None, t0=None, thick=False):
+    def set_new_lines(self, bkg1=None, bkg2=None, t0=None, goodbin1=None, goodbin2=None, thick=False):
         bkg1_width = 1
         bkg2_width = 1
         t0_width = 1
+        goodbin1_width = 1
+        goodbin2_width = 1
         if bkg1 is not None:
             self._bkg1 = bkg1
             self.input_bkgd1.setText(str(bkg1))
@@ -98,6 +111,16 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
             self.input_t0.setText(str(t0))
             if thick:
                 t0_width = 2
+        if goodbin1 is not None:
+            self._goodbin1 = goodbin1
+            self.input_goodbin1.setText(str(goodbin1))
+            if thick:
+                goodbin1_width = 2
+        if goodbin2 is not None:
+            self._goodbin2 = goodbin2
+            self.input_goodbin2.setText(str(goodbin2))
+            if thick:
+                goodbin2_width = 2
 
         self._extent = self.canvas.canvas_axes.axis()
         self.canvas.canvas_axes.clear()
@@ -105,6 +128,8 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         self.canvas.canvas_axes.axvline(x=self._bkg1, linewidth=bkg1_width, color='r')
         self.canvas.canvas_axes.axvline(x=self._bkg2, linewidth=bkg2_width, color='r')
         self.canvas.canvas_axes.axvline(x=self._t0, linewidth=t0_width, color='g')
+        self.canvas.canvas_axes.axvline(x=self._goodbin1, linewidth=goodbin1_width, color='b')
+        self.canvas.canvas_axes.axvline(x=self._goodbin2, linewidth=goodbin2_width, color='b')
 
         if not self.__initial:
             self.canvas.canvas_axes.axis(self._extent)
@@ -117,10 +142,14 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         self._bkg1 = self._initial_bkg1
         self._bkg2 = self._initial_bkg2
         self._t0 = self._initial_t0
+        self._goodbin1 = self._initial_goodbin1
+        self._goodbin2 = self._initial_goodbin2
 
         self.input_bkgd1.setText(str(self._initial_bkg1))
         self.input_bkgd2.setText(str(self._initial_bkg2))
         self.input_t0.setText(str(self._initial_t0))
+        self.input_goodbin1.setText(str(self._initial_goodbin1))
+        self.input_goodbin2.setText(str(self._initial_goodbin2))
 
         self._extent = self.canvas.canvas_axes.axis()
         self.canvas.canvas_axes.clear()
@@ -128,10 +157,12 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         self.canvas.canvas_axes.axvline(x=self._bkg1, linewidth=1, color='r')
         self.canvas.canvas_axes.axvline(x=self._bkg2, linewidth=1, color='r')
         self.canvas.canvas_axes.axvline(x=self._t0, linewidth=1, color='g')
+        self.canvas.canvas_axes.axvline(x=self._goodbin1, linewidth=1, color='b')
+        self.canvas.canvas_axes.axvline(x=self._goodbin2, linewidth=1, color='b')
         self.canvas.canvas_axes.axis(self._extent)
         self.canvas.canvas_axes.figure.canvas.draw()
 
-        return self._bkg1, self._bkg2, self._t0
+        return self._bkg1, self._bkg2, self._t0, self._goodbin1, self._goodbin2
 
     def _set_widget_tooltips(self):
         self.check_editing.setToolTip("Check to enable bin changes")
@@ -147,6 +178,8 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         self.input_bkgd1.setText(str(self._bkg1))
         self.input_bkgd2.setText(str(self._bkg2))
         self.input_t0.setText(str(self._t0))
+        self.input_goodbin1.setText(str(self._goodbin1))
+        self.input_goodbin2.setText(str(self._goodbin2))
 
     def _set_widget_dimensions(self):
         self.button_reset.setFixedWidth(60)
@@ -154,6 +187,8 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         self.input_t0.setFixedWidth(30)
         self.input_bkgd1.setFixedWidth(30)
         self.input_bkgd2.setFixedWidth(30)
+        self.input_goodbin1.setFixedWidth(30)
+        self.input_goodbin2.setFixedWidth(30)
 
     def _set_widget_layout(self):
         radio_layout = QtWidgets.QHBoxLayout()
@@ -170,6 +205,14 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         radio_layout.addWidget(self.radio_t0)
         radio_layout.addWidget(self.input_t0)
         radio_layout.addWidget(self.label_t0)
+        radio_layout.addSpacing(25)
+        radio_layout.addWidget(self.radio_goodbin1)
+        radio_layout.addWidget(self.input_goodbin1)
+        radio_layout.addWidget(self.label_goodbin1)
+        radio_layout.addSpacing(25)
+        radio_layout.addWidget(self.radio_goodbin2)
+        radio_layout.addWidget(self.input_goodbin2)
+        radio_layout.addWidget(self.label_goodbin2)
         radio_layout.addSpacing(65)
         radio_layout.addSpacing(65)
         radio_layout.addWidget(self.button_reset)
@@ -190,14 +233,20 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         self.radio_bkgd_two.setEnabled(enabled)
         self.radio_bkgd_one.setEnabled(enabled)
         self.radio_t0.setEnabled(enabled)
+        self.radio_goodbin2.setEnabled(enabled)
+        self.radio_goodbin1.setEnabled(enabled)
         self.button_save.setEnabled(enabled)
         self.button_reset.setEnabled(enabled)
         self.label_bkgd2.setEnabled(enabled)
         self.label_bkgd1.setEnabled(enabled)
         self.label_t0.setEnabled(enabled)
+        self.label_goodbin2.setEnabled(enabled)
+        self.label_goodbin1.setEnabled(enabled)
         self.input_bkgd1.setEnabled(enabled)
         self.input_bkgd2.setEnabled(enabled)
         self.input_t0.setEnabled(enabled)
+        self.input_goodbin2.setEnabled(enabled)
+        self.input_goodbin1.setEnabled(enabled)
 
     def get_input_bkgd1(self):
         return int(self.input_bkgd1.text())
@@ -208,6 +257,12 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
     def get_input_t0(self):
         return int(self.input_t0.text())
 
+    def get_input_goodbin1(self):
+        return int(self.input_goodbin1.text())
+
+    def get_input_goodbin2(self):
+        return int(self.input_goodbin2.text())
+
     def get_bkgd1(self):
         return self._bkg1
 
@@ -217,6 +272,12 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
     def get_t0(self):
         return self._t0
 
+    def get_goodbin1(self):
+        return self._goodbin1
+
+    def get_goodbin2(self):
+        return self._goodbin2
+
     def is_bkgd1(self):
         return self.radio_bkgd_one.isChecked()
 
@@ -225,6 +286,12 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
 
     def is_t0(self):
         return self.radio_t0.isChecked()
+
+    def is_goodbin1(self):
+        return self.radio_goodbin1.isChecked()
+
+    def is_goodbin2(self):
+        return self.radio_goodbin2.isChecked()
 
     def is_editing(self):
         return self.check_editing.isChecked()
@@ -256,6 +323,8 @@ class HistogramDisplayPresenter:
         self._view.input_t0.returnPressed.connect(lambda: self._input_changed('t0', self._view.get_input_t0()))
         self._view.input_bkgd1.returnPressed.connect(lambda: self._input_changed('bkgd1', self._view.get_input_bkgd1()))
         self._view.input_bkgd2.returnPressed.connect(lambda: self._input_changed('bkgd2', self._view.get_input_bkgd2()))
+        self._view.input_goodbin1.returnPressed.connect(lambda: self._input_changed('goodbin1', self._view.get_input_goodbin1()))
+        self._view.input_goodbin2.returnPressed.connect(lambda: self._input_changed('goodbin2', self._view.get_input_goodbin2()))
 
     def _mouse_interaction(self, event):
         if not self.__editing:
@@ -275,6 +344,12 @@ class HistogramDisplayPresenter:
             elif self._view.is_t0() and event.xdata > 0:
                 self._view.set_new_lines(t0=int(event.xdata), thick=thick)
 
+            elif self._view.is_goodbin1() and event.xdata > 0:
+                self._view.set_new_lines(goodbin1=int(event.xdata), thick=thick)
+
+            elif self._view.is_goodbin2() and event.xdata > 0:
+                self._view.set_new_lines(goodbin2=int(event.xdata), thick=thick)
+
         elif event.button is None and self.__pressed:
             self.__pressed = False
 
@@ -282,9 +357,11 @@ class HistogramDisplayPresenter:
         self._view.reset()
 
     def _save_clicked(self):
-        self._run.meta['BkgdOne'][self._histogram_label] = self._view.get_bkgd1()
-        self._run.meta['BkgdTwo'][self._histogram_label] = self._view.get_bkgd2()
-        self._run.meta['T0'][self._histogram_label] = self._view.get_t0()
+        self._run.meta[files.BACKGROUND_ONE_KEY][self._histogram_label] = self._view.get_bkgd1()
+        self._run.meta[files.BACKGROUND_TWO_KEY][self._histogram_label] = self._view.get_bkgd2()
+        self._run.meta[files.T0_KEY][self._histogram_label] = self._view.get_t0()
+        self._run.meta[files.GOOD_BIN_ONE_KEY][self._histogram_label] = self._view.get_goodbin1()
+        self._run.meta[files.GOOD_BIN_TWO_KEY][self._histogram_label] = self._view.get_goodbin2()
         self._view.done(0)
         self._context.reload_run_by_id(self._run.id)
 
@@ -307,4 +384,10 @@ class HistogramDisplayPresenter:
 
         if input_box == "t0" and val > 0:
             self._view.set_new_lines(t0=val)
+
+        if input_box == "goodbin1" and val < self._view.get_input_goodbin2():
+            self._view.set_new_lines(goodbin1=val)
+
+        if input_box == "goodbin2" and val > self._view.get_input_goodbin1():
+            self._view.set_new_lines(goodbin2=val)
 
