@@ -2,6 +2,7 @@
 import enum
 import os
 import sys
+from urllib import parse
 
 import requests
 from PyQt5 import QtWidgets, QtCore
@@ -28,6 +29,7 @@ class MusrDownloadDialog(QtWidgets.QDialog):
         self.input_expt = QtWidgets.QLineEdit()
         self.output_list = QtWidgets.QListWidget()
         self.output_web = QtWidgets.QPlainTextEdit()
+        self.title_search = QtWidgets.QLineEdit()
         self.download_selected = widgets.StyleOneButton('Download Selected')
         self.download_all = widgets.StyleOneButton('Download All')
         self.select_button = widgets.StyleTwoButton('Save to')
@@ -66,6 +68,7 @@ class MusrDownloadDialog(QtWidgets.QDialog):
         self.input_runs.setPlaceholderText('*Range of Runs (N-N)')
         self.input_file.setPlaceholderText('Save Directory (default is current)')
         self.input_expt.setPlaceholderText('Expt #')
+        self.title_search.setPlaceholderText('Run Title (for searching)')
 
         self.output_web.setEnabled(True)
         self.download_all.setEnabled(False)
@@ -85,6 +88,8 @@ class MusrDownloadDialog(QtWidgets.QDialog):
         row_1.addWidget(self.input_area)
         row_1.addWidget(self.input_runs)
         main_layout.addLayout(row_1)
+
+        main_layout.addWidget(self.title_search)
 
         row_2 = QtWidgets.QHBoxLayout()
         row_2.addWidget(self.select_button)
@@ -151,6 +156,9 @@ class MusrDownloadDialog(QtWidgets.QDialog):
 
     def get_file(self):
         return self.input_file.text()
+
+    def get_title(self):
+        return self.title_search.text()
 
     def get_selected_search_results(self):
         checked_files = []
@@ -239,6 +247,10 @@ class MusrDownloadDialogPresenter:
                 return
             query += "expt={}&".format(expt)
 
+        title = self._view.get_title()
+        if len(title) > 0:
+            query += "title={}&".format(title)
+
         return query
 
     def _assemble_downloads_from_search(self, selected):
@@ -251,12 +263,15 @@ class MusrDownloadDialogPresenter:
         if len(identifiers) == 0:
             return
 
+        print(identifiers)
+
         download_strings = []
         for identifier in identifiers:
             split_string = identifier.split(' ')
             run = split_string[0]
-            year = split_string[3].split(',')[0]
-            area = split_string[5].split(',')[0]
+            year = split_string[-3].split(',')[0]
+            area = split_string[-1].split(',')[0]
+            print(year, area)
             download_string = '{}/{}/'.format(area, year)
             download_string += '{0:06d}.msr'.format(int(run))
             download_strings.append(download_string)
@@ -329,6 +344,7 @@ class MusrDownloadDialogPresenter:
         i = True
         for x in response.text.split('TR>'):
             y = x.split('<TD')
+
             if len(y) > 2:
                 year = y[2][1:5]
                 area = y[3].split('<i>')[1].split('</i>')[0]
@@ -337,13 +353,17 @@ class MusrDownloadDialogPresenter:
                 run_numbers = y[6].split('"')
 
                 if len(run_numbers) > 4:
+
                     if i:
                         self._view.set_if_empty(expt, year, area)
                         i = False
 
+                    title_string = x.split('tx=')[1].split('\"')[0]
+                    title = parse.unquote(title_string)
+
                     run_number = run_numbers[3].split()[2]
-                    identifier = '{}  Year: {}, Area: {}, Expt: {}, Type: {}'.format(run_number, year, area,
-                                                                                         expt, expt_type)
+                    identifier = '{} Title: {}, Year: {}, Area: {}'.format(run_number, title, year, area)
+
                     identifiers.append(identifier)
                     printed_response = True
 
@@ -359,6 +379,7 @@ class MusrDownloadDialogPresenter:
         downloads = self._assemble_downloads()
         if downloads is None:
             self._view.log_message('No runs specified.\n')
+            self._view.set_status_message('Done.')
             return
 
         self._download(downloads)
@@ -369,6 +390,7 @@ class MusrDownloadDialogPresenter:
         downloads = self._assemble_downloads_from_search(True)
         if downloads is None:
             self._view.log_message('No runs specified.\n')
+            self._view.set_status_message('Done.')
             return
 
         self._download(downloads)
@@ -379,6 +401,7 @@ class MusrDownloadDialogPresenter:
         downloads = self._assemble_downloads_from_search(False)
         if downloads is None:
             self._view.log_message('Please finish filling in Expt Number, Year and Area.\n')
+            self._view.set_status_message('Done.')
             return
 
         self._download(downloads)
