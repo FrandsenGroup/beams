@@ -4,7 +4,7 @@ import os
 import sys
 
 import requests
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 
 from app.util import widgets
 from app.model.model import FileContext
@@ -26,7 +26,10 @@ class MusrDownloadDialog(QtWidgets.QDialog):
         self.input_runs = QtWidgets.QLineEdit()
         self.input_file = QtWidgets.QLineEdit()
         self.input_expt = QtWidgets.QLineEdit()
+        self.output_list = QtWidgets.QListWidget()
         self.output_web = QtWidgets.QPlainTextEdit()
+        self.download_selected = widgets.StyleOneButton('Download Selected')
+        self.download_all = widgets.StyleOneButton('Download All')
         self.select_button = widgets.StyleTwoButton('Save to')
         self.download_button = widgets.StyleOneButton('Download')
         self.search_button = widgets.StyleOneButton('Search')
@@ -50,9 +53,11 @@ class MusrDownloadDialog(QtWidgets.QDialog):
         self.input_year.setFixedWidth(70)
         self.select_button.setFixedWidth(80)
         self.download_button.setFixedWidth(80)
+        self.download_all.setFixedWidth(140)
+        self.download_selected.setFixedWidth(140)
         self.done_button.setFixedWidth(80)
         self.search_button.setFixedWidth(80)
-        self.output_web.setFixedHeight(150)
+        self.output_web.setFixedHeight(100)
         self.setFixedWidth(400)
 
     def _set_widget_attributes(self):
@@ -63,6 +68,8 @@ class MusrDownloadDialog(QtWidgets.QDialog):
         self.input_expt.setPlaceholderText('Expt #')
 
         self.output_web.setEnabled(True)
+        self.download_all.setEnabled(False)
+        self.download_selected.setEnabled(False)
         self.output_web.appendPlainText('No queries or downloads attempted.\n')
 
         self.set_status_message('Ready.')
@@ -96,15 +103,43 @@ class MusrDownloadDialog(QtWidgets.QDialog):
         main_layout.addLayout(row_3)
         main_layout.addSpacing(10)
 
+        main_layout.addWidget(QtWidgets.QLabel("Search Results"))
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(self.output_list)
+        main_layout.addLayout(row)
+        main_layout.addSpacing(10)
+
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(self.download_selected)
+        row.addWidget(self.download_all)
+        main_layout.addLayout(row)
+        main_layout.addSpacing(10)
+
+        main_layout.addWidget(QtWidgets.QLabel("Web Output"))
         row_4 = QtWidgets.QHBoxLayout()
         row_4.addWidget(self.output_web)
         main_layout.addLayout(row_4)
+
         main_layout.addWidget(self.status_bar)
 
         self.setLayout(main_layout)
 
     def set_file(self, file_path):
         self.input_file.setText(file_path)
+
+    def set_if_empty(self, expt_new, year_new, area_new):
+        area = self.get_area()
+        print(area)
+        if len(area) == 0:
+            self.input_area.setText(area_new)
+
+        year = self.get_year()
+        if len(year) == 0:
+            self.input_year.setText(year_new)
+
+        expt = self.get_experiment_number()
+        if len(expt) == 0:
+            self.input_expt.setText(expt_new)
 
     def get_area(self):
         return self.input_area.text()
@@ -117,6 +152,34 @@ class MusrDownloadDialog(QtWidgets.QDialog):
 
     def get_file(self):
         return self.input_file.text()
+
+    def get_selected_search_results(self):
+        checked_files = []
+
+        for i in range(self.output_list.count()):
+            if self.output_list.item(i).checkState() == QtCore.Qt.Checked:
+                checked_files.append(self.output_list.item(i).text())
+
+        return checked_files
+
+    def get_all_search_results(self):
+        run_items = []
+
+        for i in range(self.output_list.count()):
+            run_items.append(self.output_list.item(i).text())
+
+        return run_items
+
+    def fill_list(self, data):
+        self.output_list.clear()
+
+        for identifier in data:
+            run_item = QtWidgets.QListWidgetItem(identifier, self.output_list)
+            run_item.setFlags(run_item.flags() | QtCore.Qt.ItemIsUserCheckable)
+            run_item.setCheckState(QtCore.Qt.Unchecked)
+
+        self.download_selected.setEnabled(len(data) > 0)
+        self.download_all.setEnabled(len(data) > 0)
 
     def get_experiment_number(self):
         return self.input_expt.text()
@@ -145,6 +208,8 @@ class MusrDownloadDialogPresenter:
         self._view.download_button.released.connect(lambda: self._download_clicked())
         self._view.done_button.released.connect(lambda: self._done_clicked())
         self._view.select_button.released.connect(lambda: self._save_to_clicked())
+        self._view.download_selected.released.connect(lambda: self._download_selected_clicked())
+        self._view.download_all.released.connect(lambda: self._download_all_clicked())
 
     def _assemble_query(self):
         query = "?"
@@ -176,6 +241,28 @@ class MusrDownloadDialogPresenter:
             query += "expt={}&".format(expt)
 
         return query
+
+    def _assemble_downloads_from_search(self, selected):
+
+        if selected:
+            identifiers = self._view.get_selected_search_results()
+        else:
+            identifiers = self._view.get_all_search_results()
+
+        if len(identifiers) == 0:
+            return
+
+        download_strings = []
+        for identifier in identifiers:
+            split_string = identifier.split(' ')
+            run = split_string[0]
+            year = split_string[3].split(',')[0]
+            area = split_string[5].split(',')[0]
+            download_string = '{}/{}/'.format(area, year)
+            download_string += '{0:06d}.msr'.format(int(run))
+            download_strings.append(download_string)
+
+        return download_strings
 
     def _assemble_downloads(self):
         download_string = ""
@@ -239,6 +326,8 @@ class MusrDownloadDialogPresenter:
             return
 
         printed_response = False
+        identifiers = []
+        i = True
         for x in response.text.split('TR>'):
             y = x.split('<TD')
             if len(y) > 2:
@@ -247,15 +336,21 @@ class MusrDownloadDialogPresenter:
                 expt = y[4].split('>')[1].split('<')[0]
                 expt_type = y[5].split('>')[3].split('<')[0]
                 run_numbers = y[6].split('"')
+
                 if len(run_numbers) > 4:
+                    if i:
+                        self._view.set_if_empty(expt, year, area)
+                        i = False
+
                     run_number = run_numbers[3].split()[2]
-                    self._view.log_message('{}  Year: {}, Area: {}, '
-                                                           'Expt: {}, Type: {}\n'.format(run_number, year, area,
-                                                                                         expt, expt_type))
+                    identifier = '{}  Year: {}, Area: {}, Expt: {}, Type: {}'.format(run_number, year, area,
+                                                                                         expt, expt_type)
+                    identifiers.append(identifier)
                     printed_response = True
 
+        self._view.fill_list(identifiers)
         if not printed_response:
-            self._view.log_message("No runs found.")
+            self._view.log_message("No runs found.\n")
 
         self._view.set_status_message('Done.')
 
@@ -266,6 +361,31 @@ class MusrDownloadDialogPresenter:
         if downloads is None:
             self._view.log_message('No runs specified.\n')
             return
+
+        self._download(downloads)
+
+    def _download_selected_clicked(self):
+        self._view.set_status_message('Downloading ... ')
+
+        downloads = self._assemble_downloads_from_search(True)
+        if downloads is None:
+            self._view.log_message('No runs specified.\n')
+            return
+
+        self._download(downloads)
+
+    def _download_all_clicked(self):
+        self._view.set_status_message('Downloading ... ')
+
+        downloads = self._assemble_downloads_from_search(False)
+        if downloads is None:
+            self._view.log_message('Please finish filling in Expt Number, Year and Area.\n')
+            return
+
+        self._download(downloads)
+
+    def _download(self, downloads):
+        print(downloads)
 
         good = 0
         new_files = []
