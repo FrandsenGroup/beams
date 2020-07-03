@@ -1,4 +1,6 @@
 
+import traceback
+
 from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
@@ -96,6 +98,7 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         t0_width = 1
         goodbin1_width = 1
         goodbin2_width = 1
+
         if bkg1 is not None:
             self._bkg1 = bkg1
             self.input_bkgd1.setText(str(bkg1))
@@ -174,6 +177,9 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         message = "Before moving the bars manually below make sure you have deselected the zoom option in the toolbar.\n" \
                   "Then check the box to enable editing and select the bin you would like to change."
         self.label_explanation.setText(message)
+
+        self.button_reset.setAutoDefault(False)
+        self.button_save.setAutoDefault(False)
 
         self.input_bkgd1.setText(str(self._bkg1))
         self.input_bkgd2.setText(str(self._bkg2))
@@ -317,8 +323,8 @@ class HistogramDisplayPresenter:
         self._view.canvas.figure.canvas.mpl_connect('button_press_event', self._mouse_interaction)
         self._view.canvas.figure.canvas.mpl_connect('button_release_event', self._mouse_interaction)
         self._view.canvas.figure.canvas.mpl_connect('motion_notify_event', self._mouse_interaction)
-        self._view.button_reset.released.connect(self._reset_clicked)
-        self._view.button_save.released.connect(self._save_clicked)
+        self._view.button_reset.pressed.connect(self._reset_clicked)
+        self._view.button_save.pressed.connect(self._save_clicked)
         self._view.check_editing.stateChanged.connect(self._editing_checked)
         self._view.input_t0.returnPressed.connect(lambda: self._input_changed('t0', self._view.get_input_t0()))
         self._view.input_bkgd1.returnPressed.connect(lambda: self._input_changed('bkgd1', self._view.get_input_bkgd1()))
