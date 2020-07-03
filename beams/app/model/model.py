@@ -172,8 +172,6 @@ class MuonDataContext:
             run = self.get_run_by_id(run_id)
             run.fit = new_fit
 
-            print(run.fit)
-
         if not stop_signal:
             self.__instance.notifier.notify()
 

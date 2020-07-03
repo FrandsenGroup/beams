@@ -48,8 +48,6 @@ def build_muon_run_from_histogram_file(file, meta=None) -> MuonRun:
     calculate_muon_uncertainty(run)
     calculate_muon_time(run)
 
-    print(run.time)
-
     return run
 
 
@@ -235,7 +233,6 @@ def calculate_muon_time(run: MuonRun):
     :param run:
     :return:
     """
-    print(run.t0)
     run.time = (np.arange(len(run.asymmetry)) * float(run.meta[files.BIN_SIZE_KEY]) / 1000) + \
                (run.t0 * float(run.meta[files.BIN_SIZE_KEY]) / 1000)
 

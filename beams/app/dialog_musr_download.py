@@ -263,15 +263,12 @@ class MusrDownloadDialogPresenter:
         if len(identifiers) == 0:
             return
 
-        print(identifiers)
-
         download_strings = []
         for identifier in identifiers:
             split_string = identifier.split(' ')
             run = split_string[0]
             year = split_string[-3].split(',')[0]
             area = split_string[-1].split(',')[0]
-            print(year, area)
             download_string = '{}/{}/'.format(area, year)
             download_string += '{0:06d}.msr'.format(int(run))
             download_strings.append(download_string)
