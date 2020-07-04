@@ -7,7 +7,7 @@ from matplotlib.figure import Figure
 
 from app.util import widgets
 from app.model import files
-from app.dialog_misc import WarningMessageDialog
+from app.dialog_misc import WarningMessageDialog, FileDisplayDialog
 from app.model.model import MuonDataContext
 
 
@@ -73,6 +73,7 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         self.radio_goodbin2 = QtWidgets.QRadioButton()
         self.button_reset = widgets.StyleOneButton("Reset")
         self.button_save = widgets.StyleOneButton("Save")
+        self.button_see_file = widgets.StyleOneButton("See File")
         self.canvas = HistogramDisplayDialog.HistogramCanvas()
         self.check_editing = QtWidgets.QCheckBox()
         self.label_explanation = QtWidgets.QLabel()
@@ -199,10 +200,12 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         self.input_goodbin2.setText(str(self._current_values[self.histogram_label][files.GOOD_BIN_TWO_KEY]))
 
         self.histogram_choices.currentTextChanged.connect(self._replace_histogram_plot)
+        self.button_see_file.released.connect(self._see_file_clicked)
 
     def _set_widget_dimensions(self):
         self.button_reset.setFixedWidth(60)
         self.button_save.setFixedWidth(60)
+        self.button_see_file.setFixedWidth(60)
         self.input_t0.setFixedWidth(30)
         self.input_bkgd1.setFixedWidth(30)
         self.input_bkgd2.setFixedWidth(30)
@@ -214,6 +217,8 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         row.addWidget(QtWidgets.QLabel("Histogram"))
         row.addSpacing(2)
         row.addWidget(self.histogram_choices)
+        row.addSpacing(10)
+        row.addWidget(self.button_see_file)
         row.addStretch()
         self._new_layout.addLayout(row)
 
@@ -259,6 +264,12 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         self.histogram_label = self.histogram_choices.currentText()
         self.histogram = self._file.read_data()[self.histogram_label]
         self.set_new_lines(new_histogram=True)
+
+    def _see_file_clicked(self):
+        filename = self._file.file_path
+        with open(filename) as f:
+            file_content = f.read()
+        FileDisplayDialog.launch([filename, file_content])
 
     def set_enabled(self, enabled):
         self.radio_bkgd_two.setEnabled(enabled)
