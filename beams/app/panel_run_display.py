@@ -85,7 +85,7 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             super(MuonRunPanel.DataSettings, self).__init__("Applies to all selected runs")
 
             self.see_file_button = widgets.StyleTwoButton("See File")
-            self.see_histogram_button = widgets.StyleTwoButton("See Hist")
+            self.see_histogram_button = widgets.StyleTwoButton("Histogram Controls")
             self.histogram_options = QtWidgets.QComboBox()
             self.meta_key_options = QtWidgets.QComboBox()
             self.meta_value_display = QtWidgets.QLineEdit()
@@ -101,7 +101,7 @@ class MuonRunPanel(QtWidgets.QDockWidget):
 
         def _set_widget_dimensions(self):
             self.see_file_button.setFixedWidth(60)
-            self.see_histogram_button.setFixedWidth(60)
+            # self.see_histogram_button.setFixedWidth(60)
             self.apply_correction_button.setFixedWidth(60)
             self.meta_value_display.setMinimumWidth(80)
 
@@ -136,18 +136,18 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             layout.addSpacing(spacing)
 
             row = QtWidgets.QHBoxLayout()
-            row.addWidget(self.histogram_options)
-            row.addSpacing(spacing)
+            # row.addWidget(self.histogram_options)
+            # row.addSpacing(spacing)
             row.addWidget(self.see_histogram_button)
-            row.addSpacing(spacing)
-            row.addWidget(self.see_file_button)
+            # row.addSpacing(spacing)
+            # row.addWidget(self.see_file_button)
             layout.addLayout(row)
             layout.addSpacing(spacing)
 
-            row = QtWidgets.QHBoxLayout()
-            row.addWidget(self.fit_button)
-            layout.addLayout(row)
-            layout.addSpacing(spacing)
+            # row = QtWidgets.QHBoxLayout()
+            # row.addWidget(self.fit_button)
+            # layout.addLayout(row)
+            # layout.addSpacing(spacing)
 
             form_layout = QtWidgets.QFormLayout()
             form_layout.addItem(layout)
@@ -422,6 +422,12 @@ class MuonRunPanel(QtWidgets.QDockWidget):
 
     def get_alpha(self):
         return float(self.data_settings.alpha_input.text())
+
+    def get_histograms(self):
+        items = []
+        for i in range(self.data_settings.histogram_options.count()):
+            items.append(self.data_settings.histogram_options.itemText(i))
+        return items
 
     def get_histogram_label(self):
         return self.data_settings.histogram_options.currentText()
@@ -831,12 +837,13 @@ class MuonRunPanelPresenter:
         run = list(self._runs.values())[0]
         file = files.file(run.file)
         histogram_label = self._view.get_histogram_label()
+        histograms = self._view.get_histograms()
         bkgd1 = int(run.meta[files.BACKGROUND_ONE_KEY][histogram_label])
         bkgd2 = int(run.meta[files.BACKGROUND_TWO_KEY][histogram_label])
         goodbin1 = int(run.meta[files.GOOD_BIN_ONE_KEY][histogram_label])
         goodbin2 = int(run.meta[files.GOOD_BIN_TWO_KEY][histogram_label])
         t0 = int(run.meta['T0'][histogram_label])
-        HistogramDisplayDialog.launch([bkgd1, bkgd2, t0, file.read_data()[histogram_label], run.id, histogram_label, goodbin1, goodbin2])
+        HistogramDisplayDialog.launch([bkgd1, bkgd2, t0, file.read_data()[histogram_label], run.id, histogram_label, goodbin1, goodbin2, histograms, file, run.meta])
 
     def _plot_parameter_changed(self, key, value):
         selected_items = self._view.get_selected_titles()
