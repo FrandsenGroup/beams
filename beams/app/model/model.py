@@ -258,6 +258,7 @@ class PlotContext:
         ERRORBAR_COLOR = 15
         ERRORBAR_WIDTH = 16
         FIT_COLOR = 17
+        FIT_LINESTYLE = 18
 
     __instance = None
 
@@ -265,14 +266,14 @@ class PlotContext:
                             'Orange': '#ff9900', 'Maroon': '#800000', 'Pink': '#ff66ff', 'Dark Blue': '#000099',
                             'Dark Green': '#006600', 'Light Blue': '#0099ff', 'Light Purple': '#cc80ff',
                             'Dark Orange': '#ff6600', 'Yellow': '#ffcc00', 'Light Red': '#ff6666',
-                            'Light Green': '#00cc66'}
+                            'Light Green': '#00cc66', 'Black': '#000000'}
     color_options = {v: k for k, v in color_options_values.items()}
 
     color_options_extra_values = {'Default': 'Default', 'Blue': '#0000ff', 'Red': '#ff0000', 'Purple': '#9900ff',
                                   'Orange': '#ff9900', 'Maroon': '#800000', 'Pink': '#ff66ff', 'Dark Blue': '#000099',
                                   'Dark Green': '#006600', 'Light Blue': '#0099ff', 'Light Purple': '#cc80ff',
                                   'Dark Orange': '#ff6600', 'Yellow': '#ffcc00', 'Light Red': '#ff6666',
-                                  'Light Green': '#00cc66', 'Green': '#009933'}
+                                  'Light Green': '#00cc66', 'Green': '#009933', 'Black': '#000000'}
 
     color_options_extra = {v: k for k, v in color_options_extra_values.items()}
 
@@ -366,6 +367,7 @@ class PlotContext:
         style[PlotContext.Keys.ERRORBAR_COLOR] = 'Default'
         style[PlotContext.Keys.ERRORBAR_WIDTH] = 1
         style[PlotContext.Keys.FIT_COLOR] = 'Default'
+        style[PlotContext.Keys.FIT_LINESTYLE] = '-'
 
         self.__instance.styles[run.id] = style
 
@@ -428,6 +430,8 @@ class PlotContext:
                 return
 
             if key == PlotContext.Keys.LINESTYLE:
+                style[key] = self.linestyle_options_values[option_key]
+            elif key == PlotContext.Keys.FIT_LINESTYLE:
                 style[key] = self.linestyle_options_values[option_key]
             elif key == PlotContext.Keys.ERRORBAR_COLOR or \
                     key == PlotContext.Keys.MARKER_COLOR or \

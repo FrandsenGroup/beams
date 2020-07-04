@@ -378,7 +378,8 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
         self._control.slider_bin.setValue(int(value))
 
     def plot_asymmetry(self, time, asymmetry, uncertainty, fit, color, marker_color, line_color, errorbar_color,
-                       fit_color, linestyle, marker, errorbar_style, fillstyle, line_width, marker_size, errorbar_width):
+                       fit_color, linestyle, marker, errorbar_style, fillstyle, line_width, marker_size, errorbar_width,
+                       fit_linestyle):
 
         marker_color = color if marker_color == 'Default' else marker_color
         line_color = color if line_color == 'Default' else line_color
@@ -398,7 +399,7 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
                                          markersize=marker_size)
 
         if fit is not None:
-            self._display.axes_time.plot(time, fit, color=fit_color, linestyle='-',
+            self._display.axes_time.plot(time, fit, color=fit_color, linestyle=fit_linestyle,
                                          marker='None')
 
     def plot_fft(self, frequencies, fft, color, label):
@@ -545,7 +546,8 @@ class MuonPlotPanelPresenter:
                                       errorbar_color=style[PlotContext.Keys.ERRORBAR_COLOR],
                                       errorbar_style=style[PlotContext.Keys.ERRORBAR_STYLE],
                                       errorbar_width=style[PlotContext.Keys.ERRORBAR_WIDTH],
-                                      fit_color=style[PlotContext.Keys.FIT_COLOR])
+                                      fit_color=style[PlotContext.Keys.FIT_COLOR],
+                                      fit_linestyle=style[PlotContext.Keys.FIT_LINESTYLE])
 
             if not fast:
                 frequencies, fft = self._model.get_fft_data(time, asymmetry, min_time, max_time, bin_size)

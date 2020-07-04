@@ -17,6 +17,7 @@ class MuonRunPanel(QtWidgets.QDockWidget):
 
             self.all_color_options = QtWidgets.QComboBox()
             self.linestyle_options = QtWidgets.QComboBox()
+            self.fit_linestyle_options = QtWidgets.QComboBox()
             self.line_color_options = QtWidgets.QComboBox()
             self.fit_color_options = QtWidgets.QComboBox()
             self.line_width_options = QtWidgets.QComboBox()
@@ -39,6 +40,7 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             self.all_color_options.addItems(PlotContext.color_options_values.keys())
             self.fit_color_options.addItems(PlotContext.color_options_extra_values.keys())
             self.linestyle_options.addItems(PlotContext.linestyle_options_values.keys())
+            self.fit_linestyle_options.addItems(PlotContext.linestyle_options_values.keys())
             self.line_color_options.addItems(PlotContext.color_options_extra_values.keys())
             self.line_width_options.addItems(PlotContext.line_width_options_values.keys())
             self.marker_options.addItems(PlotContext.marker_options_values.keys())
@@ -73,6 +75,8 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             layout.addWidget(self.errorbar_width_options, 10, 1)
             layout.addWidget(QtWidgets.QLabel("Fit Line Color"), 11, 0)
             layout.addWidget(self.fit_color_options, 11, 1)
+            layout.addWidget(QtWidgets.QLabel("Fit Linestyle"), 12, 0)
+            layout.addWidget(self.fit_linestyle_options, 12, 1)
 
             form_layout = QtWidgets.QFormLayout()
             form_layout.addItem(layout)
@@ -743,6 +747,9 @@ class MuonRunPanelPresenter:
         self._view.plot_settings.fit_color_options.currentTextChanged.connect(
             lambda: self._plot_parameter_changed(PlotContext.Keys.FIT_COLOR,
                                                  self._view.plot_settings.fit_color_options.currentText()))
+        self._view.plot_settings.fit_linestyle_options.currentTextChanged.connect(
+            lambda: self._plot_parameter_changed(PlotContext.Keys.FIT_LINESTYLE,
+                                                 self._view.plot_settings.fit_linestyle_options.currentText()))
 
     def _insert_key_clicked(self, key):
         self._view.insert_character_at_cursor(key)
