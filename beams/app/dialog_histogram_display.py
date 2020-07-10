@@ -138,6 +138,8 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
 
         self._extent = self.canvas.canvas_axes.axis()
         self.canvas.canvas_axes.clear()
+        # self.canvas.canvas_axes.bar(x=range(len(self.histogram)), height=self.histogram)
+        # self.canvas.canvas_axes.hist(range(len(self.histogram)), bins=int(len(self.histogram)/10), weights=self.histogram)
         self.canvas.canvas_axes.plot(self.histogram, linestyle='None', marker='s')
         self.canvas.canvas_axes.axvline(x=self._current_values[self.histogram_label][files.BACKGROUND_ONE_KEY], linewidth=bkg1_width, color='r')
         self.canvas.canvas_axes.axvline(x=self._current_values[self.histogram_label][files.BACKGROUND_TWO_KEY], linewidth=bkg2_width, color='r')
@@ -168,6 +170,7 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         self._extent = self.canvas.canvas_axes.axis()
         self.canvas.canvas_axes.clear()
         self.canvas.canvas_axes.plot(self.histogram, linestyle='None', marker='s')
+        # self.canvas.canvas_axes.bar(x=range(len(self.histogram)), height=self.histogram)
         self.canvas.canvas_axes.axvline(x=self._current_values[self.histogram_label][files.BACKGROUND_ONE_KEY], linewidth=1, color='r')
         self.canvas.canvas_axes.axvline(x=self._current_values[self.histogram_label][files.BACKGROUND_TWO_KEY], linewidth=1, color='r')
         self.canvas.canvas_axes.axvline(x=self._current_values[self.histogram_label][files.T0_KEY], linewidth=1, color='g')

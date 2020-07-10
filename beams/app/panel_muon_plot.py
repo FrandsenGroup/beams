@@ -496,7 +496,7 @@ class MuonPlotPanelPresenter:
             value = self._view.get_bin_from_slider()
             self._view.set_bin_input(value)
 
-            if value % 5 != 0:  # fixme
+            if value % 5 != 0:
                 return
 
         else:
