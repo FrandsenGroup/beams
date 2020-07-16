@@ -1,5 +1,6 @@
 
 import traceback
+import enum
 
 from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
@@ -34,10 +35,18 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
             ('Save', 'Save the figure', 'filesave', 'save_figure'),
         )
 
-    def __init__(self, args):
+    class KWArgs:
+        Histograms = 'histograms'
+        Meta = 'meta'
+        Histogram = 'histogram'
+        Histogram_Label = 'label'
+        File = 'file'
+        Run_ID = 'id'
+
+    def __init__(self, histograms, meta, histogram, histogram_label, file, run_id):
         super(HistogramDisplayDialog, self).__init__()
-        self._histograms = args[8]
-        self._meta = args[10]
+        self._histograms = histograms
+        self._meta = meta
 
         self._initial_values = {title: {files.T0_KEY: int(self._meta[files.T0_KEY][title]),
                                         files.BACKGROUND_ONE_KEY: int(self._meta[files.BACKGROUND_ONE_KEY][title]),
@@ -55,12 +64,11 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
 
         self.__initial = True
 
-        self.histogram = args[3]
-        self.histogram_label = args[5]
-        self._histograms = args[8]
-        self._file = args[9]
+        self.histogram = histogram
+        self.histogram_label = histogram_label
+        self._file = file
 
-        self.run_id = args[4]
+        self.run_id = run_id
 
         self._main = QtWidgets.QMainWindow()
         widget = QtWidgets.QWidget()
@@ -194,6 +202,7 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
 
         self.button_reset.setAutoDefault(False)
         self.button_save.setAutoDefault(False)
+        self.button_see_file.setAutoDefault(False)
         self.histogram_choices.addItems(self._histograms)
 
         self.input_bkgd1.setText(str(self._current_values[self.histogram_label][files.BACKGROUND_ONE_KEY]))
@@ -345,8 +354,13 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         return self.check_editing.isChecked()
 
     @staticmethod
-    def launch(args):
-        dialog = HistogramDisplayDialog(args)
+    def launch(**kwargs):
+        dialog = HistogramDisplayDialog(histograms=kwargs[HistogramDisplayDialog.KWArgs.Histograms],
+                                        meta=kwargs[HistogramDisplayDialog.KWArgs.Meta],
+                                        histogram=kwargs[HistogramDisplayDialog.KWArgs.Histogram],
+                                        histogram_label=kwargs[HistogramDisplayDialog.KWArgs.Histogram_Label],
+                                        file=kwargs[HistogramDisplayDialog.KWArgs.File],
+                                        run_id=kwargs[HistogramDisplayDialog.KWArgs.Run_ID])
         return dialog.exec()
 
 
