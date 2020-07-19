@@ -10,6 +10,7 @@ from app.dialog_misc import AddFileDialog, WarningMessageDialog, PermissionsMess
 from app.dialog_musr_download import MusrDownloadDialog
 from app.dialog_plot_file import PlotFileDialog
 from app.dialog_write_data import WriteDataDialog
+from app.dialog_psi_download import PSIDownloadDialog
 
 
 # noinspection PyArgumentList
@@ -184,8 +185,10 @@ class FileManagerPanelPresenter:
 
         if code == AddFileDialog.Codes.FILE_SYSTEM:
             self._get_files_from_system()
-        else:
+        elif code == AddFileDialog.Codes.MUSR_DOWNLOAD:
             MusrDownloadDialog.launch()
+        elif code == AddFileDialog.Codes.PSI_DOWNLOAD:
+            PSIDownloadDialog.launch()
 
     def _remove_file_clicked(self):
         checked_items = self._view.get_checked_items()

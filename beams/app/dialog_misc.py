@@ -13,7 +13,8 @@ from app.util import widgets
 class AddFileDialog(QtWidgets.QDialog):
     class Codes(enum.IntEnum):
         FILE_SYSTEM = 1
-        WEB_DOWNLOAD = 2
+        MUSR_DOWNLOAD = 2
+        PSI_DOWNLOAD = 3
 
     def __init__(self):
         super(AddFileDialog, self).__init__()
@@ -22,18 +23,22 @@ class AddFileDialog(QtWidgets.QDialog):
         message = QtWidgets.QLabel('Would you like to add files from the local file system or online.')
         self.pos_button = widgets.StyleOneButton('From disk')
         self.neg_button = widgets.StyleOneButton('From musr.ca')
+        self.psi_button = widgets.StyleOneButton('From psi.ch')
         self.setMinimumWidth(300)
         self.setMinimumWidth(80)
         self.pos_button.setFixedWidth(100)
         self.neg_button.setFixedWidth(100)
+        self.psi_button.setFixedWidth(100)
 
-        self.pos_button.released.connect(lambda: self._set_type(True))
-        self.neg_button.released.connect(lambda: self._set_type(False))
+        self.pos_button.released.connect(lambda: self.done(AddFileDialog.Codes.FILE_SYSTEM))
+        self.neg_button.released.connect(lambda: self.done(AddFileDialog.Codes.MUSR_DOWNLOAD))
+        self.psi_button.released.connect(lambda: self.done(AddFileDialog.Codes.PSI_DOWNLOAD))
 
         try:
             socket.create_connection(("www.google.com", 80))
         except OSError:
             self.neg_button.setEnabled(False)
+            self.psi_button.setEnabled(False)
 
         col = QtWidgets.QVBoxLayout()
         col.addWidget(message)
@@ -42,16 +47,12 @@ class AddFileDialog(QtWidgets.QDialog):
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.pos_button)
         row.addWidget(self.neg_button)
+        row.addWidget(self.psi_button)
         row.setAlignment(self.pos_button, QtCore.Qt.AlignRight)
         row.setAlignment(self.neg_button, QtCore.Qt.AlignLeft)
+        row.setAlignment(self.psi_button, QtCore.Qt.AlignCenter)
         col.addLayout(row)
         self.setLayout(col)
-
-    def _set_type(self, x=False):
-        if x:
-            self.done(AddFileDialog.Codes.FILE_SYSTEM)
-        else:
-            self.done(AddFileDialog.Codes.WEB_DOWNLOAD)
 
     @staticmethod
     def launch():
