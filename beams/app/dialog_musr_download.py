@@ -101,7 +101,7 @@ class MusrDownloadDialog(QtWidgets.QDialog):
         row_3.addStretch()
         row_3.addWidget(self.search_button)
         row_3.addSpacing(10)
-        row_3.addWidget(self.download_button)
+        # row_3.addWidget(self.download_button)
         row_3.addSpacing(10)
         row_3.addWidget(self.done_button)
         row_3.addStretch()
