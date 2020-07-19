@@ -5,6 +5,7 @@ from app.model.model import PlotContext, MuonDataContext
 from app.model import files, muon, mufyt
 from app.dialog_misc import WarningMessageDialog, IntegrationDisplayDialog, FileDisplayDialog
 from app.dialog_histogram_display import HistogramDisplayDialog
+from app.dialog_fit import FitDialog
 from app.util import widgets
 
 
@@ -98,6 +99,7 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             self.alpha_input = QtWidgets.QLineEdit()
             self.integrate_button = widgets.StyleTwoButton("Integrate")
             self.integrate_options = QtWidgets.QComboBox()
+            self.fit_control_button = widgets.StyleTwoButton('Fit Controls')
 
             self._set_widget_dimensions()
             self._set_widget_attributes()
@@ -147,6 +149,8 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             # row.addWidget(self.see_file_button)
             layout.addLayout(row)
             layout.addSpacing(spacing)
+
+            layout.addWidget(self.fit_control_button)
 
             # row = QtWidgets.QHBoxLayout()
             # row.addWidget(self.fit_button)
@@ -710,6 +714,7 @@ class MuonRunPanelPresenter:
         self._view.fit_settings.insert_pi.clicked.connect(lambda: self._insert_key_clicked(mufyt.PI))
         self._view.fit_settings.insert_naught.clicked.connect(lambda: self._insert_key_clicked(mufyt.NAUGHT))
         self._view.fit_settings.expression_input.textChanged.connect(lambda: self._view.set_enabled_fit(False))
+        self._view.data_settings.fit_control_button.released.connect(lambda: FitDialog.launch([]))
 
         self._view.plot_settings.all_color_options.currentTextChanged.connect(
             lambda: self._plot_parameter_changed(PlotContext.Keys.DEFAULT_COLOR,
@@ -845,12 +850,7 @@ class MuonRunPanelPresenter:
         file = files.file(run.file)
         histogram_label = self._view.get_histogram_label()
         histograms = self._view.get_histograms()
-        bkgd1 = int(run.meta[files.BACKGROUND_ONE_KEY][histogram_label])
-        bkgd2 = int(run.meta[files.BACKGROUND_TWO_KEY][histogram_label])
-        goodbin1 = int(run.meta[files.GOOD_BIN_ONE_KEY][histogram_label])
-        goodbin2 = int(run.meta[files.GOOD_BIN_TWO_KEY][histogram_label])
-        t0 = int(run.meta['T0'][histogram_label])
-        HistogramDisplayDialog.launch([bkgd1, bkgd2, t0, file.read_data()[histogram_label], run.id, histogram_label, goodbin1, goodbin2, histograms, file, run.meta])
+        HistogramDisplayDialog.launch(histogram=file.read_data()[histogram_label], id=run.id, label=histogram_label, histograms=histograms, file=file, meta=run.meta)
 
     def _plot_parameter_changed(self, key, value):
         selected_items = self._view.get_selected_titles()
