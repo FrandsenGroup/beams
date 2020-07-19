@@ -427,8 +427,9 @@ class PSIDownloadDialogPresenter:
         tar_file_object = tarfile.open(temporary_compressed_path, 'r')
         tar_file_object.extractall(save_directory,
                      members=[member for member in tar_file_object.getmembers() if member.name != 'out.txt'])
-        os.remove(temporary_compressed_path)
         new_files = [os.path.join(save_directory, member.name) for member in tar_file_object.getmembers() if member.name != 'out.txt']
+        tar_file_object.close()
+        os.remove(temporary_compressed_path)
 
         self._context.add_files(new_files)
         self._new_files = True
@@ -449,12 +450,3 @@ class PSIDownloadDialogPresenter:
         if path:
             files.set_last_used_directory(path)
             self._view.set_file(path)
-
-
-# if __name__ == '__main__':
-    # f_data = {'AREA': 'LEM', 'YEAR': 2020, 'RUN': 4, 'go': 'Search'}
-    # print(requests.Request('POST', 'http://musruser.psi.ch/cgi-bin/SearchDB.cgi', files=f_data).prepare().body.decode('utf8'))
-    # r = requests.post('http://musruser.psi.ch/cgi-bin/SearchDB.cgi', data=f_data)
-    # print(r.status_code)
-    # print(r.text)
-    # os.remove(r'C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\temp_compressed_psi_file.tar.gz')
