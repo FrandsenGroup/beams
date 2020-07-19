@@ -29,6 +29,23 @@ class MuonRun:
         return '[MuonRun: ID={}, meta={}]'.format(self.id, self.meta)
 
 
+# class MuonRun2:
+#     def __init__(self, data, meta: dict, file):
+#         self.meta = {"Temperature": 123}
+#         self.asymmetry = [1,2,3]
+#         self.fit = Fit2()
+#
+# class Fit2:
+#     def __init__(self):
+#         self.parameters = {"alpha": {"global": True}}
+#         self.expression =
+#
+#
+# f = MuonRun2()
+# fit = f.fit()
+# fit.parameters["alpha"]["global"]
+
+
 def build_muon_run_from_histogram_file(file, meta=None) -> MuonRun:
     """
     Builds a MuonRun object (Asymmetry, Uncertainty, Time, etc) based on the given data and meta.

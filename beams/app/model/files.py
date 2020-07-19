@@ -154,7 +154,7 @@ class TRIUMFMuonFile(ConvertibleFile):
                 return None  # Unrecognized system
 
             try:
-                print(" ".join(args))
+                # print(" ".join(args))
                 subprocess.check_call(args, shell=shell)
             except subprocess.CalledProcessError:
                 track = traceback.format_exc()
@@ -190,7 +190,7 @@ class PSIMuonFile(ConvertibleFile):
                 return None  # Unrecognized system
 
             try:
-                print(" ".join(args))
+                # print(" ".join(args))
                 subprocess.check_call(args, shell=shell)
             except subprocess.CalledProcessError:
                 track = traceback.format_exc()

@@ -41,6 +41,14 @@ EQUATION_DICTIONARY = {"Simple Exponential": SIMPLE_EXPONENTIAL,
 
 class Fit:
     def __init__(self):
+
+        # expression
+        #
+        # self.parameters = this nonsense
+        # # {"alpha": {"value": 0.271, "boundaries" : [9, 10], "global": true}, }
+        # #  #beta": ... }
+        # self.expression = a(t) = a whole bunch of nonsense
+
         self.is_fitted = False
         self.fit_calculated = False  # If this is false then it will optimize again
         self.full_function = None
