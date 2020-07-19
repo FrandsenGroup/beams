@@ -3,6 +3,7 @@ import enum
 import os
 import sys
 from urllib import parse
+from datetime import datetime
 
 import requests
 from PyQt5 import QtWidgets, QtCore
@@ -22,8 +23,8 @@ class MusrDownloadDialog(QtWidgets.QDialog):
         super(MusrDownloadDialog, self).__init__()
 
         self.status_bar = QtWidgets.QStatusBar()
-        self.input_area = QtWidgets.QLineEdit()
-        self.input_year = QtWidgets.QLineEdit()
+        self.input_area = QtWidgets.QComboBox()
+        self.input_year = QtWidgets.QComboBox()
         self.input_runs = QtWidgets.QLineEdit()
         self.input_file = QtWidgets.QLineEdit()
         self.input_expt = QtWidgets.QLineEdit()
@@ -36,9 +37,8 @@ class MusrDownloadDialog(QtWidgets.QDialog):
         self.download_button = widgets.StyleOneButton('Download')
         self.search_button = widgets.StyleOneButton('Search')
         self.done_button = widgets.StyleOneButton('Done')
-        self._label_description = QtWidgets.QLabel('Provide the information below to search and/or download runs from '
-                                                   'musr.ca.\n * indicates required for download. You can search'
-                                                   ' based on incomplete info.')
+        self._label_description = QtWidgets.QLabel('Provide the information below to search and download runs from '
+                                                   'musr.ca.\n')
 
         self._set_widget_dimensions()
         self._set_widget_attributes()
@@ -63,9 +63,10 @@ class MusrDownloadDialog(QtWidgets.QDialog):
         self.setFixedWidth(400)
 
     def _set_widget_attributes(self):
-        self.input_area.setPlaceholderText('*Area')
-        self.input_year.setPlaceholderText('*Year (YYYY)')
-        self.input_runs.setPlaceholderText('*Range of Runs (N-N)')
+        self.input_year.addItems(list([str(year) for year in range(datetime.today().year, 1977, -1)]))
+        self.input_area.addItems(['M20', 'M20C', 'M20D', 'M15', 'M13', 'M9', 'BNMR', 'BNQR', 'ISAC'])
+
+        self.input_runs.setPlaceholderText('Range of Runs (N-N)')
         self.input_file.setPlaceholderText('Save Directory (default is current)')
         self.input_expt.setPlaceholderText('Expt #')
         self.title_search.setPlaceholderText('Run Title (for searching)')
@@ -135,21 +136,21 @@ class MusrDownloadDialog(QtWidgets.QDialog):
     def set_if_empty(self, expt_new, year_new, area_new):
         area = self.get_area()
         if len(area) == 0:
-            self.input_area.setText(area_new)
+            self.input_area.setCurrentText(area_new)
 
         year = self.get_year()
         if len(year) == 0:
-            self.input_year.setText(year_new)
+            self.input_year.setCurrentText(year_new)
 
         expt = self.get_experiment_number()
         if len(expt) == 0:
             self.input_expt.setText(expt_new)
 
     def get_area(self):
-        return self.input_area.text()
+        return self.input_area.currentText()
 
     def get_year(self):
-        return self.input_year.text()
+        return self.input_year.currentText()
 
     def get_runs(self):
         return self.input_runs.text()

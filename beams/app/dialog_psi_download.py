@@ -4,6 +4,7 @@ import os
 import sys
 from urllib import parse
 import tarfile
+from datetime import datetime
 
 import requests
 from PyQt5 import QtWidgets, QtCore
@@ -23,8 +24,8 @@ class PSIDownloadDialog(QtWidgets.QDialog):
         super(PSIDownloadDialog, self).__init__()
 
         self.status_bar = QtWidgets.QStatusBar()
-        self.input_area = QtWidgets.QLineEdit()  # Fixme lets just put the actual options here!
-        self.input_year = QtWidgets.QLineEdit()
+        self.input_area = QtWidgets.QComboBox()  # Fixme lets just put the actual options here!
+        self.input_year = QtWidgets.QComboBox()
         self.input_runs = QtWidgets.QLineEdit()
         self.input_file = QtWidgets.QLineEdit()
         self.input_expt = QtWidgets.QLineEdit()
@@ -37,9 +38,8 @@ class PSIDownloadDialog(QtWidgets.QDialog):
         self.download_button = widgets.StyleOneButton('Download')
         self.search_button = widgets.StyleOneButton('Search')
         self.done_button = widgets.StyleOneButton('Done')
-        self._label_description = QtWidgets.QLabel('Provide the information below to search and/or download runs from '
-                                                   'psi.ch.\n * indicates required for download. You can search'
-                                                   ' based on incomplete info.')
+        self._label_description = QtWidgets.QLabel('Provide the information below to search and download runs from '
+                                                   'psi.ch.\n')
 
         self._set_widget_dimensions()
         self._set_widget_attributes()
@@ -51,9 +51,9 @@ class PSIDownloadDialog(QtWidgets.QDialog):
         self.status_bar.showMessage(message)
 
     def _set_widget_dimensions(self):
-        self.input_area.setFixedWidth(70)
-        self.input_expt.setFixedWidth(70)
-        self.input_year.setFixedWidth(70)
+        self.input_area.setFixedWidth(100)
+        self.input_expt.setFixedWidth(100)
+        self.input_year.setFixedWidth(100)
         self.select_button.setFixedWidth(80)
         self.download_button.setFixedWidth(80)
         self.download_all.setFixedWidth(140)
@@ -64,9 +64,10 @@ class PSIDownloadDialog(QtWidgets.QDialog):
         self.setFixedWidth(400)
 
     def _set_widget_attributes(self):
-        self.input_area.setPlaceholderText('*Area')
-        self.input_year.setPlaceholderText('*Year (YYYY)')
-        self.input_runs.setPlaceholderText('*Range of Runs (N-N)')
+        self.input_area.addItems(['LEM', 'GPS', 'LTF', 'Dolly', 'GPD', 'ALC', 'HAL', 'ALL'])
+        self.input_year.addItems(list([str(year) for year in range(datetime.today().year, 1992, -1)]))
+
+        self.input_runs.setPlaceholderText('Range of Runs (N-N)')
         self.input_file.setPlaceholderText('Save Directory (default is current)')
         self.input_expt.setPlaceholderText('Expt #')
         self.title_search.setPlaceholderText('Run Title (for searching)')
@@ -84,7 +85,7 @@ class PSIDownloadDialog(QtWidgets.QDialog):
         main_layout.addSpacing(5)
 
         row_1 = QtWidgets.QHBoxLayout()
-        row_1.addWidget(self.input_expt)
+        # row_1.addWidget(self.input_expt)
         row_1.addWidget(self.input_year)
         row_1.addWidget(self.input_area)
         row_1.addWidget(self.input_runs)
@@ -136,21 +137,21 @@ class PSIDownloadDialog(QtWidgets.QDialog):
     def set_if_empty(self, expt_new=None, year_new=None, area_new=None):
         area = self.get_area()
         if len(area) == 0 and area_new is not None:
-            self.input_area.setText(area_new)
+            self.input_area.setCurrentText(area_new)
 
         year = self.get_year()
         if len(year) == 0 and year_new is not None:
-            self.input_year.setText(year_new)
+            self.input_year.setCurrentText(year_new)
 
         expt = self.get_experiment_number()
         if len(expt) == 0 and expt_new is not None:
             self.input_expt.setText(expt_new)
 
     def get_area(self):
-        return self.input_area.text()
+        return self.input_area.currentText()
 
     def get_year(self):
-        return self.input_year.text()
+        return self.input_year.currentText()
 
     def get_runs(self):
         return self.input_runs.text()
