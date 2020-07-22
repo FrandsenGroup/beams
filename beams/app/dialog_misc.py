@@ -15,6 +15,7 @@ class AddFileDialog(QtWidgets.QDialog):
         FILE_SYSTEM = 1
         MUSR_DOWNLOAD = 2
         PSI_DOWNLOAD = 3
+        ISIS_DOWNLOAD = 4
 
     def __init__(self):
         super(AddFileDialog, self).__init__()
@@ -24,21 +25,25 @@ class AddFileDialog(QtWidgets.QDialog):
         self.pos_button = widgets.StyleOneButton('From disk')
         self.neg_button = widgets.StyleOneButton('From TRIUMF')
         self.psi_button = widgets.StyleOneButton('From PSI')
+        self.isis_button = widgets.StyleOneButton('From ISIS')
         self.setMinimumWidth(300)
         self.setMinimumWidth(80)
         self.pos_button.setFixedWidth(100)
         self.neg_button.setFixedWidth(100)
         self.psi_button.setFixedWidth(100)
+        self.isis_button.setFixedWidth(100)
 
         self.pos_button.released.connect(lambda: self.done(AddFileDialog.Codes.FILE_SYSTEM))
         self.neg_button.released.connect(lambda: self.done(AddFileDialog.Codes.MUSR_DOWNLOAD))
         self.psi_button.released.connect(lambda: self.done(AddFileDialog.Codes.PSI_DOWNLOAD))
+        self.isis_button.released.connect(lambda: self.done(AddFileDialog.Codes.ISIS_DOWNLOAD))
 
         try:
             socket.create_connection(("www.google.com", 80))
         except OSError:
             self.neg_button.setEnabled(False)
             self.psi_button.setEnabled(False)
+            self.isis_button.setEnabled(False)
 
         col = QtWidgets.QVBoxLayout()
         col.addWidget(message)
@@ -47,7 +52,9 @@ class AddFileDialog(QtWidgets.QDialog):
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.pos_button)
         row.addWidget(self.neg_button)
+        row.addWidget(self.isis_button)
         row.addWidget(self.psi_button)
+
         row.setAlignment(self.pos_button, QtCore.Qt.AlignRight)
         row.setAlignment(self.neg_button, QtCore.Qt.AlignLeft)
         row.setAlignment(self.psi_button, QtCore.Qt.AlignCenter)

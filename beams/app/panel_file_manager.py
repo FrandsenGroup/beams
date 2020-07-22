@@ -11,6 +11,7 @@ from app.dialog_musr_download import MusrDownloadDialog
 from app.dialog_plot_file import PlotFileDialog
 from app.dialog_write_data import WriteDataDialog
 from app.dialog_psi_download import PSIDownloadDialog
+from app.dialog_isis_download import ISISDownloadDialog
 
 
 # noinspection PyArgumentList
@@ -189,6 +190,8 @@ class FileManagerPanelPresenter:
             MusrDownloadDialog.launch()
         elif code == AddFileDialog.Codes.PSI_DOWNLOAD:
             PSIDownloadDialog.launch()
+        elif code == AddFileDialog.Codes.ISIS_DOWNLOAD:
+            ISISDownloadDialog.launch()
 
     def _remove_file_clicked(self):
         checked_items = self._view.get_checked_items()
