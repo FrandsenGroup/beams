@@ -5,6 +5,9 @@ import sys
 from urllib import parse
 from datetime import datetime
 import json
+import tarfile
+import shutil
+import zipfile
 import time
 import requests
 
@@ -222,11 +225,15 @@ class ISISDownloadDialog(QtWidgets.QDialog):
 class ISISDownloadDialogPresenter:
     def __init__(self, view: ISISDownloadDialog):
         self._view = view
-        self._search_url = "http://musr.ca/mud/runSel.php"
-        self._data_url = "http://musr.ca/mud/data/"
+
         self._session_url = r'https://icatisis.esc.rl.ac.uk/icat/session'
-        self._data_url = r'https://icatisis.esc.rl.ac.uk/icat/lucene/data'
+        self._file_data_url = r'https://icatisis.esc.rl.ac.uk/icat/lucene/data'
         self._entity_url = r'https://icatisis.esc.rl.ac.uk/icat/entityManager'
+        self._cart_url = r'https://data.isis.stfc.ac.uk/topcat/user/cart/ISIS/cartItems'
+        self._submit_url = r'https://data.isis.stfc.ac.uk/topcat/user/cart/ISIS/submit'
+        self._download_url = r'https://data.isis.stfc.ac.uk/topcat/user/downloads'
+        self._data_url = r'https://isisicatds.stfc.ac.uk/ids/getData'
+
         self._current_identifiers = {}
         self._session_id = None
         self._session_start = None
@@ -324,18 +331,13 @@ class ISISDownloadDialogPresenter:
 
         return [download_string + '{0:06d}.msr'.format(download) for download in range(int(runs[0]), int(runs[1])+1)]
 
-    def _assemble_save(self, download):
+    def _assemble_save(self):
         directory = self._view.get_file()
 
         if len(directory) == 0:
             directory = os.getcwd()
 
-        if sys.platform == 'win32':
-            separator = "\\"
-        else:
-            separator = "/"
-
-        return directory + "{}{}".format(separator, download.split('/')[-1])
+        return directory
 
     def _search_clicked(self):
         self._view.set_status_message('Querying ... ')
@@ -343,6 +345,7 @@ class ISISDownloadDialogPresenter:
         self._view.set_status_message('Done.')
 
     def _download_clicked(self):
+
         self._view.set_status_message('Downloading ... ')
 
         downloads = self._assemble_downloads()
@@ -354,6 +357,9 @@ class ISISDownloadDialogPresenter:
         self._download(downloads)
 
     def _download_selected_clicked(self):
+        self._download_items(False)
+        return
+
         self._view.set_status_message('Downloading ... ')
 
         downloads = self._assemble_downloads_from_search(True)
@@ -475,12 +481,95 @@ class ISISDownloadDialogPresenter:
         query_string = '?sessionId={}&query={{"text":"{}","lower":"{}","upper":"{}","target":"{}"}}&maxCount={}'.format(self._session_id, title_string, start_date, end_date, target, max_count)
 
         try:
-            response = requests.get(self._data_url + query_string)
+            response = requests.get(self._file_data_url + query_string)
         except requests.ConnectionError:
             self._view.log_message('Couldn\'t get a session ID for ISIS. Connection Error.\n')
             return
 
         return [entity['id'] for entity in json.loads(response.text)]
+
+    def _cart_items(self, select_all=False):
+        if select_all:
+            identifiers = self._view.get_all_search_results()
+            datafile_string = ','.join(['Datafile {}'.format(self._current_identifiers[identifier]['Datafile']['id']) for identifier in identifiers])
+        else:
+            identifiers = self._view.get_selected_search_results()
+            datafile_string = ','.join(['Datafile {}'.format(self._current_identifiers[identifier]['Datafile']['id']) for identifier in identifiers])
+
+        form_data = {'sessionId': self._session_id, 'items': datafile_string}
+
+        try:
+            response = requests.post(self._cart_url, data=form_data)
+        except requests.ConnectionError:
+            self._view.log_message('Couldn\'t get a session ID for ISIS. Connection Error.\n')
+            return False
+
+        return True
+
+    def _submit_cart(self):
+        form_data = {'sessionId': self._session_id, 'fileName': 'temporary_isis_compressed', 'transport': 'https', 'email': '', 'zipType': ''}
+
+        try:
+            response = requests.post(self._submit_url, data=form_data)
+        except requests.ConnectionError:
+            self._view.log_message('Couldn\'t get a session ID for ISIS. Connection Error.\n')
+            return
+
+        return json.loads(response.text)['downloadId']
+
+    def _prepare_download(self, download_id):
+        query_string = "?facilityName=ISIS&sessionId={}&queryOffset=where download.facilityName = 'ISIS' AND download.id = {}".format(self._session_id, download_id)
+
+        try:
+            response = requests.get(self._download_url + query_string)
+        except requests.ConnectionError:
+            self._view.log_message('Couldn\'t get a session ID for ISIS. Connection Error.\n')
+            return
+
+        return json.loads(response.text)[0]['preparedId']
+
+    def _download_items(self, select_all=False):
+        self._check_session()
+
+        self._cart_items(select_all)
+
+        download_id = self._submit_cart()
+
+        prepared_id = self._prepare_download(download_id)
+
+        query_string = '?preparedId={}&outname=temporary_isis_compressed'.format(prepared_id)
+
+        try:
+            response = requests.get(self._data_url + query_string)
+        except requests.ConnectionError:
+            self._view.log_message('Failed to download {}. Connection Error\n'.format(query_string))
+            return
+
+        temporary_compressed_path = os.path.join(os.getcwd(), 'temporary_isis_compressed.zip')
+        save_directory = self._assemble_save()
+
+        with open(temporary_compressed_path, 'wb') as f:
+            for chunk in response.iter_content(chunk_size=10485760):
+                f.write(chunk)
+
+        new_files = []
+        with zipfile.ZipFile(temporary_compressed_path, 'r') as zf:
+            for member in zf.namelist():
+                filename = os.path.basename(member)
+
+                if not filename:
+                    continue
+
+                new_files.append(filename)
+                source = zf.open(member)
+                target = open(os.path.join(save_directory, filename), 'wb')
+                with source, target:
+                    shutil.copyfileobj(source, target)
+
+        self._context.add_files(new_files)
+        self._new_files = True
+        self._view.log_message('{} Files downloaded successfully.\n'.format(len(new_files)))
+        self._view.set_status_message('Done.')
 
     # noinspection PyCallByClass
     def _save_to_clicked(self):
@@ -501,4 +590,24 @@ if __name__ == '__main__':
 
 
 if __name__ == '__main__':
-    print(parse.unquote('https://icatisis.esc.rl.ac.uk/icat/entityManager?sessionId=a242ff93-05df-4291-8547-001f67372b1f&query=select%20distinct%20dataset%20from%20Dataset%20dataset%20,%20dataset.investigation%20as%20investigation%20,%20investigation.facility%20as%20facility%20,%20facility.instruments%20as%20instrument%20,%20facility.facilityCycles%20as%20facilityCycle%20,%20investigation.investigationInstruments%20as%20investigationInstrumentPivot%20,%20investigationInstrumentPivot.instrument%20as%20investigationInstrument%20where%20facility.id%20%3D%201%20and%20instrument.id%20%3D%2028%20and%20facilityCycle.id%20%3D%2051%20and%20investigation.id%20%3D%2024064911%20and%20investigationInstrument.id%20%3D%20instrument.id%20and%20investigation.startDate%20BETWEEN%20facilityCycle.startDate%20AND%20facilityCycle.endDate%20ORDER%20BY%20dataset.createTime%20desc%20,%20dataset.id%20asc%20limit%200,%2050&server=https:%2F%2Ficatisis.esc.rl.ac.uk'))
+    pass
+    # temporary_compressed_path = os.path.join(os.getcwd(), 'temporary_isis_compressed.tar.gz')
+    # with zipfile.ZipFile(r'C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\temporary_isis_compressed.tar.gz', 'r') as zip:
+    #     zip.printdir()
+    #     for member in zip.namelist():
+    #         filename = os.path.basename(member)
+    #         if not filename:
+    #             continue
+    #         source = zip.open(member)
+    #         target = open(os.path.join(r'C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\test', filename), 'wb')
+    #         with source, target:
+    #             shutil.copyfileobj(source, target)
+    # tar_file_object = tarfile.open(r'C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\temporary_isis_compressed.tar.gz', 'r')
+    # tar_file_object.extractall(os.getcwd(),
+    #                            members=[member for member in tar_file_object.getmembers() if
+    #                                     member.name != 'out.txt'])
+    #
+    # new_files = [os.path.join(os.getcwd(), member.name) for member in tar_file_object.getmembers() if
+    #              member.name != 'out.txt']
+    # tar_file_object.close()
+    # os.remove(temporary_compressed_path)

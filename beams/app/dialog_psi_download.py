@@ -14,6 +14,7 @@ from app.model.model import FileContext
 from app.model import files
 
 
+# fixme put limits on downloads
 # noinspection PyArgumentList
 class PSIDownloadDialog(QtWidgets.QDialog):
     class Codes(enum.IntEnum):
@@ -422,7 +423,7 @@ class PSIDownloadDialogPresenter:
         save_directory = self._assemble_save()
 
         with open(temporary_compressed_path, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=8192):
+            for chunk in response.iter_content(chunk_size=1048576):
                 f.write(chunk)
 
         tar_file_object = tarfile.open(temporary_compressed_path, 'r')
