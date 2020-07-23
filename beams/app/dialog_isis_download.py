@@ -244,92 +244,10 @@ class ISISDownloadDialogPresenter:
 
     def _set_callbacks(self):
         self._view.search_button.released.connect(lambda: self._search_clicked())
-        self._view.download_button.released.connect(lambda: self._download_clicked())
         self._view.done_button.released.connect(lambda: self._done_clicked())
         self._view.select_button.released.connect(lambda: self._save_to_clicked())
         self._view.download_selected.released.connect(lambda: self._download_selected_clicked())
         self._view.download_all.released.connect(lambda: self._download_all_clicked())
-
-    def _assemble_query(self):
-        query = "?"
-
-        area = self._view.get_area()
-        if len(area) > 0:
-            query += "area={}&".format(area)
-
-        year = self._view.get_year()
-        if len(year) > 0:
-            if len(year) == 4:
-                try:
-                    int(year)
-                except ValueError:
-                    self._view.log_message("Give year as 4 digits.\n")
-                    return
-                query += "year={}&".format(year)
-            else:
-                self._view.log_message("Give year as 4 digits.\n")
-                return
-
-        expt = self._view.get_experiment_number()
-        if len(expt) > 0:
-            try:
-                int(expt)
-            except ValueError:
-                self._view.log_message("Experiment number should be an integer.\n")
-                return
-            query += "expt={}&".format(expt)
-
-        title = self._view.get_title()
-        if len(title) > 0:
-            query += "title={}&".format(title)
-
-        return query
-
-    def _assemble_downloads_from_search(self, selected):
-
-        if selected:
-            identifiers = self._view.get_selected_search_results()
-        else:
-            identifiers = self._view.get_all_search_results()
-
-        if len(identifiers) == 0:
-            return
-
-        download_strings = []
-        for identifier in identifiers:
-            split_string = identifier.split(' ')
-            run = split_string[0]
-            year = split_string[-3].split(',')[0]
-            area = split_string[-1].split(',')[0]
-            download_string = '{}/{}/'.format(area, year)
-            download_string += '{0:06d}.msr'.format(int(run))
-            download_strings.append(download_string)
-
-        return download_strings
-
-    def _assemble_downloads(self):
-        download_string = ""
-
-        area = self._view.get_area()
-        if len(area) == 0:
-            return
-        download_string += "{}/".format(area)
-
-        year = self._view.get_year()
-        if len(year) == 0:
-            return
-        download_string += "{}/".format(year)
-
-        runs = self._view.get_runs()
-        if len(runs) == 0:
-            return
-
-        runs = runs.split('-')
-        if len(runs) == 1:
-            download_string += '{0:06d}.msr'.format(int(runs[0]))
-            return [download_string]
-
-        return [download_string + '{0:06d}.msr'.format(download) for download in range(int(runs[0]), int(runs[1])+1)]
 
     def _assemble_save(self):
         directory = self._view.get_file()
@@ -344,71 +262,15 @@ class ISISDownloadDialogPresenter:
         self._search_request()
         self._view.set_status_message('Done.')
 
-    def _download_clicked(self):
-
-        self._view.set_status_message('Downloading ... ')
-
-        downloads = self._assemble_downloads()
-        if downloads is None:
-            self._view.log_message('No runs specified.\n')
-            self._view.set_status_message('Done.')
-            return
-
-        self._download(downloads)
-
     def _download_selected_clicked(self):
-        self._download_items(False)
-        return
-
         self._view.set_status_message('Downloading ... ')
-
-        downloads = self._assemble_downloads_from_search(True)
-        if downloads is None:
-            self._view.log_message('No runs specified.\n')
-            self._view.set_status_message('Done.')
-            return
-
-        self._download(downloads)
+        self._download_items(False)
+        self._view.set_status_message('Done')
 
     def _download_all_clicked(self):
         self._view.set_status_message('Downloading ... ')
-
-        downloads = self._assemble_downloads_from_search(False)
-        if downloads is None:
-            self._view.log_message('Please finish filling in Expt Number, Year and Area.\n')
-            self._view.set_status_message('Done.')
-            return
-
-        self._download(downloads)
-
-    def _download(self, downloads):
-        good = 0
-        new_files = []
-        for i, download in enumerate(downloads):
-            full_url = self._data_url + download
-
-            try:
-                response = requests.get(full_url)
-            except requests.exceptions.ConnectionError:
-                self._view.log_message('Failed to download {}. Connection Error\n'.format(full_url))
-                continue
-
-            if response.status_code != 200:
-                self._view.log_message('Failed to download {}. Error {}\n'.format(full_url, response.status_code))
-                continue
-
-            save_file = self._assemble_save(download)
-            with open(save_file, 'wb') as fb:
-                for chunk in response.iter_content(100000):
-                    fb.write(chunk)
-            new_files.append(save_file)
-            self._new_files = True
-            self._view.log_message('Successfully downloaded {}.\n'.format(full_url))
-            good += 1
-
-        self._context.add_files(new_files)
-        self._view.log_message('{}/{} Files downloaded successfully.\n'.format(good, len(downloads)))
-        self._view.set_status_message('Done.')
+        self._download_items(True)
+        self._view.set_status_message('Done')
 
     def _done_clicked(self):
         if self._new_files:
@@ -565,6 +427,8 @@ class ISISDownloadDialogPresenter:
                 target = open(os.path.join(save_directory, filename), 'wb')
                 with source, target:
                     shutil.copyfileobj(source, target)
+
+        os.remove(temporary_compressed_path)
 
         self._context.add_files(new_files)
         self._new_files = True
