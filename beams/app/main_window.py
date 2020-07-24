@@ -4,6 +4,8 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from app.panel_file_manager import FileManagerPanel
 from app.panel_muon_plot import MuonPlotPanel
 from app.panel_run_display import MuonRunPanel
+from app.tab_histogram_display import HistogramDisplayDialog
+from app.tab_fit import FitDialog
 
 
 # noinspection PyArgumentList
@@ -52,20 +54,34 @@ class MainWindow(QtWidgets.QMainWindow):
         self._file_manager.setFixedWidth(280)
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self._file_manager)
 
+        self._tabs = QtWidgets.QTabWidget()
+
         self._plot_panel_one = MuonPlotPanel()
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self._plot_panel_one, QtCore.Qt.Horizontal)
+        # self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self._plot_panel_one, QtCore.Qt.Horizontal)
 
         self._plot_panel_two = MuonPlotPanel()
         self._plot_panel_two.set_max_time(.25)
         self._plot_panel_two.set_bin_input(2)
         self._plot_panel_two.set_bin_slider(2)
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self._plot_panel_two, QtCore.Qt.Horizontal)
+        # self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self._plot_panel_two, QtCore.Qt.Horizontal)
 
-        # self._plot_panel_three = MuonPlotPanel()
-        # self._plot_panel_three.set_max_time(10)
-        # self._plot_panel_three.set_bin_input(150)
-        # self._plot_panel_three.set_bin_slider(150)
-        # self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self._plot_panel_three, QtCore.Qt.Horizontal)
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(self._plot_panel_one)
+        row.addWidget(self._plot_panel_two)
+        temp_widget = QtWidgets.QWidget()
+        temp_widget.setLayout(row)
+        self._tabs.addTab(temp_widget, "Plot")
+
+        self._tabs.addTab(HistogramDisplayDialog(), 'Histogram')
+
+        self._tabs.addTab(FitDialog(), 'Fit')
+
+        self._tabs.addTab(QtWidgets.QWidget(), 'Download')
+
+        temp_docking_widget = QtWidgets.QDockWidget()
+        temp_docking_widget.setWidget(self._tabs)
+        temp_docking_widget.setTitleBarWidget(QtWidgets.QWidget())
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, temp_docking_widget, QtCore.Qt.Horizontal)
 
         self._run_panel = MuonRunPanel()
         self._run_panel.setFixedWidth(280)
@@ -141,3 +157,4 @@ class StyleFile:
                 qss_updated_file += qss_read_file[current_char]
                 current_char += 1
         return qss_updated_file
+

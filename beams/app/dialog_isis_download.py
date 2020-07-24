@@ -144,28 +144,6 @@ class ISISDownloadDialog(QtWidgets.QDialog):
     def set_file(self, file_path):
         self.input_file.setText(file_path)
 
-    def set_if_empty(self, expt_new, year_new, area_new):
-        area = self.get_area()
-        if len(area) == 0:
-            self.input_area.setCurrentText(area_new)
-
-        year = self.get_year()
-        if len(year) == 0:
-            self.input_year.setCurrentText(year_new)
-
-        expt = self.get_experiment_number()
-        if len(expt) == 0:
-            self.input_expt.setText(expt_new)
-
-    def get_area(self):
-        return self.input_area.currentText()
-
-    def get_year(self):
-        return self.input_year.currentText()
-
-    def get_runs(self):
-        return self.input_runs.text()
-
     def get_file(self):
         return self.input_file.text()
 
@@ -205,9 +183,6 @@ class ISISDownloadDialog(QtWidgets.QDialog):
 
         self.download_selected.setEnabled(len(data) > 0)
         self.download_all.setEnabled(len(data) > 0)
-
-    def get_experiment_number(self):
-        return self.input_expt.text()
 
     def log_message(self, message):
         self.output_web.insertPlainText(message)
@@ -375,7 +350,7 @@ class ISISDownloadDialogPresenter:
         form_data = {'sessionId': self._session_id, 'items': datafile_string}
 
         try:
-            response = requests.post(self._cart_url, data=form_data)
+            requests.post(self._cart_url, data=form_data)
         except requests.ConnectionError:
             self._view.log_message('Couldn\'t get a session ID for ISIS. Connection Error.\n')
             return False
@@ -428,7 +403,7 @@ class ISISDownloadDialogPresenter:
         save_directory = self._assemble_save()
 
         with open(temporary_compressed_path, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=10485760):
+            for chunk in response.iter_content(chunk_size=10485760):  # fixme, how to determine proper chunk size?
                 f.write(chunk)
 
         new_files = []

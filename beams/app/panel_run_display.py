@@ -4,8 +4,8 @@ from PyQt5 import QtWidgets, QtCore
 from app.model.model import PlotContext, MuonDataContext
 from app.model import files, muon, mufyt
 from app.dialog_misc import WarningMessageDialog, IntegrationDisplayDialog, FileDisplayDialog
-from app.dialog_histogram_display import HistogramDisplayDialog
-from app.dialog_fit import FitDialog
+from app.tab_histogram_display import HistogramDisplayDialog
+from app.tab_fit import FitDialog
 from app.util import widgets
 
 

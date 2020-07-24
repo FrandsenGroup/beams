@@ -9,7 +9,7 @@ from app.model import mufyt
 
 
 # noinspection PyArgumentList
-class FitDialog(QtWidgets.QDialog):
+class FitDialog(QtWidgets.QWidget):
     class FitCanvas(FigureCanvas):
         def __init__(self):
             self._draw_pending = True
@@ -31,7 +31,7 @@ class FitDialog(QtWidgets.QDialog):
             ('Save', 'Save the figure', 'filesave', 'save_figure'),
         )
 
-    def __init__(self, args):
+    def __init__(self):
         super(FitDialog, self).__init__()
 
         self.input_fit_equation = QtWidgets.QLineEdit()

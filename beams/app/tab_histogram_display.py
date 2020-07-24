@@ -13,7 +13,7 @@ from app.model.model import MuonDataContext
 
 
 # noinspection PyArgumentList
-class HistogramDisplayDialog(QtWidgets.QDialog):
+class HistogramDisplayDialog(QtWidgets.QWidget):
     class HistogramCanvas(FigureCanvas):
         def __init__(self):
             self._draw_pending = True
@@ -43,32 +43,32 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         File = 'file'
         Run_ID = 'id'
 
-    def __init__(self, histograms, meta, histogram, histogram_label, file, run_id):
+    def __init__(self):
         super(HistogramDisplayDialog, self).__init__()
-        self._histograms = histograms
-        self._meta = meta
-
-        self._initial_values = {title: {files.T0_KEY: int(self._meta[files.T0_KEY][title]),
-                                        files.BACKGROUND_ONE_KEY: int(self._meta[files.BACKGROUND_ONE_KEY][title]),
-                                        files.BACKGROUND_TWO_KEY: int(self._meta[files.BACKGROUND_TWO_KEY][title]),
-                                        files.GOOD_BIN_ONE_KEY: int(self._meta[files.GOOD_BIN_ONE_KEY][title]),
-                                        files.GOOD_BIN_TWO_KEY: int(self._meta[files.GOOD_BIN_TWO_KEY][title])}
-                                for title in self._histograms}
-
-        self._current_values = {title: {files.T0_KEY: int(self._meta[files.T0_KEY][title]),
-                                        files.BACKGROUND_ONE_KEY: int(self._meta[files.BACKGROUND_ONE_KEY][title]),
-                                        files.BACKGROUND_TWO_KEY: int(self._meta[files.BACKGROUND_TWO_KEY][title]),
-                                        files.GOOD_BIN_ONE_KEY: int(self._meta[files.GOOD_BIN_ONE_KEY][title]),
-                                        files.GOOD_BIN_TWO_KEY: int(self._meta[files.GOOD_BIN_TWO_KEY][title])}
-                                for title in self._histograms}
-
-        self.__initial = True
-
-        self.histogram = histogram
-        self.histogram_label = histogram_label
-        self._file = file
-
-        self.run_id = run_id
+        # self._histograms = histograms
+        # self._meta = meta
+        #
+        # self._initial_values = {title: {files.T0_KEY: int(self._meta[files.T0_KEY][title]),
+        #                                 files.BACKGROUND_ONE_KEY: int(self._meta[files.BACKGROUND_ONE_KEY][title]),
+        #                                 files.BACKGROUND_TWO_KEY: int(self._meta[files.BACKGROUND_TWO_KEY][title]),
+        #                                 files.GOOD_BIN_ONE_KEY: int(self._meta[files.GOOD_BIN_ONE_KEY][title]),
+        #                                 files.GOOD_BIN_TWO_KEY: int(self._meta[files.GOOD_BIN_TWO_KEY][title])}
+        #                         for title in self._histograms}
+        #
+        # self._current_values = {title: {files.T0_KEY: int(self._meta[files.T0_KEY][title]),
+        #                                 files.BACKGROUND_ONE_KEY: int(self._meta[files.BACKGROUND_ONE_KEY][title]),
+        #                                 files.BACKGROUND_TWO_KEY: int(self._meta[files.BACKGROUND_TWO_KEY][title]),
+        #                                 files.GOOD_BIN_ONE_KEY: int(self._meta[files.GOOD_BIN_ONE_KEY][title]),
+        #                                 files.GOOD_BIN_TWO_KEY: int(self._meta[files.GOOD_BIN_TWO_KEY][title])}
+        #                         for title in self._histograms}
+        #
+        # self.__initial = True
+        #
+        # self.histogram = histogram
+        # self.histogram_label = histogram_label
+        # self._file = file
+        #
+        # self.run_id = run_id
 
         self._main = QtWidgets.QMainWindow()
         widget = QtWidgets.QWidget()
@@ -110,8 +110,8 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         layout = QtWidgets.QVBoxLayout(self)
         layout.addWidget(self._main)
 
-        self.set_new_lines()
-        self._presenter = HistogramDisplayPresenter(self)
+        # self.set_new_lines()
+        # self._presenter = HistogramDisplayPresenter(self)
 
     def set_new_lines(self, bkg1=None, bkg2=None, t0=None, goodbin1=None, goodbin2=None, thick=False, new_histogram=None):
         bkg1_width = 1
@@ -207,13 +207,13 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         self.button_see_file.setAutoDefault(False)
         self.button_apply.setAutoDefault(False)
         self.button_done.setAutoDefault(False)
-        self.histogram_choices.addItems(self._histograms)
+        # self.histogram_choices.addItems(self._histograms)
 
-        self.input_bkgd1.setText(str(self._current_values[self.histogram_label][files.BACKGROUND_ONE_KEY]))
-        self.input_bkgd2.setText(str(self._current_values[self.histogram_label][files.BACKGROUND_TWO_KEY]))
-        self.input_t0.setText(str(self._current_values[self.histogram_label][files.T0_KEY]))
-        self.input_goodbin1.setText(str(self._current_values[self.histogram_label][files.GOOD_BIN_ONE_KEY]))
-        self.input_goodbin2.setText(str(self._current_values[self.histogram_label][files.GOOD_BIN_TWO_KEY]))
+        # self.input_bkgd1.setText(str(self._current_values[self.histogram_label][files.BACKGROUND_ONE_KEY]))
+        # self.input_bkgd2.setText(str(self._current_values[self.histogram_label][files.BACKGROUND_TWO_KEY]))
+        # self.input_t0.setText(str(self._current_values[self.histogram_label][files.T0_KEY]))
+        # self.input_goodbin1.setText(str(self._current_values[self.histogram_label][files.GOOD_BIN_ONE_KEY]))
+        # self.input_goodbin2.setText(str(self._current_values[self.histogram_label][files.GOOD_BIN_TWO_KEY]))
 
         self.histogram_choices.currentTextChanged.connect(self._replace_histogram_plot)
         self.button_see_file.released.connect(self._see_file_clicked)
@@ -276,6 +276,7 @@ class HistogramDisplayDialog(QtWidgets.QDialog):
         radio_form_layout.addWidget(self.label_explanation)
         radio_form_layout.addRow(radio_layout)
         radio_form.setLayout(radio_form_layout)
+        radio_form.setMaximumHeight(100)
 
         self._new_layout.addWidget(radio_form)
         self._new_layout.addWidget(self.canvas)
