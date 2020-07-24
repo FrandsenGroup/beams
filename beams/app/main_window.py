@@ -71,15 +71,15 @@ class MainWindow(QtWidgets.QMainWindow):
         temp_widget = QtWidgets.QWidget()
         temp_widget.setLayout(row)
         i = self._tabs.addTab(temp_widget , "Plot")
-        self._tabs.setTabIcon(i, QtGui.QIcon(r'C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\beams\app\resources\icons\plot2.png'))
+        self._tabs.setTabIcon(i, QtGui.QIcon(r'beams\app\resources\icons\plot2.png'))
         self._tabs.setIconSize(QtCore.QSize(16, 16))
 
         i = self._tabs.addTab(HistogramDisplayTab(), 'Histogram')
-        self._tabs.setTabIcon(i, QtGui.QIcon(r'C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\beams\app\resources\icons\histogram2.png'))
+        self._tabs.setTabIcon(i, QtGui.QIcon(r'beams\app\resources\icons\histogram2.png'))
         self._tabs.setIconSize(QtCore.QSize(16, 16))
 
         i = self._tabs.addTab(FitDialog(), 'Fit')
-        self._tabs.setTabIcon(i, QtGui.QIcon(r'C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\beams\app\resources\icons\fit2.png'))
+        self._tabs.setTabIcon(i, QtGui.QIcon(r'beams\app\resources\icons\fit2.png'))
         self._tabs.setIconSize(QtCore.QSize(16, 16))
 
         self._tabs.addTab(QtWidgets.QWidget(), 'Download')

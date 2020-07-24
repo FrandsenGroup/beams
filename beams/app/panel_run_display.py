@@ -147,10 +147,10 @@ class MuonRunPanel(QtWidgets.QDockWidget):
             row.addWidget(self.see_histogram_button)
             # row.addSpacing(spacing)
             # row.addWidget(self.see_file_button)
-            layout.addLayout(row)
-            layout.addSpacing(spacing)
+            # layout.addLayout(row)
+            # layout.addSpacing(spacing)
 
-            layout.addWidget(self.fit_control_button)
+            # layout.addWidget(self.fit_control_button)
 
             # row = QtWidgets.QHBoxLayout()
             # row.addWidget(self.fit_button)
