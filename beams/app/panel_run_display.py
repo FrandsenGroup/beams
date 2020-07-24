@@ -1,10 +1,10 @@
 
 from PyQt5 import QtWidgets, QtCore
 
-from app.model.model import PlotContext, MuonDataContext
+from app.model.model import PlotContext, MuonDataContext, FocusContext
 from app.model import files, muon, mufyt
 from app.dialog_misc import WarningMessageDialog, IntegrationDisplayDialog, FileDisplayDialog
-from app.tab_histogram_display import HistogramDisplayDialog
+from app.tab_histogram_display import HistogramDisplayTab
 from app.tab_fit import FitDialog
 from app.util import widgets
 
@@ -814,6 +814,7 @@ class MuonRunPanelPresenter:
 
     def _run_selection_changed(self):
         self._populate_settings()
+        self._model.set_focus_runs(self._view.get_selected_titles())
 
     def _meta_key_changed(self):
         meta_key = self._view.get_meta_key()
@@ -850,7 +851,7 @@ class MuonRunPanelPresenter:
         file = files.file(run.file)
         histogram_label = self._view.get_histogram_label()
         histograms = self._view.get_histograms()
-        HistogramDisplayDialog.launch(histogram=file.read_data()[histogram_label], id=run.id, label=histogram_label, histograms=histograms, file=file, meta=run.meta)
+        HistogramDisplayTab.launch(histogram=file.read_data()[histogram_label], id=run.id, label=histogram_label, histograms=histograms, file=file, meta=run.meta)
 
     def _plot_parameter_changed(self, key, value):
         selected_items = self._view.get_selected_titles()
@@ -1007,6 +1008,7 @@ class MuonRunPanelModel:
         self._observer = observer
         self._data_context = MuonDataContext()
         self._plot_context = PlotContext()
+        self._focus_context = FocusContext()
         self._data_context.subscribe(self)
         self._plot_context.subscribe(self)
         self._runs = self._data_context.get_runs()
@@ -1034,6 +1036,12 @@ class MuonRunPanelModel:
                 if style[PlotContext.Keys.LABEL] == title:
                     styles[title] = style
         return styles
+
+    def set_focus_runs(self, titles):
+        run_ids = titles
+        if titles is not None:
+            run_ids = [run.id for run in self.get_run_by_title(titles).values()]
+        self._focus_context.focus_runs(run_ids)
 
     def set_visibility_for_runs(self, visible, titles=None, stop_signal=False):
         run_ids = titles

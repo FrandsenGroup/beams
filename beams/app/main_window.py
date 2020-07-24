@@ -4,7 +4,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from app.panel_file_manager import FileManagerPanel
 from app.panel_muon_plot import MuonPlotPanel
 from app.panel_run_display import MuonRunPanel
-from app.tab_histogram_display import HistogramDisplayDialog
+from app.tab_histogram_display import HistogramDisplayTab
 from app.tab_fit import FitDialog
 
 
@@ -72,7 +72,7 @@ class MainWindow(QtWidgets.QMainWindow):
         temp_widget.setLayout(row)
         self._tabs.addTab(temp_widget, "Plot")
 
-        self._tabs.addTab(HistogramDisplayDialog(), 'Histogram')
+        self._tabs.addTab(HistogramDisplayTab(), 'Histogram')
 
         self._tabs.addTab(FitDialog(), 'Fit')
 

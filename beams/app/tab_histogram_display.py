@@ -9,16 +9,17 @@ from matplotlib.figure import Figure
 from app.util import widgets
 from app.model import files
 from app.dialog_misc import WarningMessageDialog, FileDisplayDialog
-from app.model.model import MuonDataContext
+from app.model.model import MuonDataContext, FocusContext
 
 
 # noinspection PyArgumentList
-class HistogramDisplayDialog(QtWidgets.QWidget):
+class HistogramDisplayTab(QtWidgets.QWidget):
     class HistogramCanvas(FigureCanvas):
         def __init__(self):
             self._draw_pending = True
             self._is_drawing = True
             FigureCanvas.__init__(self, Figure())
+            self.figure.set_facecolor("#f9f9fd")
             self.canvas_axes = self.figure.add_subplot(111, label='Canvas')
 
     class HistogramToolbar(NavigationToolbar2QT):
@@ -44,32 +45,7 @@ class HistogramDisplayDialog(QtWidgets.QWidget):
         Run_ID = 'id'
 
     def __init__(self):
-        super(HistogramDisplayDialog, self).__init__()
-        # self._histograms = histograms
-        # self._meta = meta
-        #
-        # self._initial_values = {title: {files.T0_KEY: int(self._meta[files.T0_KEY][title]),
-        #                                 files.BACKGROUND_ONE_KEY: int(self._meta[files.BACKGROUND_ONE_KEY][title]),
-        #                                 files.BACKGROUND_TWO_KEY: int(self._meta[files.BACKGROUND_TWO_KEY][title]),
-        #                                 files.GOOD_BIN_ONE_KEY: int(self._meta[files.GOOD_BIN_ONE_KEY][title]),
-        #                                 files.GOOD_BIN_TWO_KEY: int(self._meta[files.GOOD_BIN_TWO_KEY][title])}
-        #                         for title in self._histograms}
-        #
-        # self._current_values = {title: {files.T0_KEY: int(self._meta[files.T0_KEY][title]),
-        #                                 files.BACKGROUND_ONE_KEY: int(self._meta[files.BACKGROUND_ONE_KEY][title]),
-        #                                 files.BACKGROUND_TWO_KEY: int(self._meta[files.BACKGROUND_TWO_KEY][title]),
-        #                                 files.GOOD_BIN_ONE_KEY: int(self._meta[files.GOOD_BIN_ONE_KEY][title]),
-        #                                 files.GOOD_BIN_TWO_KEY: int(self._meta[files.GOOD_BIN_TWO_KEY][title])}
-        #                         for title in self._histograms}
-        #
-        # self.__initial = True
-        #
-        # self.histogram = histogram
-        # self.histogram_label = histogram_label
-        # self._file = file
-        #
-        # self.run_id = run_id
-
+        super(HistogramDisplayTab, self).__init__()
         self._main = QtWidgets.QMainWindow()
         widget = QtWidgets.QWidget()
         self._new_layout = QtWidgets.QVBoxLayout(widget)
@@ -84,7 +60,7 @@ class HistogramDisplayDialog(QtWidgets.QWidget):
         self.button_see_file = widgets.StyleOneButton("See File")
         self.button_apply = widgets.StyleTwoButton("Apply")
         self.button_done = widgets.StyleOneButton("Done")
-        self.canvas = HistogramDisplayDialog.HistogramCanvas()
+        self.canvas = HistogramDisplayTab.HistogramCanvas()
         self.check_editing = QtWidgets.QCheckBox()
         self.label_explanation = QtWidgets.QLabel()
         self.label_bkgd1 = QtWidgets.QLabel("Background Start")
@@ -100,7 +76,7 @@ class HistogramDisplayDialog(QtWidgets.QWidget):
         self.histogram_choices = QtWidgets.QComboBox()
 
         self._extent = None
-        self._toolbar = HistogramDisplayDialog.HistogramToolbar(self.canvas, self._main)
+        self._toolbar = HistogramDisplayTab.HistogramToolbar(self.canvas, self._main)
         self._main.addToolBar(self._toolbar)
         self._set_widget_attributes()
         self._set_widget_dimensions()
@@ -110,8 +86,31 @@ class HistogramDisplayDialog(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout(self)
         layout.addWidget(self._main)
 
-        # self.set_new_lines()
-        # self._presenter = HistogramDisplayPresenter(self)
+        self._presenter = HistogramDisplayPresenter(self)
+        self.set_blank()
+
+        self.histogram = None
+        self.histogram_label = None
+        self.bkgd1 = None
+        self.bkgd2 = None
+        self.t0 = None
+        self.goodbin1 = None
+        self.goodbin2 = None
+
+        self.__initial = True
+
+    def set_blank(self):
+        self.setEnabled(False)
+        self.canvas.canvas_axes.spines['right'].set_visible(False)
+        self.canvas.canvas_axes.spines['top'].set_visible(False)
+        self.canvas.canvas_axes.spines['left'].set_visible(False)
+        self.canvas.canvas_axes.spines['bottom'].set_visible(False)
+        self.canvas.canvas_axes.set_title("Load and select files in the display on the left to see histogram data.",
+                                  fontsize=12)
+        self.canvas.canvas_axes.title.set_color("#B8B8B8")
+        self.canvas.canvas_axes.tick_params(axis='x', colors='white')
+        self.canvas.canvas_axes.tick_params(axis='y', colors='white')
+        self.canvas.canvas_axes.set_facecolor("#f9f9fd")
 
     def set_new_lines(self, bkg1=None, bkg2=None, t0=None, goodbin1=None, goodbin2=None, thick=False, new_histogram=None):
         bkg1_width = 1
@@ -121,41 +120,39 @@ class HistogramDisplayDialog(QtWidgets.QWidget):
         goodbin2_width = 1
 
         if bkg1 is not None:
-            self._current_values[self.histogram_label][files.BACKGROUND_ONE_KEY] = bkg1
+            self.bkgd1 = bkg1
             self.input_bkgd1.setText(str(bkg1))
             if thick:
                 bkg1_width = 2
         if bkg2 is not None:
-            self._current_values[self.histogram_label][files.BACKGROUND_TWO_KEY] = bkg2
+            self.bkgd2 = bkg2
             self.input_bkgd2.setText(str(bkg2))
             if thick:
                 bkg2_width = 2
         if t0 is not None:
-            self._current_values[self.histogram_label][files.T0_KEY] = t0
+            self.t0 = t0
             self.input_t0.setText(str(t0))
             if thick:
                 t0_width = 2
         if goodbin1 is not None:
-            self._current_values[self.histogram_label][files.GOOD_BIN_ONE_KEY] = goodbin1
+            self.goodbin1 = goodbin1
             self.input_goodbin1.setText(str(goodbin1))
             if thick:
                 goodbin1_width = 2
         if goodbin2 is not None:
-            self._current_values[self.histogram_label][files.GOOD_BIN_TWO_KEY] = goodbin2
+            self.goodbin2 = goodbin2
             self.input_goodbin2.setText(str(goodbin2))
             if thick:
                 goodbin2_width = 2
 
         self._extent = self.canvas.canvas_axes.axis()
         self.canvas.canvas_axes.clear()
-        # self.canvas.canvas_axes.bar(x=range(len(self.histogram)), height=self.histogram)
-        # self.canvas.canvas_axes.hist(range(len(self.histogram)), bins=int(len(self.histogram)/10), weights=self.histogram)
         self.canvas.canvas_axes.plot(self.histogram, linestyle='None', marker='s')
-        self.canvas.canvas_axes.axvline(x=self._current_values[self.histogram_label][files.BACKGROUND_ONE_KEY], linewidth=bkg1_width, color='r')
-        self.canvas.canvas_axes.axvline(x=self._current_values[self.histogram_label][files.BACKGROUND_TWO_KEY], linewidth=bkg2_width, color='r')
-        self.canvas.canvas_axes.axvline(x=self._current_values[self.histogram_label][files.T0_KEY], linewidth=t0_width, color='g')
-        self.canvas.canvas_axes.axvline(x=self._current_values[self.histogram_label][files.GOOD_BIN_ONE_KEY], linewidth=goodbin1_width, color='b')
-        self.canvas.canvas_axes.axvline(x=self._current_values[self.histogram_label][files.GOOD_BIN_TWO_KEY], linewidth=goodbin2_width, color='b')
+        self.canvas.canvas_axes.axvline(x=self.bkgd1, linewidth=bkg1_width, color='r')
+        self.canvas.canvas_axes.axvline(x=self.bkgd2, linewidth=bkg2_width, color='r')
+        self.canvas.canvas_axes.axvline(x=self.t0, linewidth=t0_width, color='g')
+        self.canvas.canvas_axes.axvline(x=self.goodbin1, linewidth=goodbin1_width, color='b')
+        self.canvas.canvas_axes.axvline(x=self.goodbin2, linewidth=goodbin2_width, color='b')
 
         if not self.__initial and new_histogram is None:
             self.canvas.canvas_axes.axis(self._extent)
@@ -164,32 +161,29 @@ class HistogramDisplayDialog(QtWidgets.QWidget):
 
         self.__initial = False
 
-    def reset(self):
-        self._current_values[self.histogram_label][files.BACKGROUND_ONE_KEY] = self._initial_values[self.histogram_label][files.BACKGROUND_ONE_KEY]
-        self._current_values[self.histogram_label][files.BACKGROUND_TWO_KEY] = self._initial_values[self.histogram_label][files.BACKGROUND_TWO_KEY]
-        self._current_values[self.histogram_label][files.T0_KEY] = self._initial_values[self.histogram_label][files.T0_KEY]
-        self._current_values[self.histogram_label][files.GOOD_BIN_ONE_KEY] = self._initial_values[self.histogram_label][files.GOOD_BIN_ONE_KEY]
-        self._current_values[self.histogram_label][files.GOOD_BIN_TWO_KEY] = self._initial_values[self.histogram_label][files.GOOD_BIN_TWO_KEY]
+    def reset(self, bkgd1, bkgd2, t0, goodbin1, goodbin2):
+        self.bkgd2 = bkgd2
+        self.bkgd1 = bkgd1
+        self.t0 = t0
+        self.goodbin1 = goodbin1
+        self.goodbin2 = goodbin2
 
-        self.input_bkgd1.setText(str(self._initial_values[self.histogram_label][files.BACKGROUND_ONE_KEY]))
-        self.input_bkgd2.setText(str(self._initial_values[self.histogram_label][files.BACKGROUND_TWO_KEY]))
-        self.input_t0.setText(str(self._initial_values[self.histogram_label][files.T0_KEY]))
-        self.input_goodbin1.setText(str(self._initial_values[self.histogram_label][files.GOOD_BIN_ONE_KEY]))
-        self.input_goodbin2.setText(str(self._initial_values[self.histogram_label][files.GOOD_BIN_TWO_KEY]))
+        self.input_bkgd1.setText(str(bkgd1))
+        self.input_bkgd2.setText(str(bkgd2))
+        self.input_t0.setText(str(t0))
+        self.input_goodbin1.setText(str(goodbin1))
+        self.input_goodbin2.setText(str(goodbin2))
 
         self._extent = self.canvas.canvas_axes.axis()
         self.canvas.canvas_axes.clear()
         self.canvas.canvas_axes.plot(self.histogram, linestyle='None', marker='s')
-        # self.canvas.canvas_axes.bar(x=range(len(self.histogram)), height=self.histogram)
-        self.canvas.canvas_axes.axvline(x=self._current_values[self.histogram_label][files.BACKGROUND_ONE_KEY], linewidth=1, color='r')
-        self.canvas.canvas_axes.axvline(x=self._current_values[self.histogram_label][files.BACKGROUND_TWO_KEY], linewidth=1, color='r')
-        self.canvas.canvas_axes.axvline(x=self._current_values[self.histogram_label][files.T0_KEY], linewidth=1, color='g')
-        self.canvas.canvas_axes.axvline(x=self._current_values[self.histogram_label][files.GOOD_BIN_ONE_KEY], linewidth=1, color='b')
-        self.canvas.canvas_axes.axvline(x=self._current_values[self.histogram_label][files.GOOD_BIN_TWO_KEY], linewidth=1, color='b')
+        self.canvas.canvas_axes.axvline(x=bkgd1, linewidth=1, color='r')
+        self.canvas.canvas_axes.axvline(x=bkgd2, linewidth=1, color='r')
+        self.canvas.canvas_axes.axvline(x=t0, linewidth=1, color='g')
+        self.canvas.canvas_axes.axvline(x=goodbin1, linewidth=1, color='b')
+        self.canvas.canvas_axes.axvline(x=goodbin2, linewidth=1, color='b')
         self.canvas.canvas_axes.axis(self._extent)
         self.canvas.canvas_axes.figure.canvas.draw()
-
-        return self._current_values[self.histogram_label][files.BACKGROUND_ONE_KEY], self._current_values[self.histogram_label][files.BACKGROUND_TWO_KEY], self._current_values[self.histogram_label][files.T0_KEY], self._current_values[self.histogram_label][files.GOOD_BIN_ONE_KEY], self._current_values[self.histogram_label][files.GOOD_BIN_TWO_KEY]
 
     def _set_widget_tooltips(self):
         self.check_editing.setToolTip("Check to enable bin changes")
@@ -207,16 +201,6 @@ class HistogramDisplayDialog(QtWidgets.QWidget):
         self.button_see_file.setAutoDefault(False)
         self.button_apply.setAutoDefault(False)
         self.button_done.setAutoDefault(False)
-        # self.histogram_choices.addItems(self._histograms)
-
-        # self.input_bkgd1.setText(str(self._current_values[self.histogram_label][files.BACKGROUND_ONE_KEY]))
-        # self.input_bkgd2.setText(str(self._current_values[self.histogram_label][files.BACKGROUND_TWO_KEY]))
-        # self.input_t0.setText(str(self._current_values[self.histogram_label][files.T0_KEY]))
-        # self.input_goodbin1.setText(str(self._current_values[self.histogram_label][files.GOOD_BIN_ONE_KEY]))
-        # self.input_goodbin2.setText(str(self._current_values[self.histogram_label][files.GOOD_BIN_TWO_KEY]))
-
-        self.histogram_choices.currentTextChanged.connect(self._replace_histogram_plot)
-        self.button_see_file.released.connect(self._see_file_clicked)
 
     def _set_widget_dimensions(self):
         self.button_reset.setFixedWidth(60)
@@ -281,35 +265,60 @@ class HistogramDisplayDialog(QtWidgets.QWidget):
         self._new_layout.addWidget(radio_form)
         self._new_layout.addWidget(self.canvas)
 
-    def _replace_histogram_plot(self):
+    def replace_histogram_plot(self, histogram):
         self.histogram_label = self.histogram_choices.currentText()
-        self.histogram = self._file.read_data()[self.histogram_label]
+        self.histogram = histogram
         self.set_new_lines(new_histogram=True)
 
-    def _see_file_clicked(self):
-        filename = self._file.file_path
-        with open(filename) as f:
-            file_content = f.read()
-        FileDisplayDialog.launch([filename, file_content])
+    def set_enabled(self, enabled, multiple=False, editing=False):
+        self.setEnabled(enabled)
 
-    def set_enabled(self, enabled):
-        self.radio_bkgd_two.setEnabled(enabled)
-        self.radio_bkgd_one.setEnabled(enabled)
-        self.radio_t0.setEnabled(enabled)
-        self.radio_goodbin2.setEnabled(enabled)
-        self.radio_goodbin1.setEnabled(enabled)
-        self.button_save.setEnabled(enabled)
-        self.button_reset.setEnabled(enabled)
-        self.label_bkgd2.setEnabled(enabled)
-        self.label_bkgd1.setEnabled(enabled)
-        self.label_t0.setEnabled(enabled)
-        self.label_goodbin2.setEnabled(enabled)
-        self.label_goodbin1.setEnabled(enabled)
-        self.input_bkgd1.setEnabled(enabled)
-        self.input_bkgd2.setEnabled(enabled)
-        self.input_t0.setEnabled(enabled)
-        self.input_goodbin2.setEnabled(enabled)
-        self.input_goodbin1.setEnabled(enabled)
+        self.radio_bkgd_two.setEnabled(editing and enabled)
+        self.radio_bkgd_one.setEnabled(editing and enabled)
+        self.radio_t0.setEnabled(editing and enabled)
+        self.radio_goodbin2.setEnabled(editing and enabled)
+        self.radio_goodbin1.setEnabled(editing and enabled)
+        self.button_save.setEnabled(editing and enabled)
+        self.button_reset.setEnabled(editing and enabled)
+        self.label_bkgd2.setEnabled(editing and enabled)
+        self.label_bkgd1.setEnabled(editing and enabled)
+        self.label_t0.setEnabled(editing and enabled)
+        self.label_goodbin2.setEnabled(editing and enabled)
+        self.label_goodbin1.setEnabled(editing and enabled)
+        self.input_bkgd1.setEnabled(editing and enabled)
+        self.input_bkgd2.setEnabled(editing and enabled)
+        self.input_t0.setEnabled(editing and enabled)
+        self.input_goodbin2.setEnabled(editing and enabled)
+        self.input_goodbin1.setEnabled(editing and enabled)
+
+        if multiple and enabled:
+            self.button_see_file.setEnabled(False)
+            self.canvas.canvas_axes.spines['right'].set_visible(False)
+            self.canvas.canvas_axes.spines['top'].set_visible(False)
+            self.canvas.canvas_axes.spines['left'].set_visible(False)
+            self.canvas.canvas_axes.spines['bottom'].set_visible(False)
+            self.canvas.canvas_axes.set_title("Cannot display histogram with multiple runs selected.\nValues can be edited above (this will apply changes to all selected runs).",
+                                              fontsize=12)
+            self.canvas.canvas_axes.title.set_color("#B8B8B8")
+            self.canvas.canvas_axes.tick_params(axis='x', colors='white')
+            self.canvas.canvas_axes.tick_params(axis='y', colors='white')
+            self.canvas.canvas_axes.set_facecolor("#f9f9fd")
+        elif enabled:
+            self.button_see_file.setEnabled(True)
+            self.canvas.canvas_axes.tick_params(axis='x', colors='black')
+            self.canvas.canvas_axes.tick_params(axis='y', colors='black')
+            self.canvas.canvas_axes.tick_params(axis='x', colors='black')
+            self.canvas.canvas_axes.tick_params(axis='y', colors='black')
+
+            title_font_size = 12
+            self.canvas.canvas_axes.spines['right'].set_visible(False)
+            self.canvas.canvas_axes.spines['top'].set_visible(False)
+            self.canvas.canvas_axes.spines['left'].set_visible(True)
+            self.canvas.canvas_axes.spines['bottom'].set_visible(True)
+            self.canvas.canvas_axes.set_xlabel("Time Bin", fontsize=title_font_size)
+            self.canvas.canvas_axes.set_ylabel("Counts", fontsize=title_font_size)
+            self.canvas.canvas_axes.xaxis.label.set_color("#000000")
+            self.canvas.canvas_axes.set_facecolor("#f9f9fd")
 
     def get_histogram_label(self):
         return self.histogram_choices.currentText()
@@ -330,19 +339,19 @@ class HistogramDisplayDialog(QtWidgets.QWidget):
         return int(self.input_goodbin2.text())
 
     def get_bkgd1(self):
-        return self._current_values[self.histogram_label][files.BACKGROUND_ONE_KEY]
+        return self.bkgd1
 
     def get_bkgd2(self):
-        return self._current_values[self.histogram_label][files.BACKGROUND_TWO_KEY]
+        return self.bkgd2
 
     def get_t0(self):
-        return self._current_values[self.histogram_label][files.T0_KEY]
+        return self.t0
 
     def get_goodbin1(self):
-        return self._current_values[self.histogram_label][files.GOOD_BIN_ONE_KEY]
+        return self.goodbin1
 
     def get_goodbin2(self):
-        return self._current_values[self.histogram_label][files.GOOD_BIN_TWO_KEY]
+        return self.goodbin2
 
     def is_bkgd1(self):
         return self.radio_bkgd_one.isChecked()
@@ -362,24 +371,18 @@ class HistogramDisplayDialog(QtWidgets.QWidget):
     def is_editing(self):
         return self.check_editing.isChecked()
 
-    @staticmethod
-    def launch(**kwargs):
-        dialog = HistogramDisplayDialog(histograms=kwargs[HistogramDisplayDialog.KWArgs.Histograms],
-                                        meta=kwargs[HistogramDisplayDialog.KWArgs.Meta],
-                                        histogram=kwargs[HistogramDisplayDialog.KWArgs.Histogram],
-                                        histogram_label=kwargs[HistogramDisplayDialog.KWArgs.Histogram_Label],
-                                        file=kwargs[HistogramDisplayDialog.KWArgs.File],
-                                        run_id=kwargs[HistogramDisplayDialog.KWArgs.Run_ID])
-        return dialog.exec()
+    def add_histogram_labels(self, labels):
+        self.histogram_choices.clear()
+        self.histogram_choices.addItems(labels)
 
 
 class HistogramDisplayPresenter:
-    def __init__(self, view: HistogramDisplayDialog):
+    def __init__(self, view: HistogramDisplayTab):
         self.__pressed = False
         self.__editing = False
+        self.__multiple = False
         self._view = view
-        self._context = MuonDataContext()
-        self._run = self._context.get_run_by_id(self._view.run_id)
+        self._model = HistogramDisplayModel(self)
         self._set_callbacks()
 
     def _set_callbacks(self):
@@ -388,7 +391,9 @@ class HistogramDisplayPresenter:
         self._view.canvas.figure.canvas.mpl_connect('motion_notify_event', self._mouse_interaction)
         self._view.button_reset.pressed.connect(self._reset_clicked)
         self._view.button_done.pressed.connect(self._save_clicked)
+        self._view.button_see_file.pressed.connect(self._see_file_clicked)
         self._view.check_editing.stateChanged.connect(self._editing_checked)
+        self._view.histogram_choices.currentTextChanged.connect(self._histogram_choice_changed)
         self._view.input_t0.returnPressed.connect(lambda: self._input_changed('t0', self._view.get_input_t0()))
         self._view.input_bkgd1.returnPressed.connect(lambda: self._input_changed('bkgd1', self._view.get_input_bkgd1()))
         self._view.input_bkgd2.returnPressed.connect(lambda: self._input_changed('bkgd2', self._view.get_input_bkgd2()))
@@ -419,25 +424,43 @@ class HistogramDisplayPresenter:
             elif self._view.is_goodbin2() and event.xdata > 0:
                 self._view.set_new_lines(goodbin2=int(event.xdata), thick=thick)
 
+            bkgd1 = self._view.get_bkgd1()
+            bkgd2 = self._view.get_bkgd2()
+            t0 = self._view.get_t0()
+            goodbin1 = self._view.get_goodbin1()
+            goodbin2 = self._view.get_goodbin2()
+
+            self._model.store_focused_run_meta(self._view.get_histogram_label(), bkgd1, bkgd2, t0, goodbin1, goodbin2)
+
         elif event.button is None and self.__pressed:
             self.__pressed = False
 
     def _reset_clicked(self):
-        self._view.reset()
+        self._model.reset_focused_run_meta()
+
+        for item in self._model.get_focused_run_meta(self._view.histogram_label):
+            self._view.reset(item[files.BACKGROUND_ONE_KEY], item[files.BACKGROUND_TWO_KEY], item[files.T0_KEY],
+                             item[files.GOOD_BIN_ONE_KEY], item[files.GOOD_BIN_TWO_KEY])
+            break
 
     def _save_clicked(self):
-        label = self._view.get_histogram_label()
-        self._run.meta[files.BACKGROUND_ONE_KEY][label] = self._view.get_bkgd1()
-        self._run.meta[files.BACKGROUND_TWO_KEY][label] = self._view.get_bkgd2()
-        self._run.meta[files.T0_KEY][label] = self._view.get_t0()
-        self._run.meta[files.GOOD_BIN_ONE_KEY][label] = self._view.get_goodbin1()
-        self._run.meta[files.GOOD_BIN_TWO_KEY][label] = self._view.get_goodbin2()
-        self._view.done(0)
-        self._context.reload_run_by_id(self._run.id)
+        self._model.finish()
 
     def _editing_checked(self):
         self.__editing = self._view.is_editing()
-        self._view.set_enabled(self.__editing)
+        self._view.set_enabled(True, self.__multiple, self.__editing)
+
+    def _see_file_clicked(self):
+        filename, file_content = self._model.get_focused_run_file_content()
+        FileDisplayDialog.launch([filename, file_content])
+
+    def _histogram_choice_changed(self):
+        histogram_label = self._view.get_histogram_label()
+
+        if histogram_label != '':
+            print('putting in {} histogram'.format(histogram_label))
+            histogram = self._model.get_focused_run_histogram(histogram_label)
+            self._view.replace_histogram_plot(histogram)
 
     def _input_changed(self, input_box, input_value):
         try:
@@ -446,18 +469,123 @@ class HistogramDisplayPresenter:
             WarningMessageDialog.launch(["Invalid input. Should be an integer."])
             return
 
-        if input_box == "bkgd1" and val < self._view.get_input_bkgd2():
+        bkgd1 = self._view.get_bkgd1()
+        bkgd2 = self._view.get_bkgd2()
+        t0 = self._view.get_t0()
+        goodbin1 = self._view.get_goodbin1()
+        goodbin2 = self._view.get_goodbin2()
+
+        if input_box == "bkgd1" and val < bkgd2:
             self._view.set_new_lines(bkg1=val)
 
-        if input_box == "bkgd2" and val > self._view.get_input_bkgd1():
+        if input_box == "bkgd2" and val > bkgd1:
             self._view.set_new_lines(bkg2=val)
 
         if input_box == "t0" and val > 0:
             self._view.set_new_lines(t0=val)
 
-        if input_box == "goodbin1" and val < self._view.get_input_goodbin2():
+        if input_box == "goodbin1" and val < goodbin2:
             self._view.set_new_lines(goodbin1=val)
 
-        if input_box == "goodbin2" and val > self._view.get_input_goodbin1():
+        if input_box == "goodbin2" and val > goodbin1:
             self._view.set_new_lines(goodbin2=val)
 
+        self._model.store_focused_run_meta(self._view.get_histogram_label(), bkgd1, bkgd2, t0, goodbin1, goodbin2)
+
+    def update(self):
+        if self._model.are_any_runs_focused():
+            self.__multiple = self._model.are_multiple_runs_focused()
+            self._view.set_enabled(True, self.__multiple, self.__editing)
+
+            if not self.__multiple:
+                labels = self._model.get_focused_runs_histogram_labels()
+                meta = list(self._model.get_focused_run_meta(labels[0]).items())[0][1]
+                self._view.histogram = self._model.get_focused_run_histogram(labels[0])
+                self._view.reset(meta[files.BACKGROUND_ONE_KEY], meta[files.BACKGROUND_TWO_KEY], meta[files.T0_KEY],
+                                 meta[files.GOOD_BIN_ONE_KEY], meta[files.GOOD_BIN_TWO_KEY])
+
+                self._view.add_histogram_labels(labels)
+            else:
+                pass
+        else:
+            self._view.set_enabled(False)
+            self._view.set_blank()
+
+
+class HistogramDisplayModel:
+    def __init__(self, observer):
+        self._data_context = MuonDataContext()
+        self._focus_context = FocusContext()
+        self._focus_context.subscribe(self)
+        self._observer = observer
+        self._focused_runs = self._focus_context.get_focused_runs()
+        self._focused_runs_changed = False
+        self._initial_run_meta = {}
+        self._current_run_meta = {}
+
+    def are_multiple_runs_focused(self):
+        return len(self._focused_runs) > 1
+
+    def are_any_runs_focused(self):
+        return len(self._focused_runs) > 0
+
+    def get_initial_focused_run_data(self):
+        pass
+
+    def get_focused_runs_histogram_labels(self):
+        return list(files.file(self._focused_runs[0].file).read_data().keys())
+
+    def get_focused_run_histogram(self, histogram_label):
+        return files.file(self._focused_runs[0].file).read_data()[histogram_label]
+
+    def get_focused_run_meta(self, histogram):
+        if histogram not in self._initial_run_meta.keys():
+            self._initial_run_meta[histogram] = {run.id: {files.BACKGROUND_ONE_KEY: int(run.meta[files.BACKGROUND_ONE_KEY][histogram]),
+                             files.BACKGROUND_TWO_KEY: int(run.meta[files.BACKGROUND_TWO_KEY][histogram]),
+                             files.T0_KEY: int(run.meta[files.T0_KEY][histogram]),
+                             files.GOOD_BIN_ONE_KEY: int(run.meta[files.GOOD_BIN_ONE_KEY][histogram]),
+                             files.GOOD_BIN_TWO_KEY: int(run.meta[files.GOOD_BIN_TWO_KEY][histogram])}
+                    for run in self._focused_runs}
+
+        return self._initial_run_meta[histogram].copy()
+
+    def get_focused_run_file_content(self):
+        filename = self._focused_runs[0].file
+        with open(filename) as f:
+            file_content = f.read()
+            return filename, file_content
+
+    def reset_focused_run_meta(self):
+        self._focused_runs_changed = False
+        self._current_run_meta = self._initial_run_meta.copy()
+
+    def store_focused_run_meta(self, histogram, bkgd1, bkgd2, t0, goodbin1, goodbin2):
+        self._focused_runs_changed = True
+        self._current_run_meta[histogram] = {run.id: {files.BACKGROUND_ONE_KEY: bkgd1,
+                         files.BACKGROUND_TWO_KEY: bkgd2,
+                         files.T0_KEY: run.meta[t0],
+                         files.GOOD_BIN_ONE_KEY: goodbin1,
+                         files.GOOD_BIN_TWO_KEY: goodbin2}
+                for run in self._focused_runs}
+
+    def finish(self):
+        if self._focused_runs_changed:
+
+            for histogram in self._current_run_meta.keys():
+                for run in self._focused_runs:
+                    run.meta[files.BACKGROUND_ONE_KEY][histogram] = self._current_run_meta[histogram][run.id][files.BACKGROUND_ONE_KEY]
+                    run.meta[files.BACKGROUND_TWO_KEY][histogram] = self._current_run_meta[histogram][run.id][files.BACKGROUND_TWO_KEY]
+                    run.meta[files.T0_KEY][histogram] = self._current_run_meta[histogram][run.id][files.T0_KEY]
+                    run.meta[files.GOOD_BIN_ONE_KEY][histogram] = self._current_run_meta[histogram][run.id][files.GOOD_BIN_ONE_KEY]
+                    run.meta[files.GOOD_BIN_TWO_KEY][histogram] = self._current_run_meta[histogram][run.id][files.GOOD_BIN_TWO_KEY]
+
+            for run in self._focused_runs:
+                self._data_context.reload_run_by_id(run.id, stop_signal=True)
+
+            self._data_context.send_signal()
+
+    def update(self):
+        self._initial_run_meta = {}
+        self._focused_runs_changed = False
+        self._focused_runs = self._focus_context.get_focused_runs()
+        self._observer.update()
