@@ -110,6 +110,8 @@ class HistogramDisplayTab(QtWidgets.QWidget):
         self.canvas.canvas_axes.title.set_color("#B8B8B8")
         self.canvas.canvas_axes.tick_params(axis='x', colors='white')
         self.canvas.canvas_axes.tick_params(axis='y', colors='white')
+        self.canvas.canvas_axes.set_xlabel("", fontsize=12)
+        self.canvas.canvas_axes.set_ylabel("", fontsize=12)
         self.canvas.canvas_axes.set_facecolor("#f9f9fd")
 
     def set_new_lines(self, bkg1=None, bkg2=None, t0=None, goodbin1=None, goodbin2=None, thick=False, new_histogram=None):
@@ -272,14 +274,15 @@ class HistogramDisplayTab(QtWidgets.QWidget):
 
     def set_enabled(self, enabled, multiple=False, editing=False):
         self.setEnabled(enabled)
+        self.button_save.setEnabled(enabled)
+        self.button_reset.setEnabled(enabled)
+        self.button_see_file.setEnabled(enabled)
 
         self.radio_bkgd_two.setEnabled(editing and enabled)
         self.radio_bkgd_one.setEnabled(editing and enabled)
         self.radio_t0.setEnabled(editing and enabled)
         self.radio_goodbin2.setEnabled(editing and enabled)
         self.radio_goodbin1.setEnabled(editing and enabled)
-        self.button_save.setEnabled(editing and enabled)
-        self.button_reset.setEnabled(editing and enabled)
         self.label_bkgd2.setEnabled(editing and enabled)
         self.label_bkgd1.setEnabled(editing and enabled)
         self.label_t0.setEnabled(editing and enabled)
@@ -404,7 +407,7 @@ class HistogramDisplayPresenter:
         if not self.__editing:
             return
 
-        if event.button is not None:
+        if event.button is not None and event.xdata is not None:
             self.__pressed = True
 
             thick = True if event.name != 'button_release_event' else False
@@ -418,10 +421,10 @@ class HistogramDisplayPresenter:
             elif self._view.is_t0() and event.xdata > 0:
                 self._view.set_new_lines(t0=int(event.xdata), thick=thick)
 
-            elif self._view.is_goodbin1() and event.xdata > 0:
+            elif self._view.is_goodbin1() and event.xdata < self._view.get_goodbin2():
                 self._view.set_new_lines(goodbin1=int(event.xdata), thick=thick)
 
-            elif self._view.is_goodbin2() and event.xdata > 0:
+            elif self._view.is_goodbin2() and event.xdata > self._view.get_goodbin1():
                 self._view.set_new_lines(goodbin2=int(event.xdata), thick=thick)
 
             bkgd1 = self._view.get_bkgd1()
@@ -438,9 +441,9 @@ class HistogramDisplayPresenter:
     def _reset_clicked(self):
         self._model.reset_focused_run_meta()
 
-        for item in self._model.get_focused_run_meta(self._view.histogram_label):
-            self._view.reset(item[files.BACKGROUND_ONE_KEY], item[files.BACKGROUND_TWO_KEY], item[files.T0_KEY],
-                             item[files.GOOD_BIN_ONE_KEY], item[files.GOOD_BIN_TWO_KEY])
+        for item in self._model.get_focused_run_meta(self._view.histogram_label).items():
+            self._view.reset(item[1][files.BACKGROUND_ONE_KEY], item[1][files.BACKGROUND_TWO_KEY], item[1][files.T0_KEY],
+                             item[1][files.GOOD_BIN_ONE_KEY], item[1][files.GOOD_BIN_TWO_KEY])
             break
 
     def _save_clicked(self):
@@ -458,7 +461,6 @@ class HistogramDisplayPresenter:
         histogram_label = self._view.get_histogram_label()
 
         if histogram_label != '':
-            print('putting in {} histogram'.format(histogram_label))
             histogram = self._model.get_focused_run_histogram(histogram_label)
             self._view.replace_histogram_plot(histogram)
 
@@ -563,7 +565,7 @@ class HistogramDisplayModel:
         self._focused_runs_changed = True
         self._current_run_meta[histogram] = {run.id: {files.BACKGROUND_ONE_KEY: bkgd1,
                          files.BACKGROUND_TWO_KEY: bkgd2,
-                         files.T0_KEY: run.meta[t0],
+                         files.T0_KEY: t0,
                          files.GOOD_BIN_ONE_KEY: goodbin1,
                          files.GOOD_BIN_TWO_KEY: goodbin2}
                 for run in self._focused_runs}
