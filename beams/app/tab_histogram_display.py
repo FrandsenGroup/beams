@@ -306,7 +306,7 @@ class HistogramDisplayTab(QtWidgets.QWidget):
             self.canvas.canvas_axes.spines['right'].set_visible(False)
             self.canvas.canvas_axes.spines['top'].set_visible(False)
             self.canvas.canvas_axes.spines['left'].set_visible(False)
-            self.canvas.canvas_axes.spines['bottom'].set_visible(False)  # fixme need to move the instructions below
+            self.canvas.canvas_axes.spines['bottom'].set_visible(False)
             self.canvas.canvas_axes.set_title("Cannot display histogram with multiple runs selected.\nValues can be edited above (this will apply changes to all selected runs).",
                                               fontsize=12)
             self.canvas.canvas_axes.title.set_color("#B8B8B8")
@@ -594,7 +594,6 @@ class HistogramDisplayModel:
 
     def finish(self):
         if self._focused_runs_changed:
-
             for histogram in self._current_run_meta.keys():
                 for run in self._focused_runs:
                     run.meta[files.BACKGROUND_ONE_KEY][histogram] = self._current_run_meta[histogram][run.id][files.BACKGROUND_ONE_KEY]
@@ -605,6 +604,8 @@ class HistogramDisplayModel:
 
             for run in self._focused_runs:
                 self._data_context.reload_run_by_id(run.id, stop_signal=True)
+
+            self._initial_run_meta = self._current_run_meta.copy()
 
             self._data_context.send_signal()
 
