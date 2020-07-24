@@ -1,21 +1,18 @@
 
 import enum
-import os
-import sys
-from urllib import parse
-from datetime import datetime
 import json
-import tarfile
+import os
 import shutil
-import zipfile
 import time
+import zipfile
+from datetime import datetime
+
 import requests
+from PyQt5 import QtWidgets, QtCore, QtGui
 
-from PyQt5 import QtWidgets, QtCore
-
-from app.util import widgets
-from app.model.model import FileContext
 from app.model import files
+from app.model.model import FileContext
+from app.util import widgets
 
 
 # noinspection PyArgumentList
@@ -259,17 +256,26 @@ class ISISDownloadDialogPresenter:
 
     def _search_clicked(self):
         self._view.set_status_message('Querying ... ')
+        self._view.setEnabled(False)
+        QtCore.QCoreApplication.processEvents()
         self._search_request()
+        self._view.setEnabled(True)
         self._view.set_status_message('Done.')
 
     def _download_selected_clicked(self):
         self._view.set_status_message('Downloading ... ')
+        self._view.setEnabled(False)
+        QtCore.QCoreApplication.processEvents()
         self._download_items(False)
+        self._view.setEnabled(True)
         self._view.set_status_message('Done')
 
     def _download_all_clicked(self):
         self._view.set_status_message('Downloading ... ')
+        self._view.setEnabled(False)
+        QtCore.QCoreApplication.processEvents()
         self._download_items(True)
+        self._view.setEnabled(True)
         self._view.set_status_message('Done')
 
     def _done_clicked(self):
@@ -353,9 +359,17 @@ class ISISDownloadDialogPresenter:
     def _cart_items(self, select_all=False):
         if select_all:
             identifiers = self._view.get_all_search_results()
+            if len(identifiers) > 50:
+                self._view.log_message('Cannot download more then 50 items at a time.\n')
+                return False
+
             datafile_string = ','.join(['Datafile {}'.format(self._current_identifiers[identifier]['Datafile']['id']) for identifier in identifiers])
         else:
             identifiers = self._view.get_selected_search_results()
+            if len(identifiers) > 50:
+                self._view.log_message('Cannot download more then 50 items at a time.\n')
+                return False
+
             datafile_string = ','.join(['Datafile {}'.format(self._current_identifiers[identifier]['Datafile']['id']) for identifier in identifiers])
 
         form_data = {'sessionId': self._session_id, 'items': datafile_string}
@@ -393,7 +407,10 @@ class ISISDownloadDialogPresenter:
     def _download_items(self, select_all=False):
         self._check_session()
 
-        self._cart_items(select_all)
+        success = self._cart_items(select_all)
+
+        if not success:
+            return
 
         download_id = self._submit_cart()
 
@@ -422,7 +439,7 @@ class ISISDownloadDialogPresenter:
                 if not filename:
                     continue
 
-                new_files.append(filename)
+                new_files.append(os.path.join(save_directory, filename))
                 source = zf.open(member)
                 target = open(os.path.join(save_directory, filename), 'wb')
                 with source, target:
@@ -443,35 +460,3 @@ class ISISDownloadDialogPresenter:
         if path:
             files.set_last_used_directory(path)
             self._view.set_file(path)
-
-
-if __name__ == '__main__':
-    # {"plugin":"anon","credentials":[{"username":""},{"password":""}]}
-
-    test_data = {'json': json.dumps({'plugin': 'anon', 'credentials': [{'username': ''}, {'password': ''}]})}
-    test_response = requests.post(r'https://icatisis.esc.rl.ac.uk/icat/session', data=test_data)
-    print(json.loads(test_response.text)['sessionId'])
-
-
-if __name__ == '__main__':
-    pass
-    # temporary_compressed_path = os.path.join(os.getcwd(), 'temporary_isis_compressed.tar.gz')
-    # with zipfile.ZipFile(r'C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\temporary_isis_compressed.tar.gz', 'r') as zip:
-    #     zip.printdir()
-    #     for member in zip.namelist():
-    #         filename = os.path.basename(member)
-    #         if not filename:
-    #             continue
-    #         source = zip.open(member)
-    #         target = open(os.path.join(r'C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\test', filename), 'wb')
-    #         with source, target:
-    #             shutil.copyfileobj(source, target)
-    # tar_file_object = tarfile.open(r'C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\temporary_isis_compressed.tar.gz', 'r')
-    # tar_file_object.extractall(os.getcwd(),
-    #                            members=[member for member in tar_file_object.getmembers() if
-    #                                     member.name != 'out.txt'])
-    #
-    # new_files = [os.path.join(os.getcwd(), member.name) for member in tar_file_object.getmembers() if
-    #              member.name != 'out.txt']
-    # tar_file_object.close()
-    # os.remove(temporary_compressed_path)
