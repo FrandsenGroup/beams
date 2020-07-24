@@ -59,7 +59,7 @@ class HistogramDisplayTab(QtWidgets.QWidget):
         self.button_save = widgets.StyleOneButton("Save")
         self.button_see_file = widgets.StyleOneButton("See File")
         self.button_apply = widgets.StyleTwoButton("Apply")
-        self.button_done = widgets.StyleOneButton("Done")
+        self.button_done = widgets.StyleOneButton("Save")
         self.canvas = HistogramDisplayTab.HistogramCanvas()
         self.check_editing = QtWidgets.QCheckBox()
         self.label_explanation = QtWidgets.QLabel()
@@ -101,6 +101,7 @@ class HistogramDisplayTab(QtWidgets.QWidget):
 
     def set_blank(self):
         self.setEnabled(False)
+        self.canvas.canvas_axes.clear()
         self.canvas.canvas_axes.spines['right'].set_visible(False)
         self.canvas.canvas_axes.spines['top'].set_visible(False)
         self.canvas.canvas_axes.spines['left'].set_visible(False)
@@ -113,6 +114,8 @@ class HistogramDisplayTab(QtWidgets.QWidget):
         self.canvas.canvas_axes.set_xlabel("", fontsize=12)
         self.canvas.canvas_axes.set_ylabel("", fontsize=12)
         self.canvas.canvas_axes.set_facecolor("#f9f9fd")
+
+        self.canvas.canvas_axes.figure.canvas.draw()
 
     def set_new_lines(self, bkg1=None, bkg2=None, t0=None, goodbin1=None, goodbin2=None, thick=False, new_histogram=None):
         bkg1_width = 1
@@ -273,6 +276,9 @@ class HistogramDisplayTab(QtWidgets.QWidget):
         self.set_new_lines(new_histogram=True)
 
     def set_enabled(self, enabled, multiple=False, editing=False):
+        if not enabled:
+            self.set_blank()
+
         self.setEnabled(enabled)
         self.button_save.setEnabled(enabled)
         self.button_reset.setEnabled(enabled)
@@ -296,16 +302,28 @@ class HistogramDisplayTab(QtWidgets.QWidget):
 
         if multiple and enabled:
             self.button_see_file.setEnabled(False)
+            self.canvas.canvas_axes.clear()
             self.canvas.canvas_axes.spines['right'].set_visible(False)
             self.canvas.canvas_axes.spines['top'].set_visible(False)
             self.canvas.canvas_axes.spines['left'].set_visible(False)
-            self.canvas.canvas_axes.spines['bottom'].set_visible(False)
+            self.canvas.canvas_axes.spines['bottom'].set_visible(False)  # fixme need to move the instructions below
             self.canvas.canvas_axes.set_title("Cannot display histogram with multiple runs selected.\nValues can be edited above (this will apply changes to all selected runs).",
                                               fontsize=12)
             self.canvas.canvas_axes.title.set_color("#B8B8B8")
             self.canvas.canvas_axes.tick_params(axis='x', colors='white')
             self.canvas.canvas_axes.tick_params(axis='y', colors='white')
             self.canvas.canvas_axes.set_facecolor("#f9f9fd")
+            self.canvas.canvas_axes.figure.canvas.draw()
+            self.label_bkgd2.setEnabled(enabled)
+            self.label_bkgd1.setEnabled(enabled)
+            self.label_t0.setEnabled(enabled)
+            self.label_goodbin2.setEnabled(enabled)
+            self.label_goodbin1.setEnabled(enabled)
+            self.input_bkgd1.setEnabled(enabled)
+            self.input_bkgd2.setEnabled(enabled)
+            self.input_t0.setEnabled(enabled)
+            self.input_goodbin2.setEnabled(enabled)
+            self.input_goodbin1.setEnabled(enabled)
         elif enabled:
             self.button_see_file.setEnabled(True)
             self.canvas.canvas_axes.tick_params(axis='x', colors='black')
@@ -322,6 +340,7 @@ class HistogramDisplayTab(QtWidgets.QWidget):
             self.canvas.canvas_axes.set_ylabel("Counts", fontsize=title_font_size)
             self.canvas.canvas_axes.xaxis.label.set_color("#000000")
             self.canvas.canvas_axes.set_facecolor("#f9f9fd")
+            self.canvas.canvas_axes.figure.canvas.draw()
 
     def get_histogram_label(self):
         return self.histogram_choices.currentText()
@@ -495,7 +514,9 @@ class HistogramDisplayPresenter:
         self._model.store_focused_run_meta(self._view.get_histogram_label(), bkgd1, bkgd2, t0, goodbin1, goodbin2)
 
     def update(self):
-        if self._model.are_any_runs_focused():
+        self.__editing = False
+
+        if self._model.are_any_runs_focused() and self._model.is_run_histogram():
             self.__multiple = self._model.are_multiple_runs_focused()
             self._view.set_enabled(True, self.__multiple, self.__editing)
 
@@ -510,7 +531,6 @@ class HistogramDisplayPresenter:
             else:
                 pass
         else:
-            self._view.set_enabled(False)
             self._view.set_blank()
 
 
@@ -530,6 +550,9 @@ class HistogramDisplayModel:
 
     def are_any_runs_focused(self):
         return len(self._focused_runs) > 0
+
+    def is_run_histogram(self):
+        return files.file(self._focused_runs[0].file).DATA_FORMAT == files.Format.HISTOGRAM
 
     def get_initial_focused_run_data(self):
         pass
@@ -558,7 +581,6 @@ class HistogramDisplayModel:
             return filename, file_content
 
     def reset_focused_run_meta(self):
-        self._focused_runs_changed = False
         self._current_run_meta = self._initial_run_meta.copy()
 
     def store_focused_run_meta(self, histogram, bkgd1, bkgd2, t0, goodbin1, goodbin2):
