@@ -2,7 +2,7 @@
 import traceback
 import enum
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtGui
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
 
