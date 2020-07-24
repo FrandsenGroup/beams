@@ -1,21 +1,18 @@
 
 import enum
-import os
-import sys
-from urllib import parse
-from datetime import datetime
 import json
-import tarfile
+import os
 import shutil
-import zipfile
 import time
+import zipfile
+from datetime import datetime
+
 import requests
+from PyQt5 import QtWidgets, QtCore, QtGui
 
-from PyQt5 import QtWidgets, QtCore
-
-from app.util import widgets
-from app.model.model import FileContext
 from app.model import files
+from app.model.model import FileContext
+from app.util import widgets
 
 
 # noinspection PyArgumentList
@@ -147,28 +144,6 @@ class ISISDownloadDialog(QtWidgets.QDialog):
     def set_file(self, file_path):
         self.input_file.setText(file_path)
 
-    def set_if_empty(self, expt_new, year_new, area_new):
-        area = self.get_area()
-        if len(area) == 0:
-            self.input_area.setCurrentText(area_new)
-
-        year = self.get_year()
-        if len(year) == 0:
-            self.input_year.setCurrentText(year_new)
-
-        expt = self.get_experiment_number()
-        if len(expt) == 0:
-            self.input_expt.setText(expt_new)
-
-    def get_area(self):
-        return self.input_area.currentText()
-
-    def get_year(self):
-        return self.input_year.currentText()
-
-    def get_runs(self):
-        return self.input_runs.text()
-
     def get_file(self):
         return self.input_file.text()
 
@@ -209,9 +184,6 @@ class ISISDownloadDialog(QtWidgets.QDialog):
         self.download_selected.setEnabled(len(data) > 0)
         self.download_all.setEnabled(len(data) > 0)
 
-    def get_experiment_number(self):
-        return self.input_expt.text()
-
     def log_message(self, message):
         self.output_web.insertPlainText(message)
 
@@ -244,92 +216,10 @@ class ISISDownloadDialogPresenter:
 
     def _set_callbacks(self):
         self._view.search_button.released.connect(lambda: self._search_clicked())
-        self._view.download_button.released.connect(lambda: self._download_clicked())
         self._view.done_button.released.connect(lambda: self._done_clicked())
         self._view.select_button.released.connect(lambda: self._save_to_clicked())
         self._view.download_selected.released.connect(lambda: self._download_selected_clicked())
         self._view.download_all.released.connect(lambda: self._download_all_clicked())
-
-    def _assemble_query(self):
-        query = "?"
-
-        area = self._view.get_area()
-        if len(area) > 0:
-            query += "area={}&".format(area)
-
-        year = self._view.get_year()
-        if len(year) > 0:
-            if len(year) == 4:
-                try:
-                    int(year)
-                except ValueError:
-                    self._view.log_message("Give year as 4 digits.\n")
-                    return
-                query += "year={}&".format(year)
-            else:
-                self._view.log_message("Give year as 4 digits.\n")
-                return
-
-        expt = self._view.get_experiment_number()
-        if len(expt) > 0:
-            try:
-                int(expt)
-            except ValueError:
-                self._view.log_message("Experiment number should be an integer.\n")
-                return
-            query += "expt={}&".format(expt)
-
-        title = self._view.get_title()
-        if len(title) > 0:
-            query += "title={}&".format(title)
-
-        return query
-
-    def _assemble_downloads_from_search(self, selected):
-
-        if selected:
-            identifiers = self._view.get_selected_search_results()
-        else:
-            identifiers = self._view.get_all_search_results()
-
-        if len(identifiers) == 0:
-            return
-
-        download_strings = []
-        for identifier in identifiers:
-            split_string = identifier.split(' ')
-            run = split_string[0]
-            year = split_string[-3].split(',')[0]
-            area = split_string[-1].split(',')[0]
-            download_string = '{}/{}/'.format(area, year)
-            download_string += '{0:06d}.msr'.format(int(run))
-            download_strings.append(download_string)
-
-        return download_strings
-
-    def _assemble_downloads(self):
-        download_string = ""
-
-        area = self._view.get_area()
-        if len(area) == 0:
-            return
-        download_string += "{}/".format(area)
-
-        year = self._view.get_year()
-        if len(year) == 0:
-            return
-        download_string += "{}/".format(year)
-
-        runs = self._view.get_runs()
-        if len(runs) == 0:
-            return
-
-        runs = runs.split('-')
-        if len(runs) == 1:
-            download_string += '{0:06d}.msr'.format(int(runs[0]))
-            return [download_string]
-
-        return [download_string + '{0:06d}.msr'.format(download) for download in range(int(runs[0]), int(runs[1])+1)]
 
     def _assemble_save(self):
         directory = self._view.get_file()
@@ -341,74 +231,27 @@ class ISISDownloadDialogPresenter:
 
     def _search_clicked(self):
         self._view.set_status_message('Querying ... ')
+        self._view.setEnabled(False)
+        QtCore.QCoreApplication.processEvents()
         self._search_request()
+        self._view.setEnabled(True)
         self._view.set_status_message('Done.')
 
-    def _download_clicked(self):
-
-        self._view.set_status_message('Downloading ... ')
-
-        downloads = self._assemble_downloads()
-        if downloads is None:
-            self._view.log_message('No runs specified.\n')
-            self._view.set_status_message('Done.')
-            return
-
-        self._download(downloads)
-
     def _download_selected_clicked(self):
-        self._download_items(False)
-        return
-
         self._view.set_status_message('Downloading ... ')
-
-        downloads = self._assemble_downloads_from_search(True)
-        if downloads is None:
-            self._view.log_message('No runs specified.\n')
-            self._view.set_status_message('Done.')
-            return
-
-        self._download(downloads)
+        self._view.setEnabled(False)
+        QtCore.QCoreApplication.processEvents()
+        self._download_items(False)
+        self._view.setEnabled(True)
+        self._view.set_status_message('Done')
 
     def _download_all_clicked(self):
         self._view.set_status_message('Downloading ... ')
-
-        downloads = self._assemble_downloads_from_search(False)
-        if downloads is None:
-            self._view.log_message('Please finish filling in Expt Number, Year and Area.\n')
-            self._view.set_status_message('Done.')
-            return
-
-        self._download(downloads)
-
-    def _download(self, downloads):
-        good = 0
-        new_files = []
-        for i, download in enumerate(downloads):
-            full_url = self._data_url + download
-
-            try:
-                response = requests.get(full_url)
-            except requests.exceptions.ConnectionError:
-                self._view.log_message('Failed to download {}. Connection Error\n'.format(full_url))
-                continue
-
-            if response.status_code != 200:
-                self._view.log_message('Failed to download {}. Error {}\n'.format(full_url, response.status_code))
-                continue
-
-            save_file = self._assemble_save(download)
-            with open(save_file, 'wb') as fb:
-                for chunk in response.iter_content(100000):
-                    fb.write(chunk)
-            new_files.append(save_file)
-            self._new_files = True
-            self._view.log_message('Successfully downloaded {}.\n'.format(full_url))
-            good += 1
-
-        self._context.add_files(new_files)
-        self._view.log_message('{}/{} Files downloaded successfully.\n'.format(good, len(downloads)))
-        self._view.set_status_message('Done.')
+        self._view.setEnabled(False)
+        QtCore.QCoreApplication.processEvents()
+        self._download_items(True)
+        self._view.setEnabled(True)
+        self._view.set_status_message('Done')
 
     def _done_clicked(self):
         if self._new_files:
@@ -491,15 +334,23 @@ class ISISDownloadDialogPresenter:
     def _cart_items(self, select_all=False):
         if select_all:
             identifiers = self._view.get_all_search_results()
+            if len(identifiers) > 50:
+                self._view.log_message('Cannot download more then 50 items at a time.\n')
+                return False
+
             datafile_string = ','.join(['Datafile {}'.format(self._current_identifiers[identifier]['Datafile']['id']) for identifier in identifiers])
         else:
             identifiers = self._view.get_selected_search_results()
+            if len(identifiers) > 50:
+                self._view.log_message('Cannot download more then 50 items at a time.\n')
+                return False
+
             datafile_string = ','.join(['Datafile {}'.format(self._current_identifiers[identifier]['Datafile']['id']) for identifier in identifiers])
 
         form_data = {'sessionId': self._session_id, 'items': datafile_string}
 
         try:
-            response = requests.post(self._cart_url, data=form_data)
+            requests.post(self._cart_url, data=form_data)
         except requests.ConnectionError:
             self._view.log_message('Couldn\'t get a session ID for ISIS. Connection Error.\n')
             return False
@@ -531,7 +382,10 @@ class ISISDownloadDialogPresenter:
     def _download_items(self, select_all=False):
         self._check_session()
 
-        self._cart_items(select_all)
+        success = self._cart_items(select_all)
+
+        if not success:
+            return
 
         download_id = self._submit_cart()
 
@@ -549,7 +403,7 @@ class ISISDownloadDialogPresenter:
         save_directory = self._assemble_save()
 
         with open(temporary_compressed_path, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=10485760):
+            for chunk in response.iter_content(chunk_size=10485760):  # fixme, how to determine proper chunk size?
                 f.write(chunk)
 
         new_files = []
@@ -560,11 +414,13 @@ class ISISDownloadDialogPresenter:
                 if not filename:
                     continue
 
-                new_files.append(filename)
+                new_files.append(os.path.join(save_directory, filename))
                 source = zf.open(member)
                 target = open(os.path.join(save_directory, filename), 'wb')
                 with source, target:
                     shutil.copyfileobj(source, target)
+
+        os.remove(temporary_compressed_path)
 
         self._context.add_files(new_files)
         self._new_files = True
@@ -579,35 +435,3 @@ class ISISDownloadDialogPresenter:
         if path:
             files.set_last_used_directory(path)
             self._view.set_file(path)
-
-
-if __name__ == '__main__':
-    # {"plugin":"anon","credentials":[{"username":""},{"password":""}]}
-
-    test_data = {'json': json.dumps({'plugin': 'anon', 'credentials': [{'username': ''}, {'password': ''}]})}
-    test_response = requests.post(r'https://icatisis.esc.rl.ac.uk/icat/session', data=test_data)
-    print(json.loads(test_response.text)['sessionId'])
-
-
-if __name__ == '__main__':
-    pass
-    # temporary_compressed_path = os.path.join(os.getcwd(), 'temporary_isis_compressed.tar.gz')
-    # with zipfile.ZipFile(r'C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\temporary_isis_compressed.tar.gz', 'r') as zip:
-    #     zip.printdir()
-    #     for member in zip.namelist():
-    #         filename = os.path.basename(member)
-    #         if not filename:
-    #             continue
-    #         source = zip.open(member)
-    #         target = open(os.path.join(r'C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\test', filename), 'wb')
-    #         with source, target:
-    #             shutil.copyfileobj(source, target)
-    # tar_file_object = tarfile.open(r'C:\Users\kalec\Documents\Research_Frandsen\BEAMS_venv\BEAMS\temporary_isis_compressed.tar.gz', 'r')
-    # tar_file_object.extractall(os.getcwd(),
-    #                            members=[member for member in tar_file_object.getmembers() if
-    #                                     member.name != 'out.txt'])
-    #
-    # new_files = [os.path.join(os.getcwd(), member.name) for member in tar_file_object.getmembers() if
-    #              member.name != 'out.txt']
-    # tar_file_object.close()
-    # os.remove(temporary_compressed_path)

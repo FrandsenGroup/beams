@@ -511,6 +511,34 @@ class PlotContext:
         self.__instance.notifier.subscribe(observer)
 
 
+class FocusContext:
+    class __DataStore:
+        """
+        Singleton instance object to hold data.
+        """
+
+        def __init__(self):
+            self.notifier = Notifier()
+            self.data_context = MuonDataContext()
+            self.focused_runs = []
+
+    __instance = None
+
+    def __init__(self):
+        if not FocusContext.__instance:
+            FocusContext.__instance = FocusContext.__DataStore()
+
+    def focus_runs(self, run_ids):
+        self.__instance.focused_runs = [self.__instance.data_context.get_run_by_id(run_id) for run_id in run_ids]
+        self.__instance.notifier.notify()
+
+    def get_focused_runs(self):
+        return self.__instance.focused_runs
+
+    def subscribe(self, observer):
+        self.__instance.notifier.subscribe(observer)
+
+
 class Notifier:
     def __init__(self):
         self.observers = []

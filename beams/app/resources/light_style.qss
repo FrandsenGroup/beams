@@ -118,3 +118,50 @@ QComboBox::down-arrow:on { /* shift the arrow when popup is open */
 QListWidget::item:selected:!active {
     background: @low_contrast;
 }
+
+
+QTabWidget::pane { /* The tab widget frame */
+border-top: 2px solid #C2C7CB;
+}
+
+QTabWidget::tab-bar {
+left: 5px; /* move to the right by 5px */
+}
+/* Style the tab using the tab sub-control. Note that it reads QTabBar _not_ QTabWidget */
+QTabBar::tab {
+background: @high_contrast;
+min-width: 30ex;
+max-width: 30ex;
+min-height: 22px;
+padding: 2px;
+padding-left:8ex;
+padding-right:8ex;
+font: bold 12px;
+color: #FFFFFF;
+}
+QTabBar::tab:selected, QTabBar::tab:hover {
+background: @highest_contrast;
+}
+QTabBar::tab:selected {
+border-color: @highest_contrast;
+border-bottom-color: #C2C7CB; /* same as pane color */
+}
+QTabBar::tab:!selected {
+margin-top: 2px; /* make non-selected tabs look smaller */
+}
+
+/* IMPORTANT: 8< Add the code above here 8< */
+QTabBar::tab:selected {
+/* expand/overlap to the left and right by 4px */
+margin-left: -4px;
+margin-right: -4px;
+}
+QTabBar::tab:first:selected {
+margin-left: 0; /* the first selected tab has nothing to overlap with on the left */
+}
+QTabBar::tab:last:selected {
+margin-right: 0; /* the last selected tab has nothing to overlap with on the right */
+}
+QTabBar::tab:only-one {
+margin: 0; /* if there is only one tab, we don't want overlapping margins */
+}

@@ -422,11 +422,10 @@ class MusrDownloadDialogPresenter:
 
             save_file = self._assemble_save(download)
             with open(save_file, 'wb') as fb:
-                for chunk in response.iter_content(100000):
+                for chunk in response.iter_content(1048576):
                     fb.write(chunk)
             new_files.append(save_file)
             self._new_files = True
-            self._view.log_message('Successfully downloaded {}.\n'.format(full_url))
             good += 1
 
         self._context.add_files(new_files)
