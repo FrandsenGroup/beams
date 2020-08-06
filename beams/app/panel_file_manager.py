@@ -15,7 +15,7 @@ from app.dialog_isis_download import ISISDownloadDialog
 
 
 # noinspection PyArgumentList
-class FileManagerPanel(QtWidgets.QDockWidget):
+class FileManagerPanel(widgets.StyleOneDockWidget):
     def __init__(self):
         super(FileManagerPanel, self).__init__()
         self.setTitleBarWidget(QtWidgets.QWidget())
@@ -25,7 +25,7 @@ class FileManagerPanel(QtWidgets.QDockWidget):
         self._full_widget = QtWidgets.QWidget()
 
         # Create Widgets
-        self.file_list = QtWidgets.QListWidget()
+        self.file_list = widgets.StyleOneListWidget()
         self.select_all = QtWidgets.QCheckBox()
         self.write_button = widgets.StyleOneButton("Write")
         self.import_button = widgets.StyleTwoButton("+")

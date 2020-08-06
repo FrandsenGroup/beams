@@ -24,20 +24,20 @@ class MainWindow(QtWidgets.QMainWindow):
         self.statusBar()
 
         # Initialize the menu bar
-        self.menu_bar = self.menuBar()
-
-        self.exit_act = QtWidgets.QAction(QtGui.QIcon('exit.png'), '&Exit', self)
-        self.exit_act.setShortcut('Ctrl+Q')
-        self.exit_act.setStatusTip('Exit application.')
-
-        self.add_data_act = QtWidgets.QAction(QtGui.QIcon('addDada.png'), '&Add Data File', self)
-        self.add_data_act.setStatusTip('Add a data file to current session.')
-
-        file_menu = self.menu_bar.addMenu('&File')
-        file_menu.addAction(self.add_data_act)
-        file_menu.addSeparator()
-        file_menu.addAction(self.exit_act)
-        self._set_callbacks()
+        # self.menu_bar = self.menuBar()
+        #
+        # self.exit_act = QtWidgets.QAction(QtGui.QIcon('exit.png'), '&Exit', self)
+        # self.exit_act.setShortcut('Ctrl+Q')
+        # self.exit_act.setStatusTip('Exit application.')
+        #
+        # self.add_data_act = QtWidgets.QAction(QtGui.QIcon('addDada.png'), '&Add Data File', self)
+        # self.add_data_act.setStatusTip('Add a data file to current session.')
+        #
+        # file_menu = self.menu_bar.addMenu('&File')
+        # file_menu.addAction(self.add_data_act)
+        # file_menu.addSeparator()
+        # file_menu.addAction(self.exit_act)
+        # self._set_callbacks()
 
         # Initialize the window panels
         self._set_default_panels()

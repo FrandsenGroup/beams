@@ -10,7 +10,7 @@ from app.util import widgets
 
 
 # noinspection PyArgumentList
-class MuonRunPanel(QtWidgets.QDockWidget):
+class MuonRunPanel(widgets.StyleOneDockWidget):
     # noinspection PyArgumentList
     class PlotSettings(QtWidgets.QGroupBox):
         def __init__(self):
@@ -298,7 +298,7 @@ class MuonRunPanel(QtWidgets.QDockWidget):
         super(MuonRunPanel, self).__init__()
         self.setTitleBarWidget(QtWidgets.QWidget())
 
-        self.run_list = QtWidgets.QListWidget()
+        self.run_list = widgets.StyleOneListWidget()
         self.isolate_button = widgets.StyleOneButton("Isolate")
         self.plot_all_button = widgets.StyleOneButton("Plot All")
         self.clear_all_button = widgets.StyleTwoButton("Clear All")

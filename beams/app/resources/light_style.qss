@@ -1,8 +1,3 @@
-QWidget {
-    background-color: @background;
-    border-color: @background;
-}
-
 StyleOneButton {
     background-color: @brand_zero;
     border-style: None;
@@ -34,7 +29,7 @@ StyleTwoButton {
 }
 
 StyleTwoButton:disabled {
-    background-color: @contrast
+    background-color: @contrast;
 }
 
 StyleTwoButton:hover:!pressed {
@@ -50,12 +45,19 @@ StyleThreeButton {
     min-height: 22px;
 }
 
-Frame {
+StyleOneToolButton {
     background-color: @brand_zero;
     color: #FFFFFF;
+    border-style: None;
 }
 
-StyleOneToolButton {
+StyleOneDockWidget {
+    background-color: @brand_zero;
+    color: #FFFFFF;
+    border-style: None;
+}
+
+StyleOneListWidget {
     background-color: @brand_zero;
     color: #FFFFFF;
     border-style: None;
@@ -76,10 +78,6 @@ QLineEdit {
 
 QLineEdit:disabled {
     background-color: @lowest_contrast;
-}
-
-QListWidget {
-    background-color: #ffffff;
 }
 
 QComboBox {
@@ -181,3 +179,4 @@ margin-right: 0; /* the last selected tab has nothing to overlap with on the rig
 QTabBar::tab:only-one {
 margin: 0; /* if there is only one tab, we don't want overlapping margins */
 }
+

@@ -105,6 +105,16 @@ class StyleOneToolButton(QtWidgets.QToolButton):
         super(StyleOneToolButton, self).__init__()
 
 
+class StyleOneDockWidget(QtWidgets.QDockWidget):
+    def __init__(self):
+        super(StyleOneDockWidget, self).__init__()
+
+
+class StyleOneListWidget(QtWidgets.QListWidget):
+    def __init__(self):
+        super(StyleOneListWidget, self).__init__()
+
+
 # noinspection PyArgumentList
 class TitleBar(QtWidgets.QWidget):
     def __init__(self, parent):
@@ -112,7 +122,10 @@ class TitleBar(QtWidgets.QWidget):
         self.parent = parent
         self.setParent(parent)
         self.setAutoFillBackground(True)
-        self.setBackgroundRole(QtGui.QPalette.Highlight)
+        self.setBackgroundRole(QtGui.QPalette.Base)
+        p = self.palette()
+        p.setColor(self.backgroundRole(), QtGui.QColor('#070536'))
+        self.setPalette(p)
 
         self.minimize = StyleOneToolButton()
         self.maximize = StyleOneToolButton()
@@ -135,15 +148,6 @@ class TitleBar(QtWidgets.QWidget):
         self.maximize.setMinimumHeight(25)
         self.close.setMinimumHeight(25)
 
-        # self.parentWidget().setWindowTitle("BEAMS 1")
-
-        # label = StyleOneLabel("BEAMS 2")
-        # logo = QtWidgets.QToolButton()
-        # logo_icon = QtGui.QIcon(r'beams\app\resources\icons\logo.png')
-        # logo.setIcon(logo_icon)
-        # logo.setFixedWidth(150)
-        # logo.setFixedHeight(60)
-        # logo.setIconSize(QtCore.QSize(64, 64))
         row = QtWidgets.QHBoxLayout(self)
         row.addWidget(Logo())
         row.addWidget(self.minimize)
@@ -222,7 +226,7 @@ class Frame(QtWidgets.QFrame):
         col.setSpacing(0)
         col.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))
 
-        layout = QtWidgets.QVBoxLayout(self)
+        layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self._m_content)
         layout.setSpacing(0)
         layout.setContentsMargins(QtCore.QMargins(5, 5, 5, 5))
@@ -291,12 +295,9 @@ class Frame(QtWidgets.QFrame):
 class Logo(QtWidgets.QLabel):
     def __init__(self):
         super(Logo, self).__init__()
-        logo_icon = QtGui.QIcon(r'beams\app\resources\icons\logo.png')
-        logo_icon_pixmap = QtGui.QPixmap(r'beams\app\resources\icons\logo.png')
+        logo_icon_pixmap = QtGui.QPixmap(r'beams\app\resources\icons\logo_2.png')
         self.setPixmap(logo_icon_pixmap.scaledToHeight(30, QtCore.Qt.SmoothTransformation))
         self.setMask(logo_icon_pixmap.mask())
-        # self.setMaximumHeight(30)
-        # self.show()
 
 
 class StyleOneLabel(QtWidgets.QLabel):
@@ -309,13 +310,9 @@ if __name__ == '__main__':
 
     app = QtWidgets.QApplication(sys.argv)
 
-    box = Frame()
-    box.move(0, 0)
+    win = QtWidgets.QWidget()
+    vbox = QtWidgets.QVBoxLayout(win)
+    vbox.addWidget(TitleBar(win))
+    win.show()
 
-    col = QtWidgets.QVBoxLayout(box.content_widget())
-    col.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))
-    col.addWidget(QtWidgets.QTextEdit(box.content_widget()))
-
-    box.show()
-    app.exec()
-
+    app.exec_()
