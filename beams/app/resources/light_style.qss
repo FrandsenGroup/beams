@@ -58,8 +58,8 @@ StyleOneDockWidget {
 
 StyleOneListWidget {
     background-color: @brand_zero;
-    color: #FFFFFF;
     border-style: None;
+    color: #c0c0c0;
 }
 
 StyleOneLabel {
@@ -134,11 +134,11 @@ QListWidget::item:selected:!active {
 
 
 QTabWidget::pane { /* The tab widget frame */
-    border-top: 2px solid @brand_zero;
+    border-top: 2px solid #FFFFFF;
 }
 
 QTabWidget::tab-bar {
-    background: @brand_zero;
+    background: #FFFFFF;
 }
 /* Style the tab using the tab sub-control. Note that it reads QTabBar _not_ QTabWidget */
 QTabBar::tab {
@@ -158,7 +158,7 @@ QTabBar::tab:selected, QTabBar::tab:hover {
 }
 QTabBar::tab:selected {
     border-color: @highest_contrast;
-    border-bottom-color: #C2C7CB; /* same as pane color */
+    border-bottom-color: #FFFFFF; /* same as pane color */
 }
 
 

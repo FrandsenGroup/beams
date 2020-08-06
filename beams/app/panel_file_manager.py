@@ -146,8 +146,13 @@ class FileManagerPanel(widgets.StyleOneDockWidget):
         file_item.setCheckState(QtCore.Qt.Unchecked)
 
     def add_items(self, titles):
+        database = QtGui.QFontDatabase()
         for title in titles:
             file_item = QtWidgets.QListWidgetItem(title, self.file_list)
+            font = QtGui.QFont('Lato')
+            font.setBold(True)
+            font.setPointSize(10)
+            file_item.setFont(font)
             file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsUserCheckable)
             file_item.setCheckState(QtCore.Qt.Unchecked)
 

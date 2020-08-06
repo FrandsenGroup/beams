@@ -3,7 +3,7 @@
 import sys
 
 # Installed Packages
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 
 # BEAMS Modules
 from app import main_window
@@ -19,6 +19,17 @@ class BEAMS(QtWidgets.QApplication):
         super(BEAMS, self).__init__(sys.argv)
         self.setStyleSheet(main_window.StyleFile(r'beams/app/resources/light_style.qss',
                                                  r'beams/app/resources/light_style_vars.txt').style)
+        db = QtGui.QFontDatabase()
+        db.addApplicationFont(r'beams/app/resources/Lato/Lato-Black.ttf')
+        db.addApplicationFont(r'beams/app/resources/Lato/Lato-BlackItalic.ttf')
+        db.addApplicationFont(r'beams/app/resources/Lato/Lato-Bold.ttf')
+        db.addApplicationFont(r'beams/app/resources/Lato/Lato-BoldItalic.ttf')
+        db.addApplicationFont(r'beams/app/resources/Lato/Lato-Italic.ttf')
+        db.addApplicationFont(r'beams/app/resources/Lato/Lato-Light.ttf')
+        db.addApplicationFont(r'beams/app/resources/Lato/Lato-LightItalic.ttf')
+        db.addApplicationFont(r'beams/app/resources/Lato/Lato-Regular.ttf')
+        db.addApplicationFont(r'beams/app/resources/Lato/Lato-Thin.ttf')
+        db.addApplicationFont(r'beams/app/resources/Lato/Lato-ThinItalic.ttf')
         self.main_program_window = None
 
     def run(self):
