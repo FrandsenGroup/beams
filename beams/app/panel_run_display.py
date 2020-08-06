@@ -1,5 +1,5 @@
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 
 from app.model.model import PlotContext, MuonDataContext, FocusContext
 from app.model import files, muon, mufyt
@@ -385,11 +385,18 @@ class MuonRunPanel(widgets.StyleOneDockWidget):
 
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(top_layout)
+        layout.addWidget(widgets.Separator())
         layout.addLayout(bottom_layout)
-        full_widget = QtWidgets.QWidget()
-        full_widget.setLayout(layout)
+        self._full_widget = QtWidgets.QWidget()
+        self._full_widget = QtWidgets.QWidget()
+        self._full_widget.setAutoFillBackground(True)
+        self._full_widget.setBackgroundRole(QtGui.QPalette.Highlight)
+        p = self._full_widget.palette()
+        p.setColor(self._full_widget.backgroundRole(), QtGui.QColor('#070536'))
+        self._full_widget.setPalette(p)
+        self._full_widget.setLayout(layout)
 
-        self.setWidget(full_widget)
+        self.setWidget(self._full_widget)
 
     def setEnabled(self, enabled):
         super(MuonRunPanel, self).setEnabled(enabled)

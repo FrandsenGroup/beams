@@ -2,7 +2,7 @@
 import threading
 import warnings
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
 import numpy as np
@@ -269,6 +269,13 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
         widget = QtWidgets.QMainWindow()
         widget.setCentralWidget(dock_widget)
         widget.addToolBar(QtCore.Qt.TopToolBarArea, MuonPlotPanel.PlotToolbar(self._display, widget))
+
+        widget.setAutoFillBackground(True)
+        widget.setBackgroundRole(QtGui.QPalette.Base)
+        p = widget.palette()
+        p.setColor(widget.backgroundRole(), QtGui.QColor('#F2F2F2'))
+        widget.setPalette(p)
+
         self.setWidget(widget)
         self.setEnabled(False)
         self._presenter = MuonPlotPanelPresenter(self)

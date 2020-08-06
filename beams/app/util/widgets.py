@@ -108,6 +108,11 @@ class StyleOneToolButton(QtWidgets.QToolButton):
 class StyleOneDockWidget(QtWidgets.QDockWidget):
     def __init__(self):
         super(StyleOneDockWidget, self).__init__()
+        self.setAutoFillBackground(True)
+        self.setBackgroundRole(QtGui.QPalette.Highlight)
+        p = self.palette()
+        p.setColor(self.backgroundRole(), QtGui.QColor('#070536'))
+        self.setPalette(p)
 
 
 class StyleOneListWidget(QtWidgets.QListWidget):
@@ -238,6 +243,12 @@ class Frame(QtWidgets.QFrame):
         self.__right = False
         self.__bottom = False
 
+        self.setAutoFillBackground(True)
+        self.setBackgroundRole(QtGui.QPalette.Base)
+        p = self.palette()
+        p.setColor(self.backgroundRole(), QtGui.QColor('#070536'))
+        self.setPalette(p)
+
     def content_widget(self):
         return self._m_content
 
@@ -292,6 +303,20 @@ class Frame(QtWidgets.QFrame):
 
 
 # noinspection PyArgumentList
+class Separator(QtWidgets.QFrame):
+    def __init__(self):
+        super(Separator, self).__init__()
+        self.setFrameShape(QtWidgets.QFrame.HLine)
+        # self.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Expanding)
+        self.setFixedHeight(1)
+        self.setAutoFillBackground(True)
+        self.setBackgroundRole(QtGui.QPalette.Highlight)
+        p = self.palette()
+        p.setColor(self.backgroundRole(), QtGui.QColor('#F2F2F2'))
+        self.setPalette(p)
+
+
+# noinspection PyArgumentList
 class Logo(QtWidgets.QLabel):
     def __init__(self):
         super(Logo, self).__init__()
@@ -310,9 +335,15 @@ if __name__ == '__main__':
 
     app = QtWidgets.QApplication(sys.argv)
 
-    win = QtWidgets.QWidget()
-    vbox = QtWidgets.QVBoxLayout(win)
-    vbox.addWidget(TitleBar(win))
+    win = QtWidgets.QMainWindow()
+    dock = StyleOneDockWidget()
+
+    win.setCentralWidget(dock)
     win.show()
+
+    # win = QtWidgets.QWidget()
+    # vbox = QtWidgets.QVBoxLayout(win)
+    # vbox.addWidget(TitleBar(win))
+    # win.show()
 
     app.exec_()

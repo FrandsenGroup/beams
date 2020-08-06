@@ -1,7 +1,7 @@
 
 import os
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 
 from app.util import widgets
 from app.model.model import FileContext, MuonDataContext, PlotContext
@@ -23,6 +23,11 @@ class FileManagerPanel(widgets.StyleOneDockWidget):
 
         # Create our widget which will hold everything for this panel.
         self._full_widget = QtWidgets.QWidget()
+        self._full_widget.setAutoFillBackground(True)
+        self._full_widget.setBackgroundRole(QtGui.QPalette.Highlight)
+        p = self._full_widget.palette()
+        p.setColor(self._full_widget.backgroundRole(), QtGui.QColor('#070536'))
+        self._full_widget.setPalette(p)
 
         # Create Widgets
         self.file_list = widgets.StyleOneListWidget()
@@ -69,6 +74,7 @@ class FileManagerPanel(widgets.StyleOneDockWidget):
         vbox_one = QtWidgets.QVBoxLayout()
         vbox_one.addLayout(hbox_one)
         vbox_one.addLayout(hbox_two)
+        vbox_one.addWidget(widgets.Separator())
         self._full_widget.setLayout(vbox_one)
 
         # Set DockWidget to be fully laid out widget.

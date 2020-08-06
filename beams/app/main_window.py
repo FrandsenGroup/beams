@@ -55,6 +55,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self._file_manager)
 
         self._tabs = QtWidgets.QTabWidget()
+        self._tabs.setAutoFillBackground(True)
+        self._tabs.setBackgroundRole(QtGui.QPalette.Base)
+        p = self._tabs.palette()
+        p.setColor(self._tabs.backgroundRole(), QtGui.QColor('#FFFFFF'))
+        self._tabs.setPalette(p)
 
         self._plot_panel_one = MuonPlotPanel()
         # self.addDockWidget(QtCore.Qt.RightDockWidgetArea, self._plot_panel_one, QtCore.Qt.Horizontal)
