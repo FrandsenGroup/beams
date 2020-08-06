@@ -50,6 +50,22 @@ StyleThreeButton {
     min-height: 22px;
 }
 
+Frame {
+    background-color: @brand_zero;
+    color: #FFFFFF;
+}
+
+StyleOneToolButton {
+    background-color: @brand_zero;
+    color: #FFFFFF;
+    border-style: None;
+}
+
+StyleOneLabel {
+    background-color: @brand_zero;
+    color: #FFFFFF;
+}
+
 QLineEdit {
     border-style: solid;
     border-width: 1px;

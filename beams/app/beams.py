@@ -1,13 +1,13 @@
 
 # Standard Library Packages
 import sys
-import os
 
 # Installed Packages
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 
 # BEAMS Modules
 from app import main_window
+from app.util import widgets
 
 
 class BEAMS(QtWidgets.QApplication):
@@ -27,5 +27,9 @@ class BEAMS(QtWidgets.QApplication):
         """
 
         self.main_program_window = main_window.MainWindow()
-        self.main_program_window.show()
+        frame = widgets.Frame()
+        vbox = QtWidgets.QVBoxLayout(frame.content_widget())
+        vbox.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))
+        vbox.addWidget(self.main_program_window)
+        frame.show()
         sys.exit(self.exec_())

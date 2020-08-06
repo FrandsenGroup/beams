@@ -100,6 +100,11 @@ class CollapsibleBox(QtWidgets.QWidget):
         content_animation.setEndValue(content_height)
 
 
+class StyleOneToolButton(QtWidgets.QToolButton):
+    def __init__(self):
+        super(StyleOneToolButton, self).__init__()
+
+
 # noinspection PyArgumentList
 class TitleBar(QtWidgets.QWidget):
     def __init__(self, parent):
@@ -109,31 +114,44 @@ class TitleBar(QtWidgets.QWidget):
         self.setAutoFillBackground(True)
         self.setBackgroundRole(QtGui.QPalette.Highlight)
 
-        self.minimize = QtWidgets.QToolButton()
-        self.maximize = QtWidgets.QToolButton()
-        self.close = QtWidgets.QToolButton()
+        self.minimize = StyleOneToolButton()
+        self.maximize = StyleOneToolButton()
+        self.close = StyleOneToolButton()
 
-        pix = QtGui.QIcon(self.style().standardPixmap(QtWidgets.QStyle.SP_TitleBarCloseButton))
+        pix = QtGui.QIcon(r'beams\app\resources\icons\close_white.png')
         self.close.setIcon(pix)
+        self.close.setIconSize(QtCore.QSize(12, 12))
 
-        self._max_pix = QtGui.QIcon(self.style().standardPixmap(QtWidgets.QStyle.SP_TitleBarMaxButton))
-        self._restore_pix = QtGui.QIcon(self.style().standardPixmap(QtWidgets.QStyle.SP_TitleBarNormalButton))
+        self._max_pix = QtGui.QIcon(r'beams/app/resources/icons/maximize_white.png')
+        self._restore_pix = QtGui.QIcon(r'beams\app\resources\icons\restore_white.png')
         self.maximize.setIcon(self._max_pix)
+        self.maximize.setIconSize(QtCore.QSize(12, 12))
 
-        pix = QtGui.QIcon(self.style().standardPixmap(QtWidgets.QStyle.SP_TitleBarMinButton))
+        pix = QtGui.QIcon(r'beams\app\resources\icons\minimize_white.png')
         self.minimize.setIcon(pix)
+        self.minimize.setIconSize(QtCore.QSize(12, 12))
 
-        self.minimize.setMinimumHeight(20)
-        self.maximize.setMinimumHeight(20)
-        self.close.setMinimumHeight(20)
+        self.minimize.setMinimumHeight(25)
+        self.maximize.setMinimumHeight(25)
+        self.close.setMinimumHeight(25)
 
         # self.parentWidget().setWindowTitle("BEAMS 1")
 
+        # label = StyleOneLabel("BEAMS 2")
+        # logo = QtWidgets.QToolButton()
+        # logo_icon = QtGui.QIcon(r'beams\app\resources\icons\logo.png')
+        # logo.setIcon(logo_icon)
+        # logo.setFixedWidth(150)
+        # logo.setFixedHeight(60)
+        # logo.setIconSize(QtCore.QSize(64, 64))
         row = QtWidgets.QHBoxLayout(self)
-        row.addWidget(QtWidgets.QLabel("BEAMS 2"))
+        row.addWidget(Logo())
         row.addWidget(self.minimize)
+        row.addSpacing(25)
         row.addWidget(self.maximize)
+        row.addSpacing(25)
         row.addWidget(self.close)
+        row.addSpacing(15)
 
         row.insertStretch(1, 500)
         row.setSpacing(0)
@@ -143,6 +161,7 @@ class TitleBar(QtWidgets.QWidget):
         self._max_normal = False
         self._start_pos = None
         self._click_pos = None
+        self.setMaximumHeight(40)
 
         self._set_callbacks()
 
@@ -166,6 +185,8 @@ class TitleBar(QtWidgets.QWidget):
             self.parentWidget().showMaximized()
             self._max_normal = not self._max_normal
             self.maximize.setIcon(self._restore_pix)
+
+        self.maximize.setIconSize(QtCore.QSize(12, 12))
 
     def mousePressEvent(self, me: QtGui.QMouseEvent):
         self._start_pos = me.globalPos()
@@ -266,10 +287,28 @@ class Frame(QtWidgets.QFrame):
         self._m_mouse_down = False
 
 
+# noinspection PyArgumentList
+class Logo(QtWidgets.QLabel):
+    def __init__(self):
+        super(Logo, self).__init__()
+        logo_icon = QtGui.QIcon(r'beams\app\resources\icons\logo.png')
+        logo_icon_pixmap = QtGui.QPixmap(r'beams\app\resources\icons\logo.png')
+        self.setPixmap(logo_icon_pixmap.scaledToHeight(30, QtCore.Qt.SmoothTransformation))
+        self.setMask(logo_icon_pixmap.mask())
+        # self.setMaximumHeight(30)
+        # self.show()
+
+
+class StyleOneLabel(QtWidgets.QLabel):
+    def __init__(self, *args):
+        super(StyleOneLabel, self).__init__(*args)
+
+
 if __name__ == '__main__':
     import sys
 
     app = QtWidgets.QApplication(sys.argv)
+
     box = Frame()
     box.move(0, 0)
 

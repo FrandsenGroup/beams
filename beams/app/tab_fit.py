@@ -189,6 +189,9 @@ class FitDialog(QtWidgets.QWidget):
         self.run_list.setFixedWidth(300)
         self.group_spectrum_options.setFixedWidth(120)
         self.group_batch_options.setFixedWidth(160)
+        self.group_batch_options.setMaximumHeight(110)
+        self.group_save_results.setMaximumHeight(110)
+        self.group_spectrum_options.setMaximumHeight(110)
 
     def _set_widget_layout(self):
         main_layout = QtWidgets.QVBoxLayout()
@@ -255,13 +258,16 @@ class FitDialog(QtWidgets.QWidget):
         left_side = QtWidgets.QVBoxLayout()
         left_side.addWidget(self.table_parameters)
         left_side.addWidget(self.run_list)
+        left_side.setStretch(5, 5)
 
         right_side = QtWidgets.QVBoxLayout()
+        right_side.setStretch(5,5)
         right_side.addWidget(self.fit_display)
 
         row = QtWidgets.QHBoxLayout()
         row.addLayout(left_side)
         row.addLayout(right_side)
+        row.setStretch(5, 5)
         main_layout.addLayout(row)
 
         layout = QtWidgets.QFormLayout()
