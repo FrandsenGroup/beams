@@ -53,10 +53,15 @@ class CollapsibleBox(QtWidgets.QWidget):
         self.content_area.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.content_area.setStyleSheet('QScrollArea { background: #070536; color: white; }')
 
+        add_button = StyleOneButton("+")
         lay = QtWidgets.QVBoxLayout(self)
         lay.setSpacing(0)
         lay.setContentsMargins(0, 0, 0, 0)
-        lay.addWidget(self.toggle_button)
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(self.toggle_button)
+        row.addStretch()
+        # row.addWidget(add_button)
+        lay.addLayout(row)
         lay.addWidget(self.content_area)
 
         self.toggle_animation.addAnimation(
@@ -95,14 +100,14 @@ class CollapsibleBox(QtWidgets.QWidget):
         content_height = layout.sizeHint().height()
         for i in range(self.toggle_animation.animationCount()):
             animation = self.toggle_animation.animationAt(i)
-            animation.setDuration(200)
+            animation.setDuration(2)
             animation.setStartValue(collapsed_height)
             animation.setEndValue(collapsed_height + content_height)
 
         content_animation = self.toggle_animation.animationAt(
             self.toggle_animation.animationCount() - 1
         )
-        content_animation.setDuration(200)
+        content_animation.setDuration(2)
         content_animation.setStartValue(0)
         content_animation.setEndValue(content_height)
 
@@ -267,7 +272,6 @@ class Frame(QtWidgets.QFrame):
         self._m_mouse_down = me.button() == QtCore.Qt.LeftButton
 
     def mouseMoveEvent(self, me: QtGui.QMouseEvent):
-        print('here1')
         x = me.x()
         y = me.y()
 
@@ -288,7 +292,6 @@ class Frame(QtWidgets.QFrame):
 
             self._m_old_pos = QtCore.QPoint(me.x() if not self.__left else self._m_old_pos.x(), me.y())
         else:
-            print('here2')
             r = self.rect()
             self.__left = QtCore.qAbs(x - r.left()) <= 2
             self.__right = QtCore.qAbs(x - r.right()) <= 2
@@ -296,19 +299,15 @@ class Frame(QtWidgets.QFrame):
             hor = self.__left or self.__right
 
             if hor and self.__bottom:
-                print('diagonal')
                 if self.__left:
                     self.setCursor(QtCore.Qt.SizeBDiagCursor)
                 else:
                     self.setCursor(QtCore.Qt.SizeFDiagCursor)
             elif hor:
-                print('horizontal')
                 self.setCursor(QtCore.Qt.SizeHorCursor)
             elif self.__bottom:
-                print('vertical')
                 self.setCursor(QtCore.Qt.SizeVerCursor)
             else:
-                print('arrow')
                 self.setCursor(QtCore.Qt.ArrowCursor)
 
     def mouseReleaseEvent(self, me: QtGui.QMouseEvent):

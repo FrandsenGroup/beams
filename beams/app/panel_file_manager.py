@@ -31,6 +31,7 @@ class FileManagerPanel(widgets.StyleOneDockWidget):
         # self.setStyleSheet("border-top: 1px solid white")
 
         # Create Widgets
+        self.file_list_box = widgets.CollapsibleBox("Files")
         self.file_list = widgets.StyleOneListWidget()
         self.select_all = QtWidgets.QCheckBox()
         self.write_button = widgets.StyleOneButton("Write")
@@ -70,11 +71,16 @@ class FileManagerPanel(widgets.StyleOneDockWidget):
         hbox_one.addWidget(self.write_button)
 
         hbox_two = QtWidgets.QHBoxLayout()
+        # vbox = QtWidgets.QVBoxLayout()
+        # vbox.addWidget(self.file_list)
+        # self.file_list_box.setContentLayout(vbox)
+        # hbox_two.addWidget(self.file_list_box)
         hbox_two.addWidget(self.file_list)
 
         vbox_one = QtWidgets.QVBoxLayout()
         vbox_one.addLayout(hbox_one)
         vbox_one.addLayout(hbox_two)
+        vbox_one.addStretch()
         vbox_one.addWidget(widgets.Separator())
         self._full_widget.setLayout(vbox_one)
 
@@ -177,7 +183,7 @@ class FileManagerPanel(widgets.StyleOneDockWidget):
 
 
 class FileManagerPanelPresenter:
-    def __init__(self, view):
+    def __init__(self, view: FileManagerPanel):
         self._view = view
         self._model = FileManagerPanelModel(self)
         self._set_callbacks()
@@ -186,12 +192,16 @@ class FileManagerPanelPresenter:
         """
         Sets the callbacks presenter to handle relevant signals from the view.
         """
+        self._view.file_list_box.toggle_button.pressed.connect(lambda: self._toggle_box())
         self._view.import_button.released.connect(lambda: self._add_file_clicked())
         self._view.write_button.released.connect(lambda: self._write_file_clicked())
         self._view.plot_button.released.connect(lambda: self._plot_file_clicked())
         self._view.convert_button.released.connect(lambda: self._convert_file_clicked())
         self._view.remove_button.released.connect(lambda: self._remove_file_clicked())
         self._view.select_all.stateChanged.connect(lambda: self._select_all_checked())
+
+    def _toggle_box(self):
+        self._view.file_list_box.on_pressed()
 
     def _add_file_clicked(self):
         code = AddFileDialog.launch()

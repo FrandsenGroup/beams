@@ -370,16 +370,19 @@ class MuonRunPanel(widgets.StyleOneDockWidget):
         box = QtWidgets.QVBoxLayout()
         box.addWidget(self.fit_settings)
         self.fit_settings_box.setContentLayout(box)
+        self.fit_settings_box.setStyleSheet('color: white')
         bottom_layout.addWidget(self.fit_settings_box)
 
         box = QtWidgets.QVBoxLayout()
         box.addWidget(self.plot_settings)
         self.plot_settings_box.setContentLayout(box)
+        self.plot_settings_box.setStyleSheet('color: white')
         bottom_layout.addWidget(self.plot_settings_box)
 
         box = QtWidgets.QVBoxLayout()
         box.addWidget(self.annotations)
         self.annotations_box.setContentLayout(box)
+        self.annotations_box.setStyleSheet('color: white')
         bottom_layout.addWidget(self.annotations_box)
 
         bottom_layout.addStretch()

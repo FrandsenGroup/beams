@@ -37,7 +37,7 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
 
             FigureCanvas.__init__(self, Figure())
             axes = self.figure.subplots(2, 1, gridspec_kw={'height_ratios': [2, 1]})
-            self.figure.set_facecolor("#f9f9fd")
+            self.figure.set_facecolor("#ffffff")
             self.axes_time = axes[0]
             self.axes_freq = axes[1]
 
@@ -51,10 +51,10 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
             self.axes_time.spines['bottom'].set_visible(False)
             self.axes_time.set_xlabel("Add '.msr', '.dat' or '.asy' files and press 'Plot' to see data.",
                                       fontsize=title_font_size)
-            self.axes_time.xaxis.label.set_color("#B8B8B8")
+            self.axes_time.xaxis.label.set_color("#c0c0c0")
             self.axes_time.tick_params(axis='x', colors='white')
             self.axes_time.tick_params(axis='y', colors='white')
-            self.axes_time.set_facecolor("#f9f9fd")
+            self.axes_time.set_facecolor("#ffffff")
 
             self.axes_freq.spines['right'].set_visible(False)
             self.axes_freq.spines['top'].set_visible(False)
@@ -62,7 +62,7 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
             self.axes_freq.spines['bottom'].set_visible(False)
             self.axes_freq.tick_params(axis='x', colors='white')
             self.axes_freq.tick_params(axis='y', colors='white')
-            self.axes_freq.set_facecolor("#f9f9fd")
+            self.axes_freq.set_facecolor("#ffffff")
 
         def set_style(self, remove_legend):
             self.axes_time.tick_params(axis='x', colors='black')
@@ -78,7 +78,7 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
             self.axes_time.set_xlabel("Time (" + chr(956) + "s)", fontsize=title_font_size)
             self.axes_time.set_ylabel("Asymmetry", fontsize=title_font_size)
             self.axes_time.xaxis.label.set_color("#000000")
-            self.axes_time.set_facecolor("#f9f9fd")
+            self.axes_time.set_facecolor("#ffffff")
 
             self.axes_freq.spines['right'].set_visible(False)
             self.axes_freq.spines['top'].set_visible(False)
@@ -87,7 +87,7 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
             self.axes_freq.set_xlabel(r'Frequency (MHz)', fontsize=title_font_size)
             self.axes_freq.set_ylabel(r'FFT$^2$', fontsize=title_font_size)
             self.axes_freq.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
-            self.axes_freq.set_facecolor("#f9f9fd")
+            self.axes_freq.set_facecolor("#ffffff")
             if not remove_legend:
                 self.axes_freq.legend(loc='upper right')
 
@@ -273,7 +273,7 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
         widget.setAutoFillBackground(True)
         widget.setBackgroundRole(QtGui.QPalette.Base)
         p = widget.palette()
-        p.setColor(widget.backgroundRole(), QtGui.QColor('#F2F2F2'))
+        p.setColor(widget.backgroundRole(), QtGui.QColor('#FFFFFF'))
         widget.setPalette(p)
 
         self.setWidget(widget)
