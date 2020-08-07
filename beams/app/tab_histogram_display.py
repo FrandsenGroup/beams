@@ -19,7 +19,7 @@ class HistogramDisplayTab(QtWidgets.QWidget):
             self._draw_pending = True
             self._is_drawing = True
             FigureCanvas.__init__(self, Figure())
-            self.figure.set_facecolor("#f9f9fd")
+            self.figure.set_facecolor("#FFFFFF")
             self.canvas_axes = self.figure.add_subplot(111, label='Canvas')
 
     class HistogramToolbar(NavigationToolbar2QT):
@@ -113,7 +113,7 @@ class HistogramDisplayTab(QtWidgets.QWidget):
         self.canvas.canvas_axes.tick_params(axis='y', colors='white')
         self.canvas.canvas_axes.set_xlabel("", fontsize=12)
         self.canvas.canvas_axes.set_ylabel("", fontsize=12)
-        self.canvas.canvas_axes.set_facecolor("#f9f9fd")
+        self.canvas.canvas_axes.set_facecolor("#FFFFFF")
 
         self.canvas.canvas_axes.figure.canvas.draw()
 
@@ -312,7 +312,7 @@ class HistogramDisplayTab(QtWidgets.QWidget):
             self.canvas.canvas_axes.title.set_color("#B8B8B8")
             self.canvas.canvas_axes.tick_params(axis='x', colors='white')
             self.canvas.canvas_axes.tick_params(axis='y', colors='white')
-            self.canvas.canvas_axes.set_facecolor("#f9f9fd")
+            self.canvas.canvas_axes.set_facecolor("#FFFFFF")
             self.canvas.canvas_axes.figure.canvas.draw()
             self.label_bkgd2.setEnabled(enabled)
             self.label_bkgd1.setEnabled(enabled)
@@ -339,7 +339,7 @@ class HistogramDisplayTab(QtWidgets.QWidget):
             self.canvas.canvas_axes.set_xlabel("Time Bin", fontsize=title_font_size)
             self.canvas.canvas_axes.set_ylabel("Counts", fontsize=title_font_size)
             self.canvas.canvas_axes.xaxis.label.set_color("#000000")
-            self.canvas.canvas_axes.set_facecolor("#f9f9fd")
+            self.canvas.canvas_axes.set_facecolor("#FFFFFF")
             self.canvas.canvas_axes.figure.canvas.draw()
 
     def get_histogram_label(self):
