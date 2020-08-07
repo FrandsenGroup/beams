@@ -19,7 +19,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super(MainWindow, self).__init__(flags=QtCore.Qt.WindowFlags())
         self.presenter = MainWindowPresenter()  # Connect to Presenter
 
-        self.setGeometry(50, 50, 950, 950)
+        # self.setGeometry(50, 50, 950, 950)
         self.setWindowTitle("BEAMS | Basic and Effective Analysis for Muon Spin-Spectroscopy")
         self.statusBar()
 
