@@ -28,6 +28,7 @@ class FileManagerPanel(widgets.StyleOneDockWidget):
         p = self._full_widget.palette()
         p.setColor(self._full_widget.backgroundRole(), QtGui.QColor('#070536'))
         self._full_widget.setPalette(p)
+        # self.setStyleSheet("border-top: 1px solid white")
 
         # Create Widgets
         self.file_list = widgets.StyleOneListWidget()

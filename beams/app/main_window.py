@@ -75,19 +75,19 @@ class MainWindow(QtWidgets.QMainWindow):
         row.addWidget(self._plot_panel_two)
         temp_widget = QtWidgets.QWidget()
         temp_widget.setLayout(row)
-        i = self._tabs.addTab(temp_widget , "Plot")
+        i = self._tabs.addTab(temp_widget, "")
         self._tabs.setTabIcon(i, QtGui.QIcon(r'beams\app\resources\icons\plot2.png'))
-        self._tabs.setIconSize(QtCore.QSize(16, 16))
+        self._tabs.setIconSize(QtCore.QSize(20, 20))
 
-        i = self._tabs.addTab(HistogramDisplayTab(), 'Histogram')
+        i = self._tabs.addTab(HistogramDisplayTab(), '')
         self._tabs.setTabIcon(i, QtGui.QIcon(r'beams\app\resources\icons\histogram2.png'))
-        self._tabs.setIconSize(QtCore.QSize(16, 16))
+        self._tabs.setIconSize(QtCore.QSize(20, 20))
 
-        i = self._tabs.addTab(FitDialog(), 'Fit')
+        i = self._tabs.addTab(FitDialog(), '')
         self._tabs.setTabIcon(i, QtGui.QIcon(r'beams\app\resources\icons\fit2.png'))
-        self._tabs.setIconSize(QtCore.QSize(16, 16))
+        self._tabs.setIconSize(QtCore.QSize(20, 20))
 
-        self._tabs.addTab(QtWidgets.QWidget(), 'Download')
+        self._tabs.addTab(QtWidgets.QWidget(), '')
 
         temp_docking_widget = QtWidgets.QDockWidget()
         temp_docking_widget.setWidget(self._tabs)

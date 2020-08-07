@@ -364,6 +364,7 @@ class MuonRunPanel(widgets.StyleOneDockWidget):
         box = QtWidgets.QVBoxLayout()
         box.addWidget(self.data_settings)
         self.data_settings_box.setContentLayout(box)
+        self.data_settings_box.setStyleSheet('color: white')
         bottom_layout.addWidget(self.data_settings_box)
 
         box = QtWidgets.QVBoxLayout()

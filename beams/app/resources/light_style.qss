@@ -1,22 +1,27 @@
+CollapsibleBox {
+    color: #ffffff;
+}
+
 StyleOneButton {
-    background-color: @brand_zero;
+    background-color: #ffffff;
     border-style: None;
     border-radius: 4px;
     font: bold 12px;
-    color: #ffffff;
+    color: @brand_zero;
     min-height: 22px;
 }
 
 StyleOneButton:pressed {
-    background-color: @brand_plus_two;
+    background-color: #e8e8fd;
 }
 
 StyleOneButton:hover:!pressed {
-    background-color: @brand_plus_one;
+    background-color: #ffffff;
 }
 
 StyleOneButton:disabled {
-    background-color: @brand_minus_two;
+    background-color: #D2D2D2;
+    color: @brand_minus_two;
 }
 
 StyleTwoButton {
@@ -53,7 +58,8 @@ StyleOneToolButton {
 
 StyleOneDockWidget {
     background-color: @brand_zero;
-    border-style: None;
+    border: 2px solid #FFFFFF;
+    border-style: solid;
 }
 
 StyleOneListWidget {
