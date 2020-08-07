@@ -26,10 +26,16 @@ class CollapsibleBox(QtWidgets.QWidget):
         super(CollapsibleBox, self).__init__(parent)
         self.__dumb_constant = False
 
+        self.setAutoFillBackground(True)
+        self.setBackgroundRole(QtGui.QPalette.Base)
+        p = self.palette()
+        p.setColor(self.backgroundRole(), QtGui.QColor('#070536'))
+        self.setPalette(p)
+
         self.toggle_button = QtWidgets.QToolButton(
             text=title, checkable=True, checked=False
         )
-        self.toggle_button.setStyleSheet("QToolButton { border: none; }")
+        self.toggle_button.setStyleSheet("QToolButton { border: none; color: #ffffff; background: #070536}")
         self.toggle_button.setToolButtonStyle(
             QtCore.Qt.ToolButtonTextBesideIcon
         )
@@ -45,6 +51,7 @@ class CollapsibleBox(QtWidgets.QWidget):
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed
         )
         self.content_area.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.content_area.setStyleSheet('QScrollArea { background: #070536; color: white; }')
 
         lay = QtWidgets.QVBoxLayout(self)
         lay.setSpacing(0)
@@ -260,6 +267,7 @@ class Frame(QtWidgets.QFrame):
         self._m_mouse_down = me.button() == QtCore.Qt.LeftButton
 
     def mouseMoveEvent(self, me: QtGui.QMouseEvent):
+        print('here1')
         x = me.x()
         y = me.y()
 
@@ -280,22 +288,27 @@ class Frame(QtWidgets.QFrame):
 
             self._m_old_pos = QtCore.QPoint(me.x() if not self.__left else self._m_old_pos.x(), me.y())
         else:
+            print('here2')
             r = self.rect()
-            self.__left = QtCore.qAbs(x - r.left()) <= 5
-            self.__right = QtCore.qAbs(x - r.right()) <= 5
-            self.__bottom = QtCore.qAbs(y - r.bottom()) <= 5
+            self.__left = QtCore.qAbs(x - r.left()) <= 2
+            self.__right = QtCore.qAbs(x - r.right()) <= 2
+            self.__bottom = QtCore.qAbs(y - r.bottom()) <= 2
             hor = self.__left or self.__right
 
             if hor and self.__bottom:
+                print('diagonal')
                 if self.__left:
                     self.setCursor(QtCore.Qt.SizeBDiagCursor)
                 else:
                     self.setCursor(QtCore.Qt.SizeFDiagCursor)
             elif hor:
+                print('horizontal')
                 self.setCursor(QtCore.Qt.SizeHorCursor)
             elif self.__bottom:
+                print('vertical')
                 self.setCursor(QtCore.Qt.SizeVerCursor)
             else:
+                print('arrow')
                 self.setCursor(QtCore.Qt.ArrowCursor)
 
     def mouseReleaseEvent(self, me: QtGui.QMouseEvent):
