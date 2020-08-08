@@ -9,11 +9,11 @@ StyleOneButton {
 }
 
 StyleOneButton:pressed {
-    background-color: #e8e8fd;
+    background-color: #a8a8bd;
 }
 
 StyleOneButton:hover:!pressed {
-    background-color: #ffffff;
+    background-color: #e8e8fd;
 }
 
 StyleOneButton:disabled {
@@ -36,6 +36,10 @@ StyleTwoButton:disabled {
 
 StyleTwoButton:hover:!pressed {
     background-color: @highest_contrast;
+}
+
+StyleTwoButton:hover:pressed {
+    background-color: @highester_contrast;
 }
 
 StyleThreeButton {

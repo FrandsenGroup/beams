@@ -10,6 +10,7 @@
 @contrast = #909090
 @high_contrast = #515151
 @highest_contrast = #363636
+@highester_contrast = #232323
 @error = #db2c00
 @success = #00dba9
 
