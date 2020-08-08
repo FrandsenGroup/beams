@@ -15,7 +15,7 @@ class FitDialog(QtWidgets.QWidget):
             self._draw_pending = True
             self._is_drawing = True
             FigureCanvas.__init__(self, Figure())
-            self.canvas_axes = self.figure.add_subplot(111, label='Canvas')
+            self.canvas_axes = self.figure.add_subplot()
 
     class FitToolbar(NavigationToolbar2QT):
         # only display the buttons we need
@@ -48,7 +48,7 @@ class FitDialog(QtWidgets.QWidget):
         self.option_run_ordering = QtWidgets.QComboBox()
 
         self.fit_display = FitDialog.FitCanvas()
-        self.special_characters = widgets.CollapsibleBox("Special Characters")
+        self.special_characters = widgets.CollapsibleBox("Special Characters", background='#FFFFFF')
 
         self.table_parameters = QtWidgets.QTableWidget()
         self.user_functions = QtWidgets.QTableWidget()
@@ -92,6 +92,8 @@ class FitDialog(QtWidgets.QWidget):
         self._set_widget_dimensions()
 
     def _set_widget_attributes(self):
+        self.table_parameters.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+
         self.option_preset_fit_equations.addItems(list(mufyt.EQUATION_DICTIONARY.keys()))
         self.option_user_fit_equations.addItem("None")
         self.option_run_ordering.addItems(['Field', 'Temp', 'Run'])
@@ -329,11 +331,9 @@ class FitDialog(QtWidgets.QWidget):
 
         full_row.addSpacing(8)
         column = QtWidgets.QVBoxLayout()
-        column.addStretch()
         column.addWidget(self.button_fit)
         column.addSpacing(4)
         column.addWidget(self.button_done)
-        column.addStretch()
         full_row.addLayout(column)
         full_row.addSpacing(8)
 

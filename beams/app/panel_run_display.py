@@ -307,10 +307,10 @@ class MuonRunPanel(widgets.StyleOneDockWidget):
         self.fit_settings = MuonRunPanel.FitSettings()
         self.annotations = MuonRunPanel.Annotations()
 
-        self.data_settings_box = widgets.CollapsibleBox("Run Data Settings")
-        self.plot_settings_box = widgets.CollapsibleBox("Run Plot Settings")
-        self.fit_settings_box = widgets.CollapsibleBox("Fit Settings")
-        self.annotations_box = widgets.CollapsibleBox("Run Annotations")
+        self.data_settings_box = widgets.CollapsibleBox("Run Data Settings", background='#070536')
+        self.plot_settings_box = widgets.CollapsibleBox("Run Plot Settings", background='#070536')
+        self.fit_settings_box = widgets.CollapsibleBox("Fit Settings", background='#070536')
+        self.annotations_box = widgets.CollapsibleBox("Run Annotations", background='#070536')
 
         self._scroll = QtWidgets.QScrollArea()
 
@@ -364,26 +364,26 @@ class MuonRunPanel(widgets.StyleOneDockWidget):
         box = QtWidgets.QVBoxLayout()
         box.addWidget(self.data_settings)
         self.data_settings_box.setContentLayout(box)
-        self.data_settings_box.setStyleSheet('color: white')
+        self.data_settings_box.setStyleSheet('QGroupBox {color: white} QComboBox {color: #070536} QLabel {color: white}')
         bottom_layout.addWidget(self.data_settings_box)
 
         box = QtWidgets.QVBoxLayout()
         box.addWidget(self.fit_settings)
         self.fit_settings_box.setContentLayout(box)
-        self.fit_settings_box.setStyleSheet('color: white')
-        bottom_layout.addWidget(self.fit_settings_box)
+        self.fit_settings_box.setStyleSheet('color: black')
+        # bottom_layout.addWidget(self.fit_settings_box)
 
         box = QtWidgets.QVBoxLayout()
         box.addWidget(self.plot_settings)
         self.plot_settings_box.setContentLayout(box)
-        self.plot_settings_box.setStyleSheet('color: white')
+        self.plot_settings_box.setStyleSheet('QGroupBox {color: white} QComboBox {color: #070536} QLabel {color: white}')
         bottom_layout.addWidget(self.plot_settings_box)
 
         box = QtWidgets.QVBoxLayout()
         box.addWidget(self.annotations)
         self.annotations_box.setContentLayout(box)
         self.annotations_box.setStyleSheet('color: white')
-        bottom_layout.addWidget(self.annotations_box)
+        # bottom_layout.addWidget(self.annotations_box)
 
         bottom_layout.addStretch()
 

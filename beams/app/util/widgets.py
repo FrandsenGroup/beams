@@ -22,20 +22,22 @@ class StyleThreeButton(QtWidgets.QPushButton):
 
 # noinspection PyArgumentList
 class CollapsibleBox(QtWidgets.QWidget):
-    def __init__(self, title="", parent=None):
+    def __init__(self, title="", parent=None, background='#070536'):
         super(CollapsibleBox, self).__init__(parent)
         self.__dumb_constant = False
 
         self.setAutoFillBackground(True)
         self.setBackgroundRole(QtGui.QPalette.Base)
         p = self.palette()
-        p.setColor(self.backgroundRole(), QtGui.QColor('#070536'))
+        p.setColor(self.backgroundRole(), QtGui.QColor(background))
         self.setPalette(p)
 
         self.toggle_button = QtWidgets.QToolButton(
             text=title, checkable=True, checked=False
         )
-        self.toggle_button.setStyleSheet("QToolButton { border: none; color: #ffffff; background: #070536}")
+
+        text_color = '#070536' if background != '#070536' else '#ffffff'
+        self.toggle_button.setStyleSheet("QToolButton {{ border: none; color: {}; background: {}}}".format(text_color, background))
         self.toggle_button.setToolButtonStyle(
             QtCore.Qt.ToolButtonTextBesideIcon
         )
@@ -51,7 +53,8 @@ class CollapsibleBox(QtWidgets.QWidget):
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed
         )
         self.content_area.setFrameShape(QtWidgets.QFrame.NoFrame)
-        self.content_area.setStyleSheet('QScrollArea { background: #070536; color: white; }')
+        style = 'QScrollArea {{background: {}; color: white;}}'.format(background)
+        self.content_area.setStyleSheet(style)
 
         add_button = StyleOneButton("+")
         lay = QtWidgets.QVBoxLayout(self)
@@ -141,8 +144,13 @@ class TitleBar(QtWidgets.QWidget):
         self.setAutoFillBackground(True)
         self.setBackgroundRole(QtGui.QPalette.Base)
         p = self.palette()
-        p.setColor(self.backgroundRole(), QtGui.QColor('#070536'))
+        p.setColor(self.backgroundRole(), QtGui.QColor('#f2f2f2'))
         self.setPalette(p)
+        self.setStyleSheet(" TitleBar {"
+                           "border-style: solid;"
+                           "border-width: 5px;"
+                           "border-color: #ffffff"
+                           "}")
 
         self.minimize = StyleOneToolButton()
         self.maximize = StyleOneToolButton()
@@ -240,6 +248,7 @@ class Frame(QtWidgets.QFrame):
 
         col = QtWidgets.QVBoxLayout(self)
         col.addWidget(self._m_title_bar)
+        col.addWidget(Separator())
         col.setSpacing(0)
         col.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))
 
@@ -258,7 +267,7 @@ class Frame(QtWidgets.QFrame):
         self.setAutoFillBackground(True)
         self.setBackgroundRole(QtGui.QPalette.Base)
         p = self.palette()
-        p.setColor(self.backgroundRole(), QtGui.QColor('#070536'))
+        p.setColor(self.backgroundRole(), QtGui.QColor('#ffffff'))
         self.setPalette(p)
 
     def content_widget(self):
@@ -320,7 +329,7 @@ class Separator(QtWidgets.QFrame):
         super(Separator, self).__init__()
         self.setFrameShape(QtWidgets.QFrame.HLine)
         # self.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Expanding)
-        self.setFixedHeight(1)
+        self.setFixedHeight(0.75)
         self.setAutoFillBackground(True)
         self.setBackgroundRole(QtGui.QPalette.Highlight)
         p = self.palette()
@@ -332,7 +341,7 @@ class Separator(QtWidgets.QFrame):
 class Logo(QtWidgets.QLabel):
     def __init__(self):
         super(Logo, self).__init__()
-        logo_icon_pixmap = QtGui.QPixmap(r'beams\app\resources\icons\logo_2.png')
+        logo_icon_pixmap = QtGui.QPixmap(r'beams\app\resources\icons\logo_3.jpg')
         self.setPixmap(logo_icon_pixmap.scaledToHeight(30, QtCore.Qt.SmoothTransformation))
         self.setMask(logo_icon_pixmap.mask())
 
