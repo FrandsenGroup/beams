@@ -156,16 +156,16 @@ class TitleBar(QtWidgets.QWidget):
         self.maximize = StyleOneToolButton()
         self.close = StyleOneToolButton()
 
-        pix = QtGui.QIcon(r'beams\app\resources\icons\close_white.png')
+        pix = QtGui.QIcon(r'beams\app\resources\icons\close_black.png')
         self.close.setIcon(pix)
         self.close.setIconSize(QtCore.QSize(12, 12))
 
-        self._max_pix = QtGui.QIcon(r'beams/app/resources/icons/maximize_white.png')
-        self._restore_pix = QtGui.QIcon(r'beams\app\resources\icons\restore_white.png')
+        self._max_pix = QtGui.QIcon(r'beams/app/resources/icons/maximize_black.png')
+        self._restore_pix = QtGui.QIcon(r'beams\app\resources\icons\restore_black.png')
         self.maximize.setIcon(self._max_pix)
         self.maximize.setIconSize(QtCore.QSize(12, 12))
 
-        pix = QtGui.QIcon(r'beams\app\resources\icons\minimize_white.png')
+        pix = QtGui.QIcon(r'beams\app\resources\icons\minimize_black.png')
         self.minimize.setIcon(pix)
         self.minimize.setIconSize(QtCore.QSize(12, 12))
 
