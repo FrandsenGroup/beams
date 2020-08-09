@@ -17,6 +17,11 @@ class BEAMS(QtWidgets.QApplication):
 
     def __init__(self):
         super(BEAMS, self).__init__(sys.argv)
+        pix = QtGui.QPixmap(r'beams/app/resources/icons/splash.jpg')
+        self.splash = QtWidgets.QSplashScreen(pix.scaledToHeight(200, QtCore.Qt.SmoothTransformation))
+        self.splash.show()
+        self.processEvents()
+
         self.setStyleSheet(main_window.StyleFile(r'beams/app/resources/light_style.qss',
                                                  r'beams/app/resources/light_style_vars.txt').style)
         db = QtGui.QFontDatabase()
@@ -44,4 +49,7 @@ class BEAMS(QtWidgets.QApplication):
         vbox.addWidget(self.main_program_window)
         frame.setGeometry(50, 50, 950, 950)
         frame.show()
+
+        self.splash.finish(frame)
+
         sys.exit(self.exec_())

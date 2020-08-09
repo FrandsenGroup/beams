@@ -34,7 +34,7 @@ class FitDialog(QtWidgets.QWidget):
     def __init__(self):
         super(FitDialog, self).__init__()
 
-        self.setStyleSheet("QGroupBox { background-color: #070356; border-style: None; }")
+        # self.setStyleSheet("QGroupBox { background-color: #070356; border-style: None; }")
 
         self.input_fit_equation = QtWidgets.QLineEdit()
         self.input_user_equation = QtWidgets.QLineEdit()
