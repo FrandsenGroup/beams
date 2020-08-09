@@ -270,7 +270,13 @@ class HistogramDisplayTab(QtWidgets.QWidget):
         self._new_layout.addWidget(radio_form)
         self._new_layout.addWidget(self.canvas)
 
-    def replace_histogram_plot(self, histogram):
+    def replace_histogram_plot(self, histogram, bkgd1, bkgd2, t0, goodbin1, goodbin2):
+        self.bkgd2 = bkgd2
+        self.bkgd1 = bkgd1
+        self.t0 = t0
+        self.goodbin1 = goodbin1
+        self.goodbin2 = goodbin2
+
         self.histogram_label = self.histogram_choices.currentText()
         self.histogram = histogram
         self.set_new_lines(new_histogram=True)
@@ -480,8 +486,10 @@ class HistogramDisplayPresenter:
         histogram_label = self._view.get_histogram_label()
 
         if histogram_label != '':
+            meta = list(self._model.get_focused_run_meta(histogram_label).items())[0][1]
             histogram = self._model.get_focused_run_histogram(histogram_label)
-            self._view.replace_histogram_plot(histogram)
+            self._view.replace_histogram_plot(histogram, meta[files.BACKGROUND_ONE_KEY], meta[files.BACKGROUND_TWO_KEY],
+                                              meta[files.T0_KEY], meta[files.GOOD_BIN_ONE_KEY], meta[files.GOOD_BIN_TWO_KEY])
 
     def _input_changed(self, input_box, input_value):
         try:
