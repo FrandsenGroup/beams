@@ -163,9 +163,9 @@ class FitDialog(QtWidgets.QWidget):
         self.label_use_previous.setEnabled(False)
 
         x = np.linspace(0, 10)
-        self.fit_display.canvas_axes.plot(x, np.sin(x) + np.random.randn(50), label='006515 | Cu2IrO3 LF=1KG T=7K', linestyle='None', marker='.')
-        self.fit_display.canvas_axes.plot(x, np.sin(x) + 2*np.random.randn(50), label='006516 | Cu2IrO3 LF=200G T=.05K', linestyle='None', marker='.')
-        self.fit_display.canvas_axes.plot(x, np.sin(x) + 3*np.random.randn(50), label='006517 | Cu2IrO3 LF=200G T=.125K', linestyle='None', marker='.')
+        # self.fit_display.canvas_axes.plot(x, np.sin(x) + np.random.randn(50), label='006515 | Cu2IrO3 LF=1KG T=7K', linestyle='None', marker='.')
+        # self.fit_display.canvas_axes.plot(x, np.sin(x) + 2*np.random.randn(50), label='006516 | Cu2IrO3 LF=200G T=.05K', linestyle='None', marker='.')
+        # self.fit_display.canvas_axes.plot(x, np.sin(x) + 3*np.random.randn(50), label='006517 | Cu2IrO3 LF=200G T=.125K', linestyle='None', marker='.')
         # Number of accent colors in the color scheme
         # self.fit_display.canvas_axes.legend(loc='upper right')
 
