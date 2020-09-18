@@ -8,6 +8,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 # BEAMS Modules
 from app import main_window
 from app.util import widgets
+from app.resources import resources
 
 
 class BEAMS(QtWidgets.QApplication):
@@ -17,24 +18,23 @@ class BEAMS(QtWidgets.QApplication):
 
     def __init__(self):
         super(BEAMS, self).__init__(sys.argv)
-        pix = QtGui.QPixmap(r'beams/app/resources/icons/splash.jpg')
+        pix = QtGui.QPixmap(resources.SPLASH_IMAGE)
         self.splash = QtWidgets.QSplashScreen(pix.scaledToHeight(200, QtCore.Qt.SmoothTransformation))
         self.splash.show()
         self.processEvents()
 
-        self.setStyleSheet(main_window.StyleFile(r'beams/app/resources/light_style.qss',
-                                                 r'beams/app/resources/light_style_vars.txt').style)
+        self.setStyleSheet(main_window.StyleFile(resources.QSS_STYLE_SHEET, resources.STYLE_SHEET_VARIABLES).style)
         db = QtGui.QFontDatabase()
-        db.addApplicationFont(r'beams/app/resources/Lato/Lato-Black.ttf')
-        db.addApplicationFont(r'beams/app/resources/Lato/Lato-BlackItalic.ttf')
-        db.addApplicationFont(r'beams/app/resources/Lato/Lato-Bold.ttf')
-        db.addApplicationFont(r'beams/app/resources/Lato/Lato-BoldItalic.ttf')
-        db.addApplicationFont(r'beams/app/resources/Lato/Lato-Italic.ttf')
-        db.addApplicationFont(r'beams/app/resources/Lato/Lato-Light.ttf')
-        db.addApplicationFont(r'beams/app/resources/Lato/Lato-LightItalic.ttf')
-        db.addApplicationFont(r'beams/app/resources/Lato/Lato-Regular.ttf')
-        db.addApplicationFont(r'beams/app/resources/Lato/Lato-Thin.ttf')
-        db.addApplicationFont(r'beams/app/resources/Lato/Lato-ThinItalic.ttf')
+        db.addApplicationFont(resources.LATO_BLACK_FONT)
+        db.addApplicationFont(resources.LATO_BLACK_ITALIC_FONT)
+        db.addApplicationFont(resources.LATO_BOLD_FONT)
+        db.addApplicationFont(resources.LATO_BOLD_ITALIC_FONT)
+        db.addApplicationFont(resources.LATO_ITALIC_FONT)
+        db.addApplicationFont(resources.LATO_LIGHT_FONT)
+        db.addApplicationFont(resources.LATO_LIGHT_ITALIC_FONT)
+        db.addApplicationFont(resources.LATO_REGULAR_FONT)
+        db.addApplicationFont(resources.LATO_THIN_FONT)
+        db.addApplicationFont(resources.LATO_THIN_ITALIC_FONT)
         self.main_program_window = None
 
     def run(self):

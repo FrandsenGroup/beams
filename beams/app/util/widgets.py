@@ -1,6 +1,8 @@
 
 import abc
 import enum
+from pathlib import Path
+from app.resources import resources
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
@@ -156,16 +158,16 @@ class TitleBar(QtWidgets.QWidget):
         self.maximize = StyleOneToolButton()
         self.close = StyleOneToolButton()
 
-        pix = QtGui.QIcon(r'beams\app\resources\icons\close_black.png')
+        pix = QtGui.QIcon(resources.CLOSE_IMAGE)
         self.close.setIcon(pix)
         self.close.setIconSize(QtCore.QSize(12, 12))
 
-        self._max_pix = QtGui.QIcon(r'beams/app/resources/icons/maximize_black.png')
-        self._restore_pix = QtGui.QIcon(r'beams\app\resources\icons\restore_black.png')
+        self._max_pix = QtGui.QIcon(resources.MAXIMIZE_IMAGE)
+        self._restore_pix = QtGui.QIcon(resources.RESTORE_IMAGE)
         self.maximize.setIcon(self._max_pix)
         self.maximize.setIconSize(QtCore.QSize(12, 12))
 
-        pix = QtGui.QIcon(r'beams\app\resources\icons\minimize_black.png')
+        pix = QtGui.QIcon(resources.MINIMIZE_IMAGE)
         self.minimize.setIcon(pix)
         self.minimize.setIconSize(QtCore.QSize(12, 12))
 
@@ -341,7 +343,7 @@ class Separator(QtWidgets.QFrame):
 class Logo(QtWidgets.QLabel):
     def __init__(self):
         super(Logo, self).__init__()
-        logo_icon_pixmap = QtGui.QPixmap(r'beams\app\resources\icons\logo_3.jpg')
+        logo_icon_pixmap = QtGui.QPixmap(resources.LOGO_IMAGE)
         self.setPixmap(logo_icon_pixmap.scaledToHeight(30, QtCore.Qt.SmoothTransformation))
         self.setMask(logo_icon_pixmap.mask())
 
