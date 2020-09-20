@@ -49,11 +49,6 @@ class FileManagerPanel(widgets.StyleOneDockWidget):
         self.write_button.setFixedWidth(40)
         self.plot_button.setFixedWidth(40)
         self.setMaximumWidth(350)
-        '''
-        self.write_button.setFixedWidth(60)
-        self.plot_button.setFixedWidth(60)
-        self.convert_button.setFixedWidth(60)
-        '''
 
         # Set Widget Tooltips
         self.write_button.setToolTip('Write currently plotted data to .asy files')

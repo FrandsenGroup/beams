@@ -1,6 +1,7 @@
 
 import threading
 import warnings
+import sys
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
@@ -244,8 +245,7 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
             editor_layout.addWidget(freq_form)
 
             main_layout.addLayout(editor_layout)
-
-            # self._full_widget.setLayout(main_layout)
+            main_layout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
             self.setLayout(main_layout)
 
     def __init__(self):
@@ -254,8 +254,6 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
 
         self._display = MuonPlotPanel.PlotDisplay()
         self._control = MuonPlotPanel.PlotControl()
-
-        self._control.setFixedHeight(130)
 
         # This insanity is all because dock widgets can't have toolbars.
         layout = QtWidgets.QVBoxLayout()
