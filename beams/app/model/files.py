@@ -10,6 +10,9 @@ import enum
 # Installed Packages
 import pandas as pd
 
+# Custom Packages
+from app.resources import resources
+
 
 # File Sources
 @enum.unique
@@ -371,14 +374,14 @@ def set_last_used_directory(path):
         path = "."
 
     if os.path.exists(path) and os.path.isdir(path):
-        with open(r'beams/app/resources/config.txt', 'w') as f:
+        with open(resources.CONFIGURATION_FILE, 'w+') as f:
             f.write(path)
 
 
 def load_last_used_directory():
 
     try:
-        with open(r'beams/app/resources/config.txt', 'r+') as f:
+        with open(resources.CONFIGURATION_FILE, 'w+') as f:
             path = f.readline().strip()
 
             if os.path.exists(r'{}'.format(path)) and os.path.isdir(r'{}'.format(path)):
