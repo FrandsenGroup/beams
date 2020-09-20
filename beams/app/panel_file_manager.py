@@ -46,6 +46,8 @@ class FileManagerPanel(widgets.StyleOneDockWidget):
         self.import_button.setFixedWidth(25)
         self.remove_button.setFixedWidth(25)
         self.convert_button.setFixedWidth(60)
+        self.write_button.setFixedWidth(40)
+        self.plot_button.setFixedWidth(40)
         self.setMaximumWidth(350)
         '''
         self.write_button.setFixedWidth(60)
@@ -63,18 +65,17 @@ class FileManagerPanel(widgets.StyleOneDockWidget):
 
         # Layout Widgets
         hbox_one = QtWidgets.QHBoxLayout()
+        hbox_one.setSpacing(10)
         hbox_one.addWidget(self.select_all)
+        hbox_one.addSpacing(5)
         hbox_one.addWidget(self.import_button)
         hbox_one.addWidget(self.remove_button)
         hbox_one.addWidget(self.convert_button)
         hbox_one.addWidget(self.plot_button)
         hbox_one.addWidget(self.write_button)
+        hbox_one.addStretch()
 
         hbox_two = QtWidgets.QHBoxLayout()
-        # vbox = QtWidgets.QVBoxLayout()
-        # vbox.addWidget(self.file_list)
-        # self.file_list_box.setContentLayout(vbox)
-        # hbox_two.addWidget(self.file_list_box)
         hbox_two.addWidget(self.file_list)
 
         vbox_one = QtWidgets.QVBoxLayout()
