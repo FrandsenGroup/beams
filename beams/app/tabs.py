@@ -3,6 +3,7 @@ from PyQt5 import QtWidgets, QtGui, QtCore
 from app.panel_muon_plot import MuonPlotPanel
 from app.tab_histogram_display import HistogramDisplayTab
 from app.tab_fit import FitDialog
+from app.resources import resources
 
 
 # noinspection PyArgumentList
@@ -25,23 +26,23 @@ class MainWindowTabs(QtWidgets.QTabWidget):
         temp_widget.setLayout(row)
 
         i = self.addTab(temp_widget, '')
-        self.setTabIcon(i, QtGui.QIcon(r'beams\app\resources\icons\plotting_icon_clicked.png'))
+        self.setTabIcon(i, QtGui.QIcon(resources.PLOTTING_CLICKED_IMAGE))
         self.setIconSize(QtCore.QSize(35, 35))
 
         i = self.addTab(HistogramDisplayTab(), '')
-        self.setTabIcon(i, QtGui.QIcon(r'beams\app\resources\icons\histo_icon.png'))
+        self.setTabIcon(i, QtGui.QIcon(resources.HISTOGRAM_IMAGE))
         self.setIconSize(QtCore.QSize(36, 36))
 
         i = self.addTab(FitDialog(), '')
-        self.setTabIcon(i, QtGui.QIcon(r'beams\app\resources\icons\fitting_icon.png'))
+        self.setTabIcon(i, QtGui.QIcon(resources.FITTING_IMAGE))
         self.setIconSize(QtCore.QSize(35, 35))
 
         i = self.addTab(QtWidgets.QLabel('Useless tab.. Kinda sad'), '')
-        self.setTabIcon(i, QtGui.QIcon(r'beams\app\resources\icons\download_icon.png'))
+        self.setTabIcon(i, QtGui.QIcon(resources.DOWNLOAD_IMAGE))
         self.setIconSize(QtCore.QSize(35, 35))
 
         i = self.addTab(QtWidgets.QLabel('No help for you.'), '')
-        self.setTabIcon(i, QtGui.QIcon(r'beams\app\resources\icons\question_icon.png'))
+        self.setTabIcon(i, QtGui.QIcon(resources.QUESTION_IMAGE))
         self.setIconSize(QtCore.QSize(35, 35))
 
         self.currentChanged.connect(self._selection_changed)
@@ -56,33 +57,33 @@ class MainWindowTabs(QtWidgets.QTabWidget):
 
     def _selection_changed(self):
         if self.__index == 0:
-            self.setTabIcon(self.__index, QtGui.QIcon(r'beams\app\resources\icons\plotting_icon.png'))
+            self.setTabIcon(self.__index, QtGui.QIcon(resources.PLOTTING_IMAGE))
 
         elif self.__index == 1:
-            self.setTabIcon(self.__index, QtGui.QIcon(r'beams\app\resources\icons\histo_icon.png'))
+            self.setTabIcon(self.__index, QtGui.QIcon(resources.HISTOGRAM_IMAGE))
 
         elif self.__index == 2:
-            self.setTabIcon(self.__index, QtGui.QIcon(r'beams\app\resources\icons\fitting_icon.png'))
+            self.setTabIcon(self.__index, QtGui.QIcon(resources.FITTING_IMAGE))
 
         elif self.__index == 3:
-            self.setTabIcon(self.__index, QtGui.QIcon(r'beams\app\resources\icons\download_icon.png'))
+            self.setTabIcon(self.__index, QtGui.QIcon(resources.DOWNLOAD_IMAGE))
 
         elif self.__index == 4:
-            self.setTabIcon(self.__index, QtGui.QIcon(r'beams\app\resources\icons\question_icon.png'))
+            self.setTabIcon(self.__index, QtGui.QIcon(resources.QUESTION_IMAGE))
 
         self.__index = self.currentIndex()
 
         if self.__index == 0:
-            self.setTabIcon(self.__index, QtGui.QIcon(r'beams\app\resources\icons\plotting_icon_clicked.png'))
+            self.setTabIcon(self.__index, QtGui.QIcon(resources.PLOTTING_CLICKED_IMAGE))
 
         elif self.__index == 1:
-            self.setTabIcon(self.__index, QtGui.QIcon(r'beams\app\resources\icons\histo_icon_clicked.png'))
+            self.setTabIcon(self.__index, QtGui.QIcon(resources.HISTOGRAM_CLICKED_IMAGE))
 
         elif self.__index == 2:
-            self.setTabIcon(self.__index, QtGui.QIcon(r'beams\app\resources\icons\fitting_icon_clicked.png'))
+            self.setTabIcon(self.__index, QtGui.QIcon(resources.FITTING_CLICKED_IMAGE))
 
         elif self.__index == 3:
-            self.setTabIcon(self.__index, QtGui.QIcon(r'beams\app\resources\icons\download_icon_clicked.png'))
+            self.setTabIcon(self.__index, QtGui.QIcon(resources.DOWNLOAD_CLICKED_IMAGE))
 
         elif self.__index == 4:
-            self.setTabIcon(self.__index, QtGui.QIcon(r'beams\app\resources\icons\question_icon_clicked.png'))
+            self.setTabIcon(self.__index, QtGui.QIcon(resources.QUESTION_CLICKED_IMAGE))
