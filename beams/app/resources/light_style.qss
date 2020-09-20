@@ -109,13 +109,13 @@ QTabBar {
 /* Style the tab using the tab sub-control. Note that it reads QTabBar _not_ QTabWidget */
 QTabBar::tab {
     background: #070536;
-    min-width: 15ex;
-    max-width: 15ex;
-    min-height: 15ex;
-    max-height: 15ex;
+    min-width: 45px;
+    max-width: 45px;
+    min-height: 45px;
+    max-height: 45px;
     padding: 0px;
-    padding-left:8ex;
-    padding-right:8ex;
+    padding-left:20px;
+    padding-right:20px;
     font: bold 12px;
     color: #FFFFFF;
 }
