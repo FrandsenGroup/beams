@@ -109,8 +109,8 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
             self.input_bin = QtWidgets.QLineEdit()
 
             self._label_time = QtWidgets.QLabel('Time')
-            self._label_time_xmin = QtWidgets.QLabel('XMin (\u03BCs)')
-            self._label_time_xmax = QtWidgets.QLabel('XMax (\u03BCs)')
+            self._label_time_xmin = QtWidgets.QLabel('XMin')
+            self._label_time_xmax = QtWidgets.QLabel('XMax')
             self._label_time_ymin = QtWidgets.QLabel('YMin')
             self._label_time_ymax = QtWidgets.QLabel('YMax')
             self._label_time_yauto = QtWidgets.QLabel('Auto Y')
@@ -123,8 +123,8 @@ class MuonPlotPanel(QtWidgets.QDockWidget):
             self.check_time_yauto = QtWidgets.QCheckBox()
 
             self._label_freq = QtWidgets.QLabel('Frequency')
-            self._label_freq_xmin = QtWidgets.QLabel('XMin (MHz)')
-            self._label_freq_xmax = QtWidgets.QLabel('XMax (MHz)')
+            self._label_freq_xmin = QtWidgets.QLabel('XMin')
+            self._label_freq_xmax = QtWidgets.QLabel('XMax')
             self._label_freq_ymin = QtWidgets.QLabel('YMin')
             self._label_freq_ymax = QtWidgets.QLabel('YMax')
             self._label_freq_yauto = QtWidgets.QLabel('Auto Y')
