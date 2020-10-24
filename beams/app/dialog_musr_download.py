@@ -8,8 +8,8 @@ from datetime import datetime
 import requests
 from PyQt5 import QtWidgets, QtCore
 
+from app.model.domain import FileService
 from app.util import widgets
-from app.model.model import FileContext
 from app.model import files
 
 
@@ -207,7 +207,7 @@ class MusrDownloadDialogPresenter:
         self._search_url = "http://musr.ca/mud/runSel.php"
         self._data_url = "http://musr.ca/mud/data/"
         self._new_files = False
-        self._context = FileContext()
+        self.__file_service = FileService()
 
         self._set_callbacks()
 
@@ -428,7 +428,7 @@ class MusrDownloadDialogPresenter:
             self._new_files = True
             good += 1
 
-        self._context.add_files(new_files)
+        self.__file_service.add_files(new_files)
         self._view.log_message('{}/{} Files downloaded successfully.\n'.format(good, len(downloads)))
         self._view.set_status_message('Done.')
 
