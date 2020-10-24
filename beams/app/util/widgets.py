@@ -353,20 +353,4 @@ class StyleOneLabel(QtWidgets.QLabel):
         super(StyleOneLabel, self).__init__(*args)
 
 
-if __name__ == '__main__':
-    import sys
 
-    app = QtWidgets.QApplication(sys.argv)
-
-    win = QtWidgets.QMainWindow()
-    dock = StyleOneDockWidget()
-
-    win.setCentralWidget(dock)
-    win.show()
-
-    # win = QtWidgets.QWidget()
-    # vbox = QtWidgets.QVBoxLayout(win)
-    # vbox.addWidget(TitleBar(win))
-    # win.show()
-
-    app.exec_()

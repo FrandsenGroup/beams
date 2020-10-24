@@ -134,7 +134,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.item_tree = self.Tree()
 
             self.style_settings = QtWidgets.QGroupBox("Applies to all selected runs")
-            self.all_color_options = widgets.ComboBox()
+            self.all_color_options = QtWidgets.QComboBox()
             self.linestyle_options = QtWidgets.QComboBox()
             self.fit_linestyle_options = QtWidgets.QComboBox()
             self.line_color_options = QtWidgets.QComboBox()
@@ -145,7 +145,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.marker_size_options = QtWidgets.QComboBox()
             self.fillstyle_options = QtWidgets.QComboBox()
             self.errorbar_style_options = QtWidgets.QComboBox()
-            self.errorbar_color_options = widgets.ComboBox()
+            self.errorbar_color_options = QtWidgets.QComboBox()
             self.errorbar_width_options = QtWidgets.QComboBox()
 
             self._set_widget_dimensions()
