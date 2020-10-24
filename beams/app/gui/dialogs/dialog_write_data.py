@@ -7,8 +7,8 @@ import numpy as np
 from app.util import widgets
 from app.model.model import MuonDataContext
 from app.model import muon, files
-from app.dialog_plot_file import PlotFileDialog
-from app.dialog_misc import PermissionsMessageDialog
+from app.gui.dialogs.dialog_plot_file import PlotFileDialog
+from app.gui.dialogs.dialog_misc import PermissionsMessageDialog
 
 
 # noinspection PyArgumentList

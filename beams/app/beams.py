@@ -6,7 +6,6 @@ import sys
 from PyQt5 import QtWidgets, QtCore, QtGui
 
 # BEAMS Modules
-from app import main_window
 from app.util import widgets
 from app.resources import resources
 from app.gui import mainwindow
@@ -24,7 +23,7 @@ class BEAMS(QtWidgets.QApplication):
         self.splash.show()
         self.processEvents()
 
-        self.setStyleSheet(main_window.StyleFile(resources.QSS_STYLE_SHEET, resources.STYLE_SHEET_VARIABLES).style)
+        self.setStyleSheet(mainwindow.StyleFile(resources.QSS_STYLE_SHEET, resources.STYLE_SHEET_VARIABLES).style)
         db = QtGui.QFontDatabase()
         db.addApplicationFont(resources.LATO_BLACK_FONT)
         db.addApplicationFont(resources.LATO_BLACK_ITALIC_FONT)

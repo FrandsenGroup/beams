@@ -4,9 +4,8 @@ from PyQt5 import QtWidgets
 
 from app.model.domain import Asymmetry, RunDataset, RunService
 from app.util import widgets
-from app.model.model import MuonDataContext, PlotContext
 from app.model import files
-from app.dialog_misc import WarningMessageDialog
+from app.gui.dialogs.dialog_misc import WarningMessageDialog
 
 
 # noinspection PyArgumentList

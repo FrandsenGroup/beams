@@ -1,15 +1,14 @@
 import os
 
-from PyQt5 import QtWidgets, QtGui, QtCore
+from PyQt5 import QtWidgets, QtCore
 
-from app.dialog_isis_download import ISISDownloadDialog
-from app.dialog_misc import AddFileDialog, PermissionsMessageDialog
-from app.dialog_musr_download import MusrDownloadDialog
-from app.dialog_psi_download import PSIDownloadDialog
-from app.gui.gui import PanelPresenter, Panel
+from app.gui.dialogs.dialog_isis_download import ISISDownloadDialog
+from app.gui.dialogs.dialog_misc import AddFileDialog, PermissionsMessageDialog
+from app.gui.dialogs.dialog_musr_download import MusrDownloadDialog
+from app.gui.dialogs.dialog_psi_download import PSIDownloadDialog
+from app.gui.gui import PanelPresenter
 from app.model import files
 from app.model.domain import RunService, FileService, FitService, FileDataset, RunDataset
-from app.tree_panel import Tree
 from app.util import widgets
 
 
