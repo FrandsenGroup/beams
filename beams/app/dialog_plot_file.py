@@ -1,8 +1,8 @@
-
 import enum
 
 from PyQt5 import QtWidgets
 
+from app.model.domain import Asymmetry, RunDataset, RunService
 from app.util import widgets
 from app.model.model import MuonDataContext, PlotContext
 from app.model import files
@@ -86,7 +86,7 @@ class PlotFileDialog(QtWidgets.QDialog):
 
     def increment_current_file(self):
         if self.c_file_list.currentIndex() < self.c_file_list.count() - 1:
-            self.c_file_list.setCurrentIndex(self.c_file_list.currentIndex()+1)
+            self.c_file_list.setCurrentIndex(self.c_file_list.currentIndex() + 1)
 
     def exec(self):
         if self.c_file_list.count() == 0:
@@ -101,20 +101,17 @@ class PlotFileDialog(QtWidgets.QDialog):
 
 
 class PlotFileDialogPresenter:
-    def __init__(self, view: PlotFileDialog, file_paths):
+    def __init__(self, view: PlotFileDialog, runs):
+        self.__run_service = RunService()
         self._view = view
-        self._files = file_paths
-        self._model = PlotFileDialogModel(self._files)
+        self._runs = runs
+        self._formats = {run.file.file_path: None for run in runs}
 
-        histogram_files = self._model.histogram_files
-        if not histogram_files:
-            self._load_runs()
-        else:
-            current_hists = files.file(histogram_files[0]).read_meta()[files.HIST_TITLES_KEY]
-            self._view.set_first_histogram(current_hists)
-            self._view.set_second_histogram(current_hists)
+        current_hists = runs[0].histograms.keys()
+        self._view.set_first_histogram(current_hists)
+        self._view.set_second_histogram(current_hists)
 
-        self._view.set_files(histogram_files)
+        self._view.set_files([run.file.file_path for run in runs])
         self._set_callbacks()
 
     def _set_callbacks(self):
@@ -125,6 +122,12 @@ class PlotFileDialogPresenter:
         self._view.b_plot.released.connect(lambda: self._plot_clicked())
         self._view.c_file_list.currentIndexChanged.connect(lambda: self._file_choice_changed())
 
+    def _is_all_formatted(self):
+        for k, v in self._formats.items():
+            if v is None:
+                return False
+        return True
+
     def _apply_clicked(self):
         current_format = self._current_format()
 
@@ -134,9 +137,9 @@ class PlotFileDialogPresenter:
             self._view.set_status_message("Cannot use the same histograms.")
             return
 
-        self._model.set_format(current_format)
+        self._formats[current_format[0]] = current_format[1:3]
 
-        if self._model.is_all_formatted():
+        if self._is_all_formatted():
             self._view.set_enabled_plot_button(True)
 
         self._view.increment_current_file()
@@ -151,11 +154,14 @@ class PlotFileDialogPresenter:
             self._view.set_status_message("Cannot use the same histograms.")
             return
 
-        for file_path in self._model.histogram_files:
-            current_format[0] = file_path
-            self._model.set_format(current_format)
+        first_histogram = current_format[1]
+        second_histogram = current_format[2]
 
-        if self._model.is_all_formatted():
+        for run in self._runs:
+            if first_histogram in run.histograms.keys() and second_histogram in run.histograms.keys():
+                self._formats[run.file.file_path] = current_format[1:3]
+
+        if self._is_all_formatted():
             self._view.set_enabled_plot_button(True)
 
         self._view.set_status_message("Applied.")
@@ -166,16 +172,21 @@ class PlotFileDialogPresenter:
     def _skip_clicked(self):
         current_file = self._view.get_file()
 
-        self._files.remove(current_file)
-        self._model.remove_file(current_file)
+        for run in self._runs:
+            if run.file.file_path == current_file:
+                self._runs.remove(run)
+
+        self._formats.pop(current_file)
         self._view.remove_current_file()
 
-        if self._model.is_all_formatted():
+        if self._is_all_formatted():
             self._view.set_enabled_plot_button(True)
 
     def _plot_clicked(self):
-        if self._model.is_all_formatted():
+        if self._is_all_formatted():
             self._load_runs()
+        else:
+            self._view.set_enabled_plot_button(False)
 
     def _file_choice_changed(self):
         current_file = self._view.get_file()
@@ -189,7 +200,14 @@ class PlotFileDialogPresenter:
 
     def _load_runs(self):
         self._view.done(PlotFileDialog.Codes.FILES_PLOTTED)
-        self._model.load_runs()
+
+        for run in self._runs:
+            format = self._formats[run.file.file_path]
+            run.asymmetries[RunDataset.FULL_ASYMMETRY] = Asymmetry(time_zero=run.meta[files.T0_KEY][format[0]],
+                                                                   bin_size=run.meta[files.BIN_SIZE_KEY],
+                                                                   histogram_one=run.histograms[format[0]],
+                                                                   histogram_two=run.histograms[format[1]])
+            self.__run_service.changed()
 
     def _current_format(self):
         current_file = self._view.get_file()
@@ -197,78 +215,4 @@ class PlotFileDialogPresenter:
         current_second_histogram = self._view.get_second_histogram()
 
         return [current_file, current_first_histogram, current_second_histogram,
-                      current_first_histogram != current_second_histogram]
-
-
-class PlotFileDialogModel:
-    def __init__(self, file_paths):
-        self._formats = {}
-        self._context = MuonDataContext()
-        self._plot_context = PlotContext()
-
-        self._files = file_paths
-        self.histogram_files = []
-        self.asymmetry_files = []
-
-        self._sort_files()
-
-        for path in self.histogram_files:
-            reader = files.file(path)
-            self._formats[path] = reader.read_meta()
-
-    def _sort_files(self):
-        for file_path in self._files:
-            file_reader = files.file(file_path)
-            if file_reader.DATA_FORMAT == files.Format.HISTOGRAM:
-                self.histogram_files.append(file_path)
-            else:
-                self.asymmetry_files.append(file_path)
-
-    def set_format(self, current_format):
-        hists = self._formats[current_format[0]][files.HIST_TITLES_KEY]
-        if current_format[1] not in hists or current_format[2] not in hists:
-            return False
-
-        self._formats[current_format[0]][files.CALC_HISTS_KEY] = current_format[1:3]
-        return True
-
-    def is_all_formatted(self):
-        for file, meta in self._formats.items():
-            try:
-                if not meta[files.CALC_HISTS_KEY]:
-                    return False
-            except KeyError:
-                return False
-        return True
-
-    def remove_file(self, file_path):
-        self._formats.pop(file_path)
-        self.histogram_files.remove(file_path)
-
-    def load_runs(self):
-        if not self.asymmetry_files and not self.histogram_files:
-            return
-
-        loaded_files = self._context.get_loaded_run_files()
-        remove_files = [file for file in loaded_files
-                        if file not in self.histogram_files and file not in self.asymmetry_files]
-        remove_ids = [self._context.get_run_by_filename(file).id for file in remove_files]
-        self._context.remove_runs_by_filename(remove_files, stop_signal=True)
-        for run_id in remove_ids:
-            self._plot_context.clear_plot_parameters(run_id, stop_signal=True)
-
-        unloaded_histogram_files = [file for file in self.histogram_files if file not in loaded_files]
-        unloaded_asymmetry_files = [file for file in self.asymmetry_files if file not in loaded_files]
-
-        for file_path in unloaded_histogram_files:
-            self._context.add_run_from_histogram_file(file_path,
-                                                      meta=self._formats[file_path], stop_signal=True)
-            self._plot_context.add_style_for_run(self._context.get_run_by_filename(file_path), True, True, True)
-
-        for file_path in unloaded_asymmetry_files:
-            self._context.add_run_from_asymmetry_file(file_path, stop_signal=True)
-            self._plot_context.add_style_for_run(self._context.get_run_by_filename(file_path), True, True, True)
-
-        self._context.send_signal()
-
-
+                current_first_histogram != current_second_histogram]
