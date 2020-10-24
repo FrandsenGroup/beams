@@ -9,6 +9,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from app import main_window
 from app.util import widgets
 from app.resources import resources
+from app.gui import mainwindow
 
 
 class BEAMS(QtWidgets.QApplication):
@@ -42,7 +43,7 @@ class BEAMS(QtWidgets.QApplication):
         Creates the main window and starts the application.
         """
 
-        self.main_program_window = main_window.MainWindow()
+        self.main_program_window = mainwindow.MainWindow()
         frame = widgets.Frame()
         vbox = QtWidgets.QVBoxLayout(frame.content_widget())
         vbox.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))
