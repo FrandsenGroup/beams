@@ -12,14 +12,6 @@ __pycache__/
 *.asy
 config.txt
 
-# Executables
-beams/app/resources/mud/PSI_LINUX
-beams/app/resources/mud/PSI_WINDOWS.exe
-beams/app/resources/mud/TRIUMF_LINUX
-beams/app/resources/mud/TRIUMF_MAC
-beams/app/resources/mud/TRIUMF_WINDOWS.exe
-
-
 # Distribution / packaging
 .idea/
 .Python
