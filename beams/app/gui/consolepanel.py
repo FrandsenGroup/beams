@@ -377,6 +377,9 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
         self._presenter = MainConsolePanelPresenter(self)
 
+    def get_checked_items(self):
+        return self.tree_view.get_file_ids()
+
 
 class MainConsolePanelPresenter(PanelPresenter):
     def __init__(self, view: MainConsolePanel):
@@ -421,9 +424,7 @@ class MainConsolePanelPresenter(PanelPresenter):
             self.__file_service.load_files(file_ids)
 
     def _convert_file_clicked(self):
-        pass
-        # fixme use file service
-        # self._model.convert_files(self._view.get_checked_items())
+        self.__file_service.convert_files(self._view.tree_view.get_file_ids())
 
     def _remove_file_clicked(self):
         checked_items = self._view.get_checked_items()
