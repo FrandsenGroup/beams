@@ -5,7 +5,7 @@ from app.gui.consolepanel import MainConsolePanel
 from app.gui.histogrampanel import HistogramPanel
 from app.gui.plottingpanel import PlottingPanel
 from app.resources import resources
-from app.tab_fit import FitTab
+from app.gui.fittingpanel import FittingPanel
 
 
 # noinspection PyArgumentList
@@ -31,7 +31,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setTabIcon(i, QtGui.QIcon(resources.HISTOGRAM_IMAGE))
             self.setIconSize(QtCore.QSize(36, 36))
 
-            self.fit_panel = FitTab()
+            self.fit_panel = FittingPanel()
             i = self.addTab(self.fit_panel, '')
             self.setTabIcon(i, QtGui.QIcon(resources.FITTING_IMAGE))
             self.setIconSize(QtCore.QSize(35, 35))
