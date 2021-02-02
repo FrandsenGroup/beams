@@ -9,8 +9,8 @@ from datetime import datetime
 import requests
 from PyQt5 import QtWidgets, QtCore
 
+from app.model.domain import FileService
 from app.util import widgets
-from app.model.model import FileContext
 from app.model import files
 
 
@@ -25,7 +25,7 @@ class PSIDownloadDialog(QtWidgets.QDialog):
         super(PSIDownloadDialog, self).__init__()
 
         self.status_bar = QtWidgets.QStatusBar()
-        self.input_area = QtWidgets.QComboBox()  # Fixme lets just put the actual options here!
+        self.input_area = QtWidgets.QComboBox()
         self.input_year = QtWidgets.QComboBox()
         self.input_runs = QtWidgets.QLineEdit()
         self.input_file = QtWidgets.QLineEdit()
@@ -209,7 +209,7 @@ class PSIDownloadDialogPresenter:
         self._search_url = 'http://musruser.psi.ch/cgi-bin/SearchDB.cgi'
         self._data_url = 'http://musruser.psi.ch/cgi-bin/SearchDB.cgi'
         self._new_files = False
-        self._context = FileContext()
+        self.__file_service = FileService()
         self._current_identifier_uris = {}
         self._counter = 0
 
@@ -350,7 +350,13 @@ class PSIDownloadDialogPresenter:
         identifiers = []
         self._current_identifier_uris = {}
         i = True
-        self._counter = response.text.split('name="Counter" value="')[1].split('"')[0]
+
+        try:
+            self._counter = response.text.split('name="Counter" value="')[1].split('"')[0]
+        except IndexError:
+            self._view.log_message("No results.\n")
+            return
+
         for x in response.text.split('<tr>'):
             y = x.split('<td>')
 
@@ -433,7 +439,7 @@ class PSIDownloadDialogPresenter:
         tar_file_object.close()
         os.remove(temporary_compressed_path)
 
-        self._context.add_files(new_files)
+        self.__file_service.add_files(new_files)
         self._new_files = True
         self._view.log_message('{} Files downloaded successfully.\n'.format(len(new_files)))
         self._view.set_status_message('Done.')

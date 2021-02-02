@@ -6,9 +6,9 @@ import sys
 from PyQt5 import QtWidgets, QtCore, QtGui
 
 # BEAMS Modules
-from app import main_window
 from app.util import widgets
 from app.resources import resources
+from app.gui import mainwindow
 
 
 class BEAMS(QtWidgets.QApplication):
@@ -23,7 +23,7 @@ class BEAMS(QtWidgets.QApplication):
         self.splash.show()
         self.processEvents()
 
-        self.setStyleSheet(main_window.StyleFile(resources.QSS_STYLE_SHEET, resources.STYLE_SHEET_VARIABLES).style)
+        self.setStyleSheet(mainwindow.StyleFile(resources.QSS_STYLE_SHEET, resources.STYLE_SHEET_VARIABLES).style)
         db = QtGui.QFontDatabase()
         db.addApplicationFont(resources.LATO_BLACK_FONT)
         db.addApplicationFont(resources.LATO_BLACK_ITALIC_FONT)
@@ -42,7 +42,7 @@ class BEAMS(QtWidgets.QApplication):
         Creates the main window and starts the application.
         """
 
-        self.main_program_window = main_window.MainWindow()
+        self.main_program_window = mainwindow.MainWindow()
         frame = widgets.Frame()
         vbox = QtWidgets.QVBoxLayout(frame.content_widget())
         vbox.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))
@@ -53,3 +53,8 @@ class BEAMS(QtWidgets.QApplication):
         self.splash.finish(frame)
 
         sys.exit(self.exec_())
+
+    def exec_(self) -> int:
+        i = super(BEAMS, self).exec_()
+        resources.write_saved_data()
+        return i

@@ -6,6 +6,7 @@ import sys
 import subprocess
 import traceback
 import enum
+import json
 
 # Installed Packages
 import pandas as pd
@@ -370,27 +371,21 @@ class ConversionError(Exception):
 
 
 def set_last_used_directory(path):
+
     if len(path) == 0:
         path = "."
 
     if os.path.exists(path) and os.path.isdir(path):
+        resources.SAVED_USER_DATA["dir"] = path
         with open(resources.CONFIGURATION_FILE, 'w+') as f:
-            f.write(path)
+            json.dump(resources.SAVED_USER_DATA, f)
 
 
 def load_last_used_directory():
-
-    try:
-        with open(resources.CONFIGURATION_FILE, 'w+') as f:
-            path = f.readline().strip()
-
-            if os.path.exists(r'{}'.format(path)) and os.path.isdir(r'{}'.format(path)):
-                return path
-            else:
-                f.truncate(0)
-                f.seek(0)
-                f.write(os.getcwd())
-    except FileNotFoundError:
+    if "dir" in resources.SAVED_USER_DATA.keys():
+        path = resources.SAVED_USER_DATA["dir"]
+        if os.path.exists(r'{}'.format(path)) and os.path.isdir(r'{}'.format(path)):
+            return path
+    else:
         set_last_used_directory(os.getcwd())
-
-    return os.getcwd()
+        return os.getcwd()

@@ -5,10 +5,10 @@ from PyQt5 import QtWidgets, QtCore
 import numpy as np
 
 from app.util import widgets
-from app.model.model import MuonDataContext
-from app.model import muon, files
-from app.dialog_plot_file import PlotFileDialog
-from app.dialog_misc import PermissionsMessageDialog
+from app.model.domain import RunService
+from app.model import files
+from app.gui.dialogs.dialog_plot_file import PlotFileDialog
+from app.gui.dialogs.dialog_misc import PermissionsMessageDialog
 
 
 # noinspection PyArgumentList
@@ -156,10 +156,12 @@ class WriteDataDialog(QtWidgets.QDialog):
         return dialog.exec()
 
 
+# fixme to remove dependency on context (all I did was switch _context to __service so far) as well as muon file (needs to use new
+#  domain objects
 class WriteDataDialogPresenter:
     def __init__(self, view: WriteDataDialog):
         self._view = view
-        self._context = MuonDataContext()
+        self.__service = RunService()
         self._files = self._view.files
         read_files = []
         unread_files = []

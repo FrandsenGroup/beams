@@ -11,7 +11,7 @@ import requests
 from PyQt5 import QtWidgets, QtCore, QtGui
 
 from app.model import files
-from app.model.model import FileContext
+from app.model.domain import FileService
 from app.util import widgets
 
 
@@ -210,7 +210,7 @@ class ISISDownloadDialogPresenter:
         self._session_id = None
         self._session_start = None
         self._new_files = False
-        self._context = FileContext()
+        self.__file_service = FileService()
 
         self._set_callbacks()
 
@@ -422,7 +422,7 @@ class ISISDownloadDialogPresenter:
 
         os.remove(temporary_compressed_path)
 
-        self._context.add_files(new_files)
+        self.__file_service.add_files(new_files)
         self._new_files = True
         self._view.log_message('{} Files downloaded successfully.\n'.format(len(new_files)))
         self._view.set_status_message('Done.')
