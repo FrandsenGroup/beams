@@ -1,4 +1,6 @@
 from pathlib import Path
+import json
+import os
 
 LOGO_IMAGE = str(Path('beams/app/resources/icons/logo_3.jpg'))
 MAXIMIZE_IMAGE = str(Path('beams/app/resources/icons/maximize_black.png'))
@@ -38,5 +40,18 @@ TRIUMF_MAC_CONVERSION = str(Path('/beams/app/resources/mud/TRIUMF_MAC'))
 TRIUMF_WINDOWS_CONVERSION = str(Path('/beams/app/resources/mud/TRIUMF_WINDOWS.exe'))
 
 CONFIGURATION_FILE = str(Path('beams/app/resources/config.txt'))
-with open(CONFIGURATION_FILE, 'w+') as f:
-    pass
+
+if not os.path.exists(CONFIGURATION_FILE):
+    with open(CONFIGURATION_FILE, 'w+') as f:
+        pass
+
+with open(CONFIGURATION_FILE, 'r') as fp:
+    try:
+        SAVED_USER_DATA = json.load(fp)
+    except Exception:
+        SAVED_USER_DATA = {}
+
+
+def write_saved_data():
+    with open(CONFIGURATION_FILE, 'w') as cf:
+        json.dump(SAVED_USER_DATA, cf)
