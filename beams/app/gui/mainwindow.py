@@ -31,7 +31,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setTabIcon(i, QtGui.QIcon(resources.HISTOGRAM_IMAGE))
             self.setIconSize(QtCore.QSize(36, 36))
 
-            i = self.addTab(FitTab(), '')
+            self.fit_panel = FitTab()
+            i = self.addTab(self.fit_panel, '')
             self.setTabIcon(i, QtGui.QIcon(resources.FITTING_IMAGE))
             self.setIconSize(QtCore.QSize(35, 35))
 
@@ -95,6 +96,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._tabs = MainWindow.MainWindowTabs()
         self._plotting_support = self._tabs.plotting_panel.createSupportPanel()
         self._histogram_support = self._tabs.histogram_panel.createSupportPanel()
+        self._fit_support = self._tabs.fit_panel.createSupportPanel()
         self._current_support = self._plotting_support
 
         self._set_default_panels()
@@ -111,6 +113,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self._current_support = self._plotting_support
         elif index == 1:
             self._current_support = self._histogram_support
+        elif index == 2:
+            self._current_support = self._fit_support
 
         self._current_support.show()
         self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self._current_support)
