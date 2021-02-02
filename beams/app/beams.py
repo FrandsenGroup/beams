@@ -53,3 +53,8 @@ class BEAMS(QtWidgets.QApplication):
         self.splash.finish(frame)
 
         sys.exit(self.exec_())
+
+    def exec_(self) -> int:
+        i = super(BEAMS, self).exec_()
+        resources.write_saved_data()
+        return i
