@@ -7,11 +7,11 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
 
-from app.dialog_misc import WarningMessageDialog
-from app.dialog_plot_file import PlotFileDialog
+from app.gui.dialogs.dialog_misc import WarningMessageDialog
+from app.gui.dialogs.dialog_plot_file import PlotFileDialog
 from app.gui.gui import Panel, PanelPresenter
 from app.model import files
-from app.model.domain import RunService, FitService, FileService, FileDataset, RunDataset, FFT
+from app.model.domain import RunService, FitService, FileService, RunDataset, FFT
 from app.util import widgets
 
 
@@ -363,7 +363,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_time.spines['top'].set_visible(False)
             self.axes_time.spines['left'].set_visible(False)
             self.axes_time.spines['bottom'].set_visible(False)
-            self.axes_time.set_xlabel("Add '.msr', '.dat' or '.asy' files and press 'Plot' to see data.",
+            self.axes_time.set_xlabel("Load '.msr', '.dat' or '.asy' files and press 'Plot' to see data.",
                                       fontsize=title_font_size)
             self.axes_time.xaxis.label.set_color("#c0c0c0")
             self.axes_time.tick_params(axis='x', colors='white')
