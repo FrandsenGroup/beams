@@ -136,6 +136,26 @@ class Asymmetry(np.ndarray):
         return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
                          time=self.time, uncertainty=self.uncertainty)
 
+    def cut(self, min_time, max_time):
+        start_index = 0
+
+        for i, n in enumerate(self.time):
+            if n >= min_time:
+                start_index = i
+                break
+
+        for i, n in enumerate(self.time):
+            if n >= max_time:
+                end_index = i
+                break
+        else:
+            end_index = len(self)
+
+        return Asymmetry(input_array=self[start_index: end_index], time_zero=self.time_zero, bin_size=self.bin_size,
+                         time=self.time[start_index: end_index], uncertainty=self.uncertainty[start_index: end_index])
+
+
+
 
 class Uncertainty(np.ndarray):
     """
@@ -234,6 +254,15 @@ class Time(np.ndarray):
         return (np.arange(binned_indices_total) * time_per_binned) + (t0 * bin_full) + (time_per_binned / 2)
 
 
+class Fit(np.ndarray):
+    """
+    Represents the calculated fit for a single run.
+    """
+
+    def __new__(cls, *args, **kwargs):
+        pass
+
+
 class FFT:
     def __init__(self, asymmetry, time):
         f_min = 0
@@ -316,6 +345,8 @@ class RunDataset:
 class FitDataset:
     def __init__(self):
         self.id = str(uuid.uuid4())
+        self.run_ids = []
+        self.fits = {}
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and other.id == self.id
@@ -404,6 +435,9 @@ class FileDAO:
     def remove_files_by_paths(self, paths):
         for path in paths:
             self.__database.files.pop(path)
+
+    def remove_files_by_id(self, fid):
+        self.__database.files.pop(fid)
 
     def clear(self):
         self.__database.files = {}
@@ -527,8 +561,9 @@ class RunService:
 
         self.__notifier.notify(RunService.RUNS_ADDED)
 
-    def remove_runs_by_ids(self):
-        self.__notifier.notify(RunService.RUNS_ADDED)
+    def remove_runs_by_ids(self, ids):
+        self.__dao.remove_runs_by_ids(ids)
+        self.__notifier.notify(RunService.RUNS_LOADED)
 
     def add_dataset(self, datasets):
         self.__dao.add_runs(datasets)
@@ -544,7 +579,7 @@ class FitService:
     __dao = FitDAO()
     __notifier = NotificationService()
 
-    def get_fits(self):
+    def get_fit_datasets(self):
         return self.__dao.get_fits()
 
     def add_dataset(self, datasets):
@@ -553,6 +588,9 @@ class FitService:
 
     def changed(self):
         self.__notifier.notify(FitService.FITS_ADDED)
+
+    def register(self, signal, observer):
+        self.__notifier.register(signal, observer)
 
 
 class FileService:
@@ -568,6 +606,19 @@ class FileService:
 
     def get_files(self):
         return self.__dao.get_files()
+
+    def convert_files(self, ids):
+        new_paths = []
+        datasets = self.__dao.get_files_by_ids(ids)
+        for dataset in datasets:
+            if dataset.file.DATA_FORMAT == files.Format.BINARY:
+                temp = os.path.splitext(dataset.file.file_path)[0]
+                outfile = temp + ".dat"
+                outfile_reader = dataset.file.convert(outfile)
+                new_paths.append(outfile_reader.file_path)
+                self.__dao.remove_files_by_id(dataset.id)
+
+        self.add_files(new_paths)
 
     def add_files(self, paths):
         for path in paths:
@@ -606,4 +657,12 @@ class FileService:
             self.__fit_service.changed()
 
     def remove_files(self, checked_items):
-        pass
+        rfiles = self.__dao.get_files_by_ids(checked_items)
+        run_ids = []
+        for rf in rfiles:
+            if rf.isLoaded:
+                run_ids.append(rf.dataset.id)
+            self.__dao.remove_files_by_id(rf.id)
+
+        self.__run_service.remove_runs_by_ids(run_ids)
+        self.__notifier.notify(self.FILES_CHANGED)
