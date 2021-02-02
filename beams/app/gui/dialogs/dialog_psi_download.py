@@ -11,7 +11,6 @@ from PyQt5 import QtWidgets, QtCore
 
 from app.model.domain import FileService
 from app.util import widgets
-from app.model.model import FileContext
 from app.model import files
 
 

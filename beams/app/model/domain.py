@@ -155,8 +155,6 @@ class Asymmetry(np.ndarray):
                          time=self.time[start_index: end_index], uncertainty=self.uncertainty[start_index: end_index])
 
 
-
-
 class Uncertainty(np.ndarray):
     """
         Represents the calculated uncertainty from taking the asymmetry of two histograms with the corresponding
