@@ -239,7 +239,7 @@ class FitEngine:
 
     @staticmethod
     def _replace_fixed(function, symbols, values):
-        for symbol, value in symbols, values:
+        for symbol, value in zip(symbols, values):
             function = function.replace(symbol, str(value))
 
         return function
