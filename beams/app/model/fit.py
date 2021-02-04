@@ -198,14 +198,16 @@ class FitEngine:
         lowers = spec.get_unfixed_lower_bounds()
         uppers = spec.get_unfixed_upper_bounds()
 
-        # fixme crashes if all variables are set to fixed git as they input arrays for guesses and bounds can't be zero length
         for run_id, asymmetry in spec.get_data().items():
             new_fit = Fit()
             final_variables = {k: FitVar(v.symbol, v.name, v.value, v.is_fixed, v.lower, v.upper, v.is_global, v.independent) for k, v in spec.variables.items()}
-            opt = least_squares(residual, guesses, bounds=[lowers, uppers],
-                                args=(asymmetry.time, asymmetry, asymmetry.uncertainty))
-            for i, symbol in enumerate(spec.get_unfixed_symbols()):
-                final_variables[symbol].value = opt.x[i]
+
+            if len(spec.get_unfixed_symbols()) != 0:
+                opt = least_squares(residual, guesses, bounds=[lowers, uppers],
+                                    args=(asymmetry.time, asymmetry, asymmetry.uncertainty))
+                for i, symbol in enumerate(spec.get_unfixed_symbols()):
+                    final_variables[symbol].value = opt.x[i]
+
             new_fit.variables = final_variables
             new_fit.expression_as_lambda = lambda_expression  # fixme this the lambda with the alpha correction if they selected that just by the by, gotta fix that.
             new_fit.expression_as_string = spec.function
