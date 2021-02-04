@@ -96,6 +96,20 @@ class FitSpec:
     def get_guesses(self):
         return [var.value for var in self.variables.values()]
 
+    def get_fixed_symbols(self):
+        symbols = []
+        for var in self.variables.values():
+            if var.is_fixed:
+                symbols.append(var.symbol)
+        return symbols
+
+    def get_fixed_guesses(self):
+        guesses = []
+        for var in self.variables.values():
+            if var.is_fixed:
+                guesses.append(var.value)
+        return guesses
+
     def get_unfixed_symbols(self):
         symbols = []
         for var in self.variables.values():
@@ -182,16 +196,13 @@ class FitEngine:
         dataset = FitDataset()
 
         if spec.options[FitOptions.ALPHA_CORRECT]:
-            function = self._replace_fixed(spec)
-            alpha_corrected_function = ALPHA_CORRECTION.format(function, function)
-
-            if spec.variables[ALPHA].is_fixed:
-                alpha_corrected_function = alpha_corrected_function.replace(ALPHA, str(spec.variables[ALPHA].value))
-
+            alpha_corrected_function = ALPHA_CORRECTION.format(spec.function, spec.function)
+            alpha_corrected_function = self._replace_fixed(alpha_corrected_function, spec.get_fixed_symbols(), spec.get_fixed_guesses())
             lambda_expression = lambdify(alpha_corrected_function, spec.get_unfixed_symbols(), INDEPENDENT_VARIABLE)
         else:
-            function = self._replace_fixed(spec)
+            function = self._replace_fixed(spec.function, spec.get_fixed_symbols(), spec.get_fixed_guesses())
             lambda_expression = lambdify(function, spec.get_unfixed_symbols(), INDEPENDENT_VARIABLE)
+
         residual = FitEngine._residual(lambda_expression)
 
         guesses = spec.get_unfixed_guesses()
@@ -227,13 +238,10 @@ class FitEngine:
         return residual
 
     @staticmethod
-    def _replace_fixed(spec):
-        function = spec.function
-        for var in spec.variables.values():
-            print(var)
-            if var.is_fixed:
-                print('replacing ', var.symbol, ' with ', var.value)
-                function = function.replace(var.symbol, str(var.value))
+    def _replace_fixed(function, symbols, values):
+        for symbol, value in symbols, values:
+            function = function.replace(symbol, str(value))
+
         return function
 
 
