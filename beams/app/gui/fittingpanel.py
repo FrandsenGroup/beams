@@ -607,6 +607,7 @@ class FittingPanel(Panel):
         self.label_global_plus.setEnabled(True)
         self.label_ordering.setEnabled(False)
         self.label_use_previous.setEnabled(False)
+        self.check_batch_fit.setEnabled(False)
 
     def _set_widget_dimensions(self):
         self.button_done.setFixedWidth(60)
@@ -714,7 +715,9 @@ class FittingPanel(Panel):
         layout = QtWidgets.QFormLayout()
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.check_batch_fit)
-        row.addWidget(QtWidgets.QLabel("Batch Fit"))
+        x = QtWidgets.QLabel("Batch Fit")
+        x.setEnabled(False)
+        row.addWidget(x)
         row.addStretch()
         row2 = QtWidgets.QHBoxLayout()
         row2.addWidget(self.label_ordering)
