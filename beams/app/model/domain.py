@@ -1,4 +1,5 @@
 import os
+import sys, traceback
 
 import numpy as np
 import uuid
@@ -59,6 +60,9 @@ class Histogram(np.ndarray):
     def background_radiation(self):
         return np.mean(self[int(self.background_start):int(self.background_end) - 1])
 
+    def combine(self, histogram):
+        pass
+
 
 class Asymmetry(np.ndarray):
     """
@@ -67,7 +71,7 @@ class Asymmetry(np.ndarray):
     """
 
     def __new__(cls, input_array=None, time_zero=None, bin_size=None, histogram_one=None, histogram_two=None,
-                uncertainty=None, time=None, **kwargs):
+                uncertainty=None, time=None, alpha=None, **kwargs):
         if (input_array is None or time_zero is None or bin_size is None or uncertainty is None or time is None) \
                 and (histogram_one is None or histogram_two is None):
             raise ValueError("Not enough constructor parameters satisfied")
@@ -100,6 +104,7 @@ class Asymmetry(np.ndarray):
         self.time = time
         self.bin_size = float(bin_size)
         self.time_zero = float(time_zero)
+        self.alpha = alpha if alpha is not None else 1
 
         return self
 
@@ -127,14 +132,32 @@ class Asymmetry(np.ndarray):
 
     def bin(self, packing):
         return Asymmetry(input_array=self._bin_asymmetry(packing), time_zero=self.time_zero, bin_size=packing,
-                         time=self.time.bin(packing), uncertainty=self.uncertainty.bin(packing))
+                         time=self.time.bin(packing), uncertainty=self.uncertainty.bin(packing), alpha=self.alpha)
 
-    def correct(self, alpha, beta=None):
-        beta = 1 if beta is None else beta
-        input_array = ((alpha - 1) + (alpha + 1) * self) / \
-                      ((alpha * beta + 1) + (alpha * beta - 1) * 2)
+    def correct(self, alpha):
+        print('correct')
+        # print(self)
+
+        input_array = ((alpha - 1) + ((alpha + 1) * self)) / \
+                      ((alpha + 1) + ((alpha - 1) * self))
+        # print(input_array)
+
         return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
-                         time=self.time, uncertainty=self.uncertainty)
+                         time=self.time, uncertainty=self.uncertainty, alpha=alpha)
+
+    def raw(self):
+        print('raw')
+        # traceback.print_stack()
+        # print(self)
+        if self.alpha == 1:
+            return self
+
+        input_array = ((1 - self.alpha) + (1 + self.alpha) * self) / \
+                      ((1 + self.alpha) + (1 - self.alpha) * self)
+        # print(input_array)
+
+        return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
+                         time=self.time, uncertainty=self.uncertainty, alpha=1)
 
     def cut(self, min_time, max_time):
         start_index = 0
@@ -152,7 +175,8 @@ class Asymmetry(np.ndarray):
             end_index = len(self)
 
         return Asymmetry(input_array=self[start_index: end_index], time_zero=self.time_zero, bin_size=self.bin_size,
-                         time=self.time[start_index: end_index], uncertainty=self.uncertainty[start_index: end_index])
+                         time=self.time[start_index: end_index], uncertainty=self.uncertainty[start_index: end_index],
+                         alpha=self.alpha)
 
 
 class Uncertainty(np.ndarray):
@@ -220,18 +244,19 @@ class Time(np.ndarray):
         numpy array.
         """
 
-    def __new__(cls, input_array=None, bin_size=None, length=None, time_zero=None, run_id=None, **kwargs):
-        if (input_array is None) and (bin_size is None or length is None or time_zero is None):
+    def __new__(cls, input_array=None, bin_size=None, length=None, time_zero=None, run_id=None, time_zero_exact=None, **kwargs):
+        if (input_array is None) and (bin_size is None or length is None or (time_zero is None and time_zero_exact is None)):
             raise ValueError("No parameters for time constructor may be None")
-
-        if input_array is None:
+        if input_array is None and time_zero_exact is not None:
+            input_array = (np.arange(length) * float(bin_size) / 1000) + time_zero_exact
+        elif input_array is None:
             input_array = (np.arange(length) * float(bin_size) / 1000) + \
                           (time_zero * float(bin_size) / 1000)
 
         self = np.asarray(input_array).view(cls)
         self.bin_size = float(bin_size)
         self.length = float(length)
-        self.time_zero = float(time_zero)
+        self.time_zero = 0 if time_zero is None else float(time_zero)
         self.id = run_id
 
         return self
@@ -252,15 +277,7 @@ class Time(np.ndarray):
         return (np.arange(binned_indices_total) * time_per_binned) + (t0 * bin_full) + (time_per_binned / 2)
 
 
-class Fit(np.ndarray):
-    """
-    Represents the calculated fit for a single run.
-    """
-
-    def __new__(cls, *args, **kwargs):
-        pass
-
-
+# min, max
 class FFT:
     def __init__(self, asymmetry, time):
         f_min = 0
@@ -386,6 +403,10 @@ class RunDAO:
     def remove_runs_by_ids(self, ids):
         for rid in ids:
             self.__database.runs.pop(rid)
+
+    def update_runs_by_id(self, ids, runs):
+        for rid, run in zip(ids, runs):
+            self.__database.runs[rid] = run
 
     def clear(self):
         self.__database.runs = {}
@@ -566,6 +587,25 @@ class RunService:
     def add_dataset(self, datasets):
         self.__dao.add_runs(datasets)
         self.__notifier.notify(RunService.RUNS_ADDED)
+
+    def update_runs_by_ids(self, ids, asymmetries):
+        self.__dao.update_runs_by_id(ids, asymmetries)
+        self.__notifier.notify(RunService.RUNS_CHANGED)
+
+    def update_alphas(self, ids, alphas):
+        for rid, alpha in zip(ids, alphas):
+            run = self.__dao.get_runs_by_ids([rid])[0]
+
+            if run.asymmetries[RunDataset.FULL_ASYMMETRY].alpha != 1:
+                run.asymmetries[RunDataset.FULL_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].raw()
+
+            run.asymmetries[RunDataset.FULL_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].correct(alpha)
+
+            if run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY] is not None:
+                run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY].bin_size)
+                run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
+
+        self.__notifier.notify(RunService.RUNS_CHANGED)
 
     def changed(self):
         self.__notifier.notify(RunService.RUNS_ADDED)

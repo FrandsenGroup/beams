@@ -429,7 +429,7 @@ class FittingPanel(Panel):
             if slider_is_most_accurate:
                 self.input_bin.setText(str(self.slider_bin.value()))
             else:
-                self.slider_bin.setValue(int(self.input_bin.text()))
+                self.slider_bin.setValue(int(float(self.input_bin.text())))
 
         def get_max_time(self):
             return float(self.input_time_xmax.text())
@@ -582,7 +582,14 @@ class FittingPanel(Panel):
         self._line_edit_style = self.input_fit_equation.styleSheet()
 
     def _set_widget_attributes(self):
-        self.table_parameters.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        # self.table_parameters.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.table_parameters.setColumnCount(6)
+        self.table_parameters.setHorizontalHeaderLabels(['Name', 'Value', '<', '>', 'Fixed', 'Global'])
+        self.table_parameters.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+        self.table_parameters.horizontalHeader().setSectionResizeMode(self.__NAME_COLUMN, QtWidgets.QHeaderView.Stretch)
+        self.table_parameters.horizontalHeader().setSectionResizeMode(self.__VALUE_COLUMN, QtWidgets.QHeaderView.Stretch)
+        self.table_parameters.horizontalHeader().setSectionResizeMode(self.__LOWER_COLUMN, QtWidgets.QHeaderView.Stretch)
+        self.table_parameters.horizontalHeader().setSectionResizeMode(self.__UPPER_COLUMN, QtWidgets.QHeaderView.Stretch)
 
         self.option_preset_fit_equations.addItems(list(fit.EQUATION_DICTIONARY.keys()))
         self.option_user_fit_equations.addItems(list(fit.USER_EQUATION_DICTIONARY.keys()))
@@ -593,21 +600,11 @@ class FittingPanel(Panel):
         self.input_user_equation.setPlaceholderText("Function (e.g. \"\u03B2 * (t + \u03BB)\")")
         self.input_fit_equation.setPlaceholderText("Fit Equation")
 
-        self.table_parameters.setColumnCount(6)
-        header = self.table_parameters.horizontalHeader()
-        header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
-        header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
-        header.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
-        header.setSectionResizeMode(3, QtWidgets.QHeaderView.Stretch)
-        header.setSectionResizeMode(4, QtWidgets.QHeaderView.Stretch)
-        header.setSectionResizeMode(5, QtWidgets.QHeaderView.Stretch)
-        self.table_parameters.setHorizontalHeaderLabels(['Name', 'Value', '<', '>', 'Fixed', 'Global'])
-
         self.check_fit_alpha.setCheckState(QtCore.Qt.Checked)
         self.check_use_previous.setEnabled(False)
-        self.check_global_plus.setEnabled(False)
+        self.check_global_plus.setEnabled(True)
         self.option_run_ordering.setEnabled(False)
-        self.label_global_plus.setEnabled(False)
+        self.label_global_plus.setEnabled(True)
         self.label_ordering.setEnabled(False)
         self.label_use_previous.setEnabled(False)
 
@@ -634,10 +631,10 @@ class FittingPanel(Panel):
         self.fit_display.setMinimumWidth(800)
         self.fit_spectrum_settings.setMinimumWidth(720)
 
-        self.table_parameters.setFixedWidth(300)
-        self.run_list.setFixedWidth(300)
+        self.table_parameters.setFixedWidth(320)
+        self.run_list.setFixedWidth(320)
         self.group_spectrum_options.setFixedWidth(120)
-        self.group_batch_options.setFixedWidth(300)
+        self.group_batch_options.setFixedWidth(320)
         # self.group_batch_options.setMaximumHeight(110)
         self.group_save_results.setMaximumHeight(110)
         # self.group_save_results.setMinimumWidth(720)
@@ -849,7 +846,10 @@ class FittingPanel(Panel):
                 return None
 
             variable_name = self.table_parameters.verticalHeaderItem(i).text()
-            variable_guess = float(variable_guess.text())
+            try:
+                variable_guess = float(variable_guess.text())
+            except ValueError:
+                return None
 
             values[variable_name] = variable_guess
 
@@ -895,7 +895,10 @@ class FittingPanel(Panel):
 
             variable_guess = variable_guess.text()
 
-            variable_guess = -np.inf if variable_guess == '' else float(variable_guess)
+            try:
+                variable_guess = -np.inf if variable_guess == '' else float(variable_guess)
+            except ValueError:
+                return None
 
             values[variable_name] = variable_guess
 
@@ -913,7 +916,10 @@ class FittingPanel(Panel):
 
             variable_guess = variable_guess.text()
 
-            variable_guess = np.inf if variable_guess == '' else float(variable_guess)
+            try:
+                variable_guess = np.inf if variable_guess == '' else float(variable_guess)
+            except ValueError:
+                return None
 
             values[variable_name] = variable_guess
 
@@ -1065,8 +1071,21 @@ class FittingPanel(Panel):
 #  small amount of data which the user can then go back and for through.
 #  Also, have fit datasets be the top level node and fits be sub nodes. This will
 #  allow an easy way to save specific fits.
+
 # fixme error when the asymmetry is not plotted before fitting, we need to make a
-#  custom widget to send out that signal that a plot is selected.
+#  custom widget to send out that signal that a plot is selected and automatically populate the display. Ugh.
+
+# fixme put everything in group boxes on this page, it might look better
+
+# fixme, make sure display is updating only when necessary. Cause it definitely ain't right now.
+
+# fixme, need to redo populating, in conjunction with above.
+
+# fixme, all asymmetry displays should show corrected, but raw asymmetries need to be passed in to fits. Should we
+#  show the raw asymmetry though in the fit panel? Or should we show in corrected to whatever alpha parameter is in
+#  the table?
+
+# fixme, need to create some kind of loading popup or something when it is fitting.
 
 
 class FitTabPresenter(PanelPresenter):
@@ -1187,9 +1206,9 @@ class FitTabPresenter(PanelPresenter):
             if run.meta[files.TITLE_KEY] not in titles:
                 continue
 
-            asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(bin_size)
-            asymmetry = asymmetry.cut(min_time=min_time, max_time=max_time)
-            self._asymmetries[run.meta[files.TITLE_KEY]] = asymmetry
+            asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(bin_size).cut(min_time=min_time, max_time=max_time)
+            raw_asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time, max_time=max_time)
+            self._asymmetries[run.meta[files.TITLE_KEY]] = raw_asymmetry
             time = asymmetry.time
             uncertainty = asymmetry.uncertainty
 
@@ -1257,6 +1276,7 @@ class FitTabPresenter(PanelPresenter):
         self.__expression = expression
         if values is None:
             self.__variable_groups = []
+            return
 
         self.__variable_groups = [values]
         self._update_display()
@@ -1276,12 +1296,14 @@ class FitTabPresenter(PanelPresenter):
             return None, None
 
     def _fit(self):
+        self.__update_if_table_changes = False
         spec = fit.FitSpec()
 
         # Check user input on fit equation and update spec
         expression = self._view.input_fit_equation.text()
         if not fit.is_valid_expression("A(t) = " + expression):
             self._view.highlight_input_red(self._view.input_fit_equation, True)
+            self.__update_if_table_changes = True
             return
         else:
             self._view.highlight_input_red(self._view.input_fit_equation, False)
@@ -1297,10 +1319,12 @@ class FitTabPresenter(PanelPresenter):
             globs = self._view.get_check_global()
         except ValueError:
             self._view.highlight_input_red(self._view.table_parameters, True)
+            self.__update_if_table_changes = True
             return
 
         if guesses is None:
             self._view.highlight_input_red(self._view.table_parameters, True)
+            self.__update_if_table_changes = True
             return
         else:
             self._view.highlight_input_red(self._view.table_parameters, False)
@@ -1316,6 +1340,7 @@ class FitTabPresenter(PanelPresenter):
         titles = self._view.get_selected_run_titles()
         if len(titles) == 0:
             self._view.highlight_input_red(self._view.run_list, True)
+            self.__update_if_table_changes = True
             return
         else:
             self._view.highlight_input_red(self._view.run_list, False)
@@ -1325,15 +1350,16 @@ class FitTabPresenter(PanelPresenter):
                 if run.meta[files.TITLE_KEY] == title:
                     spec.asymmetries[run.id] = self._asymmetries[title]
 
-        # Check user input on fit options and update spec
-        if self._view.check_fit_alpha.isChecked():
-            spec.options[fit.FitOptions.ALPHA_CORRECT] = True
+        spec.options[fit.FitOptions.ALPHA_CORRECT] = self._view.check_fit_alpha.isChecked()
+        spec.options[fit.FitOptions.GLOBAL] = self._view.check_global_plus.isChecked()
 
         # Fit to spec
         engine = fit.FitEngine()
         dataset = engine.fit(spec)
         self._fit_service.add_dataset([dataset])
+        self._update_alphas(dataset)
         self._update_fit_changes(dataset)
+        self.__update_if_table_changes = True
 
     def _new_empty_fit(self):
         self.__expression = None
@@ -1399,18 +1425,34 @@ class FitTabPresenter(PanelPresenter):
         self.__update_if_table_changes = True
 
     def _update_fit_changes(self, dataset):
+        self.__update_if_table_changes = False
         self._view.select_first_fit_from_dataset(dataset.id)
+        self.__update_if_table_changes = False
         self._view.select_top_child_run(dataset.id)
+        self.__update_if_table_changes = False
 
         titles = self._view.get_selected_run_titles()
         for f in dataset.fits.values():
             if f.title in titles:
                 for symbol, variable in f.variables.items():
-                    self._view.set_variable_value(symbol, value=variable.value, name=variable.name,
+                    self.__update_if_table_changes = False
+                    self._view.set_variable_value(symbol, value='{:.4f}'.format(variable.value), name=variable.name,
                                                   is_fixed=variable.is_fixed, lower=variable.lower, upper=variable.upper,
                                                   is_global=variable.is_global)
-
+                    self.__update_if_table_changes = False
+        self.__update_if_table_changes = True
         self._update_display()
+
+    def _update_alphas(self, dataset):
+        ids = []
+        alphas = []
+        for f in dataset.fits.values():
+            if fit.ALPHA in f.variables.keys():
+                ids.append(f.run_id)
+                alphas.append(f.variables[fit.ALPHA].value)
+
+        if len(ids) > 0:
+            self._run_service.update_alphas(ids, alphas)
 
     def update(self):
         runs = []

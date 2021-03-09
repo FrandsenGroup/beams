@@ -148,6 +148,8 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.errorbar_color_options = QtWidgets.QComboBox()
             self.errorbar_width_options = QtWidgets.QComboBox()
 
+            self.alpha_input = QtWidgets.QLineEdit()
+
             self._set_widget_dimensions()
             self._set_widget_attributes()
             self._set_widget_layout()
@@ -170,6 +172,8 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.errorbar_color_options.addItems(PlotModel.color_options_extra_values.keys())
             self.errorbar_width_options.addItems(PlotModel.errorbar_width_values.keys())
 
+            self.alpha_input.setText("1.0")
+
         def _set_widget_layout(self):
             layout = QtWidgets.QGridLayout()
             layout.addWidget(QtWidgets.QLabel("Default Color"), 0, 0)
@@ -186,16 +190,18 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             layout.addWidget(self.marker_size_options, 6, 1)
             layout.addWidget(QtWidgets.QLabel("Fillstyle"), 7, 0)
             layout.addWidget(self.fillstyle_options, 7, 1)
-            layout.addWidget(QtWidgets.QLabel("Errorbar Style"), 8, 0)
-            layout.addWidget(self.errorbar_style_options, 8, 1)
-            layout.addWidget(QtWidgets.QLabel("Errorbar Color"), 9, 0)
-            layout.addWidget(self.errorbar_color_options, 9, 1)
-            layout.addWidget(QtWidgets.QLabel("Errorbar Width"), 10, 0)
-            layout.addWidget(self.errorbar_width_options, 10, 1)
-            layout.addWidget(QtWidgets.QLabel("Fit Line Color"), 11, 0)
-            layout.addWidget(self.fit_color_options, 11, 1)
-            layout.addWidget(QtWidgets.QLabel("Fit Linestyle"), 12, 0)
-            layout.addWidget(self.fit_linestyle_options, 12, 1)
+            # layout.addWidget(QtWidgets.QLabel("Errorbar Style"), 8, 0)
+            # layout.addWidget(self.errorbar_style_options, 8, 1)
+            layout.addWidget(QtWidgets.QLabel("Errorbar Color"), 8, 0)
+            layout.addWidget(self.errorbar_color_options, 8, 1)
+            layout.addWidget(QtWidgets.QLabel("Errorbar Width"), 9, 0)
+            layout.addWidget(self.errorbar_width_options, 9, 1)
+            layout.addWidget(QtWidgets.QLabel("Fit Line Color"), 10, 0)
+            layout.addWidget(self.fit_color_options, 10, 1)
+            layout.addWidget(QtWidgets.QLabel("Fit Linestyle"), 11, 0)
+            layout.addWidget(self.fit_linestyle_options, 11, 1)
+            layout.addWidget(QtWidgets.QLabel("Alpha"), 12, 0)
+            layout.addWidget(self.alpha_input, 12, 1)
 
             form_layout = QtWidgets.QFormLayout()
             form_layout.addItem(layout)
@@ -229,6 +235,9 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             else:
                 if not remove:
                     box.addItem("*")
+
+        def set_alpha(self, alpha):
+            self.alpha_input.setText(alpha)
 
         def set_default_color(self, color):
             if color == "*":
@@ -783,6 +792,7 @@ class PlottingPanelPresenter(PanelPresenter):
         self._plot_model = PlotModel()
         self.__run_service = RunService()
         self.__run_service.register(RunService.RUNS_ADDED, self)
+        self.__run_service.register(RunService.RUNS_CHANGED, self)
         self.__populating_settings = False
         self._set_callbacks()
 
@@ -959,6 +969,7 @@ class PlottingPanelPresenter(PanelPresenter):
         ids = self._view.support_panel.item_tree.get_run_ids()
         runs = self.__run_service.get_runs_by_ids(ids)
         display.start_plotting()
+
         if len(runs) == 0:
             display.set_full_blank()
             return
@@ -973,14 +984,17 @@ class PlottingPanelPresenter(PanelPresenter):
         bin_size = settings.get_bin_from_input()
 
         for run in runs:
+            if run.asymmetries[RunDataset.FULL_ASYMMETRY] is None:
+                continue
+
             if side == 'left':
                 asymmetry = run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY]
-                if asymmetry is None or asymmetry.bin_size != bin_size:
+                if asymmetry is None or asymmetry.bin_size != bin_size or True:
                     asymmetry = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(bin_size)
                     run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY] = asymmetry
             else:
                 asymmetry = run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY]
-                if asymmetry is None or asymmetry.bin_size != bin_size:
+                if asymmetry is None or asymmetry.bin_size != bin_size or True:
                     asymmetry = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(bin_size)
                     run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY] = asymmetry
 
@@ -1035,6 +1049,9 @@ class PlottingPanelPresenter(PanelPresenter):
         for run in run_datasets:
             self._plot_model.add_style_for_run(run, False, True)
 
+        self._plot_parameter_changed(self._view.left_settings, self._view.left_display, 'left')
+        self._plot_parameter_changed(self._view.right_settings, self._view.right_display, 'right')
+
     def get_fft_data(self, time, asymmetry, xmin, xmax, bin_size):
         num_bins = self.get_num_bins(xmin, xmax, bin_size)
         start_bin = self.get_start_bin(xmin, bin_size)
@@ -1074,6 +1091,7 @@ class PlottingPanelPresenter(PanelPresenter):
     def _populate_with_single_selected(self, styles):
         style = styles[0]
 
+        # self._view.support_panel.set_alpha
         self._view.support_panel.set_errorbar_color(PlotModel.color_options_extra[style[PlotModel.Keys.ERRORBAR_COLOR]])
         self._view.support_panel.set_default_color(PlotModel.color_options[style[PlotModel.Keys.DEFAULT_COLOR]])
         self._view.support_panel.set_fit_color(PlotModel.color_options_extra[style[PlotModel.Keys.FIT_COLOR]])

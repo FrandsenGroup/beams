@@ -3,7 +3,7 @@ import sympy as sp
 from scipy.optimize import least_squares
 
 import enum
-import uuid
+from collections import OrderedDict
 import time
 
 from app.resources import resources
@@ -72,7 +72,7 @@ class FitVar:
         self.independent = independent
 
     def __repr__(self):
-        return "FitVar(symbol={}, name={}, value={}, step={}, lower={}, upper={}, global={}, independent={})".format(
+        return "FitVar(symbol={}, name={}, value={}, fixed={}, lower={}, upper={}, global={}, independent={})".format(
             self.symbol, self.name, self.value, self.is_fixed, self.lower, self.upper, self.is_global, self.independent
         )
 
@@ -82,7 +82,9 @@ class FitSpec:
         self.function = ''
         self.variables = dict()
         self.asymmetries = dict()
-        self.options = {FitOptions.GLOBAL: False, FitOptions.LEAST_SQUARES: True, FitOptions.ALPHA_CORRECT: False}
+        self.options = {FitOptions.GLOBAL: False,
+                        FitOptions.LEAST_SQUARES: True,
+                        FitOptions.ALPHA_CORRECT: False}
 
     def get_lower_bounds(self):
         return [var.lower for var in self.variables.values()]
@@ -138,8 +140,104 @@ class FitSpec:
                 guesses.append(var.value)
         return guesses
 
+    def get_non_global_symbols(self):
+        symbols = []
+        for var in self.variables.values():
+            if not var.is_global:
+                symbols.append(var.symbol)
+
+        return symbols
+
+    def get_global_symbols(self):
+        symbols = []
+        for var in self.variables.values():
+            if var.is_global and not var.is_fixed:
+                symbols.append(var.symbol)
+
+        return symbols
+
+    def get_global_fit_variable_set(self):
+        symbols = set()
+        for var in self.get_non_global_symbols():
+            if self.variables[var].is_fixed:
+                continue
+
+            symbols.update([var + _shortened_run_id(run_id) for run_id, _ in self.asymmetries.items()])
+
+        symbols.update(self.get_global_symbols())
+
+        return symbols
+
+    def get_global_fit_symbols(self):
+        symbols = []
+        for symbol, variable in self.variables.items():
+            if variable.is_fixed:
+                continue
+
+            if not variable.is_global:
+                for run_id, _ in self.asymmetries.items():
+                    symbols.append(symbol + _shortened_run_id(run_id))
+            else:
+                symbols.append(symbol)
+
+        return symbols
+
+    def get_global_fit_guesses(self):
+        guesses = []
+        for _, variable in self.variables.items():
+            if variable.is_fixed:
+                continue
+
+            if not variable.is_global:
+                for run_id, _ in self.asymmetries.items():
+                    guesses.append(variable.value)
+            else:
+                guesses.append(variable.value)
+
+        return guesses
+
+    def get_global_fit_lowers(self):
+        lowers = []
+        for _, variable in self.variables.items():
+            if variable.is_fixed:
+                continue
+
+            if not variable.is_global:
+                for run_id, _ in self.asymmetries.items():
+                    lowers.append(variable.lower)
+            else:
+                lowers.append(variable.lower)
+
+        return lowers
+
+    def get_global_fit_uppers(self):
+        uppers = []
+        for _, variable in self.variables.items():
+            if variable.is_fixed:
+                continue
+
+            if not variable.is_global:
+                for run_id, _ in self.asymmetries.items():
+                    uppers.append(variable.upper)
+            else:
+                uppers.append(variable.upper)
+
+        return uppers
+
     def get_data(self):
         return self.asymmetries
+
+    def get_data_length(self):
+        return len(list(self.asymmetries.values())[0])
+
+    def get_num_datasets(self):
+        return len(self.asymmetries)
+
+    def get_bin_size(self):
+        return list(self.asymmetries.values())[0].bin_size
+
+    def get_time_zero(self):
+        return list(self.asymmetries.values())[0].time[0]
 
 
 class FitDataset:
@@ -185,30 +283,82 @@ class FitEngine:
         self.__run_service = domain.RunService()
 
     def fit(self, spec: FitSpec) -> FitDataset:
+        if len(set([len(asymmetry) for asymmetry in spec.get_data()])) != 1:
+            raise ValueError("Must have one or more datasets all of equal length to fit")
+
+        if spec.function == '':
+            raise ValueError("Empty function attribute")
 
         if spec.options[FitOptions.GLOBAL]:
-            pass
+            if spec.options[FitOptions.LEAST_SQUARES]:
+                return self._least_squares_fit_global(spec)
         else:
             if spec.options[FitOptions.LEAST_SQUARES]:
                 return self._least_squares_fit_non_global(spec)
 
-    def _least_squares_fit_non_global(self, spec):
+    def _least_squares_fit_global(self, spec):
+        guesses = spec.get_global_fit_guesses()
+        lowers = spec.get_global_fit_lowers()
+        uppers = spec.get_global_fit_uppers()
+
+        concatenated_asymmetry = np.array([])
+        concatenated_uncertainty = np.array([])
+        concatenated_time = np.array([])
+        for _, asymmetry in spec.get_data().items():
+            concatenated_asymmetry = np.concatenate((concatenated_asymmetry, asymmetry))
+            concatenated_uncertainty = np.concatenate((concatenated_uncertainty, asymmetry.uncertainty))
+            concatenated_time = np.concatenate((concatenated_time, asymmetry.time))
+
+        global_lambda_expression = FitEngine._lambdify_global(spec, concatenated_time)
+        residual = FitEngine._residual(global_lambda_expression)
+
         dataset = FitDataset()
 
+        opt = least_squares(residual, guesses, bounds=[lowers, uppers], args=(concatenated_time, concatenated_asymmetry, concatenated_uncertainty))
+
+        values = {}
+        for i, symbol in enumerate(spec.get_global_fit_symbols()):
+            values[symbol] = opt.x[i]
+
+        for run_id, _ in spec.get_data().items():
+            new_fit = Fit()
+            final_variables = {k: FitVar(v.symbol, v.name, v.value,
+                                         v.is_fixed, v.lower, v.upper,
+                                         v.is_global, v.independent) for k, v in spec.variables.items()}
+
+            for symbol, var in final_variables.items():
+                if not var.is_global:
+                    final_variables[symbol].value = values[symbol + _shortened_run_id(run_id)]
+                else:
+                    final_variables[symbol].value = values[symbol]
+
+            new_fit.variables = final_variables
+            new_fit.expression_as_lambda = lambdify(spec.function, list(final_variables.keys()), INDEPENDENT_VARIABLE)
+            new_fit.expression_as_string = spec.function
+            new_fit.run_id = run_id
+            new_fit.title = self.__run_service.get_runs_by_ids([run_id])[0].meta['Title']
+            dataset.fits[run_id] = new_fit
+
+        dataset.options = spec.options.copy()
+        dataset.function = spec.function
+
+        return dataset
+
+    def _least_squares_fit_non_global(self, spec) -> FitDataset:
         if spec.options[FitOptions.ALPHA_CORRECT]:
             alpha_corrected_function = ALPHA_CORRECTION.format(spec.function, spec.function)
-            alpha_corrected_function = self._replace_fixed(alpha_corrected_function, spec.get_fixed_symbols(), spec.get_fixed_guesses())
-            lambda_expression = lambdify(alpha_corrected_function, spec.get_unfixed_symbols(), INDEPENDENT_VARIABLE)
+            function = FitEngine._replace_fixed(alpha_corrected_function, spec.get_fixed_symbols(), spec.get_fixed_guesses())
         else:
-            function = self._replace_fixed(spec.function, spec.get_fixed_symbols(), spec.get_fixed_guesses())
-            lambda_expression = lambdify(function, spec.get_unfixed_symbols(), INDEPENDENT_VARIABLE)
+            function = FitEngine._replace_fixed(spec.function, spec.get_fixed_symbols(), spec.get_fixed_guesses())
 
+        lambda_expression = lambdify(function, spec.get_unfixed_symbols(), INDEPENDENT_VARIABLE)
         residual = FitEngine._residual(lambda_expression)
 
         guesses = spec.get_unfixed_guesses()
         lowers = spec.get_unfixed_lower_bounds()
         uppers = spec.get_unfixed_upper_bounds()
 
+        dataset = FitDataset()
         for run_id, asymmetry in spec.get_data().items():
             new_fit = Fit()
             final_variables = {k: FitVar(v.symbol, v.name, v.value, v.is_fixed, v.lower, v.upper, v.is_global, v.independent) for k, v in spec.variables.items()}
@@ -219,8 +369,11 @@ class FitEngine:
                 for i, symbol in enumerate(spec.get_unfixed_symbols()):
                     final_variables[symbol].value = opt.x[i]
 
+            lambda_expression_without_alpha = lambdify(FitEngine._replace_fixed(spec.function, spec.get_fixed_symbols(), spec.get_fixed_guesses()),
+                                                       list(spec.get_unfixed_symbols()), INDEPENDENT_VARIABLE)
+
             new_fit.variables = final_variables
-            new_fit.expression_as_lambda = lambda_expression  # fixme this the lambda with the alpha correction if they selected that just by the by, gotta fix that.
+            new_fit.expression_as_lambda = lambda_expression_without_alpha
             new_fit.expression_as_string = spec.function
             new_fit.run_id = run_id
             new_fit.title = self.__run_service.get_runs_by_ids([run_id])[0].meta['Title']
@@ -228,7 +381,42 @@ class FitEngine:
 
         dataset.options = spec.options.copy()
         dataset.function = spec.function
+
         return dataset
+
+    @staticmethod
+    def _lambdify_global(spec: FitSpec, concatenated_time):
+        if spec.options[FitOptions.ALPHA_CORRECT]:
+            alpha_corrected_function = ALPHA_CORRECTION.format(spec.function, spec.function)
+            function = FitEngine._replace_fixed(alpha_corrected_function, spec.get_fixed_symbols(), spec.get_fixed_guesses())
+        else:
+            function = FitEngine._replace_fixed(spec.function, spec.get_fixed_symbols(), spec.get_fixed_guesses())
+
+        print('Initial Function : ', function)
+        lambdas = OrderedDict()
+        run_id_order = []
+        for i, (run_id, asymmetry) in enumerate(spec.get_data().items()):
+            new_function = function
+            for var in spec.get_non_global_symbols():
+                new_function = FitEngine._replace_var_with(new_function, var, var + _shortened_run_id(run_id))
+
+            print('For run (' + run_id + ') we have function : ', new_function)
+            new_lambda_expression = lambdify(new_function, spec.get_global_fit_symbols(), INDEPENDENT_VARIABLE)
+            lambdas[run_id] = new_lambda_expression
+            run_id_order.append(run_id)
+
+            print('\tThis function will apply until time : ', concatenated_time[((i + 1) * spec.get_data_length()) - 1])
+
+        def _lambda_expression(arr, *pars, **kwargs):
+            values = []
+            length = len(arr)
+            section_length = length / len(lambdas)
+            for i_x, x in enumerate(arr):
+                n = i_x // section_length
+                values.append(lambdas[run_id_order[int(n)]](x, *pars, **kwargs))
+            return values
+
+        return _lambda_expression
 
     @staticmethod
     def _residual(lambda_expression):
@@ -238,11 +426,16 @@ class FitEngine:
         return residual
 
     @staticmethod
+    # fixme bug when smaller variable names (like 'd') occur in other variables.
     def _replace_fixed(function, symbols, values):
         for symbol, value in zip(symbols, values):
             function = function.replace(symbol, str(value))
-
         return function
+
+    @staticmethod
+    # fixme bug when smaller variable names (like 'd') occur in other variables.
+    def _replace_var_with(function, old_symbol, new_symbol):
+        return function.replace(old_symbol, new_symbol)
 
 
 def get_std_unc(result, data, error=None, num_constraints=0):
@@ -409,10 +602,40 @@ def lambdify(expression, variables, independent_variable):
     return lambda_expression
 
 
+def _shortened_run_id(run_id):
+    return run_id.split('-')[0]
+
+
+# tspec = FitSpec()
+# tfunction = 't + az - bz - dz + cz'
+# tvara = FitVar('az', 'a', 1, False, 0, 4, True, False)
+# tvarb = FitVar('bz', 'b', 1, False, 0, 4, False, False)
+# tvarc = FitVar('cz', 'c', 1, True, 0, 4, True, False)
+# tvard = FitVar('dz', 'd', 1, False, 0, 4, False, False)
+# tdata1 = [1, 2, 3, 4, 5]
+# tdata2 = [2, 3, 4, 5, 6]
+# tdataid1 = 'data1'
+# tdataid2 = 'data2'
+# tspec.function = tfunction
+# tspec.variables = {'az': tvara, 'bz': tvarb, 'cz': tvarc, 'dz': tvard}
+# tspec.asymmetries = {tdataid1: tdata1, tdataid2: tdata2}
+# # tspec.options[FitOptions.ALPHA_CORRECT] = True
+# ttime = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+#
+# # print(tspec.get_data())
+# # for i, j in enumerate(tspec.get_data().items()):
+# #     print(i, j)
+#
+# print(tspec.get_global_fit_symbols())
+# texpr = FitEngine._lambdify_global(tspec, ttime)
+# print(texpr(4, az=2, bzdata1=3, bzdata2=4, dzdata1=5, dzdata2=6), texpr(11, az=2, bzdata1=3, bzdata2=4, dzdata1=5, dzdata2=6))
+
+
 # test_expression = 't + c - b'
-# test_variables = {'c', 'b'}
+# test_variables = {'c', 'b', 'd'}
 # test_independent = 't'
 # test_lambda = lambdify(test_expression, test_variables, test_independent)
+# print(test_lambda(1, d=3, b=7, c=11))
 # # print(np.array([4.2, 3, 2, 1]).dtype)
 # # print(test_lambda(np.array([4.2,3,2,1]), **{'c': 4, 'b': 1}))
 #
