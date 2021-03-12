@@ -573,6 +573,9 @@ class FittingPanel(Panel):
         self.group_batch_options = QtWidgets.QGroupBox("Options")
         self.group_spectrum_options = QtWidgets.QGroupBox("Spectrum")
         self.group_save_results = QtWidgets.QGroupBox("Save")
+        self.group_table_parameters = QtWidgets.QGroupBox("Parameters")
+        self.group_table_runs = QtWidgets.QGroupBox("Runs")
+        self.group_function = QtWidgets.QGroupBox("Function")
 
         self._set_widget_layout()
         self._set_widget_attributes()
@@ -632,8 +635,8 @@ class FittingPanel(Panel):
         self.fit_display.setMinimumWidth(800)
         self.fit_spectrum_settings.setMinimumWidth(720)
 
-        self.table_parameters.setFixedWidth(320)
-        self.run_list.setFixedWidth(320)
+        self.group_table_parameters.setFixedWidth(320)
+        self.group_table_runs.setFixedWidth(320)
         self.group_spectrum_options.setFixedWidth(120)
         self.group_batch_options.setFixedWidth(320)
         # self.group_batch_options.setMaximumHeight(110)
@@ -682,8 +685,6 @@ class FittingPanel(Panel):
         # full_row.addStretch()
         main_layout.addLayout(grid)
 
-        main_layout.addSpacing(10)
-
         row = QtWidgets.QHBoxLayout()
         row.addSpacing(20)
         row.addWidget(QtWidgets.QLabel("A(t) = "))
@@ -691,6 +692,9 @@ class FittingPanel(Panel):
         row.addWidget(self.input_fit_equation)
         # row.addWidget(self.button_check_equation)
         row.addSpacing(20)
+        self.group_function.setLayout(row)
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(self.group_function)
         main_layout.addLayout(row)
 
         row = QtWidgets.QHBoxLayout()
@@ -744,8 +748,15 @@ class FittingPanel(Panel):
         self.group_batch_options.setLayout(layout)
 
         left_side = QtWidgets.QVBoxLayout()
-        left_side.addWidget(self.table_parameters)
-        left_side.addWidget(self.run_list)
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(self.table_parameters)
+        self.group_table_parameters.setLayout(row)
+        left_side.addWidget(self.group_table_parameters)
+
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(self.run_list)
+        self.group_table_runs.setLayout(row)
+        left_side.addWidget(self.group_table_runs)
         left_side.addWidget(self.group_batch_options)
 
         layout = QtWidgets.QFormLayout()
