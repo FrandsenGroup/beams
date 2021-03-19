@@ -72,6 +72,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
             self.__file_service = FileService()
             self.__run_service.register(RunService.RUNS_ADDED, self)
             self.__file_service.register(FileService.FILES_CHANGED, self)
+            self.__fit_service.register(FitService.FITS_ADDED, self)
 
         def _create_tree_model(self, file_datasets):
             file_nodes = []
