@@ -338,7 +338,6 @@ class Fit:
                 self.kwargs[var.symbol] = var.value
 
     def __call__(self, *args, **kwargs):
-        print(args, kwargs)
         if len(args) < 1 or not isinstance(args[0], np.ndarray):
             raise ValueError("Only takes numpy array of values as an input.")
         return self.expression_as_lambda(args[0], **self.kwargs)
@@ -360,7 +359,6 @@ class Fit:
         asymmetry = asymmetry.bin(self.bin_size).cut(self.x_min, self.x_max)
         calculated_asymmetry = self(asymmetry.time)
 
-        print(np.c_[asymmetry.time, asymmetry, calculated_asymmetry, asymmetry.uncertainty])
         np.savetxt(out_file, np.c_[asymmetry.time, asymmetry, calculated_asymmetry, asymmetry.uncertainty],
                    fmt='%2.9f, %2.4f, %2.4f, %2.4f', header="BEAMS\n" + meta_string + "\nTime, Asymmetry, Calculated, Uncertainty")
 
