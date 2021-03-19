@@ -15,7 +15,7 @@ from app.gui.dialogs.dialog_misc import PermissionsMessageDialog, WarningMessage
 class WriteDataDialog(QtWidgets.QDialog):
     def __init__(self, *args, **kwargs):
         super(WriteDataDialog, self).__init__()
-        self.setWindowTitle('Specify options for writing data')
+        self.setWindowTitle('Write Data')
 
         self.status_bar = QtWidgets.QStatusBar()
         self.file_list = QtWidgets.QComboBox()
@@ -152,18 +152,14 @@ class WriteDataDialog(QtWidgets.QDialog):
 
     @staticmethod
     def launch(*args, **kwargs):
-        print(args)
         dialog = WriteDataDialog(*args, **kwargs)
         return dialog.exec()
 
 
-# fixme to remove dependency on context (all I did was switch _context to __service so far) as well as muon file (needs to use new
-#  domain objects
 class WriteDataDialogPresenter:
     def __init__(self, view: WriteDataDialog):
         self._view = view
         self.__service = FileService()
-        print(self._view.files)
         self.__files = self.__service.get_files(self._view.files)
 
         # fixme, we will want to allow for fits but for now we will just do runs
@@ -282,14 +278,7 @@ class WriteDataDialogPresenter:
                 save_path = os.path.splitext(file_path)[0] + '.asy'
 
         bin_size = float(self._view.get_bin_size())
-        meta_string = files.TITLE_KEY + ":" + str(run.meta[files.TITLE_KEY]) + "," \
-                      + files.BIN_SIZE_KEY + ":" + str(bin_size) + "," \
-                      + files.TEMPERATURE_KEY + ":" + str(run.meta[files.TEMPERATURE_KEY]) + "," \
-                      + files.FIELD_KEY + ":" + str(run.meta[files.FIELD_KEY]) + "," \
-                      + files.T0_KEY + ":" + str(run.meta[files.T0_KEY]) + "\n"
-        asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(bin_size)
-        np.savetxt(save_path, np.c_[asymmetry.time, asymmetry, asymmetry.uncertainty],
-                   fmt='%2.9f, %2.4f, %2.4f', header="BEAMS\n" + meta_string + "Time, Asymmetry, Uncertainty")
+        run.write(save_path, bin_size)
 
     def _write_full(self, file_path):
         run = None
@@ -308,14 +297,7 @@ class WriteDataDialogPresenter:
             else:
                 save_path = os.path.splitext(file_path)[0] + '.asy'
 
-        meta_string = files.TITLE_KEY + ":" + str(run.meta[files.TITLE_KEY]) + "," \
-                      + files.BIN_SIZE_KEY + ":" + str(run.meta[files.BIN_SIZE_KEY]) + "," \
-                      + files.TEMPERATURE_KEY + ":" + str(run.meta[files.TEMPERATURE_KEY]) + "," \
-                      + files.FIELD_KEY + ":" + str(run.meta[files.FIELD_KEY]) + "," \
-                      + files.T0_KEY + ":" + str(run.meta[files.T0_KEY]) + "\n"
-        asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY]
-        np.savetxt(save_path, np.c_[asymmetry.time, asymmetry, asymmetry.uncertainty],
-                   fmt='%2.9f, %2.4f, %2.4f', header="BEAMS\n" + meta_string + "Time, Asymmetry, Uncertainty")
+        run.write(save_path)
 
     def _write_fft(self, run):
         pass

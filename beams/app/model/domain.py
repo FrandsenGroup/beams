@@ -4,7 +4,7 @@ import sys, traceback
 import numpy as np
 import uuid
 
-from app.model import files
+from app.model import files, fit
 from app.model.files import File
 
 
@@ -356,15 +356,20 @@ class RunDataset:
     def __eq__(self, other):
         return isinstance(other, self.__class__) and other.id == self.id
 
+    def write(self, out_file, bin_size=None):
+        meta_string = files.TITLE_KEY + ":" + str(self.meta[files.TITLE_KEY]) + "," \
+                      + files.BIN_SIZE_KEY + ":" + str(bin_size) + "," \
+                      + files.TEMPERATURE_KEY + ":" + str(self.meta[files.TEMPERATURE_KEY]) + "," \
+                      + files.FIELD_KEY + ":" + str(self.meta[files.FIELD_KEY]) + "," \
+                      + files.T0_KEY + ":" + str(self.meta[files.T0_KEY])
 
-class FitDataset:
-    def __init__(self):
-        self.id = str(uuid.uuid4())
-        self.run_ids = []
-        self.fits = {}
+        if bin_size:
+            asymmetry = self.asymmetries[RunDataset.FULL_ASYMMETRY].bin(bin_size)
+        else:
+            asymmetry = self.asymmetries[RunDataset.FULL_ASYMMETRY]
 
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and other.id == self.id
+        np.savetxt(out_file, np.c_[asymmetry.time, asymmetry, asymmetry.uncertainty],
+                   fmt='%2.9f, %2.4f, %2.4f', header="BEAMS\n" + meta_string + "\nTime, Asymmetry, Uncertainty")
 
 
 class FileDataset:
@@ -499,7 +504,7 @@ class DataBuilder:
             f = files.file(f)
 
         # fixme add conditional for fits
-        if d is None or (not isinstance(d, RunDataset) and not isinstance(d, FitDataset)):
+        if d is None or (not isinstance(d, RunDataset) and not isinstance(d, fit.FitDataset)):
             if f.DATA_FORMAT == files.Format.HISTOGRAM or \
                     f.DATA_FORMAT == files.Format.ASYMMETRY:
                 d = RunDataset()
