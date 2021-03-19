@@ -5,9 +5,10 @@ from scipy.optimize import least_squares
 import enum
 from collections import OrderedDict
 import time
+import uuid
 
 from app.resources import resources
-from app.model import domain
+from app.model import domain, files
 
 INDEPENDENT_VARIABLE = "t"
 
@@ -58,6 +59,8 @@ class FitOptions(enum.IntEnum):
     GLOBAL = 0
     LEAST_SQUARES = 1
     ALPHA_CORRECT = 2
+    SAVE_1 = 3
+    SAVE_2 = 4
 
 
 class FitVar:
@@ -75,6 +78,9 @@ class FitVar:
         return "FitVar(symbol={}, name={}, value={}, fixed={}, lower={}, upper={}, global={}, independent={})".format(
             self.symbol, self.name, self.value, self.is_fixed, self.lower, self.upper, self.is_global, self.independent
         )
+
+    def __str__(self):
+        return "{}\t{:.4f}\t{}\t{}".format(self.name, self.value, self.lower, self.upper)
 
 
 class FitSpec:
@@ -243,12 +249,62 @@ class FitSpec:
 class FitDataset:
     def __init__(self):
         t = time.localtime()
-        current_time = time.strftime("%d.%m.%Y at %H.%M.%S", t)
+        current_time = time.strftime("%d-%m-%Y-%H-%M-%S", t)
 
         self.id = str(current_time)
         self.fits = {}
         self.options = {}
         self.function = None
+
+    def write(self, out_file, save_format=None):
+        if save_format is None or save_format == FitOptions.SAVE_1:
+            fit_parameters_string = "# Fit Parameters\n\n# \tName\tValue\tLower\tUpper\n\n"
+            if self.options[FitOptions.GLOBAL]:
+                fit_parameters_string += "# Common parameters for all runs\n\n"
+
+                f = list(self.fits.values())[0]
+                for name, v in f.variables.items():
+                    if v.is_global:
+                        fit_parameters_string += "\t" + str(v) + "\n"
+
+                fit_parameters_string += "\n"
+
+            for f in self.fits.values():
+                run = domain.RunService.get_runs_by_ids([f.run_id])[0]
+                fit_parameters_string += "# Specific parameters for run {}\n\n".format(run.meta["RunNumber"])
+
+                for name, v in f.variables.items():
+                    if not v.is_global:
+                        fit_parameters_string += "\t" + str(v) + "\n"
+
+                fit_parameters_string += "\n"
+
+            with open(out_file, 'w', encoding="utf-8") as f:
+                f.write("#BEAMS\n"
+                        + fit_parameters_string
+                        + "# Expression\n\n\t"
+                        + "A(t) = " + self.function)
+
+        elif save_format == FitOptions.SAVE_2:
+            full_string = ""
+
+            f = list(self.fits.values())[0]
+
+            for name, v in f.variables.items():
+                full_string += "{}\t".format(name)
+
+            full_string += "RUN\n"
+
+            for f in self.fits.values():
+                for name, v in f.variables.items():
+                    full_string += "{:.4f}\t".format(v.value)
+                run = domain.RunService.get_runs_by_ids([f.run_id])[0]
+                full_string += run.meta["RunNumber"] + "\n"
+
+            print(full_string)
+            with open(out_file, 'w', encoding="utf-8") as f:
+                f.write("#BEAMS\n"
+                        + full_string)
 
 
 class Fit:
@@ -276,6 +332,9 @@ class Fit:
         if len(args) < 1 or type(args[0]) != np.ndarray:
             raise ValueError("Only takes numpy array of values as an input.")
         return self.expression_as_lambda(args[0], **self.kwargs)
+
+    def write(self, out_file):
+        pass
 
 
 class FitEngine:
