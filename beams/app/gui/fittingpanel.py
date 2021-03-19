@@ -1159,7 +1159,11 @@ class FitTabPresenter(PanelPresenter):
         selected_data = self._view.support_panel.tree.get_selected_data()
         if selected_data is None:
             return
-        selected_data.write("out_file_x.txt", fit.FitOptions.SAVE_2)
+
+        if isinstance(selected_data, fit.FitDataset):
+            selected_data.write("out_file_x.txt", fit.FitOptions.SAVE_2)
+        else:
+            selected_data.write("out_file_x.txt")
 
     def _function_input_changed(self):
         print('_function_input_changed', self.__update_if_table_changes)
