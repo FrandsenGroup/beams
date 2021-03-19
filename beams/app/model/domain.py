@@ -555,18 +555,22 @@ class RunService:
     __dao = RunDAO()
     __notifier = NotificationService()
 
-    def register(self, signal, observer):
-        self.__notifier.register(signal, observer)
+    @staticmethod
+    def register(signal, observer):
+        RunService.__notifier.register(signal, observer)
 
-    def get_runs(self):
-        return self.__dao.get_runs()
+    @staticmethod
+    def get_runs():
+        return RunService.__dao.get_runs()
 
-    def get_runs_by_ids(self, ids):
-        return self.__dao.get_runs_by_ids(ids)
+    @staticmethod
+    def get_runs_by_ids(ids):
+        return RunService.__dao.get_runs_by_ids(ids)
 
-    def get_loaded_runs(self):
+    @staticmethod
+    def get_loaded_runs():
         loaded_runs = []
-        for run in self.__dao.get_runs():
+        for run in RunService.__dao.get_runs():
             if run.isLoaded:
                 loaded_runs.append(run)
         return loaded_runs
@@ -577,29 +581,34 @@ class RunService:
     def combine_histograms(self, ids, titles):
         pass
 
-    def add_runs(self, paths):
+    @staticmethod
+    def add_runs(paths):
         builder = DataBuilder()
         for path in paths:
             run = builder.build_minimal(path)
-            self.__dao.add_runs([run])
+            RunService.__dao.add_runs([run])
 
-        self.__notifier.notify(RunService.RUNS_ADDED)
+        RunService.__notifier.notify(RunService.RUNS_ADDED)
 
-    def remove_runs_by_ids(self, ids):
-        self.__dao.remove_runs_by_ids(ids)
-        self.__notifier.notify(RunService.RUNS_LOADED)
+    @staticmethod
+    def remove_runs_by_ids(ids):
+        RunService.__dao.remove_runs_by_ids(ids)
+        RunService.__notifier.notify(RunService.RUNS_LOADED)
 
-    def add_dataset(self, datasets):
-        self.__dao.add_runs(datasets)
-        self.__notifier.notify(RunService.RUNS_ADDED)
+    @staticmethod
+    def add_dataset(datasets):
+        RunService.__dao.add_runs(datasets)
+        RunService.__notifier.notify(RunService.RUNS_ADDED)
 
-    def update_runs_by_ids(self, ids, asymmetries):
-        self.__dao.update_runs_by_id(ids, asymmetries)
-        self.__notifier.notify(RunService.RUNS_CHANGED)
+    @staticmethod
+    def update_runs_by_ids(ids, asymmetries):
+        RunService.__dao.update_runs_by_id(ids, asymmetries)
+        RunService.__notifier.notify(RunService.RUNS_CHANGED)
 
-    def update_alphas(self, ids, alphas):
+    @staticmethod
+    def update_alphas(ids, alphas):
         for rid, alpha in zip(ids, alphas):
-            run = self.__dao.get_runs_by_ids([rid])[0]
+            run = RunService.__dao.get_runs_by_ids([rid])[0]
 
             if run.asymmetries[RunDataset.FULL_ASYMMETRY].alpha != 1:
                 run.asymmetries[RunDataset.FULL_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].raw()
@@ -610,10 +619,11 @@ class RunService:
                 run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY].bin_size)
                 run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
 
-        self.__notifier.notify(RunService.RUNS_CHANGED)
+        RunService.__notifier.notify(RunService.RUNS_CHANGED)
 
-    def changed(self):
-        self.__notifier.notify(RunService.RUNS_ADDED)
+    @staticmethod
+    def changed():
+        RunService.__notifier.notify(RunService.RUNS_ADDED)
 
 
 class FitService:
