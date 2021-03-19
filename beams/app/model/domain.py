@@ -642,8 +642,11 @@ class FileService:
     def register(self, signal, observer):
         self.__notifier.register(signal, observer)
 
-    def get_files(self):
-        return self.__dao.get_files()
+    def get_files(self, ids=None):
+        if ids is not None:
+            return self.__dao.get_files_by_ids(ids)
+        else:
+            return self.__dao.get_files()
 
     def convert_files(self, ids):
         new_paths = []
@@ -704,3 +707,4 @@ class FileService:
 
         self.__run_service.remove_runs_by_ids(run_ids)
         self.__notifier.notify(self.FILES_CHANGED)
+
