@@ -242,6 +242,12 @@ class FitSpec:
     def get_bin_size(self):
         return list(self.asymmetries.values())[0].bin_size
 
+    def get_min_time(self):
+        return list(self.asymmetries.values())[0].time[0]
+
+    def get_max_time(self):
+        return list(self.asymmetries.values())[0].time[-1]
+
     def get_time_zero(self):
         return list(self.asymmetries.values())[0].time[0]
 
@@ -313,6 +319,9 @@ class Fit:
         self.kwargs = dict()
         self.expression_as_string = None
         self.expression_as_lambda = None
+        self.bin_size = None
+        self.x_min = None
+        self.x_max = None
         self.title = None
         self.run_id = None
 
@@ -329,12 +338,31 @@ class Fit:
                 self.kwargs[var.symbol] = var.value
 
     def __call__(self, *args, **kwargs):
-        if len(args) < 1 or type(args[0]) != np.ndarray:
+        print(args, kwargs)
+        if len(args) < 1 or not isinstance(args[0], np.ndarray):
             raise ValueError("Only takes numpy array of values as an input.")
         return self.expression_as_lambda(args[0], **self.kwargs)
 
     def write(self, out_file):
-        pass
+        run = domain.RunService.get_runs_by_ids([self.run_id])[0]
+        meta_string = files.TITLE_KEY + ":" + str(run.meta[files.TITLE_KEY]) + "," \
+                      + files.BIN_SIZE_KEY + ":" + str(self.bin_size) + "," \
+                      + files.TEMPERATURE_KEY + ":" + str(run.meta[files.TEMPERATURE_KEY]) + "," \
+                      + files.FIELD_KEY + ":" + str(run.meta[files.FIELD_KEY]) + "," \
+                      + files.T0_KEY + ":" + str(run.meta[files.T0_KEY])
+
+        asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].raw()
+
+        for v in self.__variables.values():
+            if v.symbol == ALPHA:
+                asymmetry = asymmetry.correct(v.value)
+
+        asymmetry = asymmetry.bin(self.bin_size).cut(self.x_min, self.x_max)
+        calculated_asymmetry = self(asymmetry.time)
+
+        print(np.c_[asymmetry.time, asymmetry, calculated_asymmetry, asymmetry.uncertainty])
+        np.savetxt(out_file, np.c_[asymmetry.time, asymmetry, calculated_asymmetry, asymmetry.uncertainty],
+                   fmt='%2.9f, %2.4f, %2.4f, %2.4f', header="BEAMS\n" + meta_string + "\nTime, Asymmetry, Calculated, Uncertainty")
 
 
 class FitEngine:
@@ -396,6 +424,9 @@ class FitEngine:
             new_fit.expression_as_string = spec.function
             new_fit.run_id = run_id
             new_fit.title = self.__run_service.get_runs_by_ids([run_id])[0].meta['Title']
+            new_fit.bin_size = spec.get_bin_size()
+            new_fit.x_min = spec.get_min_time()
+            new_fit.x_max = spec.get_max_time()
             dataset.fits[run_id] = new_fit
 
         dataset.options = spec.options.copy()
@@ -436,6 +467,9 @@ class FitEngine:
             new_fit.expression_as_string = spec.function
             new_fit.run_id = run_id
             new_fit.title = self.__run_service.get_runs_by_ids([run_id])[0].meta['Title']
+            new_fit.bin_size = spec.get_bin_size()
+            new_fit.x_min = spec.get_min_time()
+            new_fit.x_max = spec.get_max_time()
             dataset.fits[run_id] = new_fit
 
         dataset.options = spec.options.copy()
