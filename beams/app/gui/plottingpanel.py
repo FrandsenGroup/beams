@@ -352,6 +352,10 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             ('Save', 'Save the figure', 'filesave', 'save_figure'),
         )
 
+    class PlotLegend:
+        def __init__(self):
+            pass
+
     class PlotDisplay(FigureCanvas):
         def __init__(self, settings):
             self._draw_pending = True
@@ -412,7 +416,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_freq.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
             self.axes_freq.set_facecolor("#ffffff")
             if not remove_legend:
-                self.axes_freq.legend(loc='upper right')
+                self.axes_freq.legend(bbox_to_anchor=(1.04,1), loc="upper left")
 
             self.figure.tight_layout()
 
@@ -960,9 +964,9 @@ class PlottingPanelPresenter(PanelPresenter):
         threading.Thread(target=self._update_canvas(settings, display, side, fast=moving), daemon=True).start()
 
     def _check_parameter_changed(self, settings):
-        settings.set_enabled_asymmetry_auto(not self._view.is_asymmetry_auto())
-        settings.set_enabled_frequency_auto(not self._view.is_freq_auto())
-        settings.set_enabled_fft_auto(not self._view.is_fft_auto())
+        settings.set_enabled_asymmetry_auto(not settings.is_asymmetry_auto())
+        settings.set_enabled_frequency_auto(not settings.is_freq_auto())
+        settings.set_enabled_fft_auto(not settings.is_fft_auto())
 
     def _verify_asymmetries_are_calculated(self, runs):
         runs_without_asymmetries = []
