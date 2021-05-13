@@ -904,7 +904,11 @@ class PlottingPanelPresenter(PanelPresenter):
         self._view.support_panel.item_tree.set_all_checked(True)
         ids = self._view.support_panel.item_tree.get_run_ids()
         runs = self.__run_service.get_runs_by_ids(ids)
-        self._verify_asymmetries_are_calculated(runs)
+        verified = self._verify_asymmetries_are_calculated(runs)
+
+        if not verified:
+            return
+
         threading.Thread(
             target=self._update_canvas(self._view.left_settings, self._view.left_display, 'left', fast=False),
             daemon=True).start()
@@ -916,7 +920,11 @@ class PlottingPanelPresenter(PanelPresenter):
         # get checked and plot
         ids = self._view.support_panel.item_tree.get_run_ids()
         runs = self.__run_service.get_runs_by_ids(ids)
-        self._verify_asymmetries_are_calculated(runs)
+        verified = self._verify_asymmetries_are_calculated(runs)
+
+        if not verified:
+            return
+
         threading.Thread(
             target=self._update_canvas(self._view.left_settings, self._view.left_display, 'left', fast=False),
             daemon=True).start()
@@ -963,7 +971,11 @@ class PlottingPanelPresenter(PanelPresenter):
                 runs_without_asymmetries.append(run)
 
         if len(runs_without_asymmetries) > 0:
-            PlotFileDialog.launch([runs_without_asymmetries])
+            code = PlotFileDialog.launch([runs_without_asymmetries])
+            if code == PlotFileDialog.Codes.NO_FILES_PLOTTED:
+                return False
+
+        return True
 
     def _update_canvas(self, settings, display, side, fast=False):
         ids = self._view.support_panel.item_tree.get_run_ids()

@@ -6,6 +6,7 @@ from app.gui.histogrampanel import HistogramPanel
 from app.gui.plottingpanel import PlottingPanel
 from app.resources import resources
 from app.gui.fittingpanel import FittingPanel
+from app.util.widgets import QtWaitingSpinner
 
 
 # noinspection PyArgumentList
@@ -14,6 +15,7 @@ class MainWindow(QtWidgets.QMainWindow):
     MainWindow widget for the program. Creates the default arrangement of panels.
     """
     LEFT_PANEL_MAX = 280  # pixels
+    SPINNER = None
 
     class MainWindowTabs(QtWidgets.QTabWidget):
         def __init__(self):
@@ -36,13 +38,13 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setTabIcon(i, QtGui.QIcon(resources.FITTING_IMAGE))
             self.setIconSize(QtCore.QSize(35, 35))
 
-            i = self.addTab(QtWidgets.QLabel('Useless tab.. Kinda sad'), '')
-            self.setTabIcon(i, QtGui.QIcon(resources.DOWNLOAD_IMAGE))
-            self.setIconSize(QtCore.QSize(35, 35))
-
-            i = self.addTab(QtWidgets.QLabel('No help for you.'), '')
-            self.setTabIcon(i, QtGui.QIcon(resources.QUESTION_IMAGE))
-            self.setIconSize(QtCore.QSize(35, 35))
+            # i = self.addTab(QtWidgets.QLabel('Useless tab.. Kinda sad'), '')
+            # self.setTabIcon(i, QtGui.QIcon(resources.DOWNLOAD_IMAGE))
+            # self.setIconSize(QtCore.QSize(35, 35))
+            #
+            # i = self.addTab(QtWidgets.QLabel('No help for you.'), '')
+            # self.setTabIcon(i, QtGui.QIcon(resources.QUESTION_IMAGE))
+            # self.setIconSize(QtCore.QSize(35, 35))
 
             self.currentChanged.connect(self._selection_changed)
 

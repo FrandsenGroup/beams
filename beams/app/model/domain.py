@@ -4,7 +4,7 @@ import sys, traceback
 import numpy as np
 import uuid
 
-from app.model import files
+from app.model import files, fit
 from app.model.files import File
 
 
@@ -356,15 +356,20 @@ class RunDataset:
     def __eq__(self, other):
         return isinstance(other, self.__class__) and other.id == self.id
 
+    def write(self, out_file, bin_size=None):
+        meta_string = files.TITLE_KEY + ":" + str(self.meta[files.TITLE_KEY]) + "," \
+                      + files.BIN_SIZE_KEY + ":" + str(bin_size) + "," \
+                      + files.TEMPERATURE_KEY + ":" + str(self.meta[files.TEMPERATURE_KEY]) + "," \
+                      + files.FIELD_KEY + ":" + str(self.meta[files.FIELD_KEY]) + "," \
+                      + files.T0_KEY + ":" + str(self.meta[files.T0_KEY])
 
-class FitDataset:
-    def __init__(self):
-        self.id = str(uuid.uuid4())
-        self.run_ids = []
-        self.fits = {}
+        if bin_size:
+            asymmetry = self.asymmetries[RunDataset.FULL_ASYMMETRY].bin(bin_size)
+        else:
+            asymmetry = self.asymmetries[RunDataset.FULL_ASYMMETRY]
 
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and other.id == self.id
+        np.savetxt(out_file, np.c_[asymmetry.time, asymmetry, asymmetry.uncertainty],
+                   fmt='%2.9f, %2.4f, %2.4f', header="BEAMS\n" + meta_string + "\nTime, Asymmetry, Uncertainty")
 
 
 class FileDataset:
@@ -499,7 +504,7 @@ class DataBuilder:
             f = files.file(f)
 
         # fixme add conditional for fits
-        if d is None or (not isinstance(d, RunDataset) and not isinstance(d, FitDataset)):
+        if d is None or (not isinstance(d, RunDataset) and not isinstance(d, fit.FitDataset)):
             if f.DATA_FORMAT == files.Format.HISTOGRAM or \
                     f.DATA_FORMAT == files.Format.ASYMMETRY:
                 d = RunDataset()
@@ -550,18 +555,22 @@ class RunService:
     __dao = RunDAO()
     __notifier = NotificationService()
 
-    def register(self, signal, observer):
-        self.__notifier.register(signal, observer)
+    @staticmethod
+    def register(signal, observer):
+        RunService.__notifier.register(signal, observer)
 
-    def get_runs(self):
-        return self.__dao.get_runs()
+    @staticmethod
+    def get_runs():
+        return RunService.__dao.get_runs()
 
-    def get_runs_by_ids(self, ids):
-        return self.__dao.get_runs_by_ids(ids)
+    @staticmethod
+    def get_runs_by_ids(ids):
+        return RunService.__dao.get_runs_by_ids(ids)
 
-    def get_loaded_runs(self):
+    @staticmethod
+    def get_loaded_runs():
         loaded_runs = []
-        for run in self.__dao.get_runs():
+        for run in RunService.__dao.get_runs():
             if run.isLoaded:
                 loaded_runs.append(run)
         return loaded_runs
@@ -572,29 +581,34 @@ class RunService:
     def combine_histograms(self, ids, titles):
         pass
 
-    def add_runs(self, paths):
+    @staticmethod
+    def add_runs(paths):
         builder = DataBuilder()
         for path in paths:
             run = builder.build_minimal(path)
-            self.__dao.add_runs([run])
+            RunService.__dao.add_runs([run])
 
-        self.__notifier.notify(RunService.RUNS_ADDED)
+        RunService.__notifier.notify(RunService.RUNS_ADDED)
 
-    def remove_runs_by_ids(self, ids):
-        self.__dao.remove_runs_by_ids(ids)
-        self.__notifier.notify(RunService.RUNS_LOADED)
+    @staticmethod
+    def remove_runs_by_ids(ids):
+        RunService.__dao.remove_runs_by_ids(ids)
+        RunService.__notifier.notify(RunService.RUNS_LOADED)
 
-    def add_dataset(self, datasets):
-        self.__dao.add_runs(datasets)
-        self.__notifier.notify(RunService.RUNS_ADDED)
+    @staticmethod
+    def add_dataset(datasets):
+        RunService.__dao.add_runs(datasets)
+        RunService.__notifier.notify(RunService.RUNS_ADDED)
 
-    def update_runs_by_ids(self, ids, asymmetries):
-        self.__dao.update_runs_by_id(ids, asymmetries)
-        self.__notifier.notify(RunService.RUNS_CHANGED)
+    @staticmethod
+    def update_runs_by_ids(ids, asymmetries):
+        RunService.__dao.update_runs_by_id(ids, asymmetries)
+        RunService.__notifier.notify(RunService.RUNS_CHANGED)
 
-    def update_alphas(self, ids, alphas):
+    @staticmethod
+    def update_alphas(ids, alphas):
         for rid, alpha in zip(ids, alphas):
-            run = self.__dao.get_runs_by_ids([rid])[0]
+            run = RunService.__dao.get_runs_by_ids([rid])[0]
 
             if run.asymmetries[RunDataset.FULL_ASYMMETRY].alpha != 1:
                 run.asymmetries[RunDataset.FULL_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].raw()
@@ -605,10 +619,11 @@ class RunService:
                 run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY].bin_size)
                 run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
 
-        self.__notifier.notify(RunService.RUNS_CHANGED)
+        RunService.__notifier.notify(RunService.RUNS_CHANGED)
 
-    def changed(self):
-        self.__notifier.notify(RunService.RUNS_ADDED)
+    @staticmethod
+    def changed():
+        RunService.__notifier.notify(RunService.RUNS_ADDED)
 
 
 class FitService:
@@ -642,8 +657,11 @@ class FileService:
     def register(self, signal, observer):
         self.__notifier.register(signal, observer)
 
-    def get_files(self):
-        return self.__dao.get_files()
+    def get_files(self, ids=None):
+        if ids is not None:
+            return self.__dao.get_files_by_ids(ids)
+        else:
+            return self.__dao.get_files()
 
     def convert_files(self, ids):
         new_paths = []
@@ -704,3 +722,4 @@ class FileService:
 
         self.__run_service.remove_runs_by_ids(run_ids)
         self.__notifier.notify(self.FILES_CHANGED)
+

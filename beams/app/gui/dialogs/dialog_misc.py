@@ -216,3 +216,34 @@ class FileDisplayDialog(QtWidgets.QDialog):
     def launch(args):
         dialog = FileDisplayDialog(args)
         return dialog.exec()
+
+
+# noinspection PyArgumentList
+class ProgressBarDialog(QtWidgets.QProgressDialog):
+    class Codes(enum.IntEnum):
+        FINISHED = 0
+        INTERRUPTED = 1
+
+    def __init__(self, *args, **kwargs):
+        super(ProgressBarDialog, self).__init__(*args, **kwargs)
+        self.setModal(True)
+
+    @staticmethod
+    def launch(*args, **kwargs):
+        dialog = ProgressBarDialog(*args, **kwargs)
+        return dialog.exec()
+
+    def update(self, value):
+        self.setValue(value)
+
+        if value == 100:
+            self.done(self.Codes.FINISHED)
+
+    def interrupt(self):
+        self.done(self.Codes.INTERRUPTED)
+
+    def cancel(self):
+        self.done(self.Codes.INTERRUPTED)
+
+
+

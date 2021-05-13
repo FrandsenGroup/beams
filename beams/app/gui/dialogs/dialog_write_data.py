@@ -5,17 +5,17 @@ from PyQt5 import QtWidgets, QtCore
 import numpy as np
 
 from app.util import widgets
-from app.model.domain import RunService
-from app.model import files
+from app.model.domain import FileService
+from app.model import files, domain
 from app.gui.dialogs.dialog_plot_file import PlotFileDialog
-from app.gui.dialogs.dialog_misc import PermissionsMessageDialog
+from app.gui.dialogs.dialog_misc import PermissionsMessageDialog, WarningMessageDialog
 
 
 # noinspection PyArgumentList
 class WriteDataDialog(QtWidgets.QDialog):
-    def __init__(self, args):
+    def __init__(self, *args, **kwargs):
         super(WriteDataDialog, self).__init__()
-        self.setWindowTitle('Specify options for writing data')
+        self.setWindowTitle('Write Data')
 
         self.status_bar = QtWidgets.QStatusBar()
         self.file_list = QtWidgets.QComboBox()
@@ -40,7 +40,7 @@ class WriteDataDialog(QtWidgets.QDialog):
         self._set_widget_dimensions()
         self._set_widget_layout()
 
-        self.files = args[0]
+        self.files = args
         self._presenter = WriteDataDialogPresenter(self)
         self.set_status_message('Ready.')
 
@@ -151,35 +151,33 @@ class WriteDataDialog(QtWidgets.QDialog):
         self.setLayout(col_one)
 
     @staticmethod
-    def launch(args=None):
-        dialog = WriteDataDialog(args)
+    def launch(*args, **kwargs):
+        dialog = WriteDataDialog(*args, **kwargs)
         return dialog.exec()
 
 
-# fixme to remove dependency on context (all I did was switch _context to __service so far) as well as muon file (needs to use new
-#  domain objects
 class WriteDataDialogPresenter:
     def __init__(self, view: WriteDataDialog):
         self._view = view
-        self.__service = RunService()
-        self._files = self._view.files
-        read_files = []
-        unread_files = []
-        for file_path in self._files:
-            run = self._context.get_run_by_filename(file_path)
-            if run:
-                read_files.append(file_path)
-            else:
-                unread_files.append(file_path)
+        self.__service = FileService()
+        self.__files = self.__service.get_files(self._view.files)
 
-        if unread_files:
-            code = PermissionsMessageDialog.launch(["Some files have not yet been loaded. Load them now?"])
-            if code == PermissionsMessageDialog.Codes.OKAY:
-                PlotFileDialog.launch([unread_files])
-            else:
-                self._files = read_files
+        # fixme, we will want to allow for fits but for now we will just do runs
+        unloaded = 0
+        files_with_run_datasets = []
+        for file in self.__files:
+            if file.dataset is None or (isinstance(file.dataset, domain.RunDataset) and file.dataset.asymmetries[domain.RunDataset.FULL_ASYMMETRY] is None):
+                WarningMessageDialog.launch(["Some selected runs have not been loaded, or asymmetries have not been plotted."])
+                unloaded += 1
 
-        self._view.add_files(self._files)
+            elif isinstance(file.dataset, domain.RunDataset) and file.dataset.asymmetries[domain.RunDataset.FULL_ASYMMETRY] is not None:
+                files_with_run_datasets.append(file)
+
+        if len(files_with_run_datasets) + unloaded < len(self.__files):
+            WarningMessageDialog.launch(["Some non-asymmetry datasets are selected. These can't be written yet from this view. "])
+
+        self.__files = files_with_run_datasets
+        self._view.add_files([f.file_path for f in self.__files])
         self._set_callbacks()
 
     def _set_callbacks(self):
@@ -195,29 +193,29 @@ class WriteDataDialogPresenter:
 
     def _write_clicked(self):
         self._view.set_status_message('Writing files ... ')
-        run = self._context.get_run_by_filename(self._view.get_current_file())
+        current_file = self._view.get_current_file()
         if self._view.is_binned():
-            self._write_binned(run)
+            self._write_binned(current_file)
         elif self._view.is_full():
-            self._write_full(run)
+            self._write_full(current_file)
         else:
-            self._write_fft(run)
+            self._write_fft(current_file)
         self._view.set_status_message('Done.')
 
     def _write_all_clicked(self):
         self._view.set_status_message('Writing files ... ')
-        for file_path in self._view.get_all_files():
-            run = self._context.get_run_by_filename(file_path)
+        for file in self._view.get_all_files():
 
             if self._view.is_binned():
-                self._write_binned(run)
+                self._write_binned(file)
             elif self._view.is_full():
-                self._write_full(run)
+                self._write_full(file)
             else:
-                self._write_fft(run)
+                self._write_fft(file)
         self._view.set_status_message('Done.')
 
     def _save_to_clicked(self):
+        # fixme only specifies for .asy files
         # noinspection PyCallByClass,PyArgumentList
         saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self._view, 'Specify file',
                                                                 files.load_last_used_directory(), 'ASY(*.asy)')[0]
@@ -230,9 +228,17 @@ class WriteDataDialogPresenter:
             self._view.set_file_path(saved_file_path)
 
     def _skip_clicked(self):
+        current_file = self._view.get_current_file()
         self._view.remove_current_file()
+
         if len(self._view.get_current_file()) == 0:
             self._view.done(0)
+            return
+
+        for file in self.__files:
+            if file.file_path == current_file:
+                self.__files.remove(file)
+                break
 
     def _done_clicked(self):
         self._view.done(0)
@@ -254,43 +260,44 @@ class WriteDataDialogPresenter:
             else:
                 self._files.remove(file_path)
 
-    def _write_binned(self, run):
-        save_path = self._view.get_file_path()
+    def _write_binned(self, file_path):
+        run = None
 
+        for f in self.__files:
+            if f.file_path == file_path:
+                run = f.dataset
+
+        if run is None:
+            return
+
+        save_path = self._view.get_file_path()
         if len(save_path) == 0:
             if 'RunNumber' in run.meta.keys():
-                save_path = os.path.join(os.path.split(run.file)[0], str(run.meta['RunNumber']) + '.asy')
+                save_path = os.path.join(os.path.split(file_path)[0], str(run.meta['RunNumber']) + '.asy')
             else:
-                save_path = os.path.splitext(run.file)[0] + '.asy'
+                save_path = os.path.splitext(file_path)[0] + '.asy'
 
         bin_size = float(self._view.get_bin_size())
-        meta_string = files.TITLE_KEY + ":" + str(run.meta[files.TITLE_KEY]) + "," \
-                      + files.BIN_SIZE_KEY + ":" + str(bin_size) + "," \
-                      + files.TEMPERATURE_KEY + ":" + str(run.meta[files.TEMPERATURE_KEY]) + "," \
-                      + files.FIELD_KEY + ":" + str(run.meta[files.FIELD_KEY]) + "," \
-                      + files.T0_KEY + ":" + str(run.t0) + "\n"
-        asymmetry = muon.bin_muon_asymmetry(run, bin_size)
-        uncertainty = muon.bin_muon_uncertainty(run, bin_size)
-        time = muon.bin_muon_time(run, bin_size)
-        np.savetxt(save_path, np.c_[time, asymmetry, uncertainty],
-                   fmt='%2.9f, %2.4f, %2.4f', header="BEAMS\n" + meta_string + "Time, Asymmetry, Uncertainty")
+        run.write(save_path, bin_size)
 
-    def _write_full(self, run):
+    def _write_full(self, file_path):
+        run = None
+
+        for f in self.__files:
+            if f.file_path == file_path:
+                run = f.dataset
+
+        if run is None:
+            return
+
         save_path = self._view.get_file_path()
-
         if len(save_path) == 0:
             if 'RunNumber' in run.meta.keys():
-                save_path = os.path.join(os.path.split(run.file)[0], str(run.meta['RunNumber']) + '.asy')
+                save_path = os.path.join(os.path.split(file_path)[0], str(run.meta['RunNumber']) + '.asy')
             else:
-                save_path = os.path.splitext(run.file)[0] + '.asy'
+                save_path = os.path.splitext(file_path)[0] + '.asy'
 
-        meta_string = files.TITLE_KEY + ":" + str(run.meta[files.TITLE_KEY]) + "," \
-                      + files.BIN_SIZE_KEY + ":" + str(run.meta[files.BIN_SIZE_KEY]) + "," \
-                      + files.TEMPERATURE_KEY + ":" + str(run.meta[files.TEMPERATURE_KEY]) + "," \
-                      + files.FIELD_KEY + ":" + str(run.meta[files.FIELD_KEY]) + "," \
-                      + files.T0_KEY + ":" + str(run.t0) + "\n"
-        np.savetxt(save_path, np.c_[run.time, run.asymmetry, run.uncertainty],
-                   fmt='%2.9f, %2.4f, %2.4f', header="BEAMS\n" + meta_string + "Time, Asymmetry, Uncertainty")
+        run.write(save_path)
 
     def _write_fft(self, run):
         pass

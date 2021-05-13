@@ -3,9 +3,10 @@ import os
 from PyQt5 import QtWidgets, QtCore
 
 from app.gui.dialogs.dialog_isis_download import ISISDownloadDialog
-from app.gui.dialogs.dialog_misc import AddFileDialog, PermissionsMessageDialog
+from app.gui.dialogs.dialog_misc import AddFileDialog, PermissionsMessageDialog, ProgressBarDialog
 from app.gui.dialogs.dialog_musr_download import MusrDownloadDialog
 from app.gui.dialogs.dialog_psi_download import PSIDownloadDialog
+from app.gui.dialogs.dialog_write_data import WriteDataDialog
 from app.gui.gui import PanelPresenter
 from app.model import files
 from app.model.domain import RunService, FileService, FitService, FileDataset, RunDataset
@@ -71,6 +72,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
             self.__file_service = FileService()
             self.__run_service.register(RunService.RUNS_ADDED, self)
             self.__file_service.register(FileService.FILES_CHANGED, self)
+            self.__fit_service.register(FitService.FITS_ADDED, self)
 
         def _create_tree_model(self, file_datasets):
             file_nodes = []
@@ -376,6 +378,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         self.setFloating(False)
 
         self._presenter = MainConsolePanelPresenter(self)
+        self._spinner = widgets.QtWaitingSpinner(self)
 
     def get_checked_items(self):
         return self.tree_view.get_file_ids()
@@ -415,7 +418,9 @@ class MainConsolePanelPresenter(PanelPresenter):
             ISISDownloadDialog.launch()
 
     def _write_file_clicked(self):
-        pass
+        file_ids = self._view.tree_view.get_file_ids()
+        WriteDataDialog.launch(*file_ids)
+        # ProgressBarDialog.launch("Copying files...", "Abort Copy", 0, 3)
 
     def _load_file_clicked(self):
         file_ids = self._view.tree_view.get_file_ids()
@@ -424,6 +429,7 @@ class MainConsolePanelPresenter(PanelPresenter):
             self.__file_service.load_files(file_ids)
 
     def _convert_file_clicked(self):
+
         self.__file_service.convert_files(self._view.tree_view.get_file_ids())
 
     def _remove_file_clicked(self):

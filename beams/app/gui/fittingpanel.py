@@ -1132,8 +1132,19 @@ class FitTabPresenter(PanelPresenter):
         self._view.button_plot.released.connect(self._update_display)
         self._view.table_parameters.itemChanged.connect(self._plot_fit)
         self._view.button_fit.released.connect(self._fit)
+        self._view.button_save_results.released.connect(self._save_fit_results)
         self._view.support_panel.new_button.released.connect(self._new_empty_fit)
         self._view.check_fit_alpha.stateChanged.connect(self._check_fit_alpha)
+
+    def _save_fit_results(self):
+        selected_data = self._view.support_panel.tree.get_selected_data()
+        if selected_data is None:
+            return
+
+        if isinstance(selected_data, fit.FitDataset):
+            selected_data.write("out_file_x.txt", fit.FitOptions.SAVE_2)
+        else:
+            selected_data.write("out_file_x.txt")
 
     def _function_input_changed(self):
         print('_function_input_changed', self.__update_if_table_changes)
@@ -1271,7 +1282,6 @@ class FitTabPresenter(PanelPresenter):
         self._view.fit_display.finish_plotting(False)
 
     def _plot_fit(self):
-        print('_plot_fit', self.__update_if_table_changes)
         if not self.__update_if_table_changes:
             return
 
@@ -1370,7 +1380,6 @@ class FitTabPresenter(PanelPresenter):
         self._view.clear()
 
     def _selection_changed(self):
-        print('_selection_changed setting to ', False)
         self.__update_if_table_changes = False
 
         selected_data = self._view.support_panel.tree.get_selected_data()
@@ -1388,9 +1397,11 @@ class FitTabPresenter(PanelPresenter):
 
             self._view.update_variable_table(list(selected_data.variables.keys()))
             for symbol, variable in selected_data.variables.items():
-                self._view.set_variable_value(symbol, value=variable.value)
+                self._view.set_variable_value(symbol, value='{:.4f}'.format(variable.value))
+
             run = self._run_service.get_runs_by_ids([selected_data.run_id])[0]
             self._view.input_file_name.setText('{}_fit.txt'.format(run.meta['RunNumber']))
+            self._view.input_folder_name.setText(files.load_last_used_directory())
             self._view.run_list.setEnabled(False)
             self._view.table_parameters.setEnabled(True)
             self.__expression = selected_data.expression_as_lambda
@@ -1410,7 +1421,8 @@ class FitTabPresenter(PanelPresenter):
             self._view.update_variable_table(list(list(selected_data.fits.values())[0].variables.keys()))
             for symbol in list(selected_data.fits.values())[0].variables.keys():
                 self._view.set_variable_value(symbol, value='*')
-
+            self._view.input_file_name.setText('{}_fit.txt'.format(selected_data.id))
+            self._view.input_folder_name.setText(files.load_last_used_directory())
             self._view.run_list.setEnabled(False)
             self._view.table_parameters.setEnabled(False)
 
@@ -1424,7 +1436,6 @@ class FitTabPresenter(PanelPresenter):
             self._view.run_list.setEnabled(True)
             self._view.table_parameters.setEnabled(True)
 
-        print('_selection_changed setting to ', True)
         self.__update_if_table_changes = True
 
     def _update_fit_changes(self, dataset):
