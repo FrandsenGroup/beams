@@ -1147,7 +1147,6 @@ class FitTabPresenter(PanelPresenter):
             selected_data.write("out_file_x.txt")
 
     def _function_input_changed(self):
-        print('_function_input_changed', self.__update_if_table_changes)
         if not self.__update_if_table_changes:
             return
 
