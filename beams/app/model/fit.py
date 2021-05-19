@@ -307,7 +307,6 @@ class FitDataset:
                 run = domain.RunService.get_runs_by_ids([f.run_id])[0]
                 full_string += run.meta["RunNumber"] + "\n"
 
-            print(full_string)
             with open(out_file, 'w', encoding="utf-8") as f:
                 f.write("#BEAMS\n"
                         + full_string)
@@ -382,10 +381,12 @@ class FitEngine:
                 return self._least_squares_fit_non_global(spec)
 
     def _least_squares_fit_global(self, spec):
+        # (0) Get the parameters for our variables. These are generated to work with our stepwise approach.
         guesses = spec.get_global_fit_guesses()
         lowers = spec.get_global_fit_lowers()
         uppers = spec.get_global_fit_uppers()
 
+        # 1) Concatenate our time, asymmetry and uncertainty arrays for each dataset together.
         concatenated_asymmetry = np.array([])
         concatenated_uncertainty = np.array([])
         concatenated_time = np.array([])
@@ -394,12 +395,23 @@ class FitEngine:
             concatenated_uncertainty = np.concatenate((concatenated_uncertainty, asymmetry.uncertainty))
             concatenated_time = np.concatenate((concatenated_time, asymmetry.time))
 
+        # 2) Create a single global lambda function for all the datasets. Essentially, it acts like a 
+        #    stepwise function, once you pass into the asymmetry of another dataset, a separate function
+        #    in the lambda will start being used. See its definition for more on why.
         global_lambda_expression = FitEngine._lambdify_global(spec, concatenated_time)
         residual = FitEngine._residual(global_lambda_expression)
 
         dataset = FitDataset()
-
-        opt = least_squares(residual, guesses, bounds=[lowers, uppers], args=(concatenated_time, concatenated_asymmetry, concatenated_uncertainty))
+        
+        # 3) Run a lease squres fit on the global lambda and concatenated datasets
+        try:
+            opt = least_squares(residual, guesses, bounds=[lowers, uppers], args=(concatenated_time, concatenated_asymmetry, concatenated_uncertainty))
+        except ValueError:
+            print('You have found an elusive bug. Please submit an issue on github with your actions prior to pressing "fit"')
+            print(residual, guesses, [lowers, uppers], (len(concatenated_time), len(concatenated_asymmetry), len(concatenated_uncertainty)))
+            import traceback
+            traceback.print_exc()
+            raise ValueError("Provide all the information above and submit to a github issue please!")
 
         values = {}
         for i, symbol in enumerate(spec.get_global_fit_symbols()):
@@ -412,13 +424,19 @@ class FitEngine:
                                          v.is_global, v.independent) for k, v in spec.variables.items()}
 
             for symbol, var in final_variables.items():
+                if var.is_fixed:
+                    continue
+
                 if not var.is_global:
                     final_variables[symbol].value = values[symbol + _shortened_run_id(run_id)]
                 else:
                     final_variables[symbol].value = values[symbol]
 
+            lambda_expression_without_alpha = lambdify(FitEngine._replace_fixed(spec.function, spec.get_fixed_symbols(), spec.get_fixed_guesses()),
+                                                       list(spec.get_unfixed_symbols()), INDEPENDENT_VARIABLE)
+
             new_fit.variables = final_variables
-            new_fit.expression_as_lambda = lambdify(spec.function, list(final_variables.keys()), INDEPENDENT_VARIABLE)
+            new_fit.expression_as_lambda = lambda_expression_without_alpha#lambdify(spec.function, list(final_variables.keys()), INDEPENDENT_VARIABLE)
             new_fit.expression_as_string = spec.function
             new_fit.run_id = run_id
             new_fit.title = self.__run_service.get_runs_by_ids([run_id])[0].meta['Title']
@@ -433,12 +451,15 @@ class FitEngine:
         return dataset
 
     def _least_squares_fit_non_global(self, spec) -> FitDataset:
+        # 1) We create another string version of the fit function that basically lies inside a function for alpha correction
+        # 2) We replace all fixed variable with their numberican values
         if spec.options[FitOptions.ALPHA_CORRECT]:
             alpha_corrected_function = ALPHA_CORRECTION.format(spec.function, spec.function)
             function = FitEngine._replace_fixed(alpha_corrected_function, spec.get_fixed_symbols(), spec.get_fixed_guesses())
         else:
             function = FitEngine._replace_fixed(spec.function, spec.get_fixed_symbols(), spec.get_fixed_guesses())
 
+        # 3) Use lambdify to make a callable function out of our string and unfixed variables.
         lambda_expression = lambdify(function, spec.get_unfixed_symbols(), INDEPENDENT_VARIABLE)
         residual = FitEngine._residual(lambda_expression)
 
@@ -446,20 +467,28 @@ class FitEngine:
         lowers = spec.get_unfixed_lower_bounds()
         uppers = spec.get_unfixed_upper_bounds()
 
+        # 4) Iterate through each fit dataset, this is not a global fit so they are fitted completely independent of eachother
         dataset = FitDataset()
         for run_id, asymmetry in spec.get_data().items():
             new_fit = Fit()
+
+            # 5) Create a copy of our initial variables (we will replace the values with our fitted values)
             final_variables = {k: FitVar(v.symbol, v.name, v.value, v.is_fixed, v.lower, v.upper, v.is_global, v.independent) for k, v in spec.variables.items()}
 
+            # 6) Assuming we have a variable that is not fixed, perform a least squares fit
             if len(spec.get_unfixed_symbols()) != 0:
                 opt = least_squares(residual, guesses, bounds=[lowers, uppers],
                                     args=(asymmetry.time, asymmetry, asymmetry.uncertainty))
+
+                # 7) Replace initial values with fitted values for unfixed variables
                 for i, symbol in enumerate(spec.get_unfixed_symbols()):
                     final_variables[symbol].value = opt.x[i]
 
+            # 8) Create a callable function of our original string function 
             lambda_expression_without_alpha = lambdify(FitEngine._replace_fixed(spec.function, spec.get_fixed_symbols(), spec.get_fixed_guesses()),
                                                        list(spec.get_unfixed_symbols()), INDEPENDENT_VARIABLE)
 
+            # 9) Fill in all values for our new fit object
             new_fit.variables = final_variables
             new_fit.expression_as_lambda = lambda_expression_without_alpha
             new_fit.expression_as_string = spec.function
@@ -468,8 +497,11 @@ class FitEngine:
             new_fit.bin_size = spec.get_bin_size()
             new_fit.x_min = spec.get_min_time()
             new_fit.x_max = spec.get_max_time()
+
+            # 10) Add fit to our dataset
             dataset.fits[run_id] = new_fit
 
+        # 11) Attach fit spec options and function to dataset (mostly for debugging purposes)
         dataset.options = spec.options.copy()
         dataset.function = spec.function
 
