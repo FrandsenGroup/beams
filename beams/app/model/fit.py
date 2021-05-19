@@ -424,13 +424,19 @@ class FitEngine:
                                          v.is_global, v.independent) for k, v in spec.variables.items()}
 
             for symbol, var in final_variables.items():
+                if var.is_fixed:
+                    continue
+
                 if not var.is_global:
                     final_variables[symbol].value = values[symbol + _shortened_run_id(run_id)]
                 else:
                     final_variables[symbol].value = values[symbol]
 
+            lambda_expression_without_alpha = lambdify(FitEngine._replace_fixed(spec.function, spec.get_fixed_symbols(), spec.get_fixed_guesses()),
+                                                       list(spec.get_unfixed_symbols()), INDEPENDENT_VARIABLE)
+
             new_fit.variables = final_variables
-            new_fit.expression_as_lambda = lambdify(spec.function, list(final_variables.keys()), INDEPENDENT_VARIABLE)
+            new_fit.expression_as_lambda = lambda_expression_without_alpha#lambdify(spec.function, list(final_variables.keys()), INDEPENDENT_VARIABLE)
             new_fit.expression_as_string = spec.function
             new_fit.run_id = run_id
             new_fit.title = self.__run_service.get_runs_by_ids([run_id])[0].meta['Title']
