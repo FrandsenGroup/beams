@@ -416,7 +416,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_freq.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
             self.axes_freq.set_facecolor("#ffffff")
             if not remove_legend:
-                self.axes_freq.legend(bbox_to_anchor=(1.04,1), loc="upper left")
+                self.axes_freq.legend(loc='upper right')
 
             self.figure.tight_layout()
 
