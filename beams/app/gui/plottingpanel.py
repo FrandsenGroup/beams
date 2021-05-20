@@ -5,6 +5,7 @@ from enum import Enum
 from PyQt5 import QtWidgets, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
+from matplotlib.patches import Patch
 import numpy as np
 
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
@@ -415,8 +416,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_freq.set_ylabel(r'FFT$^2$', fontsize=title_font_size)
             self.axes_freq.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
             self.axes_freq.set_facecolor("#ffffff")
-            if not remove_legend:
-                self.axes_freq.legend(loc='upper right')
 
             self.figure.tight_layout()
 
@@ -516,6 +515,48 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.setEnabled(False)
             self.set_blank()
             self.axes_time.figure.canvas.draw()
+
+    class PlotLegend(FigureCanvas):
+        def __init__(self) -> None:
+            self._draw_pending = True
+            self._is_drawing = True
+
+            FigureCanvas.__init__(self, Figure())
+
+            self.__legend = {}
+
+            # import matplotlib.pyplot as plt
+            # import matplotlib as mpl
+            # labels = ['Label 1', 'Label 2', 'Label 3', 'Label 4']
+            # colors = ['b', 'g', 'r', 'y']
+            
+            # patches = [
+            #     Patch(color=color, label=label)
+            #     for label, color in zip(labels, colors)]
+            # self.figure.legend(patches, labels, loc='center', frameon=False)
+
+        def set_legend(self, values: dict):
+            # If the legend is the same, no need to replot
+            if values == self.__legend:
+                return
+
+            # If there are no legend items, blank it out
+            # Fixme, maybe we should have the legend block disappear entirely?
+            #   How hard would it be to update the gui each time?
+            if len(values) == 0:
+                self.set_blank()
+                return
+            self.figure.clear()
+            patches = [
+                Patch(color=color, label=label)
+                for label, color in values.items()
+            ]
+
+            self.figure.legend(patches, [x[0] for x in values.items()], loc='center', frameon=False)
+            self.figure.canvas.draw()
+
+        def set_blank(self):
+            pass
 
     class PlotControl(QtWidgets.QWidget):
         def __init__(self):
@@ -762,6 +803,8 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         self.right_settings = self.PlotControl()
         self.right_display = self.PlotDisplay(self.right_settings)
 
+        self.legend_display = self.PlotLegend()
+
         self._set_widget_layout()
         self._presenter = PlottingPanelPresenter(self)
 
@@ -786,6 +829,8 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         vbox.addWidget(self.right_display)
         vbox.addWidget(self.right_settings)
         hbox.addLayout(vbox)
+
+        hbox.addWidget(self.legend_display)
 
         self.setLayout(hbox)
 
@@ -999,6 +1044,7 @@ class PlottingPanelPresenter(PanelPresenter):
         max_time = settings.get_max_time()
         bin_size = settings.get_bin_from_input()
 
+        legend_values = {}
         for run in runs:
             if run.asymmetries[RunDataset.FULL_ASYMMETRY] is None:
                 continue
@@ -1018,6 +1064,7 @@ class PlottingPanelPresenter(PanelPresenter):
             uncertainty = asymmetry.uncertainty
             fit = None
             style = self._plot_model.get_style_by_run_id(run.id)
+            legend_values[style[PlotModel.Keys.LABEL]] = PlotModel.color_options_extra[style[PlotModel.Keys.DEFAULT_COLOR] if style[PlotModel.Keys.MARKER_COLOR] == 'Default' else style[PlotModel.Keys.MARKER_COLOR]]
 
             # We have to do this logic because Matplotlib is not good at setting good default plot limits
             frac_start = float(min_time) / (time[len(time) - 1] - time[0])
@@ -1059,6 +1106,8 @@ class PlottingPanelPresenter(PanelPresenter):
         display.set_asymmetry_plot_limits(max_asymmetry, min_asymmetry)
         display.set_fft_plot_limits(max_fft)
         display.finish_plotting(fast)
+
+        self._view.legend_display.set_legend(legend_values)
 
     def update(self):
         run_datasets = self.__run_service.get_runs()
