@@ -4,3 +4,4 @@ sympy
 scipy
 matplotlib
 requests
+pyqt5
