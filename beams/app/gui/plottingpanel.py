@@ -539,24 +539,53 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.set_blank()
             self.axes_time.figure.canvas.draw()
 
-    class PlotLegend(FigureCanvas):
+    class PlotLegend(QtWidgets.QWidget):
+        class Legend(FigureCanvas):
+            def __init__(self) -> None:
+                self._draw_pending = True
+                self._is_drawing = True
+
+                FigureCanvas.__init__(self, Figure())
+
+                self.__legend = {}
+
+                # import matplotlib.pyplot as plt
+                # import matplotlib as mpl
+                # labels = ['Label 1', 'Label 2', 'Label 3', 'Label 4']
+                # colors = ['b', 'g', 'r', 'y']
+                
+                # patches = [
+                #     Patch(color=color, label=label)
+                #     for label, color in zip(labels, colors)]
+                # self.figure.legend(patches, labels, loc='center', frameon=False)
+
+            def set_legend(self, values: dict):
+                # If the legend is the same, no need to replot
+                if values == self.__legend:
+                    return
+
+                # If there are no legend items, blank it out
+                # Fixme, maybe we should have the legend block disappear entirely?
+                #   How hard would it be to update the gui each time?
+                if len(values) == 0:
+                    self.set_blank()
+                    return
+                self.figure.clear()
+                patches = [
+                    Patch(color=color, label=label)
+                    for label, color in values.items()
+                ]
+
+                self.figure.legend(patches, [x[0] for x in values.items()], loc='center', frameon=False, prop={"size":9})
+                self.figure.canvas.draw()
+
+            def set_blank(self):
+                self.figure.clear()
+                self.figure.canvas.draw()
+
         def __init__(self) -> None:
-            self._draw_pending = True
-            self._is_drawing = True
-
-            FigureCanvas.__init__(self, Figure())
-
-            self.__legend = {}
-
-            # import matplotlib.pyplot as plt
-            # import matplotlib as mpl
-            # labels = ['Label 1', 'Label 2', 'Label 3', 'Label 4']
-            # colors = ['b', 'g', 'r', 'y']
+            super(PlottingPanel.PlotLegend, self).__init__()
             
-            # patches = [
-            #     Patch(color=color, label=label)
-            #     for label, color in zip(labels, colors)]
-            # self.figure.legend(patches, labels, loc='center', frameon=False)
 
         def set_legend(self, values: dict):
             # If the legend is the same, no need to replot
@@ -564,7 +593,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 return
 
             # If there are no legend items, blank it out
-            # Fixme, maybe we should have the legend block disappear entirely?
+            # Todo, maybe we should have the legend block disappear entirely?
             #   How hard would it be to update the gui each time?
             if len(values) == 0:
                 self.set_blank()
@@ -575,11 +604,12 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 for label, color in values.items()
             ]
 
-            self.figure.legend(patches, [x[0] for x in values.items()], loc='center', frameon=False)
+            self.figure.legend(patches, [x[0] for x in values.items()], loc='center', frameon=False, prop={"size":9})
             self.figure.canvas.draw()
 
         def set_blank(self):
-            pass
+            self.figure.clear()
+            self.figure.canvas.draw()
 
     class PlotControl(QtWidgets.QWidget):
         def __init__(self):
