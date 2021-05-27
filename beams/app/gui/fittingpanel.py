@@ -587,7 +587,7 @@ class FittingPanel(Panel):
     def _set_widget_attributes(self):
         # self.table_parameters.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.table_parameters.setColumnCount(6)
-        self.table_parameters.setHorizontalHeaderLabels(['Name', 'Value', '<', '>', 'Fixed', 'Global'])
+        self.table_parameters.setHorizontalHeaderLabels(['Name', 'Value', 'Min', 'Max', 'Fixed', 'Global'])
         self.table_parameters.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.table_parameters.horizontalHeader().setSectionResizeMode(self.__NAME_COLUMN, QtWidgets.QHeaderView.Stretch)
         self.table_parameters.horizontalHeader().setSectionResizeMode(self.__VALUE_COLUMN, QtWidgets.QHeaderView.Stretch)
