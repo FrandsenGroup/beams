@@ -567,8 +567,8 @@ class FittingPanel(Panel):
         self.insert_beta = widgets.StyleTwoButton(fit.BETA)
         self.insert_pi = widgets.StyleOneButton(fit.PI)
 
-        self.group_preset_functions = QtWidgets.QGroupBox("Loaded Functions")
-        self.group_user_functions = QtWidgets.QGroupBox("User Functions")
+        self.group_preset_functions = QtWidgets.QGroupBox("Predefined Functions")
+        self.group_user_functions = QtWidgets.QGroupBox("User Defined Functions")
         self.group_special_characters = QtWidgets.QGroupBox("")
         self.group_batch_options = QtWidgets.QGroupBox("Options")
         self.group_spectrum_options = QtWidgets.QGroupBox("Spectrum")
