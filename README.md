@@ -1,4 +1,3 @@
-> First go at the the README (not complete but a start), haven't proofread or anything and still have more to add. The gifs and images are temporary of course since we still have a lot left to do with the program but they are good placeholders and give an idea of what I am thinking of doing.
 
 ### Features
 
@@ -7,10 +6,6 @@
 - Write your data to a common file type.
 - Compatible with Linux, Mac and Windows
 
-#### Todo
-- Converting nexus files
-- Redesign user interface
-
 # BEAMS
 > A simple interface for visualizing and analyzing µSR data.
 
@@ -18,17 +13,25 @@
 
 ## Getting Started
 
-#### Prerequisites
+### Prerequisites
 - You only need to have Python 3 installed on your computer.
 
-#### Installation
+### Installation
 - Download or clone this repository.
 - Open a terminal and navigate to the BEAMS folder.
+
+#### Without Anaconda
 - Run the following command to install the package requirements for BEAMS
 ```shell
-$ pip install -r requirements.txt
+$ python -m pip install -r python_requirements.txt
 ```
-- Start BEAMS with the following
+#### Anaconda
+- Run the following command in the anaconda prompt to install requirements.
+```shell
+$ conda install -c anaconda --file conda_requirements.txt
+```
+
+- Start BEAMS for either, once you have navigated to the directory with the following
 ```shell
 $ python beams
 ```
