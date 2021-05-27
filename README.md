@@ -31,7 +31,7 @@ $ python -m pip install -r python_requirements.txt
 $ conda install -c anaconda --file conda_requirements.txt
 ```
 
-- Start BEAMS for either, once you have navigated to the directory with the following
+Start BEAMS for either, once you have navigated to the directory with the following
 ```shell
 $ python beams
 ```
