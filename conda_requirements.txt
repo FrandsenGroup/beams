@@ -1,0 +1,8 @@
+pyqt
+requests
+d34625f63c7d6db0a39bbf3488affc5b947fec99:conda_requirements.txt
+numpy
+pandas
+sympy
+scipy
+matplotlib

@@ -1,6 +1,7 @@
+pyqt5
+requests
 numpy
 pandas
 sympy
 scipy
 matplotlib
-requests

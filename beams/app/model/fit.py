@@ -83,6 +83,25 @@ class FitVar:
         return "{}\t{:.4f}\t{}\t{}".format(self.name, self.value, self.lower, self.upper)
 
 
+class FitExpression:
+    def __init__(self, expression, variables, expression_as_lambda=None):
+        self.__expression_as_string = expression
+
+        if expression_as_lambda:
+            self.__expression_as_lambda = expression_as_lambda
+            return
+
+        expression = replace_symbols(expression)
+        variables = [replace_symbols(k) for k in variables]
+        self.__expression_as_lambda = lambdify(expression, variables, INDEPENDENT_VARIABLE)
+
+    def __call__(self, *args, **kwds):
+        kwds = {replace_symbols(k): v for k, v in kwds.items()}
+        return self.__expression_as_lambda(*args, **kwds)
+
+    def __str__(self):
+        return self.__expression_as_string
+
 class FitSpec:
     def __init__(self):
         self.function = ''
@@ -317,7 +336,7 @@ class Fit:
         self.__variables = dict()
         self.kwargs = dict()
         self.expression_as_string = None
-        self.expression_as_lambda = None
+        self.expression = None
         self.bin_size = None
         self.x_min = None
         self.x_max = None
@@ -339,7 +358,7 @@ class Fit:
     def __call__(self, *args, **kwargs):
         if len(args) < 1 or not isinstance(args[0], np.ndarray):
             raise ValueError("Only takes numpy array of values as an input.")
-        return self.expression_as_lambda(args[0], **self.kwargs)
+        return self.expression(args[0], **self.kwargs)
 
     def write(self, out_file):
         run = domain.RunService.get_runs_by_ids([self.run_id])[0]
@@ -436,7 +455,7 @@ class FitEngine:
                                                        list(spec.get_unfixed_symbols()), INDEPENDENT_VARIABLE)
 
             new_fit.variables = final_variables
-            new_fit.expression_as_lambda = lambda_expression_without_alpha#lambdify(spec.function, list(final_variables.keys()), INDEPENDENT_VARIABLE)
+            new_fit.expression = FitExpression(spec.function, None, lambda_expression_without_alpha)
             new_fit.expression_as_string = spec.function
             new_fit.run_id = run_id
             new_fit.title = self.__run_service.get_runs_by_ids([run_id])[0].meta['Title']
@@ -490,7 +509,7 @@ class FitEngine:
 
             # 9) Fill in all values for our new fit object
             new_fit.variables = final_variables
-            new_fit.expression_as_lambda = lambda_expression_without_alpha
+            new_fit.expression = FitExpression(spec.function, None, lambda_expression_without_alpha)
             new_fit.expression_as_string = spec.function
             new_fit.run_id = run_id
             new_fit.title = self.__run_service.get_runs_by_ids([run_id])[0].meta['Title']
@@ -695,18 +714,40 @@ def split_expression(expression):
         return None
 
 
-def replace_symbols(expression):
+def replace_symbols(expression, pretty=False):
     expression_string = ""
 
-    for c in expression:
-        if c == PI:
-            expression_string += "pi"
-        elif c == '^':
-            expression_string += "**"
-        elif c == NAUGHT:
-            expression_string += "0"
-        else:
-            expression_string += c
+    if pretty:
+        skip = False
+        for i, c in enumerate(expression):
+            if skip:
+                skip = False
+                continue
+
+            if i + 1 < len(expression):
+                if expression[i:i+2] == "pi":
+                    expression_string += PI
+                    skip = True
+                    continue
+                elif expression[i:i+2] == '**':
+                    expression_string += "^"
+                    skip = True
+                    continue
+
+            if c == "0" and i > 0 and expression[i-1].isalpha():
+                expression_string += NAUGHT
+            else:
+                expression_string += c
+    else:
+        for c in expression:
+            if c == PI:
+                expression_string += "pi"
+            elif c == '^':
+                expression_string += "**"
+            elif c == NAUGHT:
+                expression_string += "0"
+            else:
+                expression_string += c
 
     return expression_string
 

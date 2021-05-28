@@ -567,8 +567,8 @@ class FittingPanel(Panel):
         self.insert_beta = widgets.StyleTwoButton(fit.BETA)
         self.insert_pi = widgets.StyleOneButton(fit.PI)
 
-        self.group_preset_functions = QtWidgets.QGroupBox("Loaded Functions")
-        self.group_user_functions = QtWidgets.QGroupBox("User Functions")
+        self.group_preset_functions = QtWidgets.QGroupBox("Predefined Functions")
+        self.group_user_functions = QtWidgets.QGroupBox("User Defined Functions")
         self.group_special_characters = QtWidgets.QGroupBox("")
         self.group_batch_options = QtWidgets.QGroupBox("Options")
         self.group_spectrum_options = QtWidgets.QGroupBox("Spectrum")
@@ -587,7 +587,7 @@ class FittingPanel(Panel):
     def _set_widget_attributes(self):
         # self.table_parameters.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.table_parameters.setColumnCount(6)
-        self.table_parameters.setHorizontalHeaderLabels(['Name', 'Value', '<', '>', 'Fixed', 'Global'])
+        self.table_parameters.setHorizontalHeaderLabels(['Name', 'Value', 'Min', 'Max', 'Fixed', 'Global'])
         self.table_parameters.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         self.table_parameters.horizontalHeader().setSectionResizeMode(self.__NAME_COLUMN, QtWidgets.QHeaderView.Stretch)
         self.table_parameters.horizontalHeader().setSectionResizeMode(self.__VALUE_COLUMN, QtWidgets.QHeaderView.Stretch)
@@ -886,6 +886,9 @@ class FittingPanel(Panel):
 
         return values
 
+    def get_expression(self):
+        return self.input_fit_equation.text()
+
     def get_lower_bounds(self):
         values = {}
         for i in range(self.table_parameters.rowCount()):
@@ -1150,7 +1153,7 @@ class FitTabPresenter(PanelPresenter):
         if not self.__update_if_table_changes:
             return
 
-        expression = "A(t) = " + self._view.input_fit_equation.text()
+        expression = "A(t) = " + self._view.get_expression()
 
         if fit.is_valid_expression(expression):
             self._view.highlight_input_red(self._view.input_fit_equation, False)
@@ -1166,7 +1169,7 @@ class FitTabPresenter(PanelPresenter):
             self._view.highlight_input_red(self._view.input_fit_equation, True)
 
     def _check_fit_alpha(self):
-        expression = self._view.input_fit_equation.text()
+        expression = self._view.get_expression()
         if self._view.check_fit_alpha.isChecked():
             variables = fit.parse(expression)
             variables.discard(fit.INDEPENDENT_VARIABLE)
@@ -1295,12 +1298,13 @@ class FitTabPresenter(PanelPresenter):
 
     def _get_expression_and_values(self):
         values = self._view.get_initial_values()
-        expression = self._view.input_fit_equation.text()
+        expression = self._view.get_expression()
 
         if fit.is_valid_expression("A(t) = " + expression) and values is not None:
             variables = set(values.keys())
             variables.discard(fit.INDEPENDENT_VARIABLE)
-            lambda_expression = fit.lambdify(expression, variables, fit.INDEPENDENT_VARIABLE)
+
+            lambda_expression = fit.FitExpression(expression, variables)            
 
             return lambda_expression, values
 
@@ -1312,7 +1316,7 @@ class FitTabPresenter(PanelPresenter):
         spec = fit.FitSpec()
 
         # Check user input on fit equation and update spec
-        expression = self._view.input_fit_equation.text()
+        expression = self._view.get_expression()
         if not fit.is_valid_expression("A(t) = " + expression):
             self._view.highlight_input_red(self._view.input_fit_equation, True)
             self.__update_if_table_changes = True
@@ -1403,7 +1407,7 @@ class FitTabPresenter(PanelPresenter):
             self._view.input_folder_name.setText(files.load_last_used_directory())
             self._view.run_list.setEnabled(False)
             self._view.table_parameters.setEnabled(True)
-            self.__expression = selected_data.expression_as_lambda
+            self.__expression = selected_data.expression
             self.__variable_groups = [selected_data.kwargs]
             self._view.input_fit_equation.setText(selected_data.expression_as_string)
             self._update_display()
@@ -1427,7 +1431,7 @@ class FitTabPresenter(PanelPresenter):
 
             fits = list(selected_data.fits.values())
             self._view.input_fit_equation.setText(fits[0].expression_as_string)
-            self.__expression = fits[0].expression_as_lambda
+            self.__expression = fits[0].expression
             self.__variable_groups = [f.kwargs for f in fits]
             self._update_display()
 
