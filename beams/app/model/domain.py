@@ -135,26 +135,18 @@ class Asymmetry(np.ndarray):
                          time=self.time.bin(packing), uncertainty=self.uncertainty.bin(packing), alpha=self.alpha)
 
     def correct(self, alpha):
-        print('correct')
-        # print(self)
-
         input_array = ((alpha - 1) + ((alpha + 1) * self)) / \
                       ((alpha + 1) + ((alpha - 1) * self))
-        # print(input_array)
 
         return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
                          time=self.time, uncertainty=self.uncertainty, alpha=alpha)
 
     def raw(self):
-        print('raw')
-        # traceback.print_stack()
-        # print(self)
         if self.alpha == 1:
             return self
 
         input_array = ((1 - self.alpha) + (1 + self.alpha) * self) / \
                       ((1 + self.alpha) + (1 - self.alpha) * self)
-        # print(input_array)
 
         return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
                          time=self.time, uncertainty=self.uncertainty, alpha=1)
