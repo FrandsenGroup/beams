@@ -1253,7 +1253,6 @@ class FitTabPresenter(PanelPresenter):
 
             asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(bin_size).cut(min_time=min_time, max_time=max_time)
             raw_asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time, max_time=max_time)
-            self.__logger.debug("_update_display set ({}, {})".format(self._asymmetries, run.meta[files.TITLE_KEY]))
             self._asymmetries[run.meta[files.TITLE_KEY]] = raw_asymmetry
             time = asymmetry.time
             uncertainty = asymmetry.uncertainty
