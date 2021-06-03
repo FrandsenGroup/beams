@@ -59,7 +59,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
             def get_selected(self):
                 # noinspection PyTypeChecker
-                iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Selected)
+                iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Checked)
 
                 ids = []
                 while iterator.value():
@@ -861,6 +861,7 @@ class PlottingPanelPresenter(PanelPresenter):
         self._view.support_panel.plot_button.pressed.connect(self._plot)
         self._view.support_panel.plot_all_button.pressed.connect(self._plot_all)
         self._view.support_panel.clear_all_button.pressed.connect(self._clear_all)
+        self._view.support_panel.alpha_input.returnPressed.connect(self.update_alpha)
 
         self._view.support_panel.all_color_options.currentTextChanged.connect(
             lambda: self._style_parameter_changed(PlotModel.Keys.DEFAULT_COLOR,
@@ -1067,6 +1068,18 @@ class PlottingPanelPresenter(PanelPresenter):
 
         self._plot_parameter_changed(self._view.left_settings, self._view.left_display, 'left')
         self._plot_parameter_changed(self._view.right_settings, self._view.right_display, 'right')
+
+        self._populate_settings()
+
+    def update_alpha(self):
+        try:
+            alpha = float(self._view.support_panel.alpha_input.text())
+        except ValueError:
+            return
+
+        ids = self._view.support_panel.item_tree.get_selected()
+        if len(ids) > 0:
+            self.__run_service.update_alphas(ids, [alpha])
 
     def get_fft_data(self, time, asymmetry, xmin, xmax, bin_size):
         num_bins = self.get_num_bins(xmin, xmax, bin_size)
