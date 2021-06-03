@@ -627,8 +627,6 @@ class FittingPanel(Panel):
         self.support_panel.new_button.released.connect(lambda: logger.debug("support_panel.new_button.released"))
         self.check_fit_alpha.stateChanged.connect(lambda: logger.debug("check_fit_alpha.stateChanged ({})".format(self.check_fit_alpha.isChecked())))
 
-
-
     def _set_widget_attributes(self):
         # self.table_parameters.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.table_parameters.setColumnCount(6)
@@ -1396,12 +1394,15 @@ class FitTabPresenter(PanelPresenter):
         for title in titles:
             for run in self._runs:
                 if run.meta[files.TITLE_KEY] == title:
-                    try:
+                    if run.id in self._asymmetries.keys():
                         spec.asymmetries[run.id] = self._asymmetries[title]
-                    except Exception:
-                        self.__logger.debug("_fit get ({}, {})".format(self._asymmetries, title))
-                        print('Sorry you hit an error, my bad, you should send the qt.log file to Alec...')
-                        exit()
+                    else:
+                        min_time = self._view.fit_spectrum_settings.get_min_time()
+                        max_time = self._view.fit_spectrum_settings.get_max_time()
+                        bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
+                        raw_asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time, max_time=max_time)
+                        self._asymmetries[title] = raw_asymmetry
+                        spec.asymmetries[run.id] = self._asymmetries[title]
 
         spec.options[fit.FitOptions.ALPHA_CORRECT] = self._view.check_fit_alpha.isChecked()
         spec.options[fit.FitOptions.GLOBAL] = self._view.check_global_plus.isChecked()
