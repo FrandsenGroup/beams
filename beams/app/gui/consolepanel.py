@@ -362,12 +362,13 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         hbox_one.addWidget(self.write_button)
         hbox_one.addStretch()
 
-        hbox_two = QtWidgets.QHBoxLayout()
-        hbox_two.addWidget(self.file_list)
+        self.tree_view.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.tree_view.header().setMinimumSectionSize(600)
+        self.tree_view.header().setDefaultSectionSize(900)
+        self.tree_view.header().setStretchLastSection(False)
 
         vbox_one = QtWidgets.QVBoxLayout()
         vbox_one.addLayout(hbox_one)
-        # vbox_one.addLayout(hbox_two)
         vbox_one.addWidget(self.tree_view)
         vbox_one.addStretch()
         vbox_one.addWidget(widgets.Separator())

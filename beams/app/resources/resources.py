@@ -51,6 +51,10 @@ with open(CONFIGURATION_FILE, 'r') as fp:
     except Exception:
         SAVED_USER_DATA = {}
 
+QT_LOG_FILE = str(Path('beams/app/resources/qt.log'))
+
+with open(QT_LOG_FILE, 'w') as fp:
+    fp.truncate(0)
 
 def write_saved_data():
     with open(CONFIGURATION_FILE, 'w') as cf:
