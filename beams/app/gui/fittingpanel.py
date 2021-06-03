@@ -603,7 +603,7 @@ class FittingPanel(Panel):
     def _set_logging(self):
         logger = logging.getLogger('qt_fitting')
 
-        self.support_panel.tree.itemSelectionChanged.connect(lambda: "support_panel.tree.itemSelectionChanged (none)" if not self.support_panel.tree.currentItem() else logger.debug("support_panel.tree.itemSelectionChanged ({})".format(self.support_panel.tree.selectedItems()[0].text(0))))
+        #self.support_panel.tree.itemSelectionChanged.connect(lambda: "support_panel.tree.itemSelectionChanged (none)" if not self.support_panel.tree.currentItem() else logger.debug("support_panel.tree.itemSelectionChanged ({})".format(self.support_panel.tree.selectedItems()[0].text(0))))
         self.input_fit_equation.textChanged.connect(lambda: logger.debug("input_fit_equation.textChanged ({})".format(self.input_fit_equation.text())))
         self.button_insert_preset_equation.released.connect(lambda: logger.debug("button_insert_preset_equation.released ({})".format(self.option_preset_fit_equations.currentText())))
         self.button_insert_user_equation.released.connect(lambda: logger.debug("button_insert_user_equation.released ({})".format(self.option_user_fit_equations.currentText())))
@@ -1267,7 +1267,7 @@ class FitTabPresenter(PanelPresenter):
             max_asymmetry = local_max if local_max > max_asymmetry else max_asymmetry
             local_min = np.min(asymmetry[start_index:end_index])
             min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
-
+            self.__logger.debug("{}, {}, {}, {}, {}".format(time, asymmetry, uncertainty, color, run.meta[files.TITLE_KEY]))
             color = list(self._plot_model.color_options_values.values())[-i]
             self._view.fit_display.plot_asymmetry(time, asymmetry, uncertainty, None,
                                                   color=color,
