@@ -19,7 +19,7 @@ class BEAMS(QtWidgets.QApplication):
 
     def __init__(self):
         super(BEAMS, self).__init__(sys.argv)
-        logging.basicConfig(filename=resources.QT_LOG_FILE, encoding='utf-8', level=logging.DEBUG)
+        logging.basicConfig(filename=resources.QT_LOG_FILE, level=logging.DEBUG)
         mpl_logger = logging.getLogger('matplotlib')
         mpl_logger.setLevel(logging.WARNING)
 
