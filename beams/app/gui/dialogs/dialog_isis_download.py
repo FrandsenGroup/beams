@@ -64,7 +64,7 @@ class ISISDownloadDialog(QtWidgets.QDialog):
         self.done_button.setFixedWidth(80)
         self.search_button.setFixedWidth(80)
         self.output_web.setFixedHeight(100)
-        self.setFixedWidth(400)
+        self.setFixedWidth(600)
 
     def _set_widget_attributes(self):
         self.input_year.addItems(list([str(year) for year in range(datetime.today().year, 1977, -1)]))

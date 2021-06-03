@@ -62,7 +62,7 @@ class PSIDownloadDialog(QtWidgets.QDialog):
         self.done_button.setFixedWidth(80)
         self.search_button.setFixedWidth(80)
         self.output_web.setFixedHeight(100)
-        self.setFixedWidth(400)
+        self.setFixedWidth(600)
 
     def _set_widget_attributes(self):
         self.input_area.addItems(['LEM', 'GPS', 'LTF', 'Dolly', 'GPD', 'ALC', 'HAL', 'ALL'])
