@@ -599,6 +599,10 @@ class RunService:
 
     @staticmethod
     def update_alphas(ids, alphas):
+        if len(alphas) == 1: # When we update alpha from plotting panel we send one alpha for multiple runs
+            alpha = alphas[0]
+            alphas = [alpha for _ in ids]
+
         for rid, alpha in zip(ids, alphas):
             run = RunService.__dao.get_runs_by_ids([rid])[0]
 
