@@ -362,7 +362,11 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         hbox_one.addWidget(self.write_button)
         hbox_one.addStretch()
 
-        self.tree_view.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        if hasattr(QtCore.Qt.ScrollBarPolicy, 'ScrollBarAsNeeded'):
+            self.tree_view.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        else: # For older versions of PyQt5
+            self.tree_view.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+
         self.tree_view.header().setMinimumSectionSize(600)
         self.tree_view.header().setDefaultSectionSize(900)
         self.tree_view.header().setStretchLastSection(False)
