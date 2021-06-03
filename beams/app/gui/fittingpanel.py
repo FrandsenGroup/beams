@@ -1,4 +1,5 @@
 import warnings
+import logging
 
 from PyQt5 import QtWidgets, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
@@ -49,6 +50,20 @@ class FittingPanel(Panel):
                 self.addTopLevelItems(tree)
 
             def get_run_ids(self):
+                # Suppressing inspection because it doesn't recognize 'self' as a QTreeWidget
+                # noinspection PyTypeChecker
+                iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Checked)
+
+                ids = []
+                while iterator.value():
+                    if isinstance(iterator.value().model, fit.FitDataset):
+                        ids.append(iterator.value().model.id)
+
+                    iterator += 1
+
+                return ids
+
+            def get_names(self):
                 # Suppressing inspection because it doesn't recognize 'self' as a QTreeWidget
                 # noinspection PyTypeChecker
                 iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Checked)
@@ -577,12 +592,42 @@ class FittingPanel(Panel):
         self.group_table_runs = QtWidgets.QGroupBox("Runs")
         self.group_function = QtWidgets.QGroupBox("Function")
 
+        self._set_logging()
         self._set_widget_layout()
         self._set_widget_attributes()
         self._set_widget_dimensions()
 
         self._presenter = FitTabPresenter(self)
         self._line_edit_style = self.input_fit_equation.styleSheet()
+
+    def _set_logging(self):
+        logger = logging.getLogger('qt_fitting')
+
+        self.support_panel.tree.itemSelectionChanged.connect(lambda: "support_panel.tree.itemSelectionChanged (none)" if not self.support_panel.tree.currentItem() else logger.debug("support_panel.tree.itemSelectionChanged ({})".format(self.support_panel.tree.selectedItems()[0].text(0))))
+        self.input_fit_equation.textChanged.connect(lambda: logger.debug("input_fit_equation.textChanged ({})".format(self.input_fit_equation.text())))
+        self.button_insert_preset_equation.released.connect(lambda: logger.debug("button_insert_preset_equation.released ({})".format(self.option_preset_fit_equations.currentText())))
+        self.button_insert_user_equation.released.connect(lambda: logger.debug("button_insert_user_equation.released ({})".format(self.option_user_fit_equations.currentText())))
+        self.button_save_user_equation.released.connect(lambda: logger.debug("button_save_user_equation.released ({})".format(self.option_user_fit_equations.currentText())))
+        self.insert_sigma.released.connect(lambda: logger.debug("insert_sigma.released"))
+        self.insert_pi.released.connect(lambda: logger.debug("insert_pi.released"))
+        self.insert_phi.released.connect(lambda: logger.debug("insert_phi.released"))
+        self.insert_naught.released.connect(lambda: logger.debug("insert_naught.released"))
+        self.insert_lambda.released.connect(lambda: logger.debug("insert_lambda.released"))
+        self.insert_delta.released.connect(lambda: logger.debug("insert_delta.released"))
+        self.insert_alpha.released.connect(lambda: logger.debug("insert_alpha.released"))
+        self.insert_beta.released.connect(lambda: logger.debug("insert_beta.released"))
+        self.fit_spectrum_settings.input_time_xmax.returnPressed.connect(lambda: logger.debug("fit_spectrum_settings.input_time_xmax.returnPressed ({})".format(self.fit_spectrum_settings.input_time_xmax.text())))
+        self.fit_spectrum_settings.input_time_xmin.returnPressed.connect(lambda: logger.debug("fit_spectrum_settings.input_time_xmin.returnPressed ({})".format(self.fit_spectrum_settings.input_time_xmin.text())))
+        self.fit_spectrum_settings.input_bin.returnPressed.connect(lambda: logger.debug("fit_spectrum_settings.input_bin.returnPressed ({})".format(self.fit_spectrum_settings.input_bin.text())))
+        self.fit_spectrum_settings.slider_bin.sliderMoved.connect(lambda: logger.debug("fit_spectrum_settings.slider_bin.sliderMoved ({})".format(self.fit_spectrum_settings.slider_bin.value())))
+        self.button_plot.released.connect(lambda: logger.debug("button_plot.released ({})".format(self.get_selected_run_titles())))
+        self.table_parameters.itemChanged.connect(lambda: logger.debug("table_parameters.itemChanged"))
+        self.button_fit.released.connect(lambda: logger.debug("button_fit.released ({}, {}, {}, {}, {}, {}, {}, {}, batch {}, alpha {}, global {})".format(self.get_names(), self.get_initial_values(), self.get_lower_bounds(), self.get_upper_bounds(), self.get_fixed(), self.get_check_global(), self.get_expression(), self.get_selected_run_titles(), self.check_batch_fit.isChecked(), self.check_fit_alpha.isChecked(), self.check_global_plus.isChecked())))
+        self.button_save_results.released.connect(lambda: logger.debug("button_save_results.released"))
+        self.support_panel.new_button.released.connect(lambda: logger.debug("support_panel.new_button.released"))
+        self.check_fit_alpha.stateChanged.connect(lambda: logger.debug("check_fit_alpha.stateChanged ({})".format(self.check_fit_alpha.isChecked())))
+
+
 
     def _set_widget_attributes(self):
         # self.table_parameters.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -1072,24 +1117,9 @@ class FittingPanel(Panel):
         return dialog.exec()
 
 
-# fixme when the user clicks fit the generated fit is added to the side panel
-#  this happens each time the user clicks fit because we have to save a relatively
-#  small amount of data which the user can then go back and for through.
-#  Also, have fit datasets be the top level node and fits be sub nodes. This will
-#  allow an easy way to save specific fits.
-
-# fixme error when the asymmetry is not plotted before fitting, we need to make a
-#  custom widget to send out that signal that a plot is selected and automatically populate the display. Ugh.
-
-# fixme put everything in group boxes on this page, it might look better
-
 # fixme, make sure display is updating only when necessary. Cause it definitely ain't right now.
 
 # fixme, need to redo populating, in conjunction with above.
-
-# fixme, all asymmetry displays should show corrected, but raw asymmetries need to be passed in to fits. Should we
-#  show the raw asymmetry though in the fit panel? Or should we show in corrected to whatever alpha parameter is in
-#  the table?
 
 # fixme, need to create some kind of loading popup or something when it is fitting.
 
@@ -1112,6 +1142,7 @@ class FitTabPresenter(PanelPresenter):
         self.__update_if_table_changes = True
         self.__variable_groups = []
         self.__expression = None
+        self.__logger = logging.getLogger('qt_fitting_presenter')
         self._check_fit_alpha()
 
     def _set_callbacks(self):
@@ -1224,6 +1255,7 @@ class FitTabPresenter(PanelPresenter):
 
             asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(bin_size).cut(min_time=min_time, max_time=max_time)
             raw_asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time, max_time=max_time)
+            self.__logger.debug("_update_display set ({}, {})".format(self._asymmetries, run.meta[files.TITLE_KEY]))
             self._asymmetries[run.meta[files.TITLE_KEY]] = raw_asymmetry
             time = asymmetry.time
             uncertainty = asymmetry.uncertainty
@@ -1364,7 +1396,12 @@ class FitTabPresenter(PanelPresenter):
         for title in titles:
             for run in self._runs:
                 if run.meta[files.TITLE_KEY] == title:
-                    spec.asymmetries[run.id] = self._asymmetries[title]
+                    try:
+                        spec.asymmetries[run.id] = self._asymmetries[title]
+                    except Exception:
+                        self.__logger.debug("_fit get ({}, {})".format(self._asymmetries, title))
+                        print('Sorry you hit an error, my bad, you should send the qt.log file to Alec...')
+                        exit()
 
         spec.options[fit.FitOptions.ALPHA_CORRECT] = self._view.check_fit_alpha.isChecked()
         spec.options[fit.FitOptions.GLOBAL] = self._view.check_global_plus.isChecked()
