@@ -1,6 +1,7 @@
 import threading
 import warnings
 from enum import Enum
+import logging
 
 from PyQt5 import QtWidgets, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
@@ -65,6 +66,32 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 while iterator.value():
                     if isinstance(iterator.value().model, RunDataset):
                         ids.append(iterator.value().model.id)
+
+                    iterator += 1
+
+                return ids
+
+            def get_selected_names(self):
+                # noinspection PyTypeChecker
+                iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Checked)
+
+                ids = []
+                while iterator.value():
+                    if isinstance(iterator.value().model, RunDataset):
+                        ids.append(iterator.value().model.meta[files.TITLE_KEY])
+
+                    iterator += 1
+
+                return ids
+
+            def get_names(self):
+                # noinspection PyTypeChecker
+                iterator = QtWidgets.QTreeWidgetItemIterator(self)
+
+                ids = []
+                while iterator.value():
+                    if isinstance(iterator.value().model, RunDataset):
+                        ids.append(iterator.value().model.meta[files.TITLE_KEY])
 
                     iterator += 1
 
@@ -762,11 +789,67 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         self.right_settings = self.PlotControl()
         self.right_display = self.PlotDisplay(self.right_settings)
 
+        self._set_logging()
         self._set_widget_layout()
         self._presenter = PlottingPanelPresenter(self)
 
     def createSupportPanel(self) -> QtWidgets.QDockWidget:
         return self.support_panel
+
+    def _set_logging(self):
+        logger = logging.getLogger('qt_plotting')
+
+        self.left_settings.input_bin.returnPressed.connect(lambda: logger.debug("left_settings.input_bin.returnPressed ({})".format(self.left_settings.input_bin.text())))
+        self.left_settings.input_time_xmin.returnPressed.connect(lambda: logger.debug("left_settings.input_time_xmin.returnPressed ({})".format(self.left_settings.input_time_xmin.text())))
+        self.left_settings.input_time_xmax.returnPressed.connect(lambda: logger.debug("left_settings.input_time_xmax.returnPressed ({})".format(self.left_settings.input_time_xmax.text())))
+        self.left_settings.input_time_ymin.returnPressed.connect(lambda: logger.debug("left_settings.input_time_ymin.returnPressed ({})".format(self.left_settings.input_time_ymin.text())))
+        self.left_settings.input_time_ymax.returnPressed.connect(lambda: logger.debug("left_settings.input_time_ymax.returnPressed ({})".format(self.left_settings.input_time_ymax.text())))
+        self.left_settings.check_time_yauto.stateChanged.connect(lambda: logger.debug("left_settings.check_time_yauto.stateChanged ({})".format(self.left_settings.check_time_yauto.isChecked())))
+        self.left_settings.input_freq_xmin.returnPressed.connect(lambda: logger.debug("left_settings.input_freq_xmin.returnPressed ({})".format(self.left_settings.input_freq_xmin.text())))
+        self.left_settings.input_freq_xmax.returnPressed.connect(lambda: logger.debug("left_settings.input_freq_xmax.returnPressed ({})".format(self.left_settings.input_freq_xmax.text())))
+        self.left_settings.input_freq_ymin.returnPressed.connect(lambda: logger.debug("left_settings.input_freq_ymin.returnPressed ({})".format(self.left_settings.input_freq_ymin.text())))
+        self.left_settings.input_freq_ymax.returnPressed.connect(lambda: logger.debug("left_settings.input_freq_ymax.returnPressed ({})".format(self.left_settings.input_freq_ymax.text())))
+        self.left_settings.check_freq_yauto.stateChanged.connect(lambda: logger.debug("left_settings.check_freq_yauto.stateChanged ({})".format(self.left_settings.check_freq_yauto.isChecked())))
+        self.left_settings.check_freq_xauto.stateChanged.connect(lambda: logger.debug("left_settings.check_freq_xauto.stateChanged ({})".format(self.left_settings.check_freq_xauto.isChecked())))
+        self.left_settings.input_freq_xmin.returnPressed.connect(lambda: logger.debug("left_settings.input_freq_xmin.returnPressed ({})".format(self.left_settings.input_freq_xmin.text())))
+        self.right_settings.slider_bin.sliderMoved.connect(lambda: logger.debug("left_settings.slider_bin.sliderMoved ({})".format(self.left_settings.slider_bin.value())))
+        self.left_settings.slider_bin.sliderReleased.connect(lambda: logger.debug("left_settings.slider_bin.sliderReleased ({})".format(self.left_settings.slider_bin.value())))
+
+        self.right_settings.input_bin.returnPressed.connect(lambda: logger.debug("right_settings.input_bin.returnPressed ({})".format(self.right_settings.input_bin.text())))
+        self.right_settings.input_time_xmin.returnPressed.connect(lambda: logger.debug("right_settings.input_time_xmin.returnPressed ({})".format(self.right_settings.input_time_xmin.text())))
+        self.right_settings.input_time_xmax.returnPressed.connect(lambda: logger.debug("right_settings.input_time_xmax.returnPressed ({})".format(self.right_settings.input_time_xmax.text())))
+        self.right_settings.input_time_ymin.returnPressed.connect(lambda: logger.debug("right_settings.input_time_ymin.returnPressed ({})".format(self.right_settings.input_time_ymin.text())))
+        self.right_settings.input_time_ymax.returnPressed.connect(lambda: logger.debug("right_settings.input_time_ymax.returnPressed ({})".format(self.right_settings.input_time_ymax.text())))
+        self.right_settings.check_time_yauto.stateChanged.connect(lambda: logger.debug("right_settings.check_time_yauto.stateChanged ({})".format(self.right_settings.check_time_yauto.isChecked())))
+        self.right_settings.input_freq_xmin.returnPressed.connect(lambda: logger.debug("right_settings.input_freq_xmin.returnPressed ({})".format(self.right_settings.input_freq_xmin.text())))
+        self.right_settings.input_freq_xmax.returnPressed.connect(lambda: logger.debug("right_settings.input_freq_xmax.returnPressed ({})".format(self.right_settings.input_freq_xmax.text())))
+        self.right_settings.input_freq_ymin.returnPressed.connect(lambda: logger.debug("right_settings.input_freq_ymin.returnPressed ({})".format(self.right_settings.input_freq_ymin.text())))
+        self.right_settings.input_freq_ymax.returnPressed.connect(lambda: logger.debug("right_settings.input_freq_ymax.returnPressed ({})".format(self.right_settings.input_freq_ymax.text())))
+        self.right_settings.check_freq_yauto.stateChanged.connect(lambda: logger.debug("right_settings.check_freq_yauto.stateChanged ({})".format(self.right_settings.check_freq_yauto.isChecked())))
+        self.right_settings.check_freq_xauto.stateChanged.connect(lambda: logger.debug("right_settings.check_freq_xauto.stateChanged ({})".format(self.right_settings.check_freq_xauto.isChecked())))
+        self.right_settings.input_freq_xmin.returnPressed.connect(lambda: logger.debug("right_settings.input_freq_xmin.returnPressed ({})".format(self.right_settings.input_freq_xmin.text())))
+        self.right_settings.slider_bin.sliderMoved.connect(lambda: logger.debug("right_settings.input_bin.returnPressed ({})".format(self.right_settings.slider_bin.value())))
+        self.right_settings.slider_bin.sliderReleased.connect(lambda: logger.debug("right_settings.input_bin.returnPressed ({})".format(self.right_settings.slider_bin.value())))
+
+        self.support_panel.all_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.all_color_options.currentTextChanged ({})".format(self.support_panel.all_color_options.currentText())))
+        self.support_panel.linestyle_options.currentTextChanged.connect(lambda: logger.debug("support_panel.linestyle_options.currentTextChanged ({})".format(self.support_panel.linestyle_options.currentText())))
+        self.support_panel.line_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.line_color_options.currentTextChanged ({})".format(self.support_panel.line_color_options.currentText())))
+        self.support_panel.line_width_options.currentTextChanged.connect(lambda: logger.debug("support_panel.line_width_options.currentTextChanged ({})".format(self.support_panel.line_width_options.currentText())))
+        self.support_panel.marker_options.currentTextChanged.connect(lambda: logger.debug("support_panel.marker_options.currentTextChanged ({})".format(self.support_panel.marker_options.currentText())))
+        self.support_panel.marker_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.marker_color_options.currentTextChanged ({})".format(self.support_panel.marker_color_options.currentText())))
+        self.support_panel.marker_size_options.currentTextChanged.connect(lambda: logger.debug("support_panel.marker_size_options.currentTextChanged ({})".format(self.support_panel.marker_size_options.currentText())))
+        self.support_panel.fillstyle_options.currentTextChanged.connect(lambda: logger.debug("support_panel.fillstyle_options.currentTextChanged ({})".format(self.support_panel.fillstyle_options.currentText())))
+        self.support_panel.errorbar_style_options.currentTextChanged.connect(lambda: logger.debug("support_panel.errorbar_style_options.currentTextChanged ({})".format(self.support_panel.errorbar_style_options.currentText())))
+        self.support_panel.errorbar_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.errorbar_color_options.currentTextChanged ({})".format(self.support_panel.errorbar_color_options.currentText())))
+        self.support_panel.errorbar_width_options.currentTextChanged.connect(lambda: logger.debug("support_panel.errorbar_width_options.currentTextChanged ({})".format(self.support_panel.errorbar_width_options.currentText())))
+        self.support_panel.fit_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.fit_color_options.currentTextChanged ({})".format(self.support_panel.fit_color_options.currentText())))
+        self.support_panel.fit_linestyle_options.currentTextChanged.connect(lambda: logger.debug("support_panel.fit_linestyle_options.currentTextChanged ({})".format(self.support_panel.fit_linestyle_options.currentText())))
+        self.support_panel.item_tree.itemSelectionChanged.connect(lambda: logger.debug("support_panel.item_tree.itemSelectionChanged ({})".format(self.support_panel.item_tree.currentItem().text())))
+        
+        self.support_panel.plot_button.pressed.connect(lambda: logger.debug("support_panel.plot_button.pressed ({})".format(self.support_panel.item_tree.get_selected_names())))
+        self.support_panel.plot_all_button.pressed.connect(lambda: logger.debug("support_panel.plot_all_button.pressed ({})".format(self.support_panel.item_tree.get_names())))
+        self.support_panel.clear_all_button.pressed.connect(lambda: logger.debug("support_panel.clear_all_button.pressed ({})".format(self.support_panel.item_tree.get_selected_names())))
+        self.support_panel.alpha_input.returnPressed.connect(lambda: logger.debug("support_panel.alpha_input.returnPressed ({})".format(self.support_panel.alpha_input.text())))
 
     def _set_widget_attributes(self):
         pass
