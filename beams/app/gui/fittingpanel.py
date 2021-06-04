@@ -1266,8 +1266,9 @@ class FitTabPresenter(PanelPresenter):
             max_asymmetry = local_max if local_max > max_asymmetry else max_asymmetry
             local_min = np.min(asymmetry[start_index:end_index])
             min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
-            self.__logger.debug("{}, {}, {}, {}, {}".format(time, asymmetry, uncertainty, color, run.meta[files.TITLE_KEY]))
             color = list(self._plot_model.color_options_values.values())[-i]
+            self.__logger.debug("{}, {}, {}, {}, {}".format(time, asymmetry, uncertainty, color, run.meta[files.TITLE_KEY]))
+  
             self._view.fit_display.plot_asymmetry(time, asymmetry, uncertainty, None,
                                                   color=color,
                                                   marker='.',
