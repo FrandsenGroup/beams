@@ -793,6 +793,10 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         self._set_widget_layout()
         self._presenter = PlottingPanelPresenter(self)
 
+        self.right_settings.input_bin.setText('5')
+        self.right_settings.slider_bin.setValue(5)
+        self.right_settings.input_time_xmax.setText('0.5')
+
     def createSupportPanel(self) -> QtWidgets.QDockWidget:
         return self.support_panel
 
