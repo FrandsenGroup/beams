@@ -81,9 +81,13 @@ class Asymmetry(np.ndarray):
             background_one = histogram_one.background_radiation()
             background_two = histogram_two.background_radiation()
             histogram_one_good = histogram_one[start_bin_one - 1: end_bin_one + 1]
-            histogram_two_good = histogram_two[start_bin_one - 1: end_bin_one + 1]
+            histogram_two_good = histogram_two[start_bin_two - 1: end_bin_two + 1]
             input_array = ((histogram_one_good - background_one) - (histogram_two_good - background_two)) / \
                           ((histogram_two_good - background_two) + (histogram_one_good - background_one))
+            
+            if alpha is not None:
+                input_array = ((alpha - 1) + ((alpha + 1) * input_array)) / \
+                              ((alpha + 1) + ((alpha - 1) * input_array))
 
             if histogram_one.bin_size != histogram_two.bin_size:
                 raise ValueError("Histograms do not have the same bin size")
