@@ -343,6 +343,7 @@ class RunDataset:
 
         self.meta = None
         self.file = None
+        self.histograms_used = []
         self.isLoaded = False
 
     def __eq__(self, other):
@@ -572,6 +573,20 @@ class RunService:
 
     def combine_histograms(self, ids, titles):
         pass
+
+    @staticmethod
+    def recalculate_asymmetries(ids):
+        for run in RunService.__dao.get_runs_by_ids(ids):
+            if len(run.histograms_used) == 2:
+                run.asymmetries[RunDataset.FULL_ASYMMETRY] = Asymmetry(histogram_one=run.histograms[run.histograms_used[0]],
+                                                                       histogram_two=run.histograms[run.histograms_used[1]],
+                                                                       alpha=run.asymmetries[RunDataset.FULL_ASYMMETRY].alpha)
+
+                if run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY] is not None:
+                    run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY].bin_size)
+                    run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
+        
+        RunService.__notifier.notify(RunService.RUNS_CHANGED)
 
     @staticmethod
     def add_runs(paths):
