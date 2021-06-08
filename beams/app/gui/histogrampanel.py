@@ -646,7 +646,6 @@ class HistogramPanelPresenter(PanelPresenter):
                          self.__current_histogram.good_bin_end)
 
     def _save_clicked(self):
-        print(self._view.support_panel.tree.get_selected_histograms())
         for histogram in self._view.support_panel.tree.get_selected_histograms():
             histogram.background_start = self.__alterations[histogram.id][histogram.title][files.BACKGROUND_ONE_KEY]
             histogram.background_end = self.__alterations[histogram.id][histogram.title][files.BACKGROUND_TWO_KEY]
