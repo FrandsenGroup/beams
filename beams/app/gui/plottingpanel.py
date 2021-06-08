@@ -585,31 +585,19 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
         def __init__(self) -> None:
             super(PlottingPanel.PlotLegend, self).__init__()
+
+            self.__legend = PlottingPanel.PlotLegend.Legend()
+            layout = QtWidgets.QHBoxLayout()
+            layout.addWidget(self.__legend)
+            self.setLayout(layout)
             
 
         def set_legend(self, values: dict):
             # If the legend is the same, no need to replot
-            if values == self.__legend:
-                return
-
-            # If there are no legend items, blank it out
-            # Todo, maybe we should have the legend block disappear entirely?
-            #   How hard would it be to update the gui each time?
-            if len(values) == 0:
-                self.set_blank()
-                return
-            self.figure.clear()
-            patches = [
-                Patch(color=color, label=label)
-                for label, color in values.items()
-            ]
-
-            self.figure.legend(patches, [x[0] for x in values.items()], loc='center', frameon=False, prop={"size":9})
-            self.figure.canvas.draw()
+            self.__legend.set_legend(values)
 
         def set_blank(self):
-            self.figure.clear()
-            self.figure.canvas.draw()
+            self.__legend.set_blank()
 
     class PlotControl(QtWidgets.QWidget):
         def __init__(self):
