@@ -81,9 +81,13 @@ class Asymmetry(np.ndarray):
             background_one = histogram_one.background_radiation()
             background_two = histogram_two.background_radiation()
             histogram_one_good = histogram_one[start_bin_one - 1: end_bin_one + 1]
-            histogram_two_good = histogram_two[start_bin_one - 1: end_bin_one + 1]
+            histogram_two_good = histogram_two[start_bin_two - 1: end_bin_two + 1]
             input_array = ((histogram_one_good - background_one) - (histogram_two_good - background_two)) / \
                           ((histogram_two_good - background_two) + (histogram_one_good - background_one))
+            
+            if alpha is not None:
+                input_array = ((alpha - 1) + ((alpha + 1) * input_array)) / \
+                              ((alpha + 1) + ((alpha - 1) * input_array))
 
             if histogram_one.bin_size != histogram_two.bin_size:
                 raise ValueError("Histograms do not have the same bin size")
@@ -343,6 +347,7 @@ class RunDataset:
 
         self.meta = None
         self.file = None
+        self.histograms_used = []
         self.isLoaded = False
 
     def __eq__(self, other):
@@ -572,6 +577,20 @@ class RunService:
 
     def combine_histograms(self, ids, titles):
         pass
+
+    @staticmethod
+    def recalculate_asymmetries(ids):
+        for run in RunService.__dao.get_runs_by_ids(ids):
+            if len(run.histograms_used) == 2:
+                run.asymmetries[RunDataset.FULL_ASYMMETRY] = Asymmetry(histogram_one=run.histograms[run.histograms_used[0]],
+                                                                       histogram_two=run.histograms[run.histograms_used[1]],
+                                                                       alpha=run.asymmetries[RunDataset.FULL_ASYMMETRY].alpha)
+
+                if run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY] is not None:
+                    run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY].bin_size)
+                    run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
+        
+        RunService.__notifier.notify(RunService.RUNS_CHANGED)
 
     @staticmethod
     def add_runs(paths):
