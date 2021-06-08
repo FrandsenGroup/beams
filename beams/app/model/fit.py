@@ -6,6 +6,7 @@ import enum
 from collections import OrderedDict
 import time
 import uuid
+import re
 
 from app.resources import resources
 from app.model import domain, files
@@ -571,7 +572,8 @@ class FitEngine:
     # fixme bug when smaller variable names (like 'd') occur in other variables.
     def _replace_fixed(function, symbols, values):
         for symbol, value in zip(symbols, values):
-            function = function.replace(symbol, str(value))
+            value = str(value)
+            function = re.sub(r'(?<=\b){}(?=\b)'.format(symbol), value, function)
         return function
 
     @staticmethod
