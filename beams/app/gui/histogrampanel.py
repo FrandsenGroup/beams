@@ -63,14 +63,13 @@ class HistogramPanel(Panel):
                 self.clear()
                 self.addTopLevelItems(tree)
 
-            def get_run_ids(self):
-                # Suppressing inspection because it doesn't recognize 'self' as a QTreeWidget
+            def get_selected_run_ids(self):
                 # noinspection PyTypeChecker
-                iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Checked)
+                iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Selected)
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, RunDataset):
+                    if isinstance(iterator.value().model, Histogram):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -647,14 +646,15 @@ class HistogramPanelPresenter(PanelPresenter):
                          self.__current_histogram.good_bin_end)
 
     def _save_clicked(self):
+        print(self._view.support_panel.tree.get_selected_histograms())
         for histogram in self._view.support_panel.tree.get_selected_histograms():
             histogram.background_start = self.__alterations[histogram.id][histogram.title][files.BACKGROUND_ONE_KEY]
             histogram.background_end = self.__alterations[histogram.id][histogram.title][files.BACKGROUND_TWO_KEY]
             histogram.time_zero = self.__alterations[histogram.id][histogram.title][files.T0_KEY]
             histogram.good_bin_start = self.__alterations[histogram.id][histogram.title][files.GOOD_BIN_ONE_KEY]
-            histogram.good_bin_end = self.__alterations[histogram.id][histogram.title][files.BACKGROUND_TWO_KEY]
+            histogram.good_bin_end = self.__alterations[histogram.id][histogram.title][files.GOOD_BIN_TWO_KEY]
 
-        # fixme need the run service to recalculate all asymmetries
+        self.__run_service.recalculate_asymmetries(self._view.support_panel.tree.get_selected_run_ids())
 
     def _editing_checked(self):
         self.__editing = self._view.is_editing()
