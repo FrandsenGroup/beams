@@ -14,7 +14,7 @@
 ## Getting Started
 
 ### Prerequisites
-- You only need to have Python 3 installed on your computer.
+- Python 3.6 or greater
 
 ### Installation
 - Download or clone this repository.
