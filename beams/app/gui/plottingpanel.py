@@ -848,7 +848,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         self.support_panel.errorbar_width_options.currentTextChanged.connect(lambda: logger.debug("support_panel.errorbar_width_options.currentTextChanged ({})".format(self.support_panel.errorbar_width_options.currentText())))
         self.support_panel.fit_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.fit_color_options.currentTextChanged ({})".format(self.support_panel.fit_color_options.currentText())))
         self.support_panel.fit_linestyle_options.currentTextChanged.connect(lambda: logger.debug("support_panel.fit_linestyle_options.currentTextChanged ({})".format(self.support_panel.fit_linestyle_options.currentText())))
-        self.support_panel.item_tree.itemSelectionChanged.connect(lambda: logger.debug("support_panel.item_tree.itemSelectionChanged ({})".format(self.support_panel.item_tree.currentItem().text())))
+        self.support_panel.item_tree.itemSelectionChanged.connect(lambda: logger.debug("support_panel.item_tree.itemSelectionChanged ({})".format(self.support_panel.item_tree.get_selected_names())))
         
         self.support_panel.plot_button.pressed.connect(lambda: logger.debug("support_panel.plot_button.pressed ({})".format(self.support_panel.item_tree.get_selected_names())))
         self.support_panel.plot_all_button.pressed.connect(lambda: logger.debug("support_panel.plot_all_button.pressed ({})".format(self.support_panel.item_tree.get_names())))
