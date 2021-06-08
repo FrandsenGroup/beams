@@ -573,7 +573,7 @@ class FitEngine:
     def _replace_fixed(function, symbols, values):
         for symbol, value in zip(symbols, values):
             value = str(value)
-            function = re.sub(r'(?<=\W){}(?=\W)'.format(symbol), value, function)
+            function = re.sub(r'(?<=\b){}(?=\b)'.format(symbol), value, function)
         return function
 
     @staticmethod
