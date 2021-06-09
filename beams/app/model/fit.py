@@ -572,8 +572,7 @@ class FitEngine:
     # fixme bug when smaller variable names (like 'd') occur in other variables.
     def _replace_fixed(function, symbols, values):
         for symbol, value in zip(symbols, values):
-            value = str(value)
-            function = re.sub(r'(?<=\W){}(?=\W)'.format(symbol), value, function)
+            function = re.sub(r'(?<=\b){}(?=\b)'.format(symbol), str(value), function)
         return function
 
     @staticmethod
