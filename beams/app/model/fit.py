@@ -89,16 +89,16 @@ class FitExpression:
         self.__expression_as_string = expression
 
         if expression_as_lambda:
-            self.__expression_as_lambda = expression_as_lambda
+            self.expression_as_lambda = expression_as_lambda
             return
 
         expression = replace_symbols(expression)
         variables = [replace_symbols(k) for k in variables]
-        self.__expression_as_lambda = lambdify(expression, variables, INDEPENDENT_VARIABLE)
+        self.expression_as_lambda = lambdify(expression, variables, INDEPENDENT_VARIABLE)
 
     def __call__(self, *args, **kwds):
         kwds = {replace_symbols(k): v for k, v in kwds.items()}
-        return self.__expression_as_lambda(*args, **kwds)
+        return self.expression_as_lambda(*args, **kwds)
 
     def __str__(self):
         return self.__expression_as_string
@@ -572,8 +572,7 @@ class FitEngine:
     # fixme bug when smaller variable names (like 'd') occur in other variables.
     def _replace_fixed(function, symbols, values):
         for symbol, value in zip(symbols, values):
-            value = str(value)
-            function = re.sub(r'(?<=\b){}(?=\b)'.format(symbol), value, function)
+            function = re.sub(r'(?<=\b){}(?=\b)'.format(symbol), str(value), function)
         return function
 
     @staticmethod
