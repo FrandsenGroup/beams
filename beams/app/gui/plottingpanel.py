@@ -703,14 +703,14 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
         def _set_widget_dimensions(self):
             box_size = 40
-            self.input_time_xmin.setFixedWidth(box_size)
-            self.input_time_xmax.setFixedWidth(box_size)
-            self.input_time_ymin.setFixedWidth(box_size)
-            self.input_time_ymax.setFixedWidth(box_size)
-            self.input_freq_xmin.setFixedWidth(box_size)
-            self.input_freq_xmax.setFixedWidth(box_size)
-            self.input_freq_ymin.setFixedWidth(box_size)
-            self.input_freq_ymax.setFixedWidth(box_size)
+            self.input_time_xmin.setMinimumWidth(box_size)
+            self.input_time_xmax.setMinimumWidth(box_size)
+            self.input_time_ymin.setMinimumWidth(box_size)
+            self.input_time_ymax.setMinimumWidth(box_size)
+            self.input_freq_xmin.setMinimumWidth(box_size)
+            self.input_freq_xmax.setMinimumWidth(box_size)
+            self.input_freq_ymin.setMinimumWidth(box_size)
+            self.input_freq_ymax.setMinimumWidth(box_size)
             self.input_bin.setFixedWidth(50)
 
         def _set_widget_layout(self):
@@ -726,6 +726,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             time_form = QtWidgets.QGroupBox('Time')
             time_layout = QtWidgets.QFormLayout()
             time_grid = QtWidgets.QGridLayout()
+            time_grid.setRowStretch(0, 5)
 
             time_grid.addWidget(self._label_time_xmin, 0, 2)
             time_grid.addWidget(self.input_time_xmin, 0, 3)
