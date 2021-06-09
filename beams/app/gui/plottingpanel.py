@@ -3,7 +3,7 @@ import warnings
 from enum import Enum
 import logging
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtGui, QtWidgets, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
 from matplotlib.patches import Patch
@@ -46,7 +46,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self.addTopLevelItems(tree)
 
             def get_run_ids(self):
-                # Suppressing inspection because it doesn't recognize 'self' as a QTreeWidget
                 # noinspection PyTypeChecker
                 iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Checked)
 
@@ -160,6 +159,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.clear_all_button = widgets.StyleTwoButton("Clear All")
 
             self.item_tree = self.Tree()
+            self.legend = PlottingPanel.PlotLegend()
 
             self.style_settings = QtWidgets.QGroupBox("Applies to all selected runs")
             self.all_color_options = QtWidgets.QComboBox()
@@ -540,64 +540,37 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_time.figure.canvas.draw()
 
     class PlotLegend(QtWidgets.QWidget):
-        class Legend(FigureCanvas):
-            def __init__(self) -> None:
-                self._draw_pending = True
-                self._is_drawing = True
-
-                FigureCanvas.__init__(self, Figure())
-
-                self.__legend = {}
-
-                # import matplotlib.pyplot as plt
-                # import matplotlib as mpl
-                # labels = ['Label 1', 'Label 2', 'Label 3', 'Label 4']
-                # colors = ['b', 'g', 'r', 'y']
-                
-                # patches = [
-                #     Patch(color=color, label=label)
-                #     for label, color in zip(labels, colors)]
-                # self.figure.legend(patches, labels, loc='center', frameon=False)
-
-            def set_legend(self, values: dict):
-                # If the legend is the same, no need to replot
-                if values == self.__legend:
-                    return
-
-                # If there are no legend items, blank it out
-                # Fixme, maybe we should have the legend block disappear entirely?
-                #   How hard would it be to update the gui each time?
-                if len(values) == 0:
-                    self.set_blank()
-                    return
-                self.figure.clear()
-                patches = [
-                    Patch(color=color, label=label)
-                    for label, color in values.items()
-                ]
-
-                self.figure.legend(patches, [x[0] for x in values.items()], loc='center', frameon=False, prop={"size":9})
-                self.figure.canvas.draw()
-
-            def set_blank(self):
-                self.figure.clear()
-                self.figure.canvas.draw()
-
         def __init__(self) -> None:
             super(PlottingPanel.PlotLegend, self).__init__()
-
-            self.__legend = PlottingPanel.PlotLegend.Legend()
+            self.centralWidget = QtWidgets.QListWidget()
             layout = QtWidgets.QHBoxLayout()
-            layout.addWidget(self.__legend)
+            layout.addWidget(self.centralWidget)
             self.setLayout(layout)
+            self.__values = None
             
-
         def set_legend(self, values: dict):
-            # If the legend is the same, no need to replot
-            self.__legend.set_legend(values)
+            if self.__values is not None and len(self.__values) == len(values):
+                return
+            
+            self.__values = values
+            self.centralWidget.clear()
 
+            for i, (label, color) in enumerate(values.items()):
+                qlabel = QtWidgets.QLineEdit()
+                qlabel.setText(label)
+
+                pixmap = QtGui.QPixmap(100,100);
+                pixmap.fill(QtGui.QColor(color));
+                redIcon = QtGui.QIcon(pixmap);
+                qcolor = QtWidgets.QToolButton()
+                qcolor.setIcon(redIcon)
+
+                file_item = QtWidgets.QListWidgetItem(label, self.centralWidget)
+                file_item.setIcon(redIcon)
+                file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsEditable)
+                    
         def set_blank(self):
-            self.__legend.set_blank()
+            pass
 
     class PlotControl(QtWidgets.QWidget):
         def __init__(self):
@@ -845,7 +818,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         self.right_display = self.PlotDisplay(self.right_settings)
 
         self._set_logging()
-        self.legend_display = self.PlotLegend()
+        self.legend_display = self.support_panel.legend
 
         self._set_widget_layout()
         self._presenter = PlottingPanelPresenter(self)
@@ -905,7 +878,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         self.support_panel.errorbar_width_options.currentTextChanged.connect(lambda: logger.debug("support_panel.errorbar_width_options.currentTextChanged ({})".format(self.support_panel.errorbar_width_options.currentText())))
         self.support_panel.fit_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.fit_color_options.currentTextChanged ({})".format(self.support_panel.fit_color_options.currentText())))
         self.support_panel.fit_linestyle_options.currentTextChanged.connect(lambda: logger.debug("support_panel.fit_linestyle_options.currentTextChanged ({})".format(self.support_panel.fit_linestyle_options.currentText())))
-        self.support_panel.item_tree.itemSelectionChanged.connect(lambda: logger.debug("support_panel.item_tree.itemSelectionChanged ({})".format(self.support_panel.item_tree.currentItem().text())))
+        self.support_panel.item_tree.itemSelectionChanged.connect(lambda: logger.debug("support_panel.item_tree.itemSelectionChanged ({})".format(self.support_panel.item_tree.get_selected_names())))
         
         self.support_panel.plot_button.pressed.connect(lambda: logger.debug("support_panel.plot_button.pressed ({})".format(self.support_panel.item_tree.get_selected_names())))
         self.support_panel.plot_all_button.pressed.connect(lambda: logger.debug("support_panel.plot_all_button.pressed ({})".format(self.support_panel.item_tree.get_names())))
@@ -930,8 +903,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         vbox.addWidget(self.right_display)
         vbox.addWidget(self.right_settings)
         hbox.addLayout(vbox)
-
-        hbox.addWidget(self.legend_display)
 
         self.setLayout(hbox)
 
