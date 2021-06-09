@@ -335,7 +335,7 @@ class Separator(QtWidgets.QFrame):
         self.setAutoFillBackground(True)
         self.setBackgroundRole(QtGui.QPalette.Highlight)
         p = self.palette()
-        p.setColor(self.backgroundRole(), QtGui.QColor('#F2F2F2'))
+        p.setColor(self.backgroundRole(), QtGui.QColor('#000000'))
         self.setPalette(p)
 
 

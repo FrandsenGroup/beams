@@ -276,6 +276,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         def __init__(self):
             super().__init__()
             self.setTitleBarWidget(QtWidgets.QWidget())
+            self.setWindowTitle("Plotting")
 
             self.plot_button = widgets.StyleOneButton("Plot")
             self.plot_all_button = widgets.StyleOneButton("Plot All")
