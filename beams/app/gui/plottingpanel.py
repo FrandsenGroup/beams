@@ -929,6 +929,8 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         vbox.addWidget(self.right_settings)
         hbox.addLayout(vbox)
 
+        hbox.addWidget(self.legend_display)
+
         self.setLayout(hbox)
 
 
