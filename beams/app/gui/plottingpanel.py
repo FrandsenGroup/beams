@@ -203,6 +203,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.alpha_input.setText("1.0")
 
         def _set_widget_layout(self):
+            
             layout = QtWidgets.QGridLayout()
             layout.addWidget(QtWidgets.QLabel("Default Color"), 0, 0)
             layout.addWidget(self.all_color_options, 0, 1)
@@ -231,10 +232,11 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             layout.addWidget(QtWidgets.QLabel("Alpha"), 12, 0)
             layout.addWidget(self.alpha_input, 12, 1)
 
-            form_layout = QtWidgets.QFormLayout()
-            form_layout.addItem(layout)
-
-            self.style_settings.setLayout(form_layout)
+            box_layout = QtWidgets.QHBoxLayout()
+            box_layout.addLayout(layout)
+            self.style_box = widgets.CollapsibleBox("Plot Style")
+            self.style_box.setContentLayout(box_layout)
+            self.style_box.toggle_button.pressed.connect(lambda: self._toggle_boxes('plot'))
 
             hbox = QtWidgets.QHBoxLayout()
             hbox.addWidget(self.plot_button)
@@ -244,11 +246,19 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             vbox = QtWidgets.QVBoxLayout()
             vbox.addLayout(hbox)
             vbox.addWidget(self.item_tree)
-            vbox.addWidget(self.style_settings)
+            vbox.addWidget(self.style_box)
+            vbox.addWidget(self.legend)
             temp = QtWidgets.QWidget()
             temp.setLayout(vbox)
 
             self.setWidget(temp)
+
+        def _toggle_boxes(self, box_id):
+            if box_id != 'plot' and self.style_box.is_open():
+                self.style_box.on_pressed()
+
+            if box_id == 'plot':
+                self.style_box.on_pressed()
 
         def set_first_selected(self):
             if self.item_tree.topLevelItemCount() > 0:

@@ -24,7 +24,7 @@ class StyleThreeButton(QtWidgets.QPushButton):
 
 # noinspection PyArgumentList
 class CollapsibleBox(QtWidgets.QWidget):
-    def __init__(self, title="", parent=None, background='#070536'):
+    def __init__(self, title="", parent=None, background='#ffffff'):
         super(CollapsibleBox, self).__init__(parent)
         self.__dumb_constant = False
 
