@@ -89,16 +89,16 @@ class FitExpression:
         self.__expression_as_string = expression
 
         if expression_as_lambda:
-            self.__expression_as_lambda = expression_as_lambda
+            self.expression_as_lambda = expression_as_lambda
             return
 
         expression = replace_symbols(expression)
         variables = [replace_symbols(k) for k in variables]
-        self.__expression_as_lambda = lambdify(expression, variables, INDEPENDENT_VARIABLE)
+        self.expression_as_lambda = lambdify(expression, variables, INDEPENDENT_VARIABLE)
 
     def __call__(self, *args, **kwds):
         kwds = {replace_symbols(k): v for k, v in kwds.items()}
-        return self.__expression_as_lambda(*args, **kwds)
+        return self.expression_as_lambda(*args, **kwds)
 
     def __str__(self):
         return self.__expression_as_string
