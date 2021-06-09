@@ -259,6 +259,8 @@ class FittingPanel(Panel):
                                         ecolor=errorbar_color, capsize=errorbar_style)
 
             else:
+                self.__logger = logging.getLogger('qt_fitting_panel_plot_fit')
+                self.__logger.debug("{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}".format(time, asymmetry, marker_face_color, marker_color, color, linestyle, marker, fillstyle, line_width, marker_size, label))
                 self.axes_time.plot(time, asymmetry, mfc=marker_face_color, mec=marker_color, color=color,
                                     linestyle=linestyle, marker=marker, fillstyle=fillstyle,
                                     linewidth=line_width,
@@ -1290,8 +1292,17 @@ class FitTabPresenter(PanelPresenter):
                 break
             time = domain.Time(input_array=None, bin_size=(max_time - min_time) * 1000 / 200, length=200,
                                time_zero=min_time)
+
             fit_asymmetry = self.__expression(time, **group)
+            
+            try:
+                if len(fit_asymmetry) == 1:
+                    fit_asymmetry = [fit_asymmetry for _ in time]
+            except TypeError:
+                fit_asymmetry = [fit_asymmetry for _ in time]
+
             color = 'Black'
+            self.__logger.debug("{}, {}, {}, {}".format(self.__expression, self.__expression.expression_as_lambda.__kwdefaults__, group, len(time)))
             self._view.fit_display.plot_asymmetry(time, fit_asymmetry, None, None,
                                                   color=color,
                                                   marker='.',
