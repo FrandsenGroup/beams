@@ -238,6 +238,12 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.style_box.setContentLayout(box_layout)
             self.style_box.toggle_button.pressed.connect(lambda: self._toggle_boxes('plot'))
 
+            box_layout = QtWidgets.QHBoxLayout()
+            box_layout.addWidget(self.legend)
+            self.legend_box = widgets.CollapsibleBox("Legend")
+            self.legend_box.setContentLayout(box_layout)
+            self.legend_box.toggle_button.pressed.connect(lambda: self._toggle_boxes('legend'))
+
             hbox = QtWidgets.QHBoxLayout()
             hbox.addWidget(self.plot_button)
             hbox.addWidget(self.plot_all_button)
@@ -247,7 +253,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             vbox.addLayout(hbox)
             vbox.addWidget(self.item_tree)
             vbox.addWidget(self.style_box)
-            vbox.addWidget(self.legend)
+            vbox.addWidget(self.legend_box)
             temp = QtWidgets.QWidget()
             temp.setLayout(vbox)
 
@@ -256,9 +262,13 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         def _toggle_boxes(self, box_id):
             if box_id != 'plot' and self.style_box.is_open():
                 self.style_box.on_pressed()
+            elif box_id != 'legend' and self.legend_box.is_open():
+                self.legend_box.on_pressed()
 
             if box_id == 'plot':
                 self.style_box.on_pressed()
+            elif box_id == 'legend':
+                self.legend_box.on_pressed()
 
         def set_first_selected(self):
             if self.item_tree.topLevelItemCount() > 0:
@@ -549,13 +559,9 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.set_blank()
             self.axes_time.figure.canvas.draw()
 
-    class PlotLegend(QtWidgets.QWidget):
+    class PlotLegend(QtWidgets.QListWidget):
         def __init__(self) -> None:
             super(PlottingPanel.PlotLegend, self).__init__()
-            self.centralWidget = QtWidgets.QListWidget()
-            layout = QtWidgets.QHBoxLayout()
-            layout.addWidget(self.centralWidget)
-            self.setLayout(layout)
             self.__values = None
             
         def set_legend(self, values: dict):
@@ -563,9 +569,9 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 return
             
             self.__values = values
-            self.centralWidget.clear()
+            self.clear()
 
-            for i, (label, color) in enumerate(values.items()):
+            for label, color in values.items():
                 qlabel = QtWidgets.QLineEdit()
                 qlabel.setText(label)
 
@@ -575,12 +581,21 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 qcolor = QtWidgets.QToolButton()
                 qcolor.setIcon(redIcon)
 
-                file_item = QtWidgets.QListWidgetItem(label, self.centralWidget)
+                file_item = QtWidgets.QListWidgetItem(label, self)
                 file_item.setIcon(redIcon)
-                file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsEditable)
+
+                #TODO We need to make it so we can edit the title, this will involve changing the logic quite a bit though in a few places.
+                # maybe we can go back to our old idea of attaching references to model objects to things like this... OR we just keep a dict
+                # in this class that references the actual titles to the ones the user has selected. It would have to be persistent for when
+                # they clear and plot again. I don't imagine we would want to save these values. OR we could have them choose what they want in
+                # the legend (like select temp or field or material or title). I like that idea, maybe put the options up at the top of the 
+                # collapsible box.
+
+                # file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsEditable) 
                     
         def set_blank(self):
-            pass
+            self.__values = {}
+            self.clear()
 
     class PlotControl(QtWidgets.QWidget):
         def __init__(self):
@@ -1067,13 +1082,13 @@ class PlottingPanelPresenter(PanelPresenter):
     def _clear_all(self):
         # set all to unchecked and plot
         self._view.support_panel.item_tree.set_all_checked(False)
+        self._view.support_panel.legend.set_blank()
         threading.Thread(
             target=self._update_canvas(self._view.left_settings, self._view.left_display, 'left', fast=False),
             daemon=True).start()
         threading.Thread(
             target=self._update_canvas(self._view.right_settings, self._view.right_display, 'right', fast=False),
             daemon=True).start()
-        # need to clear... shit well crap we need to handle a case where there is 0
 
     def _plot_parameter_changed(self, settings, display, side):
         threading.Thread(target=self._update_canvas(settings, display, side, fast=False), daemon=True).start()
