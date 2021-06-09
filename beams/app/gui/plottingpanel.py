@@ -89,8 +89,9 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 self.alpha_input = QtWidgets.QLineEdit()
 
-                layout = QtWidgets.QVBoxLayout()
-                layout.addWidget(self.alpha_input)
+                layout = QtWidgets.QGridLayout()
+                layout.addWidget(QtWidgets.QLabel("Alpha"), 0, 0)
+                layout.addWidget(self.alpha_input, 0, 1)
                 self.setContentLayout(layout)
 
         class LegendBox(widgets.CollapsibleBox):
@@ -297,6 +298,8 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.plot_style_box.toggle_button.pressed.connect(lambda: self._toggle_boxes(self.plot_style_box.title))
             self.asymmetry_param_box.toggle_button.pressed.connect(lambda: self._toggle_boxes(self.asymmetry_param_box.title))
 
+            self.legend_box.on_pressed()
+
         def _set_widget_layout(self):
             hbox = QtWidgets.QHBoxLayout()
             hbox.addWidget(self.plot_button)
@@ -309,6 +312,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             vbox.addWidget(self.legend_box)
             vbox.addWidget(self.plot_style_box)
             vbox.addWidget(self.asymmetry_param_box)
+            vbox.addStretch()
 
             temp = QtWidgets.QWidget()
             temp.setLayout(vbox)
@@ -344,103 +348,103 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                     box.addItem("*")
 
         def set_alpha(self, alpha):
-            self.alpha_input.setText(alpha)
+            self.asymmetry_param_box.alpha_input.setText(alpha)
 
         def set_default_color(self, color):
             if color == "*":
-                self._check_add_star(self.all_color_options, False)
+                self._check_add_star(self.plot_style_box.all_color_options, False)
             else:
-                self._check_add_star(self.all_color_options, True)
+                self._check_add_star(self.plot_style_box.all_color_options, True)
 
-            self.all_color_options.setCurrentText(color)
+            self.plot_style_box.all_color_options.setCurrentText(color)
 
         def set_linestyle(self, linestyle):
             if linestyle == "*":
-                self._check_add_star(self.linestyle_options, False)
+                self._check_add_star(self.plot_style_box.linestyle_options, False)
             else:
-                self._check_add_star(self.linestyle_options, True)
+                self._check_add_star(self.plot_style_box.linestyle_options, True)
 
-            self.linestyle_options.setCurrentText(linestyle)
+            self.plot_style_box.linestyle_options.setCurrentText(linestyle)
 
         def set_line_color(self, line_color):
             if line_color == "*":
-                self._check_add_star(self.line_color_options, False)
+                self._check_add_star(self.plot_style_box.line_color_options, False)
             else:
-                self._check_add_star(self.line_color_options, True)
+                self._check_add_star(self.plot_style_box.line_color_options, True)
 
-            self.line_color_options.setCurrentText(line_color)
+            self.plot_style_box.line_color_options.setCurrentText(line_color)
 
         def set_line_width(self, line_width):
             if line_width == "*":
-                self._check_add_star(self.line_width_options, False)
+                self._check_add_star(self.plot_style_box.line_width_options, False)
             else:
-                self._check_add_star(self.line_width_options, True)
+                self._check_add_star(self.plot_style_box.line_width_options, True)
 
-            self.line_width_options.setCurrentText(line_width)
+            self.plot_style_box.line_width_options.setCurrentText(line_width)
 
         def set_marker(self, marker):
             if marker == "*":
-                self._check_add_star(self.marker_options, False)
+                self._check_add_star(self.plot_style_box.marker_options, False)
             else:
-                self._check_add_star(self.marker_options, True)
+                self._check_add_star(self.plot_style_box.marker_options, True)
 
-            self.marker_options.setCurrentText(marker)
+            self.plot_style_box.marker_options.setCurrentText(marker)
 
         def set_marker_color(self, color):
             if color == "*":
-                self._check_add_star(self.marker_color_options, False)
+                self._check_add_star(self.plot_style_box.marker_color_options, False)
             else:
-                self._check_add_star(self.marker_color_options, True)
+                self._check_add_star(self.plot_style_box.marker_color_options, True)
 
-            self.marker_color_options.setCurrentText(color)
+            self.plot_style_box.marker_color_options.setCurrentText(color)
 
         def set_fit_color(self, color):
             if color == "*":
-                self._check_add_star(self.fit_color_options, False)
+                self._check_add_star(self.plot_style_box.fit_color_options, False)
             else:
-                self._check_add_star(self.fit_color_options, True)
+                self._check_add_star(self.plot_style_box.fit_color_options, True)
 
-            self.fit_color_options.setCurrentText(color)
+            self.plot_style_box.fit_color_options.setCurrentText(color)
 
         def set_marker_size(self, size):
             if size == "*":
-                self._check_add_star(self.marker_size_options, False)
+                self._check_add_star(self.plot_style_box.marker_size_options, False)
             else:
-                self._check_add_star(self.marker_size_options, True)
+                self._check_add_star(self.plot_style_box.marker_size_options, True)
 
-            self.marker_size_options.setCurrentText(size)
+            self.plot_style_box.marker_size_options.setCurrentText(size)
 
         def set_fillstyle(self, fillstyle):
             if fillstyle == "*":
-                self._check_add_star(self.fillstyle_options, False)
+                self._check_add_star(self.plot_style_box.fillstyle_options, False)
             else:
-                self._check_add_star(self.fillstyle_options, True)
+                self._check_add_star(self.plot_style_box.fillstyle_options, True)
 
-            self.fillstyle_options.setCurrentText(fillstyle)
+            self.plot_style_box.fillstyle_options.setCurrentText(fillstyle)
 
         def set_errorbar_style(self, style):
             if style == "*":
-                self._check_add_star(self.errorbar_style_options, False)
+                self._check_add_star(self.plot_style_box.errorbar_style_options, False)
             else:
-                self._check_add_star(self.errorbar_style_options, True)
+                self._check_add_star(self.plot_style_box.errorbar_style_options, True)
 
-            self.errorbar_style_options.setCurrentText(style)
+            self.plot_style_box.errorbar_style_options.setCurrentText(style)
 
         def set_errorbar_color(self, color):
             if color == "*":
-                self._check_add_star(self.errorbar_color_options, False)
+                self._check_add_star(self.plot_style_box.errorbar_color_options, False)
             else:
-                self._check_add_star(self.errorbar_color_options, True)
+                self._check_add_star(self.plot_style_box.errorbar_color_options, True)
 
-            self.errorbar_color_options.setCurrentText(color)
+            self.plot_style_box.errorbar_color_options.setCurrentText(color)
 
         def set_errorbar_width(self, width):
             if width == "*":
-                self._check_add_star(self.errorbar_width_options, False)
+                self._check_add_star(self.plot_style_box.errorbar_width_options, False)
             else:
-                self._check_add_star(self.errorbar_width_options, True)
+                self._check_add_star(self.plot_style_box.errorbar_width_options, True)
 
-            self.errorbar_width_options.setCurrentText(width)
+            self.plot_style_box.errorbar_width_options.setCurrentText(width)
 
     class PlotToolbar(NavigationToolbar2QT):
         def _init_toolbar(self):
