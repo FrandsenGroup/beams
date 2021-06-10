@@ -504,7 +504,6 @@ class FittingPanel(Panel):
         self.check_batch_fit = QtWidgets.QCheckBox()
         self.check_global_plus = QtWidgets.QCheckBox()
         self.check_use_previous = QtWidgets.QCheckBox()
-        self.check_fit_alpha = QtWidgets.QCheckBox()
 
         self.insert_phi = widgets.StyleTwoButton(fit.PHI)
         self.insert_alpha = widgets.StyleTwoButton(fit.ALPHA)
@@ -555,10 +554,9 @@ class FittingPanel(Panel):
         self.fit_spectrum_settings.slider_bin.sliderMoved.connect(lambda: logger.debug("fit_spectrum_settings.slider_bin.sliderMoved ({})".format(self.fit_spectrum_settings.slider_bin.value())))
         self.button_plot.released.connect(lambda: logger.debug("button_plot.released ({})".format(self.get_selected_run_titles())))
         self.table_parameters.itemChanged.connect(lambda: logger.debug("table_parameters.itemChanged"))
-        self.button_fit.released.connect(lambda: logger.debug("button_fit.released ({}, {}, {}, {}, {}, {}, {}, {}, batch {}, alpha {}, global {})".format(self.get_names(), self.get_initial_values(), self.get_lower_bounds(), self.get_upper_bounds(), self.get_fixed(), self.get_check_global(), self.get_expression(), self.get_selected_run_titles(), self.check_batch_fit.isChecked(), self.check_fit_alpha.isChecked(), self.check_global_plus.isChecked())))
+        self.button_fit.released.connect(lambda: logger.debug("button_fit.released ({}, {}, {}, {}, {}, {}, {}, {}, batch {}, global {})".format(self.get_names(), self.get_initial_values(), self.get_lower_bounds(), self.get_upper_bounds(), self.get_fixed(), self.get_check_global(), self.get_expression(), self.get_selected_run_titles(), self.check_batch_fit.isChecked(), self.check_global_plus.isChecked())))
         self.button_save_results.released.connect(lambda: logger.debug("button_save_results.released"))
         self.support_panel.new_button.released.connect(lambda: logger.debug("support_panel.new_button.released"))
-        self.check_fit_alpha.stateChanged.connect(lambda: logger.debug("check_fit_alpha.stateChanged ({})".format(self.check_fit_alpha.isChecked())))
 
     def _set_widget_attributes(self):
         # self.table_parameters.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -579,7 +577,6 @@ class FittingPanel(Panel):
         self.input_user_equation.setPlaceholderText("Function (e.g. \"\u03B2 * (t + \u03BB)\")")
         self.input_fit_equation.setPlaceholderText("Fit Equation")
 
-        self.check_fit_alpha.setCheckState(QtCore.Qt.Checked)
         self.check_use_previous.setEnabled(False)
         self.check_global_plus.setEnabled(True)
         self.option_run_ordering.setEnabled(False)
@@ -694,7 +691,6 @@ class FittingPanel(Panel):
         row.addLayout(row2)
         layout.addRow(row)
         row = QtWidgets.QHBoxLayout()
-        row.addWidget(self.check_fit_alpha)
         row.addWidget(self.label_fit_alpha)
         row.addStretch()
         layout.addRow(row)
@@ -1034,7 +1030,6 @@ class FitTabPresenter(PanelPresenter):
         self.__variable_groups = []
         self.__expression = None
         self.__logger = logging.getLogger('qt_fitting_presenter')
-        self._check_fit_alpha()
 
     def _set_callbacks(self):
         self._view.support_panel.tree.itemSelectionChanged.connect(self._selection_changed)
@@ -1059,7 +1054,6 @@ class FitTabPresenter(PanelPresenter):
         self._view.button_fit.released.connect(self._fit)
         self._view.button_save_results.released.connect(self._save_fit_results)
         self._view.support_panel.new_button.released.connect(self._new_empty_fit)
-        self._view.check_fit_alpha.stateChanged.connect(self._check_fit_alpha)
 
     def _save_fit_results(self):
         selected_data = self._view.support_panel.tree.get_selected_data()
@@ -1081,27 +1075,12 @@ class FitTabPresenter(PanelPresenter):
             self._view.highlight_input_red(self._view.input_fit_equation, False)
             variables = fit.parse(fit.split_expression(expression)[1])
             variables.discard(fit.INDEPENDENT_VARIABLE)
-
-            if self._view.check_fit_alpha.isChecked():
-                variables.add(fit.ALPHA)
+            variables.add(fit.ALPHA)
 
             self._view.update_variable_table(variables=variables)
             self._view.set_variable_value(fit.ALPHA, name='Alpha', is_global=True)
         else:
             self._view.highlight_input_red(self._view.input_fit_equation, True)
-
-    def _check_fit_alpha(self):
-        expression = self._view.get_expression()
-        if self._view.check_fit_alpha.isChecked():
-            variables = fit.parse(expression)
-            variables.discard(fit.INDEPENDENT_VARIABLE)
-            variables.add(fit.ALPHA)
-            self._view.update_variable_table(variables=variables)
-            self._view.set_variable_value(fit.ALPHA, name='Alpha', value=1, is_global=True)
-        else:
-            variables = fit.parse(expression)
-            variables.discard(fit.INDEPENDENT_VARIABLE)
-            self._view.update_variable_table(variables=variables)
 
     def _save_user_function(self):
         function_name = self._view.input_user_equation_name.text()
@@ -1306,7 +1285,7 @@ class FitTabPresenter(PanelPresenter):
                         self._asymmetries[title] = raw_asymmetry
                         spec.asymmetries[run.id] = self._asymmetries[title]
 
-        spec.options[fit.FitOptions.ALPHA_CORRECT] = self._view.check_fit_alpha.isChecked()
+        spec.options[fit.FitOptions.ALPHA_CORRECT] = True
         spec.options[fit.FitOptions.GLOBAL] = self._view.check_global_plus.isChecked()
 
         # Fit to spec
