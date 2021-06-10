@@ -333,7 +333,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         self.convert_button.setFixedWidth(60)
         self.write_button.setFixedWidth(40)
         self.load_button.setFixedWidth(40)
-        self.tree_view.setMaximumHeight(300)
+        self.setMaximumHeight(350)
         self.setMaximumWidth(350)
 
         # Set Widget Tooltips
@@ -367,7 +367,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
         vbox_one = QtWidgets.QVBoxLayout()
         vbox_one.addLayout(hbox_one)
-        vbox_one.addWidget(self.tree_view)
+        vbox_one.addWidget(self.tree_view, 2)
         self._full_widget.setLayout(vbox_one)
 
         # Set DockWidget to be fully laid out widget.
