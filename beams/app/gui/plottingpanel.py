@@ -475,7 +475,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.figure.set_facecolor("#ffffff")
             self.axes_time = axes[0]
             self.axes_freq = axes[1]
-
+        
             self.set_blank()
 
         def set_blank(self):
@@ -628,8 +628,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             QtWidgets.QWidget.__init__(self)
             # self.setTitleBarWidget(QtWidgets.QWidget())
 
-            # self._full_widget = QtWidgets.QWidget()
-
             self._label_slider_bin = QtWidgets.QLabel('')
             self._label_input_bin = QtWidgets.QLabel('Time Bins (ns)')
 
@@ -725,9 +723,9 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             main_layout.addLayout(row_1)
 
             time_form = QtWidgets.QGroupBox('Time')
+            time_form.setMaximumHeight(110)
             time_layout = QtWidgets.QFormLayout()
             time_grid = QtWidgets.QGridLayout()
-            time_grid.setRowStretch(0, 5)
 
             time_grid.addWidget(self._label_time_xmin, 0, 2)
             time_grid.addWidget(self.input_time_xmin, 0, 3)
@@ -747,6 +745,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             time_form.setLayout(time_layout)
 
             freq_form = QtWidgets.QGroupBox('Frequency')
+            freq_form.setMaximumHeight(110)
             freq_layout = QtWidgets.QFormLayout()
             freq_grid = QtWidgets.QGridLayout()
 
@@ -774,7 +773,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             editor_layout.addWidget(freq_form)
 
             main_layout.addLayout(editor_layout)
-            main_layout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
             self.setLayout(main_layout)
 
         def get_max_time(self):
@@ -949,12 +947,12 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         hbox = QtWidgets.QHBoxLayout()
 
         vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self.left_display)
+        vbox.addWidget(self.left_display, 2)
         vbox.addWidget(self.left_settings)
         hbox.addLayout(vbox)
 
         vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self.right_display)
+        vbox.addWidget(self.right_display, 2)
         vbox.addWidget(self.right_settings)
         hbox.addLayout(vbox)
 
