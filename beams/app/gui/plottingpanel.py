@@ -1109,7 +1109,7 @@ class PlottingPanelPresenter(PanelPresenter):
     def _clear_all(self):
         # set all to unchecked and plot
         self._view.support_panel.item_tree.set_all_checked(False)
-        self._view.support_panel.legend.set_blank()
+        self._view.legend_display.set_blank()
         threading.Thread(
             target=self._update_canvas(self._view.left_settings, self._view.left_display, 'left', fast=False),
             daemon=True).start()
@@ -1258,7 +1258,7 @@ class PlottingPanelPresenter(PanelPresenter):
         num_bins = self.get_num_bins(xmin, xmax, bin_size)
         start_bin = self.get_start_bin(xmin, bin_size)
         fft = FFT(asymmetry[start_bin:start_bin + num_bins], time[start_bin:start_bin + num_bins])
-        return fft.z, fft.fft
+        return fft.z, fft.fft/max(fft.fft)
 
     def get_num_bins(self, xmin, xmax, bin_size):
         return int((float(xmax)-float(xmin))/(float(bin_size)/1000))
