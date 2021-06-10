@@ -406,6 +406,10 @@ class MusrDownloadDialogPresenter:
 
     def _download(self, downloads):
         good = 0
+        if len(downloads) > 500:
+            self._view.log_message("Error: TRIUMF limits downloads to 500 runs or less.")
+            return
+            
         new_files = []
         for i, download in enumerate(downloads):
             full_url = self._data_url + download
