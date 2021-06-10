@@ -589,7 +589,6 @@ class FittingPanel(Panel):
         self.check_batch_fit.setEnabled(False)
 
     def _set_widget_dimensions(self):
-        pass
         self.button_done.setFixedWidth(60)
         self.button_fit.setFixedWidth(60)
         self.button_check_equation.setFixedWidth(60)
@@ -738,7 +737,7 @@ class FittingPanel(Panel):
 
         # Create and add layout for plot display and controls
         right_side = QtWidgets.QVBoxLayout()
-        right_side.addWidget(self.fit_display)
+        right_side.addWidget(self.fit_display, 2)
         hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.button_plot)
         hbox.addWidget(self.fit_spectrum_settings)
