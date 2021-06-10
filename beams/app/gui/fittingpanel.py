@@ -265,10 +265,6 @@ class FittingPanel(Panel):
                                     linewidth=line_width,
                                     markersize=marker_size, label=label)
 
-            if fit is not None:
-                self.axes_time.plot(time, fit, color=fit_color, linestyle=fit_linestyle,
-                                    marker='None')
-
         def set_asymmetry_plot_limits(self, max_asymmetry, min_asymmetry):
             if not self._settings.is_asymmetry_auto():
                 try:
@@ -1171,6 +1167,16 @@ class FitTabPresenter(PanelPresenter):
             except TypeError:
                 fit_asymmetry = [fit_asymmetry for _ in time]
 
+            if len(titles) == 0 or len(runs) == 0:
+                frac_start = float(min_time) / (time[len(time) - 1] - time[0])
+                frac_end = float(max_time) / (time[len(time) - 1] - time[0])
+                start_index = int(np.floor(len(fit_asymmetry) * frac_start))
+                end_index = int(np.floor(len(fit_asymmetry) * frac_end))
+                local_max = np.max(fit_asymmetry[start_index:end_index])
+                max_asymmetry = local_max if local_max > max_asymmetry else max_asymmetry
+                local_min = np.min(fit_asymmetry[start_index:end_index])
+                min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
+
             color = 'Black'
             self.__logger.debug("{}, {}, {}, {}".format(self.__expression, self.__expression.expression_as_lambda.__kwdefaults__, group, len(time)))
             self._view.fit_display.plot_asymmetry(time, fit_asymmetry, None, None,
@@ -1189,8 +1195,7 @@ class FitTabPresenter(PanelPresenter):
                                                   fit_linestyle='none',
                                                   label=None)
 
-        if len(runs) > 0:
-            self._view.fit_display.set_asymmetry_plot_limits(max_asymmetry, min_asymmetry)
+        self._view.fit_display.set_asymmetry_plot_limits(max_asymmetry, min_asymmetry)
 
         self._view.fit_display.finish_plotting(False)
 
