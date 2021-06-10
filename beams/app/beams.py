@@ -1,4 +1,3 @@
-
 # Standard Library Packages
 import sys
 import logging
@@ -52,7 +51,8 @@ class BEAMS(QtWidgets.QApplication):
         vbox = QtWidgets.QVBoxLayout(frame.content_widget())
         vbox.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))
         vbox.addWidget(self.main_program_window)
-        frame.setGeometry(50, 50, 450, 1000)
+        sizeObject = QtWidgets.QDesktopWidget().screenGeometry(-1)
+        frame.setGeometry(10, 10, sizeObject.width()-20, sizeObject.height()-100)
         frame.show()
 
         self.splash.finish(frame)

@@ -24,7 +24,7 @@ class StyleThreeButton(QtWidgets.QPushButton):
 
 # noinspection PyArgumentList
 class CollapsibleBox(QtWidgets.QWidget):
-    def __init__(self, title="", parent=None, background='#070536'):
+    def __init__(self, title="", parent=None, background='#ffffff'):
         super(CollapsibleBox, self).__init__(parent)
         self.__dumb_constant = False
 
@@ -184,10 +184,7 @@ class TitleBar(QtWidgets.QWidget):
         row.addWidget(self.close)
         row.addSpacing(15)
 
-        row.insertStretch(1, 500)
         row.setSpacing(0)
-
-        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
 
         self._max_normal = False
         self._start_pos = None
@@ -335,7 +332,7 @@ class Separator(QtWidgets.QFrame):
         self.setAutoFillBackground(True)
         self.setBackgroundRole(QtGui.QPalette.Highlight)
         p = self.palette()
-        p.setColor(self.backgroundRole(), QtGui.QColor('#F2F2F2'))
+        p.setColor(self.backgroundRole(), QtGui.QColor('#000000'))
         self.setPalette(p)
 
 
@@ -359,25 +356,9 @@ Copyright (c) 2012-2014 Alexander Turkin
 Copyright (c) 2014 William Hallatt
 Copyright (c) 2015 Jacob Dawid
 Copyright (c) 2016 Luca Weiss
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
 """
 
 import math
-
 
 class QtWaitingSpinner(QtWidgets.QWidget):
     def __init__(self, parent, centerOnParent=True, disableParentWhenSpinning=False, modality=QtCore.Qt.NonModal):

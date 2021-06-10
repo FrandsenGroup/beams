@@ -3,9 +3,10 @@ import warnings
 from enum import Enum
 import logging
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtGui, QtWidgets, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
+from matplotlib.patches import Patch
 import numpy as np
 
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
@@ -18,6 +19,129 @@ from app.util import widgets
 
 class PlottingPanel(Panel, QtWidgets.QWidget):
     class SupportPanel(QtWidgets.QDockWidget):
+        class PlotStyleBox(widgets.CollapsibleBox):
+            def __init__(self) -> None:
+                self.title = 'Plot Style'
+                super().__init__(self.title)
+
+                self.all_color_options = QtWidgets.QComboBox()
+                self.linestyle_options = QtWidgets.QComboBox()
+                self.fit_linestyle_options = QtWidgets.QComboBox()
+                self.line_color_options = QtWidgets.QComboBox()
+                self.fit_color_options = QtWidgets.QComboBox()
+                self.line_width_options = QtWidgets.QComboBox()
+                self.marker_options = QtWidgets.QComboBox()
+                self.marker_color_options = QtWidgets.QComboBox()
+                self.marker_size_options = QtWidgets.QComboBox()
+                self.fillstyle_options = QtWidgets.QComboBox()
+                self.errorbar_style_options = QtWidgets.QComboBox()
+                self.errorbar_color_options = QtWidgets.QComboBox()
+                self.errorbar_width_options = QtWidgets.QComboBox()
+
+                self.all_color_options.addItems(PlotModel.color_options_values.keys())
+                self.fit_color_options.addItems(PlotModel.color_options_extra_values.keys())
+                self.linestyle_options.addItems(PlotModel.linestyle_options_values.keys())
+                self.fit_linestyle_options.addItems(PlotModel.linestyle_options_values.keys())
+                self.line_color_options.addItems(PlotModel.color_options_extra_values.keys())
+                self.line_width_options.addItems(PlotModel.line_width_options_values.keys())
+                self.marker_options.addItems(PlotModel.marker_options_values.keys())
+                self.marker_color_options.addItems(PlotModel.color_options_extra_values.keys())
+                self.marker_size_options.addItems(PlotModel.marker_size_options_values.keys())
+                self.fillstyle_options.addItems(PlotModel.fillstyle_options_values.keys())
+                self.errorbar_style_options.addItems(PlotModel.errorbar_styles_values.keys())
+                self.errorbar_color_options.addItems(PlotModel.color_options_extra_values.keys())
+                self.errorbar_width_options.addItems(PlotModel.errorbar_width_values.keys())
+
+                layout = QtWidgets.QGridLayout()
+                layout.addWidget(QtWidgets.QLabel("Default Color"), 0, 0)
+                layout.addWidget(self.all_color_options, 0, 1)
+                layout.addWidget(QtWidgets.QLabel("Linestyle"), 1, 0)
+                layout.addWidget(self.linestyle_options, 1, 1)
+                layout.addWidget(QtWidgets.QLabel("Line Width"), 3, 0)
+                layout.addWidget(self.line_width_options, 3, 1)
+                layout.addWidget(QtWidgets.QLabel("Marker Style"), 4, 0)
+                layout.addWidget(self.marker_options, 4, 1)
+                layout.addWidget(QtWidgets.QLabel("Marker Color"), 5, 0)
+                layout.addWidget(self.marker_color_options, 5, 1)
+                layout.addWidget(QtWidgets.QLabel("Marker Size"), 6, 0)
+                layout.addWidget(self.marker_size_options, 6, 1)
+                layout.addWidget(QtWidgets.QLabel("Fillstyle"), 7, 0)
+                layout.addWidget(self.fillstyle_options, 7, 1)
+                layout.addWidget(QtWidgets.QLabel("Errorbar Style"), 8, 0)
+                layout.addWidget(self.errorbar_style_options, 8, 1)
+                layout.addWidget(QtWidgets.QLabel("Errorbar Color"), 9, 0)
+                layout.addWidget(self.errorbar_color_options, 9, 1)
+                layout.addWidget(QtWidgets.QLabel("Errorbar Width"), 10, 0)
+                layout.addWidget(self.errorbar_width_options, 10, 1)
+                layout.addWidget(QtWidgets.QLabel("Fit Line Color"), 11, 0)
+                layout.addWidget(self.fit_color_options, 11, 1)
+                layout.addWidget(QtWidgets.QLabel("Fit Linestyle"), 12, 0)
+                layout.addWidget(self.fit_linestyle_options, 12, 1)
+
+                box_layout = QtWidgets.QHBoxLayout()
+                box_layout.addLayout(layout)
+                self.setContentLayout(box_layout)                
+
+        class AsymmetryParametersBox(widgets.CollapsibleBox):
+            def __init__(self) -> None:
+                self.title = 'Asymmetry Parameters'
+                super().__init__(self.title)
+
+                self.alpha_input = QtWidgets.QLineEdit()
+
+                layout = QtWidgets.QGridLayout()
+                layout.addWidget(QtWidgets.QLabel("Alpha"), 0, 0)
+                layout.addWidget(self.alpha_input, 0, 1)
+                self.setContentLayout(layout)
+
+        class LegendBox(widgets.CollapsibleBox):
+            def __init__(self) -> None:
+                self.title = 'Legend'
+                super().__init__(self.title)
+
+                self.legend_list = QtWidgets.QListWidget()
+                self.__values = {}
+                
+                box_layout = QtWidgets.QHBoxLayout()
+                box_layout.addWidget(self.legend_list)
+                self.setContentLayout(box_layout)
+
+            def set_legend(self, values: dict):
+                    if len(self.__values) == len(values):
+                        return
+                    
+                    self.__values = values
+                    self.legend_list.clear()
+
+                    for label, color in values.items():
+                        qlabel = QtWidgets.QLineEdit()
+                        qlabel.setText(label)
+
+                        pixmap = QtGui.QPixmap(100, 100)
+                        pixmap.fill(QtGui.QColor(color))
+                        qicon = QtGui.QIcon(pixmap)
+                        qcolor = QtWidgets.QToolButton()
+                        qcolor.setIcon(qicon)
+
+                        file_item = QtWidgets.QListWidgetItem(label, self.legend_list)
+                        file_item.setIcon(qicon)
+
+                        #TODO Since we have to set the color as a toolbutton anyways, it would be pretty cool if the user could press it and have
+                        # a color picker pop up to change the color for that particular run.
+
+                        #TODO We need to make it so we can edit the title, this will involve changing the logic quite a bit though in a few places.
+                        # maybe we can go back to our old idea of attaching references to model objects to things like this... OR we just keep a dict
+                        # in this class that references the actual titles to the ones the user has selected. It would have to be persistent for when
+                        # they clear and plot again. I don't imagine we would want to save these values. OR we could have them choose what they want in
+                        # the legend (like select temp or field or material or title). I like that idea, maybe put the options up at the top of the 
+                        # collapsible box.
+
+                        # file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsEditable) 
+
+            def set_blank(self):
+                    self.__values = {}
+                    self.legend_list.clear()
+
         class Tree(QtWidgets.QTreeWidget):
             def __init__(self):
                 super().__init__()
@@ -45,7 +169,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self.addTopLevelItems(tree)
 
             def get_run_ids(self):
-                # Suppressing inspection because it doesn't recognize 'self' as a QTreeWidget
                 # noinspection PyTypeChecker
                 iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Checked)
 
@@ -153,29 +276,16 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         def __init__(self):
             super().__init__()
             self.setTitleBarWidget(QtWidgets.QWidget())
+            self.setWindowTitle("Plotting")
 
             self.plot_button = widgets.StyleOneButton("Plot")
             self.plot_all_button = widgets.StyleOneButton("Plot All")
             self.clear_all_button = widgets.StyleTwoButton("Clear All")
 
             self.item_tree = self.Tree()
-
-            self.style_settings = QtWidgets.QGroupBox("Applies to all selected runs")
-            self.all_color_options = QtWidgets.QComboBox()
-            self.linestyle_options = QtWidgets.QComboBox()
-            self.fit_linestyle_options = QtWidgets.QComboBox()
-            self.line_color_options = QtWidgets.QComboBox()
-            self.fit_color_options = QtWidgets.QComboBox()
-            self.line_width_options = QtWidgets.QComboBox()
-            self.marker_options = QtWidgets.QComboBox()
-            self.marker_color_options = QtWidgets.QComboBox()
-            self.marker_size_options = QtWidgets.QComboBox()
-            self.fillstyle_options = QtWidgets.QComboBox()
-            self.errorbar_style_options = QtWidgets.QComboBox()
-            self.errorbar_color_options = QtWidgets.QComboBox()
-            self.errorbar_width_options = QtWidgets.QComboBox()
-
-            self.alpha_input = QtWidgets.QLineEdit()
+            self.legend_box = self.LegendBox()
+            self.plot_style_box = self.PlotStyleBox()
+            self.asymmetry_param_box = self.AsymmetryParametersBox()
 
             self._set_widget_dimensions()
             self._set_widget_attributes()
@@ -185,56 +295,13 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             pass
 
         def _set_widget_attributes(self):
-            self.all_color_options.addItems(PlotModel.color_options_values.keys())
-            self.fit_color_options.addItems(PlotModel.color_options_extra_values.keys())
-            self.linestyle_options.addItems(PlotModel.linestyle_options_values.keys())
-            self.fit_linestyle_options.addItems(PlotModel.linestyle_options_values.keys())
-            self.line_color_options.addItems(PlotModel.color_options_extra_values.keys())
-            self.line_width_options.addItems(PlotModel.line_width_options_values.keys())
-            self.marker_options.addItems(PlotModel.marker_options_values.keys())
-            self.marker_color_options.addItems(PlotModel.color_options_extra_values.keys())
-            self.marker_size_options.addItems(PlotModel.marker_size_options_values.keys())
-            self.fillstyle_options.addItems(PlotModel.fillstyle_options_values.keys())
-            self.errorbar_style_options.addItems(PlotModel.errorbar_styles_values.keys())
-            self.errorbar_color_options.addItems(PlotModel.color_options_extra_values.keys())
-            self.errorbar_width_options.addItems(PlotModel.errorbar_width_values.keys())
+            self.legend_box.toggle_button.pressed.connect(lambda: self._toggle_boxes(self.legend_box.title))
+            self.plot_style_box.toggle_button.pressed.connect(lambda: self._toggle_boxes(self.plot_style_box.title))
+            self.asymmetry_param_box.toggle_button.pressed.connect(lambda: self._toggle_boxes(self.asymmetry_param_box.title))
 
-            self.alpha_input.setText("1.0")
+            self.legend_box.on_pressed()
 
         def _set_widget_layout(self):
-            layout = QtWidgets.QGridLayout()
-            layout.addWidget(QtWidgets.QLabel("Default Color"), 0, 0)
-            layout.addWidget(self.all_color_options, 0, 1)
-            layout.addWidget(QtWidgets.QLabel("Linestyle"), 1, 0)
-            layout.addWidget(self.linestyle_options, 1, 1)
-            layout.addWidget(QtWidgets.QLabel("Line Width"), 3, 0)
-            layout.addWidget(self.line_width_options, 3, 1)
-            layout.addWidget(QtWidgets.QLabel("Marker Style"), 4, 0)
-            layout.addWidget(self.marker_options, 4, 1)
-            layout.addWidget(QtWidgets.QLabel("Marker Color"), 5, 0)
-            layout.addWidget(self.marker_color_options, 5, 1)
-            layout.addWidget(QtWidgets.QLabel("Marker Size"), 6, 0)
-            layout.addWidget(self.marker_size_options, 6, 1)
-            layout.addWidget(QtWidgets.QLabel("Fillstyle"), 7, 0)
-            layout.addWidget(self.fillstyle_options, 7, 1)
-            # layout.addWidget(QtWidgets.QLabel("Errorbar Style"), 8, 0)
-            # layout.addWidget(self.errorbar_style_options, 8, 1)
-            layout.addWidget(QtWidgets.QLabel("Errorbar Color"), 8, 0)
-            layout.addWidget(self.errorbar_color_options, 8, 1)
-            layout.addWidget(QtWidgets.QLabel("Errorbar Width"), 9, 0)
-            layout.addWidget(self.errorbar_width_options, 9, 1)
-            layout.addWidget(QtWidgets.QLabel("Fit Line Color"), 10, 0)
-            layout.addWidget(self.fit_color_options, 10, 1)
-            layout.addWidget(QtWidgets.QLabel("Fit Linestyle"), 11, 0)
-            layout.addWidget(self.fit_linestyle_options, 11, 1)
-            layout.addWidget(QtWidgets.QLabel("Alpha"), 12, 0)
-            layout.addWidget(self.alpha_input, 12, 1)
-
-            form_layout = QtWidgets.QFormLayout()
-            form_layout.addItem(layout)
-
-            self.style_settings.setLayout(form_layout)
-
             hbox = QtWidgets.QHBoxLayout()
             hbox.addWidget(self.plot_button)
             hbox.addWidget(self.plot_all_button)
@@ -243,11 +310,29 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             vbox = QtWidgets.QVBoxLayout()
             vbox.addLayout(hbox)
             vbox.addWidget(self.item_tree)
-            vbox.addWidget(self.style_settings)
+            vbox.addWidget(self.legend_box)
+            vbox.addWidget(self.plot_style_box)
+            vbox.addWidget(self.asymmetry_param_box)
+            vbox.addStretch()
+
             temp = QtWidgets.QWidget()
             temp.setLayout(vbox)
-
             self.setWidget(temp)
+
+        def _toggle_boxes(self, box_id):
+            if box_id != self.legend_box.title and self.legend_box.is_open():
+                self.legend_box.on_pressed()
+            elif box_id != self.plot_style_box.title and self.plot_style_box.is_open():
+                self.plot_style_box.on_pressed()
+            elif box_id != self.asymmetry_param_box.title and self.asymmetry_param_box.is_open():
+                self.asymmetry_param_box.on_pressed()
+
+            if box_id == self.legend_box.title:
+                self.legend_box.on_pressed()
+            elif box_id == self.plot_style_box.title:
+                self.plot_style_box.on_pressed()
+            elif box_id == self.asymmetry_param_box.title:
+                self.asymmetry_param_box.on_pressed()
 
         def set_first_selected(self):
             if self.item_tree.topLevelItemCount() > 0:
@@ -264,103 +349,103 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                     box.addItem("*")
 
         def set_alpha(self, alpha):
-            self.alpha_input.setText(alpha)
+            self.asymmetry_param_box.alpha_input.setText(alpha)
 
         def set_default_color(self, color):
             if color == "*":
-                self._check_add_star(self.all_color_options, False)
+                self._check_add_star(self.plot_style_box.all_color_options, False)
             else:
-                self._check_add_star(self.all_color_options, True)
+                self._check_add_star(self.plot_style_box.all_color_options, True)
 
-            self.all_color_options.setCurrentText(color)
+            self.plot_style_box.all_color_options.setCurrentText(color)
 
         def set_linestyle(self, linestyle):
             if linestyle == "*":
-                self._check_add_star(self.linestyle_options, False)
+                self._check_add_star(self.plot_style_box.linestyle_options, False)
             else:
-                self._check_add_star(self.linestyle_options, True)
+                self._check_add_star(self.plot_style_box.linestyle_options, True)
 
-            self.linestyle_options.setCurrentText(linestyle)
+            self.plot_style_box.linestyle_options.setCurrentText(linestyle)
 
         def set_line_color(self, line_color):
             if line_color == "*":
-                self._check_add_star(self.line_color_options, False)
+                self._check_add_star(self.plot_style_box.line_color_options, False)
             else:
-                self._check_add_star(self.line_color_options, True)
+                self._check_add_star(self.plot_style_box.line_color_options, True)
 
-            self.line_color_options.setCurrentText(line_color)
+            self.plot_style_box.line_color_options.setCurrentText(line_color)
 
         def set_line_width(self, line_width):
             if line_width == "*":
-                self._check_add_star(self.line_width_options, False)
+                self._check_add_star(self.plot_style_box.line_width_options, False)
             else:
-                self._check_add_star(self.line_width_options, True)
+                self._check_add_star(self.plot_style_box.line_width_options, True)
 
-            self.line_width_options.setCurrentText(line_width)
+            self.plot_style_box.line_width_options.setCurrentText(line_width)
 
         def set_marker(self, marker):
             if marker == "*":
-                self._check_add_star(self.marker_options, False)
+                self._check_add_star(self.plot_style_box.marker_options, False)
             else:
-                self._check_add_star(self.marker_options, True)
+                self._check_add_star(self.plot_style_box.marker_options, True)
 
-            self.marker_options.setCurrentText(marker)
+            self.plot_style_box.marker_options.setCurrentText(marker)
 
         def set_marker_color(self, color):
             if color == "*":
-                self._check_add_star(self.marker_color_options, False)
+                self._check_add_star(self.plot_style_box.marker_color_options, False)
             else:
-                self._check_add_star(self.marker_color_options, True)
+                self._check_add_star(self.plot_style_box.marker_color_options, True)
 
-            self.marker_color_options.setCurrentText(color)
+            self.plot_style_box.marker_color_options.setCurrentText(color)
 
         def set_fit_color(self, color):
             if color == "*":
-                self._check_add_star(self.fit_color_options, False)
+                self._check_add_star(self.plot_style_box.fit_color_options, False)
             else:
-                self._check_add_star(self.fit_color_options, True)
+                self._check_add_star(self.plot_style_box.fit_color_options, True)
 
-            self.fit_color_options.setCurrentText(color)
+            self.plot_style_box.fit_color_options.setCurrentText(color)
 
         def set_marker_size(self, size):
             if size == "*":
-                self._check_add_star(self.marker_size_options, False)
+                self._check_add_star(self.plot_style_box.marker_size_options, False)
             else:
-                self._check_add_star(self.marker_size_options, True)
+                self._check_add_star(self.plot_style_box.marker_size_options, True)
 
-            self.marker_size_options.setCurrentText(size)
+            self.plot_style_box.marker_size_options.setCurrentText(size)
 
         def set_fillstyle(self, fillstyle):
             if fillstyle == "*":
-                self._check_add_star(self.fillstyle_options, False)
+                self._check_add_star(self.plot_style_box.fillstyle_options, False)
             else:
-                self._check_add_star(self.fillstyle_options, True)
+                self._check_add_star(self.plot_style_box.fillstyle_options, True)
 
-            self.fillstyle_options.setCurrentText(fillstyle)
+            self.plot_style_box.fillstyle_options.setCurrentText(fillstyle)
 
         def set_errorbar_style(self, style):
             if style == "*":
-                self._check_add_star(self.errorbar_style_options, False)
+                self._check_add_star(self.plot_style_box.errorbar_style_options, False)
             else:
-                self._check_add_star(self.errorbar_style_options, True)
+                self._check_add_star(self.plot_style_box.errorbar_style_options, True)
 
-            self.errorbar_style_options.setCurrentText(style)
+            self.plot_style_box.errorbar_style_options.setCurrentText(style)
 
         def set_errorbar_color(self, color):
             if color == "*":
-                self._check_add_star(self.errorbar_color_options, False)
+                self._check_add_star(self.plot_style_box.errorbar_color_options, False)
             else:
-                self._check_add_star(self.errorbar_color_options, True)
+                self._check_add_star(self.plot_style_box.errorbar_color_options, True)
 
-            self.errorbar_color_options.setCurrentText(color)
+            self.plot_style_box.errorbar_color_options.setCurrentText(color)
 
         def set_errorbar_width(self, width):
             if width == "*":
-                self._check_add_star(self.errorbar_width_options, False)
+                self._check_add_star(self.plot_style_box.errorbar_width_options, False)
             else:
-                self._check_add_star(self.errorbar_width_options, True)
+                self._check_add_star(self.plot_style_box.errorbar_width_options, True)
 
-            self.errorbar_width_options.setCurrentText(width)
+            self.plot_style_box.errorbar_width_options.setCurrentText(width)
 
     class PlotToolbar(NavigationToolbar2QT):
         def _init_toolbar(self):
@@ -379,10 +464,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             ('Save', 'Save the figure', 'filesave', 'save_figure'),
         )
 
-    class PlotLegend:
-        def __init__(self):
-            pass
-
     class PlotDisplay(FigureCanvas):
         def __init__(self, settings):
             self._draw_pending = True
@@ -394,7 +475,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.figure.set_facecolor("#ffffff")
             self.axes_time = axes[0]
             self.axes_freq = axes[1]
-
+        
             self.set_blank()
 
         def set_blank(self):
@@ -442,8 +523,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_freq.set_ylabel(r'FFT$^2$', fontsize=title_font_size)
             self.axes_freq.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
             self.axes_freq.set_facecolor("#ffffff")
-            if not remove_legend:
-                self.axes_freq.legend(loc='upper right')
 
             self.figure.tight_layout()
 
@@ -549,8 +628,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             QtWidgets.QWidget.__init__(self)
             # self.setTitleBarWidget(QtWidgets.QWidget())
 
-            # self._full_widget = QtWidgets.QWidget()
-
             self._label_slider_bin = QtWidgets.QLabel('')
             self._label_input_bin = QtWidgets.QLabel('Time Bins (ns)')
 
@@ -625,14 +702,14 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
         def _set_widget_dimensions(self):
             box_size = 40
-            self.input_time_xmin.setFixedWidth(box_size)
-            self.input_time_xmax.setFixedWidth(box_size)
-            self.input_time_ymin.setFixedWidth(box_size)
-            self.input_time_ymax.setFixedWidth(box_size)
-            self.input_freq_xmin.setFixedWidth(box_size)
-            self.input_freq_xmax.setFixedWidth(box_size)
-            self.input_freq_ymin.setFixedWidth(box_size)
-            self.input_freq_ymax.setFixedWidth(box_size)
+            self.input_time_xmin.setMinimumWidth(box_size)
+            self.input_time_xmax.setMinimumWidth(box_size)
+            self.input_time_ymin.setMinimumWidth(box_size)
+            self.input_time_ymax.setMinimumWidth(box_size)
+            self.input_freq_xmin.setMinimumWidth(box_size)
+            self.input_freq_xmax.setMinimumWidth(box_size)
+            self.input_freq_ymin.setMinimumWidth(box_size)
+            self.input_freq_ymax.setMinimumWidth(box_size)
             self.input_bin.setFixedWidth(50)
 
         def _set_widget_layout(self):
@@ -646,6 +723,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             main_layout.addLayout(row_1)
 
             time_form = QtWidgets.QGroupBox('Time')
+            time_form.setMaximumHeight(110)
             time_layout = QtWidgets.QFormLayout()
             time_grid = QtWidgets.QGridLayout()
 
@@ -667,6 +745,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             time_form.setLayout(time_layout)
 
             freq_form = QtWidgets.QGroupBox('Frequency')
+            freq_form.setMaximumHeight(110)
             freq_layout = QtWidgets.QFormLayout()
             freq_grid = QtWidgets.QGridLayout()
 
@@ -694,7 +773,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             editor_layout.addWidget(freq_form)
 
             main_layout.addLayout(editor_layout)
-            main_layout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
             self.setLayout(main_layout)
 
         def get_max_time(self):
@@ -790,6 +868,8 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         self.right_display = self.PlotDisplay(self.right_settings)
 
         self._set_logging()
+        self.legend_display = self.support_panel.legend_box
+
         self._set_widget_layout()
         self._presenter = PlottingPanelPresenter(self)
 
@@ -835,25 +915,27 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         self.right_settings.slider_bin.sliderMoved.connect(lambda: logger.debug("right_settings.input_bin.returnPressed ({})".format(self.right_settings.slider_bin.value())))
         self.right_settings.slider_bin.sliderReleased.connect(lambda: logger.debug("right_settings.input_bin.returnPressed ({})".format(self.right_settings.slider_bin.value())))
 
-        self.support_panel.all_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.all_color_options.currentTextChanged ({})".format(self.support_panel.all_color_options.currentText())))
-        self.support_panel.linestyle_options.currentTextChanged.connect(lambda: logger.debug("support_panel.linestyle_options.currentTextChanged ({})".format(self.support_panel.linestyle_options.currentText())))
-        self.support_panel.line_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.line_color_options.currentTextChanged ({})".format(self.support_panel.line_color_options.currentText())))
-        self.support_panel.line_width_options.currentTextChanged.connect(lambda: logger.debug("support_panel.line_width_options.currentTextChanged ({})".format(self.support_panel.line_width_options.currentText())))
-        self.support_panel.marker_options.currentTextChanged.connect(lambda: logger.debug("support_panel.marker_options.currentTextChanged ({})".format(self.support_panel.marker_options.currentText())))
-        self.support_panel.marker_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.marker_color_options.currentTextChanged ({})".format(self.support_panel.marker_color_options.currentText())))
-        self.support_panel.marker_size_options.currentTextChanged.connect(lambda: logger.debug("support_panel.marker_size_options.currentTextChanged ({})".format(self.support_panel.marker_size_options.currentText())))
-        self.support_panel.fillstyle_options.currentTextChanged.connect(lambda: logger.debug("support_panel.fillstyle_options.currentTextChanged ({})".format(self.support_panel.fillstyle_options.currentText())))
-        self.support_panel.errorbar_style_options.currentTextChanged.connect(lambda: logger.debug("support_panel.errorbar_style_options.currentTextChanged ({})".format(self.support_panel.errorbar_style_options.currentText())))
-        self.support_panel.errorbar_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.errorbar_color_options.currentTextChanged ({})".format(self.support_panel.errorbar_color_options.currentText())))
-        self.support_panel.errorbar_width_options.currentTextChanged.connect(lambda: logger.debug("support_panel.errorbar_width_options.currentTextChanged ({})".format(self.support_panel.errorbar_width_options.currentText())))
-        self.support_panel.fit_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.fit_color_options.currentTextChanged ({})".format(self.support_panel.fit_color_options.currentText())))
-        self.support_panel.fit_linestyle_options.currentTextChanged.connect(lambda: logger.debug("support_panel.fit_linestyle_options.currentTextChanged ({})".format(self.support_panel.fit_linestyle_options.currentText())))
+
+        # self.support_panel.all_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.all_color_options.currentTextChanged ({})".format(self.support_panel.all_color_options.currentText())))
+        # self.support_panel.linestyle_options.currentTextChanged.connect(lambda: logger.debug("support_panel.linestyle_options.currentTextChanged ({})".format(self.support_panel.linestyle_options.currentText())))
+        # self.support_panel.line_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.line_color_options.currentTextChanged ({})".format(self.support_panel.line_color_options.currentText())))
+        # self.support_panel.line_width_options.currentTextChanged.connect(lambda: logger.debug("support_panel.line_width_options.currentTextChanged ({})".format(self.support_panel.line_width_options.currentText())))
+        # self.support_panel.marker_options.currentTextChanged.connect(lambda: logger.debug("support_panel.marker_options.currentTextChanged ({})".format(self.support_panel.marker_options.currentText())))
+        # self.support_panel.marker_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.marker_color_options.currentTextChanged ({})".format(self.support_panel.marker_color_options.currentText())))
+        # self.support_panel.marker_size_options.currentTextChanged.connect(lambda: logger.debug("support_panel.marker_size_options.currentTextChanged ({})".format(self.support_panel.marker_size_options.currentText())))
+        # self.support_panel.fillstyle_options.currentTextChanged.connect(lambda: logger.debug("support_panel.fillstyle_options.currentTextChanged ({})".format(self.support_panel.fillstyle_options.currentText())))
+        # self.support_panel.errorbar_style_options.currentTextChanged.connect(lambda: logger.debug("support_panel.errorbar_style_options.currentTextChanged ({})".format(self.support_panel.errorbar_style_options.currentText())))
+        # self.support_panel.errorbar_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.errorbar_color_options.currentTextChanged ({})".format(self.support_panel.errorbar_color_options.currentText())))
+        # self.support_panel.errorbar_width_options.currentTextChanged.connect(lambda: logger.debug("support_panel.errorbar_width_options.currentTextChanged ({})".format(self.support_panel.errorbar_width_options.currentText())))
+        # self.support_panel.fit_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.fit_color_options.currentTextChanged ({})".format(self.support_panel.fit_color_options.currentText())))
+        # self.support_panel.fit_linestyle_options.currentTextChanged.connect(lambda: logger.debug("support_panel.fit_linestyle_options.currentTextChanged ({})".format(self.support_panel.fit_linestyle_options.currentText())))
+
         self.support_panel.item_tree.itemSelectionChanged.connect(lambda: logger.debug("support_panel.item_tree.itemSelectionChanged ({})".format(self.support_panel.item_tree.get_selected_names())))
         
         self.support_panel.plot_button.pressed.connect(lambda: logger.debug("support_panel.plot_button.pressed ({})".format(self.support_panel.item_tree.get_selected_names())))
         self.support_panel.plot_all_button.pressed.connect(lambda: logger.debug("support_panel.plot_all_button.pressed ({})".format(self.support_panel.item_tree.get_names())))
         self.support_panel.clear_all_button.pressed.connect(lambda: logger.debug("support_panel.clear_all_button.pressed ({})".format(self.support_panel.item_tree.get_selected_names())))
-        self.support_panel.alpha_input.returnPressed.connect(lambda: logger.debug("support_panel.alpha_input.returnPressed ({})".format(self.support_panel.alpha_input.text())))
+        self.support_panel.asymmetry_param_box.alpha_input.returnPressed.connect(lambda: logger.debug("support_panel.alpha_input.returnPressed ({})".format(self.support_panel.asymmetry_param_box.alpha_input.text())))
 
     def _set_widget_attributes(self):
         pass
@@ -865,12 +947,12 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         hbox = QtWidgets.QHBoxLayout()
 
         vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self.left_display)
+        vbox.addWidget(self.left_display, 2)
         vbox.addWidget(self.left_settings)
         hbox.addLayout(vbox)
 
         vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self.right_display)
+        vbox.addWidget(self.right_display, 2)
         vbox.addWidget(self.right_settings)
         hbox.addLayout(vbox)
 
@@ -948,47 +1030,47 @@ class PlottingPanelPresenter(PanelPresenter):
         self._view.support_panel.plot_button.pressed.connect(self._plot)
         self._view.support_panel.plot_all_button.pressed.connect(self._plot_all)
         self._view.support_panel.clear_all_button.pressed.connect(self._clear_all)
-        self._view.support_panel.alpha_input.returnPressed.connect(self.update_alpha)
+        self._view.support_panel.asymmetry_param_box.alpha_input.returnPressed.connect(self.update_alpha)
 
-        self._view.support_panel.all_color_options.currentTextChanged.connect(
+        self._view.support_panel.plot_style_box.all_color_options.currentTextChanged.connect(
             lambda: self._style_parameter_changed(PlotModel.Keys.DEFAULT_COLOR,
-                                                 self._view.support_panel.all_color_options.currentText()))
-        self._view.support_panel.linestyle_options.currentTextChanged.connect(
+                                                 self._view.support_panel.plot_style_box.all_color_options.currentText()))
+        self._view.support_panel.plot_style_box.linestyle_options.currentTextChanged.connect(
             lambda: self._style_parameter_changed(PlotModel.Keys.LINESTYLE,
-                                                 self._view.support_panel.linestyle_options.currentText()))
-        self._view.support_panel.line_color_options.currentTextChanged.connect(
+                                                 self._view.support_panel.plot_style_box.linestyle_options.currentText()))
+        self._view.support_panel.plot_style_box.line_color_options.currentTextChanged.connect(
             lambda: self._style_parameter_changed(PlotModel.Keys.LINE_COLOR,
-                                                 self._view.support_panel.line_color_options.currentText()))
-        self._view.support_panel.line_width_options.currentTextChanged.connect(
+                                                 self._view.support_panel.plot_style_box.line_color_options.currentText()))
+        self._view.support_panel.plot_style_box.line_width_options.currentTextChanged.connect(
             lambda: self._style_parameter_changed(PlotModel.Keys.LINE_WIDTH,
-                                                 self._view.support_panel.line_width_options.currentText()))
-        self._view.support_panel.marker_options.currentTextChanged.connect(
+                                                 self._view.support_panel.plot_style_box.line_width_options.currentText()))
+        self._view.support_panel.plot_style_box.marker_options.currentTextChanged.connect(
             lambda: self._style_parameter_changed(PlotModel.Keys.MARKER,
-                                                 self._view.support_panel.marker_options.currentText()))
-        self._view.support_panel.marker_color_options.currentTextChanged.connect(
+                                                 self._view.support_panel.plot_style_box.marker_options.currentText()))
+        self._view.support_panel.plot_style_box.marker_color_options.currentTextChanged.connect(
             lambda: self._style_parameter_changed(PlotModel.Keys.MARKER_COLOR,
-                                                 self._view.support_panel.marker_color_options.currentText()))
-        self._view.support_panel.marker_size_options.currentTextChanged.connect(
+                                                 self._view.support_panel.plot_style_box.marker_color_options.currentText()))
+        self._view.support_panel.plot_style_box.marker_size_options.currentTextChanged.connect(
             lambda: self._style_parameter_changed(PlotModel.Keys.MARKER_SIZE,
-                                                 self._view.support_panel.marker_size_options.currentText()))
-        self._view.support_panel.fillstyle_options.currentTextChanged.connect(
+                                                 self._view.support_panel.plot_style_box.marker_size_options.currentText()))
+        self._view.support_panel.plot_style_box.fillstyle_options.currentTextChanged.connect(
             lambda: self._style_parameter_changed(PlotModel.Keys.FILLSTYLE,
-                                                 self._view.support_panel.fillstyle_options.currentText()))
-        self._view.support_panel.errorbar_style_options.currentTextChanged.connect(
+                                                 self._view.support_panel.plot_style_box.fillstyle_options.currentText()))
+        self._view.support_panel.plot_style_box.errorbar_style_options.currentTextChanged.connect(
             lambda: self._style_parameter_changed(PlotModel.Keys.ERRORBAR_STYLE,
-                                                 self._view.support_panel.errorbar_style_options.currentText()))
-        self._view.support_panel.errorbar_color_options.currentTextChanged.connect(
+                                                 self._view.support_panel.plot_style_box.errorbar_style_options.currentText()))
+        self._view.support_panel.plot_style_box.errorbar_color_options.currentTextChanged.connect(
             lambda: self._style_parameter_changed(PlotModel.Keys.ERRORBAR_COLOR,
-                                                 self._view.support_panel.errorbar_color_options.currentText()))
-        self._view.support_panel.errorbar_width_options.currentTextChanged.connect(
+                                                 self._view.support_panel.plot_style_box.errorbar_color_options.currentText()))
+        self._view.support_panel.plot_style_box.errorbar_width_options.currentTextChanged.connect(
             lambda: self._style_parameter_changed(PlotModel.Keys.ERRORBAR_WIDTH,
-                                                 self._view.support_panel.errorbar_width_options.currentText()))
-        self._view.support_panel.fit_color_options.currentTextChanged.connect(
+                                                 self._view.support_panel.plot_style_box.errorbar_width_options.currentText()))
+        self._view.support_panel.plot_style_box.fit_color_options.currentTextChanged.connect(
             lambda: self._style_parameter_changed(PlotModel.Keys.FIT_COLOR,
-                                                 self._view.support_panel.fit_color_options.currentText()))
-        self._view.support_panel.fit_linestyle_options.currentTextChanged.connect(
+                                                 self._view.support_panel.plot_style_box.fit_color_options.currentText()))
+        self._view.support_panel.plot_style_box.fit_linestyle_options.currentTextChanged.connect(
             lambda: self._style_parameter_changed(PlotModel.Keys.FIT_LINESTYLE,
-                                                 self._view.support_panel.fit_linestyle_options.currentText()))
+                                                 self._view.support_panel.plot_style_box.fit_linestyle_options.currentText()))
         self._view.support_panel.item_tree.itemSelectionChanged.connect(self._populate_settings)
 
     def _plot_all(self):
@@ -1027,13 +1109,13 @@ class PlottingPanelPresenter(PanelPresenter):
     def _clear_all(self):
         # set all to unchecked and plot
         self._view.support_panel.item_tree.set_all_checked(False)
+        self._view.legend_display.set_blank()
         threading.Thread(
             target=self._update_canvas(self._view.left_settings, self._view.left_display, 'left', fast=False),
             daemon=True).start()
         threading.Thread(
             target=self._update_canvas(self._view.right_settings, self._view.right_display, 'right', fast=False),
             daemon=True).start()
-        # need to clear... shit well crap we need to handle a case where there is 0
 
     def _plot_parameter_changed(self, settings, display, side):
         threading.Thread(target=self._update_canvas(settings, display, side, fast=False), daemon=True).start()
@@ -1087,6 +1169,7 @@ class PlottingPanelPresenter(PanelPresenter):
         max_time = settings.get_max_time()
         bin_size = settings.get_bin_from_input()
 
+        legend_values = {}
         for run in runs:
             if run.asymmetries[RunDataset.FULL_ASYMMETRY] is None:
                 continue
@@ -1106,6 +1189,7 @@ class PlottingPanelPresenter(PanelPresenter):
             uncertainty = asymmetry.uncertainty
             fit = None
             style = self._plot_model.get_style_by_run_id(run.id)
+            legend_values[style[PlotModel.Keys.LABEL]] = PlotModel.color_options_extra[style[PlotModel.Keys.DEFAULT_COLOR] if style[PlotModel.Keys.MARKER_COLOR] == 'Default' else style[PlotModel.Keys.MARKER_COLOR]]
 
             # We have to do this logic because Matplotlib is not good at setting good default plot limits
             frac_start = float(min_time) / (time[len(time) - 1] - time[0])
@@ -1148,6 +1232,8 @@ class PlottingPanelPresenter(PanelPresenter):
         display.set_fft_plot_limits(max_fft)
         display.finish_plotting(fast)
 
+        self._view.legend_display.set_legend(legend_values)
+
     def update(self):
         run_datasets = self.__run_service.get_runs()
         for run in run_datasets:
@@ -1160,7 +1246,7 @@ class PlottingPanelPresenter(PanelPresenter):
 
     def update_alpha(self):
         try:
-            alpha = float(self._view.support_panel.alpha_input.text())
+            alpha = float(self._view.support_panel.asymmetry_param_box.alpha_input.text())
         except ValueError:
             return
 
@@ -1172,7 +1258,7 @@ class PlottingPanelPresenter(PanelPresenter):
         num_bins = self.get_num_bins(xmin, xmax, bin_size)
         start_bin = self.get_start_bin(xmin, bin_size)
         fft = FFT(asymmetry[start_bin:start_bin + num_bins], time[start_bin:start_bin + num_bins])
-        return fft.z, fft.fft
+        return fft.z, fft.fft/max(fft.fft)
 
     def get_num_bins(self, xmin, xmax, bin_size):
         return int((float(xmax)-float(xmin))/(float(bin_size)/1000))
@@ -1553,139 +1639,3 @@ class PlotModel:
                 self._update_markers(style[PlotModel.Keys.MARKER], False)
                 self._update_colors(style[PlotModel.Keys.DEFAULT_COLOR], False)
             self.__styles = dict()
-
-
-# if __name__ == '__main__':
-#
-#     import sys
-#     app = QtWidgets.QApplication(sys.argv)
-#
-#     x = QtWidgets.QWidget()
-#
-#     style_settings = QtWidgets.QGroupBox("Applies to all selected runs")
-#     all_color_options = widgets.ComboBox()
-#     linestyle_options = QtWidgets.QComboBox()
-#     fit_linestyle_options = QtWidgets.QComboBox()
-#     line_color_options = QtWidgets.QComboBox()
-#     fit_color_options = QtWidgets.QComboBox()
-#     line_width_options = QtWidgets.QComboBox()
-#     marker_options = QtWidgets.QComboBox()
-#     marker_color_options = QtWidgets.QComboBox()
-#     marker_size_options = QtWidgets.QComboBox()
-#     fillstyle_options = QtWidgets.QComboBox()
-#     errorbar_style_options = QtWidgets.QComboBox()
-#     errorbar_color_options = widgets.ComboBox()
-#     errorbar_width_options = QtWidgets.QComboBox()
-#
-#     all_color_options.addItems(PlotModel.color_options_values.keys())
-#     fit_color_options.addItems(PlotModel.color_options_extra_values.keys())
-#     linestyle_options.addItems(PlotModel.linestyle_options_values.keys())
-#     fit_linestyle_options.addItems(PlotModel.linestyle_options_values.keys())
-#     line_color_options.addItems(PlotModel.color_options_extra_values.keys())
-#     line_width_options.addItems(PlotModel.line_width_options_values.keys())
-#     marker_options.addItems(PlotModel.marker_options_values.keys())
-#     marker_color_options.addItems(PlotModel.color_options_extra_values.keys())
-#     marker_size_options.addItems(PlotModel.marker_size_options_values.keys())
-#     fillstyle_options.addItems(PlotModel.fillstyle_options_values.keys())
-#     errorbar_style_options.addItems(PlotModel.errorbar_styles_values.keys())
-#     errorbar_color_options.addItems(PlotModel.color_options_extra_values.keys())
-#     errorbar_width_options.addItems(PlotModel.errorbar_width_values.keys())
-#
-#     layout = QtWidgets.QGridLayout()
-#     layout.addWidget(QtWidgets.QLabel("Default Color"), 0, 0)
-#     layout.addWidget(all_color_options, 0, 1)
-#     layout.addWidget(QtWidgets.QLabel("Linestyle"), 1, 0)
-#     layout.addWidget(linestyle_options, 1, 1)
-#     layout.addWidget(QtWidgets.QLabel("Line Width"), 3, 0)
-#     layout.addWidget(line_width_options, 3, 1)
-#     layout.addWidget(QtWidgets.QLabel("Marker Style"), 4, 0)
-#     layout.addWidget(marker_options, 4, 1)
-#     layout.addWidget(QtWidgets.QLabel("Marker Color"), 5, 0)
-#     layout.addWidget(marker_color_options, 5, 1)
-#     layout.addWidget(QtWidgets.QLabel("Marker Size"), 6, 0)
-#     layout.addWidget(marker_size_options, 6, 1)
-#     layout.addWidget(QtWidgets.QLabel("Fillstyle"), 7, 0)
-#     layout.addWidget(fillstyle_options, 7, 1)
-#     layout.addWidget(QtWidgets.QLabel("Errorbar Style"), 8, 0)
-#     layout.addWidget(errorbar_style_options, 8, 1)
-#     layout.addWidget(QtWidgets.QLabel("Errorbar Color"), 9, 0)
-#     layout.addWidget(errorbar_color_options, 9, 1)
-#     layout.addWidget(QtWidgets.QLabel("Errorbar Width"), 10, 0)
-#     layout.addWidget(errorbar_width_options, 10, 1)
-#     layout.addWidget(QtWidgets.QLabel("Fit Line Color"), 11, 0)
-#     layout.addWidget(fit_color_options, 11, 1)
-#     layout.addWidget(QtWidgets.QLabel("Fit Linestyle"), 12, 0)
-#     layout.addWidget(fit_linestyle_options, 12, 1)
-#
-#     form_layout = QtWidgets.QFormLayout()
-#     form_layout.addItem(layout)
-#
-#     style_settings.setLayout(form_layout)
-#
-#     vbox = QtWidgets.QVBoxLayout()
-#     vbox.addWidget(style_settings)
-#     x.setLayout(vbox)
-#
-#     x.show()
-#
-#     import time
-#
-#     t = time.time()
-#     all_color_options.setCurrentText('Red')
-#     print(time.time() - t)
-#
-#     t = time.time()
-#     linestyle_options.setCurrentText('Dashed')
-#     print(time.time() - t)
-#
-#     t = time.time()
-#     linestyle_options.setCurrentText('Dashed')
-#     print(time.time() - t)
-#     t = time.time()
-#     linestyle_options.setCurrentText('Dashed')
-#     print(time.time() - t)
-#     t = time.time()
-#     linestyle_options.setCurrentText('Dashed')
-#     print(time.time() - t)
-#     t = time.time()
-#     linestyle_options.setCurrentText('Dashed')
-#     print(time.time() - t)
-#     t = time.time()
-#     linestyle_options.setCurrentText('Dashed')
-#     print(time.time() - t)
-#     t = time.time()
-#     linestyle_options.setCurrentText('Dashed')
-#     print(time.time() - t)
-#     t = time.time()
-#     linestyle_options.setCurrentText('Dashed')
-#     print(time.time() - t)
-#     t = time.time()
-#     linestyle_options.setCurrentText('Dashed')
-#     print(time.time() - t)
-#     t = time.time()
-#     linestyle_options.setCurrentText('Dashed')
-#     print(time.time() - t)
-#     t = time.time()
-#     linestyle_options.setCurrentText('Dashed')
-#     print(time.time() - t)
-#     t = time.time()
-#     linestyle_options.setCurrentText('Dashed')
-#     print(time.time() - t)
-#     t = time.time()
-#     linestyle_options.setCurrentText('Dashed')
-#     print(time.time() - t)
-#     t = time.time()
-#     linestyle_options.setCurrentText('Dashed')
-#     print(time.time() - t)
-#     t = time.time()
-#     linestyle_options.setCurrentText('Dashed')
-#     print(time.time() - t)
-#     t = time.time()
-#     linestyle_options.setCurrentText('Dashed')
-#     print(time.time() - t)
-#
-#
-#
-#     sys.exit(app.exec_())
-
-
