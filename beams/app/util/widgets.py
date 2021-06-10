@@ -184,10 +184,7 @@ class TitleBar(QtWidgets.QWidget):
         row.addWidget(self.close)
         row.addSpacing(15)
 
-        row.insertStretch(1, 500)
         row.setSpacing(0)
-
-        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
 
         self._max_normal = False
         self._start_pos = None
