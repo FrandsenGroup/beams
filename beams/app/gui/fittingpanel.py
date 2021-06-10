@@ -495,7 +495,6 @@ class FittingPanel(Panel):
         self.label_global_plus = QtWidgets.QLabel("Global+")
         self.label_ordering = QtWidgets.QLabel("Order by")
         self.label_use_previous = QtWidgets.QLabel("Use Previous Run")
-        self.label_fit_alpha = QtWidgets.QLabel("Fit Alpha")
 
         self.check_batch_fit = QtWidgets.QCheckBox()
         self.check_global_plus = QtWidgets.QCheckBox()
@@ -685,10 +684,6 @@ class FittingPanel(Panel):
         row2.addWidget(self.label_use_previous)
         row2.addStretch()
         row.addLayout(row2)
-        layout.addRow(row)
-        row = QtWidgets.QHBoxLayout()
-        row.addWidget(self.label_fit_alpha)
-        row.addStretch()
         layout.addRow(row)
         self.group_batch_options.setLayout(layout)
 
