@@ -309,16 +309,10 @@ class MainConsolePanel(QtWidgets.QDockWidget):
     def __init__(self):
         super(MainConsolePanel, self).__init__()
         self.setTitleBarWidget(QtWidgets.QWidget())
-        self.setWindowTitle("Main Console")
+        self.setWindowTitle("Files")
 
         # Create our widget which will hold everything for this panel.
         self._full_widget = QtWidgets.QWidget()
-        # self._full_widget.setAutoFillBackground(True)
-        # self._full_widget.setBackgroundRole(QtGui.QPalette.Highlight)
-        # p = self._full_widget.palette()
-        # p.setColor(self._full_widget.backgroundRole(), QtGui.QColor('#070536'))
-        # self._full_widget.setPalette(p)
-        # self.setStyleSheet("border-top: 1px solid white")
 
         # Create Widgets
         self.file_list_box = widgets.CollapsibleBox("Files")
@@ -339,7 +333,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         self.convert_button.setFixedWidth(60)
         self.write_button.setFixedWidth(40)
         self.load_button.setFixedWidth(40)
-        self.tree_view.setFixedHeight(300)
+        self.setMaximumHeight(350)
         self.setMaximumWidth(350)
 
         # Set Widget Tooltips
@@ -373,9 +367,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
         vbox_one = QtWidgets.QVBoxLayout()
         vbox_one.addLayout(hbox_one)
-        vbox_one.addWidget(self.tree_view)
-        vbox_one.addStretch()
-        vbox_one.addWidget(widgets.Separator())
+        vbox_one.addWidget(self.tree_view, 2)
         self._full_widget.setLayout(vbox_one)
 
         # Set DockWidget to be fully laid out widget.
@@ -393,9 +385,7 @@ class MainConsolePanelPresenter(PanelPresenter):
     def __init__(self, view: MainConsolePanel):
         super().__init__(view)
         
-        self.__run_service = RunService()
         self.__file_service = FileService()
-        self.__fit_service = FitService()
         
         self._set_callbacks()
         
@@ -425,7 +415,6 @@ class MainConsolePanelPresenter(PanelPresenter):
     def _write_file_clicked(self):
         file_ids = self._view.tree_view.get_file_ids()
         WriteDataDialog.launch(*file_ids)
-        # ProgressBarDialog.launch("Copying files...", "Abort Copy", 0, 3)
 
     def _load_file_clicked(self):
         file_ids = self._view.tree_view.get_file_ids()

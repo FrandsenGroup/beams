@@ -38,14 +38,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setTabIcon(i, QtGui.QIcon(resources.FITTING_IMAGE))
             self.setIconSize(QtCore.QSize(35, 35))
 
-            # i = self.addTab(QtWidgets.QLabel('Useless tab.. Kinda sad'), '')
-            # self.setTabIcon(i, QtGui.QIcon(resources.DOWNLOAD_IMAGE))
-            # self.setIconSize(QtCore.QSize(35, 35))
-            #
-            # i = self.addTab(QtWidgets.QLabel('No help for you.'), '')
-            # self.setTabIcon(i, QtGui.QIcon(resources.QUESTION_IMAGE))
-            # self.setIconSize(QtCore.QSize(35, 35))
-
             self.currentChanged.connect(self._selection_changed)
 
         def _set_style(self):

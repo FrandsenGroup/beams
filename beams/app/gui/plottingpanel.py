@@ -276,6 +276,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         def __init__(self):
             super().__init__()
             self.setTitleBarWidget(QtWidgets.QWidget())
+            self.setWindowTitle("Plotting")
 
             self.plot_button = widgets.StyleOneButton("Plot")
             self.plot_all_button = widgets.StyleOneButton("Plot All")
@@ -474,7 +475,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.figure.set_facecolor("#ffffff")
             self.axes_time = axes[0]
             self.axes_freq = axes[1]
-
+        
             self.set_blank()
 
         def set_blank(self):
@@ -627,8 +628,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             QtWidgets.QWidget.__init__(self)
             # self.setTitleBarWidget(QtWidgets.QWidget())
 
-            # self._full_widget = QtWidgets.QWidget()
-
             self._label_slider_bin = QtWidgets.QLabel('')
             self._label_input_bin = QtWidgets.QLabel('Time Bins (ns)')
 
@@ -703,14 +702,14 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
         def _set_widget_dimensions(self):
             box_size = 40
-            self.input_time_xmin.setFixedWidth(box_size)
-            self.input_time_xmax.setFixedWidth(box_size)
-            self.input_time_ymin.setFixedWidth(box_size)
-            self.input_time_ymax.setFixedWidth(box_size)
-            self.input_freq_xmin.setFixedWidth(box_size)
-            self.input_freq_xmax.setFixedWidth(box_size)
-            self.input_freq_ymin.setFixedWidth(box_size)
-            self.input_freq_ymax.setFixedWidth(box_size)
+            self.input_time_xmin.setMinimumWidth(box_size)
+            self.input_time_xmax.setMinimumWidth(box_size)
+            self.input_time_ymin.setMinimumWidth(box_size)
+            self.input_time_ymax.setMinimumWidth(box_size)
+            self.input_freq_xmin.setMinimumWidth(box_size)
+            self.input_freq_xmax.setMinimumWidth(box_size)
+            self.input_freq_ymin.setMinimumWidth(box_size)
+            self.input_freq_ymax.setMinimumWidth(box_size)
             self.input_bin.setFixedWidth(50)
 
         def _set_widget_layout(self):
@@ -724,6 +723,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             main_layout.addLayout(row_1)
 
             time_form = QtWidgets.QGroupBox('Time')
+            time_form.setMaximumHeight(110)
             time_layout = QtWidgets.QFormLayout()
             time_grid = QtWidgets.QGridLayout()
 
@@ -745,6 +745,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             time_form.setLayout(time_layout)
 
             freq_form = QtWidgets.QGroupBox('Frequency')
+            freq_form.setMaximumHeight(110)
             freq_layout = QtWidgets.QFormLayout()
             freq_grid = QtWidgets.QGridLayout()
 
@@ -772,7 +773,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             editor_layout.addWidget(freq_form)
 
             main_layout.addLayout(editor_layout)
-            main_layout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
             self.setLayout(main_layout)
 
         def get_max_time(self):
@@ -947,12 +947,12 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         hbox = QtWidgets.QHBoxLayout()
 
         vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self.left_display)
+        vbox.addWidget(self.left_display, 2)
         vbox.addWidget(self.left_settings)
         hbox.addLayout(vbox)
 
         vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self.right_display)
+        vbox.addWidget(self.right_display, 2)
         vbox.addWidget(self.right_settings)
         hbox.addLayout(vbox)
 

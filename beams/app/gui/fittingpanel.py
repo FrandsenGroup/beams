@@ -158,7 +158,7 @@ class FittingPanel(Panel):
             self.tree = FittingPanel.SupportPanel.Tree()
             self.setTitleBarWidget(QtWidgets.QWidget())
             # self.setFixedWidth(350)
-            self.setMinimumHeight(500)
+            # self.setMinimumHeight(500)
             layout = QtWidgets.QVBoxLayout()
 
             self.new_button = widgets.StyleTwoButton("New Empty Fit")
@@ -167,7 +167,6 @@ class FittingPanel(Panel):
 
             hbox = QtWidgets.QHBoxLayout()
             hbox.addWidget(self.new_button)
-            # hbox.addWidget(self.reset_button)
             hbox.addWidget(self.save_button)
             layout.addLayout(hbox)
 
@@ -333,21 +332,6 @@ class FittingPanel(Panel):
             self.input_time_ymax = QtWidgets.QLineEdit()
             self.check_time_yauto = QtWidgets.QCheckBox()
 
-            self._label_freq = QtWidgets.QLabel('Frequency')
-            self._label_freq_xmin = QtWidgets.QLabel('XMin')
-            self._label_freq_xmax = QtWidgets.QLabel('XMax')
-            self._label_freq_ymin = QtWidgets.QLabel('YMin')
-            self._label_freq_ymax = QtWidgets.QLabel('YMax')
-            self._label_freq_yauto = QtWidgets.QLabel('Auto Y')
-            self._label_freq_xauto = QtWidgets.QLabel('Auto X')
-
-            self.input_freq_xmin = QtWidgets.QLineEdit()
-            self.input_freq_xmax = QtWidgets.QLineEdit()
-            self.input_freq_ymin = QtWidgets.QLineEdit()
-            self.input_freq_ymax = QtWidgets.QLineEdit()
-            self.check_freq_yauto = QtWidgets.QCheckBox()
-            self.check_freq_xauto = QtWidgets.QCheckBox()
-
             self._set_widget_attributes()
             self._set_widget_tooltips()
             self._set_widget_dimensions()
@@ -356,8 +340,6 @@ class FittingPanel(Panel):
             # self.setWidget(self._full_widget)
 
         def _set_widget_attributes(self):
-            self.check_freq_xauto.setChecked(True)
-            self.check_freq_yauto.setChecked(True)
             self.check_time_yauto.setChecked(True)
 
             self.input_time_xmin.setText("0")
@@ -367,12 +349,6 @@ class FittingPanel(Panel):
 
             self.input_time_ymin.setEnabled(False)
             self.input_time_ymax.setEnabled(False)
-
-            self.input_freq_xmin.setEnabled(False)
-            self.input_freq_xmax.setEnabled(False)
-
-            self.input_freq_ymin.setEnabled(False)
-            self.input_freq_ymax.setEnabled(False)
 
             self.slider_bin.setMinimum(0)
             self.slider_bin.setMaximum(500)
@@ -389,14 +365,10 @@ class FittingPanel(Panel):
 
         def _set_widget_dimensions(self):
             box_size = 80
-            self.input_time_xmin.setFixedWidth(box_size)
-            self.input_time_xmax.setFixedWidth(box_size)
-            self.input_time_ymin.setFixedWidth(box_size)
-            self.input_time_ymax.setFixedWidth(box_size)
-            self.input_freq_xmin.setFixedWidth(box_size)
-            self.input_freq_xmax.setFixedWidth(box_size)
-            self.input_freq_ymin.setFixedWidth(box_size)
-            self.input_freq_ymax.setFixedWidth(box_size)
+            self.input_time_xmin.setMaximumWidth(box_size)
+            self.input_time_xmax.setMaximumWidth(box_size)
+            self.input_time_ymin.setMaximumWidth(box_size)
+            self.input_time_ymax.setMaximumWidth(box_size)
             self.input_bin.setFixedWidth(50)
 
         def _set_widget_layout(self):
@@ -436,10 +408,7 @@ class FittingPanel(Panel):
 
             editor_layout = QtWidgets.QHBoxLayout()
             editor_layout.addWidget(time_form)
-            # editor_layout.addWidget(freq_form)
 
-            # main_layout.addLayout(editor_layout)
-            # main_layout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
             self.setLayout(main_layout)
 
         def _update_bin(self, slider_is_most_accurate):
@@ -454,23 +423,11 @@ class FittingPanel(Panel):
         def get_min_time(self):
             return float(self.input_time_xmin.text())
 
-        def get_max_freq(self):
-            return float(self.input_freq_xmax.text())
-
-        def get_min_freq(self):
-            return float(self.input_freq_xmin.text())
-
         def get_max_asymmetry(self):
             return float(self.input_time_ymax.text())
 
         def get_min_asymmetry(self):
             return float(self.input_time_ymin.text())
-
-        def get_max_fft(self):
-            return float(self.input_freq_ymax.text())
-
-        def get_min_fft(self):
-            return float(self.input_freq_ymin.text())
 
         def get_bin_from_input(self):
             return float(self.input_bin.text())
@@ -481,23 +438,9 @@ class FittingPanel(Panel):
         def is_asymmetry_auto(self):
             return self.check_time_yauto.isChecked()
 
-        def is_fft_auto(self):
-            return self.check_freq_yauto.isChecked()
-
-        def is_freq_auto(self):
-            return self.check_freq_xauto.isChecked()
-
         def set_enabled_asymmetry_auto(self, enabled):
             self.input_time_ymin.setEnabled(enabled)
             self.input_time_ymax.setEnabled(enabled)
-
-        def set_enabled_frequency_auto(self, enabled):
-            self.input_freq_xmin.setEnabled(enabled)
-            self.input_freq_xmax.setEnabled(enabled)
-
-        def set_enabled_fft_auto(self, enabled):
-            self.input_freq_ymin.setEnabled(enabled)
-            self.input_freq_ymax.setEnabled(enabled)
 
         def set_max_time(self, value):
             self.input_time_xmax.setText('{0:.3f}'.format(value))
@@ -505,23 +448,11 @@ class FittingPanel(Panel):
         def set_min_time(self, value):
             self.input_time_xmin.setText('{0:.3f}'.format(value))
 
-        def set_max_freq(self, value):
-            self.input_freq_xmax.setText('{0:.3f}'.format(value))
-
-        def set_min_freq(self, value):
-            self.input_freq_xmin.setText('{0:.3f}'.format(value))
-
         def set_max_asymmetry(self, value):
             self.input_time_ymax.setText('{0:.3f}'.format(value))
 
         def set_min_asymmetry(self, value):
             self.input_time_ymin.setText('{0:.3f}'.format(value))
-
-        def set_max_fft(self, value):
-            self.input_freq_ymax.setText('{0:.1f}'.format(value))
-
-        def set_min_fft(self, value):
-            self.input_freq_ymin.setText('{0:.1f}'.format(value))
 
         def set_bin_input(self, value):
             self.input_bin.setText(str(value))
@@ -667,27 +598,14 @@ class FittingPanel(Panel):
         self.button_save_user_equation.setFixedWidth(60)
         self.button_plot.setFixedWidth(60)
 
-        self.option_run_ordering.setFixedWidth(80)
-        self.option_user_fit_equations.setFixedWidth(120)
-        self.option_preset_fit_equations.setFixedWidth(120)
+        self.option_user_fit_equations.setFixedWidth(200)
+        self.option_preset_fit_equations.setFixedWidth(200)
 
-        self.input_user_equation_name.setFixedWidth(100)
-        self.input_user_equation.setMinimumWidth(160)
-        self.input_packing.setFixedWidth(60)
-        self.input_spectrum_min.setFixedWidth(60)
-        self.input_spectrum_max.setFixedWidth(60)
-
-        self.fit_display.setMinimumWidth(800)
-        self.fit_spectrum_settings.setMinimumWidth(720)
-
-        self.group_table_parameters.setFixedWidth(320)
-        self.group_table_runs.setFixedWidth(320)
-        self.group_spectrum_options.setFixedWidth(120)
-        self.group_batch_options.setFixedWidth(320)
-        # self.group_batch_options.setMaximumHeight(110)
+        self.group_table_parameters.setMaximumWidth(380)
+        self.group_table_runs.setMaximumWidth(380)
+        self.group_batch_options.setMaximumWidth(380)
+        self.group_batch_options.setMaximumHeight(110)
         self.group_save_results.setMaximumHeight(110)
-        # self.group_save_results.setMinimumWidth(720)
-        self.group_spectrum_options.setMaximumHeight(110)
 
         self.insert_pi.setFixedWidth(30)
         self.insert_phi.setFixedWidth(30)
@@ -701,41 +619,40 @@ class FittingPanel(Panel):
     def _set_widget_layout(self):
         main_layout = QtWidgets.QVBoxLayout()
 
-        full_row = QtWidgets.QHBoxLayout()
         grid = QtWidgets.QGridLayout()
 
+        # Create and add GroupBox for predefined fit equations
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.option_preset_fit_equations)
         row.addWidget(self.button_insert_preset_equation)
         layout = QtWidgets.QFormLayout()
         layout.addRow(row)
         self.group_preset_functions.setLayout(layout)
-        grid.addWidget(self.group_preset_functions, 0, 0, 1, 2)
+        grid.addWidget(self.group_preset_functions, 0, 0, 1, 1)
 
+        # Create and add GroupBox for user defined fit equations
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.option_user_fit_equations)
         row.addWidget(self.button_insert_user_equation)
         row.addSpacing(20)
         row.addWidget(self.input_user_equation_name)
-        row.addWidget(self.input_user_equation)
+        row.addWidget(self.input_user_equation,2)
         row.addWidget(self.button_save_user_equation)
+        row.addSpacing(10)
         layout = QtWidgets.QFormLayout()
         layout.addRow(row)
         self.group_user_functions.setLayout(layout)
-        grid.addWidget(self.group_user_functions, 0, 2, 1, 5)
+        grid.addWidget(self.group_user_functions, 0, 1, 1, 5)
 
-        # full_row.addWidget(self.group_preset_functions)
-        # full_row.addSpacing(20)
-        # full_row.addWidget(self.group_user_functions)
-        # full_row.addStretch()
+        # Add our top row of layouts (the loaded fit functions)
         main_layout.addLayout(grid)
 
+        # Create a row for our fit function (the input and special character keys)
         row = QtWidgets.QHBoxLayout()
         row.addSpacing(20)
         row.addWidget(QtWidgets.QLabel("A(t) = "))
         row.addSpacing(5)
         row.addWidget(self.input_fit_equation)
-        # row.addWidget(self.button_check_equation)
         row.addSpacing(20)
         row.addWidget(self.insert_pi)
         row.addWidget(self.insert_alpha)
@@ -745,11 +662,13 @@ class FittingPanel(Panel):
         row.addWidget(self.insert_phi)
         row.addWidget(self.insert_sigma)
         row.addWidget(self.insert_naught)
+        row.addSpacing(15)
         self.group_function.setLayout(row)
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.group_function)
         main_layout.addLayout(row)
 
+        # Create and add GroupBox for batch options
         layout = QtWidgets.QFormLayout()
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.check_batch_fit)
@@ -781,18 +700,21 @@ class FittingPanel(Panel):
         layout.addRow(row)
         self.group_batch_options.setLayout(layout)
 
+        # Create and add GroupBox for table parameters
         left_side = QtWidgets.QVBoxLayout()
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.table_parameters)
         self.group_table_parameters.setLayout(row)
         left_side.addWidget(self.group_table_parameters)
 
+        # Create and add GroupBox for run list
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.run_list)
         self.group_table_runs.setLayout(row)
         left_side.addWidget(self.group_table_runs)
         left_side.addWidget(self.group_batch_options)
 
+        # Create and add GroupBox for saving files
         layout = QtWidgets.QFormLayout()
         grid = QtWidgets.QGridLayout()
         grid.addWidget(QtWidgets.QLabel("File Name: "), 0, 0, 1, 1)
@@ -813,53 +735,22 @@ class FittingPanel(Panel):
         column.addWidget(self.button_done)
         row_save.addLayout(column)
 
+        # Create and add layout for plot display and controls
         right_side = QtWidgets.QVBoxLayout()
-        right_side.addWidget(self.fit_display)
+        right_side.addWidget(self.fit_display, 2)
         hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.button_plot)
         hbox.addWidget(self.fit_spectrum_settings)
         right_side.addLayout(hbox)
         right_side.addLayout(row_save)
-        # right_side.addWidget(self.fit_spectrum_settings)
 
+        # And put it all together
         row = QtWidgets.QHBoxLayout()
         row.addLayout(left_side)
-        row.addStretch()
+        row.addSpacing(10)
         row.addLayout(right_side)
-        row.addStretch()
+        row.addSpacing(10)
         main_layout.addLayout(row)
-
-        full_row = QtWidgets.QHBoxLayout()
-        # full_row.addWidget(self.group_batch_options)
-
-        layout = QtWidgets.QFormLayout()
-        grid = QtWidgets.QGridLayout()
-        grid.addWidget(QtWidgets.QLabel("X-Min"), 0, 0)
-        grid.addWidget(self.input_spectrum_min, 0, 1)
-        grid.addWidget(QtWidgets.QLabel("X-Max"), 1, 0)
-        grid.addWidget(self.input_spectrum_max, 1, 1)
-        grid.addWidget(QtWidgets.QLabel("Packing"), 2, 0)
-        grid.addWidget(self.input_packing, 2, 1)
-        row = QtWidgets.QHBoxLayout()
-        row.addLayout(grid)
-        layout.addRow(row)
-        self.group_spectrum_options.setLayout(layout)
-
-        # full_row.addWidget(self.group_spectrum_options)
-
-
-
-        # full_row.addWidget(self.group_save_results)
-
-        # full_row.addSpacing(8)
-        # column = QtWidgets.QVBoxLayout()
-        # column.addWidget(self.button_fit)
-        # column.addSpacing(4)
-        # column.addWidget(self.button_done)
-        # full_row.addLayout(column)
-        # full_row.addSpacing(8)
-        #
-        # main_layout.addLayout(full_row)
 
         self.setLayout(main_layout)
 

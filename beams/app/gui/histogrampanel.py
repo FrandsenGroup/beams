@@ -369,15 +369,13 @@ class HistogramPanel(Panel):
         radio_layout.addWidget(self.input_goodbin2)
         radio_layout.addWidget(self.label_goodbin2)
         radio_layout.addStretch()
-        radio_layout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
 
         radio_form = QtWidgets.QGroupBox("Edit")
         radio_form_layout = QtWidgets.QFormLayout()
         radio_form_layout.addWidget(self.label_explanation)
         radio_form_layout.addRow(radio_layout)
-        radio_form_layout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
         radio_form.setLayout(radio_form_layout)
-        radio_form.setMaximumHeight(100)
+        radio_form.setMaximumHeight(120)
 
         self._new_layout.addWidget(radio_form)
         self._new_layout.addWidget(self.canvas)
