@@ -1313,6 +1313,7 @@ class FitTabPresenter(PanelPresenter):
             return
 
         if type(selected_data) == fit.Fit:
+            print('here')
             for i in range(self._view.run_list.count()):
                 item = self._view.run_list.item(i)
                 if item.text() == selected_data.title:
@@ -1327,8 +1328,6 @@ class FitTabPresenter(PanelPresenter):
             run = self._run_service.get_runs_by_ids([selected_data.run_id])[0]
             self._view.input_file_name.setText('{}_fit.txt'.format(run.meta['RunNumber']))
             self._view.input_folder_name.setText(files.load_last_used_directory())
-            self._view.run_list.setEnabled(False)
-            self._view.table_parameters.setEnabled(True)
             self.__expression = selected_data.expression
             self.__variable_groups = [selected_data.kwargs]
             self._view.input_fit_equation.setText(selected_data.expression_as_string)
@@ -1348,9 +1347,6 @@ class FitTabPresenter(PanelPresenter):
                 self._view.set_variable_value(symbol, value='*')
             self._view.input_file_name.setText('{}_fit.txt'.format(selected_data.id))
             self._view.input_folder_name.setText(files.load_last_used_directory())
-            self._view.run_list.setEnabled(False)
-            self._view.table_parameters.setEnabled(False)
-
             fits = list(selected_data.fits.values())
             self._view.input_fit_equation.setText(fits[0].expression_as_string)
             self.__expression = fits[0].expression
