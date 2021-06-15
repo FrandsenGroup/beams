@@ -55,7 +55,7 @@ GOOD_BIN_TWO_KEY = 'GoodBinTwo'
 T0_KEY = 'T0'
 CALC_HISTS_KEY = 'CalcHists'
 
-
+#TODO Maybe we should have these files inherit from the actual File object
 class File(abc.ABC):
     """
     Abstract base class for file objects, establishes some static constants and a constructor.
