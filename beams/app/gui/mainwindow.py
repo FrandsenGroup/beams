@@ -6,7 +6,6 @@ from app.gui.histogrampanel import HistogramPanel
 from app.gui.plottingpanel import PlottingPanel
 from app.resources import resources
 from app.gui.fittingpanel import FittingPanel
-from app.util.widgets import QtWaitingSpinner
 
 
 # noinspection PyArgumentList
@@ -14,8 +13,6 @@ class MainWindow(QtWidgets.QMainWindow):
     """
     MainWindow widget for the program. Creates the default arrangement of panels.
     """
-    LEFT_PANEL_MAX = 280  # pixels
-    SPINNER = None
 
     class MainWindowTabs(QtWidgets.QTabWidget):
         def __init__(self):
