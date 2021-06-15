@@ -15,12 +15,12 @@ from app.gui.gui import PanelPresenter, Panel
 
 # noinspection PyArgumentList
 class FittingPanel(Panel):
-    __NAME_COLUMN = 0
-    __VALUE_COLUMN = 1
-    __LOWER_COLUMN = 2
-    __UPPER_COLUMN = 3
-    __FIXED_COLUMN = 4
-    __GLOBAL_COLUMN = 5
+    # __NAME_COLUMN = 0
+    __VALUE_COLUMN = 0
+    __LOWER_COLUMN = 1
+    __UPPER_COLUMN = 2
+    __FIXED_COLUMN = 3
+    __GLOBAL_COLUMN = 4
 
     class SupportPanel(QtWidgets.QDockWidget):
         class Tree(QtWidgets.QTreeWidget):
@@ -555,10 +555,10 @@ class FittingPanel(Panel):
 
     def _set_widget_attributes(self):
         # self.table_parameters.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        self.table_parameters.setColumnCount(6)
-        self.table_parameters.setHorizontalHeaderLabels(['Name', 'Value', 'Min', 'Max', 'Fixed', 'Global'])
+        self.table_parameters.setColumnCount(5) # Set to 6 and add 'Name' below if we want to keep name column
+        self.table_parameters.setHorizontalHeaderLabels(['Value', 'Min', 'Max', 'Fixed', 'Global'])
         self.table_parameters.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
-        self.table_parameters.horizontalHeader().setSectionResizeMode(self.__NAME_COLUMN, QtWidgets.QHeaderView.Stretch)
+        # self.table_parameters.horizontalHeader().setSectionResizeMode(self.__NAME_COLUMN, QtWidgets.QHeaderView.Stretch)
         self.table_parameters.horizontalHeader().setSectionResizeMode(self.__VALUE_COLUMN, QtWidgets.QHeaderView.Stretch)
         self.table_parameters.horizontalHeader().setSectionResizeMode(self.__LOWER_COLUMN, QtWidgets.QHeaderView.Stretch)
         self.table_parameters.horizontalHeader().setSectionResizeMode(self.__UPPER_COLUMN, QtWidgets.QHeaderView.Stretch)
@@ -785,18 +785,21 @@ class FittingPanel(Panel):
         values = {}
         for i in range(self.table_parameters.rowCount()):
             variable_name = self.table_parameters.verticalHeaderItem(i).text()
-            variable_guess = self.table_parameters.item(i, self.__NAME_COLUMN)
+            # variable_guess = self.table_parameters.item(i, self.__NAME_COLUMN)
 
-            if variable_guess is None:
-                values[variable_name] = variable_name
-                continue
+            # if variable_guess is None:
+            #     values[variable_name] = variable_name
+            #     continue
 
-            variable_name = self.table_parameters.verticalHeaderItem(i).text()
-            variable_guess = variable_guess.text()
+            # variable_name = self.table_parameters.verticalHeaderItem(i).text()
+            # variable_guess = variable_guess.text()
 
-            variable_guess = variable_name if variable_guess == '' else variable_guess
+            # variable_guess = variable_name if variable_guess == '' else variable_guess
 
-            values[variable_name] = variable_guess
+            # values[variable_name] = variable_guess
+
+            #TODO Temporary while we aren't using the name column.
+            values[variable_name] = variable_name
 
         return values
 
@@ -958,10 +961,10 @@ class FittingPanel(Panel):
                     item.setText(str(value))
                     self.table_parameters.setItem(i, self.__VALUE_COLUMN, item)
 
-                if name:
-                    item = QtWidgets.QTableWidgetItem()
-                    item.setText(str(name))
-                    self.table_parameters.setItem(i, self.__NAME_COLUMN, item)
+                # if name:
+                #     item = QtWidgets.QTableWidgetItem()
+                #     item.setText(str(name))
+                #     self.table_parameters.setItem(i, self.__NAME_COLUMN, item)
 
                 if is_fixed:
                     self.table_parameters.setCellWidget(i, self.__FIXED_COLUMN, self._create_check_box_for_table(is_fixed))
