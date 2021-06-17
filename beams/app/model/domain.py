@@ -60,7 +60,7 @@ class Histogram(np.ndarray):
     def background_radiation(self):
         return np.mean(self[int(self.background_start):int(self.background_end) - 1])
 
-    def combine(self, histogram):
+    def combine(self, other):
         pass
 
 

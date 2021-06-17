@@ -19,8 +19,7 @@ class BEAMS(QtWidgets.QApplication):
     def __init__(self):
         super(BEAMS, self).__init__(sys.argv)
         logging.basicConfig(filename=resources.QT_LOG_FILE, level=logging.DEBUG)
-        mpl_logger = logging.getLogger('matplotlib')
-        mpl_logger.setLevel(logging.WARNING)
+        logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
         pix = QtGui.QPixmap(resources.SPLASH_IMAGE)
         self.splash = QtWidgets.QSplashScreen(pix.scaledToHeight(200, QtCore.Qt.SmoothTransformation))
