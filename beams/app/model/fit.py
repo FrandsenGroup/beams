@@ -770,6 +770,94 @@ def _shortened_run_id(run_id):
     return run_id.split('-')[0]
 
 
+class FitParameter:
+    def __init__(self, symbol, value, lower, upper, is_global, is_fixed, uncertainty=None):
+        self.uncertainty = uncertainty
+        self.upper = upper
+        self.lower = lower
+        self.value = value
+        self.symbol = symbol
+        self.is_fixed = is_fixed
+        self.is_global = is_global
+
+    def __str__(self):
+        return '{}={}'.format(self.symbol, self.value)
+
+
+class FitExpression:
+    def __init__(self, expression_string):
+        self.__expression_string = expression_string
+
+        variables = parse(self.__expression_string)
+        variables.discard(INDEPENDENT_VARIABLE)
+        self.__expression = lambdify(self.__expression_string, variables, INDEPENDENT_VARIABLE)
+
+    def __str__(self):
+        return self.__expression_string
+
+    def __call__(self, *args, **kwargs):
+        if len(args) == 0:
+            raise ValueError("FitExpression needs at least one parameter (an array).")
+        elif not isinstance(args[0], np.ndarray):
+            try:
+                iter(args[0])
+                time_array = np.array(args[0])
+            except TypeError:
+                raise ValueError("First parameter to FitExpression needs to be an array.")
+        else:
+            time_array = args[0]
+
+        pars = {}
+        unnamed_pars = []
+        if len(args) > 1:
+            for arg in args[1:]:
+                if isinstance(arg, FitParameter):
+                    pars[arg.symbol] = arg.value
+                else:
+                    try:
+                        unnamed_pars.append(float(arg))
+                    except ValueError:
+                        raise ValueError("Every parameter after the array should be of type FitParameter.")
+        for k, v in kwargs.items():
+            pars[k] = v
+
+        return self.__expression(time_array, *unnamed_pars, **pars)
+
+
+class FitConfig:
+    LEAST_SQUARES = 1
+    GLOBAL_PLUS = 2
+
+    def __init__(self):
+        self.expression = ''
+        self.parameters = {}
+        self.data = {}
+        self.flags = 0
+
+    def is_least_squares(self):
+        return bool(self.flags & FitConfig.LEAST_SQUARES)
+
+    def is_global_plus(self):
+        return bool(self.flags & FitConfig.GLOBAL_PLUS)
+
+
+class Fit(np.ndarray):
+    def __new__(cls, *args, **kwargs):
+        pass
+
+
+class FitDataset:
+    def __init__(self):
+        pass
+
+
+def _residual(lambda_expression):
+    def residual(pars, x, y_data, dy_data):
+        y_calc = lambda_expression(x, *pars)
+        return (y_data - y_calc) / dy_data
+    return residual
+
+
 # tspec = FitSpec()
 # tfunction = 't + az - bz - dz + cz'
 # tvara = FitVar('az', 'a', 1, False, 0, 4, True, False)
