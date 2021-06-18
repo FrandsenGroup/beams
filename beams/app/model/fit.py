@@ -5,7 +5,6 @@ from scipy.optimize import least_squares
 import enum
 from collections import OrderedDict
 import time
-import uuid
 import re
 
 from app.resources import resources
