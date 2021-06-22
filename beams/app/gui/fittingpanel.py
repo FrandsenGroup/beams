@@ -511,7 +511,6 @@ class FittingPanel(Panel):
         self.support_panel = FittingPanel.SupportPanel()
 
         self.parameter_table = self.ParameterTable()
-        self.add_parameter('a', 1, 2, 3, True, False, True, 1, 2, 3)
 
         self.input_fit_equation = QtWidgets.QLineEdit()
         self.input_user_equation = QtWidgets.QLineEdit()
@@ -952,6 +951,37 @@ class FittingPanel(Panel):
                 item_value.setText(str(output_uncertainty))
                 self.parameter_table.output_table.setItem(n, self.ParameterTable.UNCERTAINTY_COLUMN, item_value)
 
+    def clear_parameters(self, symbols):
+        n = self.parameter_table.config_table.verticalHeader().count()
+
+        for i in range(n - 1, -1, -1):
+            item = self.parameter_table.config_table.verticalHeaderItem(i)
+
+            if item is None or item.text() in symbols:
+                continue
+
+            self.parameter_table.config_table.removeRow(i)
+
+        n = self.parameter_table.batch_table.verticalHeader().count()
+
+        for i in range(n - 1, -1, -1):
+            item = self.parameter_table.batch_table.verticalHeaderItem(i)
+
+            if item is None or item.text() in symbols:
+                continue
+
+            self.parameter_table.batch_table.removeRow(i)
+
+        n = self.parameter_table.output_table.verticalHeader().count()
+
+        for i in range(n - 1, -1, -1):
+            item = self.parameter_table.output_table.verticalHeaderItem(i)
+
+            if item is None or item.text() in symbols:
+                continue
+
+            self.parameter_table.output_table.removeRow(i)
+
     def get_selected_run_titles(self):
         titles = []
         for i in range(self.run_list.count()):
@@ -960,155 +990,44 @@ class FittingPanel(Panel):
                 titles.append(item.text())
         return titles
 
-    def get_initial_values(self):
-        values = {}
-        for i in range(self.table_parameters.rowCount()):
-            variable_guess = self.table_parameters.item(i, self.__VALUE_COLUMN)
+    def get_parameters(self):
+        parameters = []
+        for i in range(self.parameter_table.config_table.rowCount()):
+            item_symbol = self.parameter_table.config_table.verticalHeaderItem(i)
+            item_value = self.parameter_table.config_table.item(i, self.parameter_table.VALUE_COLUMN)
+            item_min = self.parameter_table.config_table.item(i, self.parameter_table.MIN_COLUMN)
+            item_max = self.parameter_table.config_table.item(i, self.parameter_table.MAX_COLUMN)
+            item_fixed = self.parameter_table.config_table.cellWidget(i, self.parameter_table.FIXED_COLUMN)
+            item_global = self.parameter_table.batch_table.cellWidget(i, self.parameter_table.GLOBAL_COLUMN)
+            item_fixed_run = self.parameter_table.batch_table.cellWidget(i, self.parameter_table.FIXED_RUN_COLUMN)
+            item_fixed_run_value = self.parameter_table.batch_table.item(i, self.parameter_table.FIXED_VALUE_COLUMN)
+            item_output_value = self.parameter_table.output_table.item(i, self.parameter_table.OUTPUT_VALUE_COLUMN)
+            item_output_uncertainty = self.parameter_table.output_table.item(i, self.parameter_table.UNCERTAINTY_COLUMN)
 
-            if variable_guess is None or variable_guess.text() == '':
-                return None
-
-            variable_name = self.table_parameters.verticalHeaderItem(i).text()
-            try:
-                variable_guess = float(variable_guess.text())
-            except ValueError:
-                return None
-
-            values[variable_name] = variable_guess
-
-        return values
-
-    def get_names(self):
-        values = {}
-        for i in range(self.table_parameters.rowCount()):
-            variable_name = self.table_parameters.verticalHeaderItem(i).text()
-            # variable_guess = self.table_parameters.item(i, self.__NAME_COLUMN)
-
-            # if variable_guess is None:
-            #     values[variable_name] = variable_name
-            #     continue
-
-            # variable_name = self.table_parameters.verticalHeaderItem(i).text()
-            # variable_guess = variable_guess.text()
-
-            # variable_guess = variable_name if variable_guess == '' else variable_guess
-
-            # values[variable_name] = variable_guess
-
-            #TODO Temporary while we aren't using the name column.
-            values[variable_name] = variable_name
-
-        return values
-
-    def get_fixed(self):
-        values = {}
-        for i in range(self.table_parameters.rowCount()):
-            variable_guess = self.table_parameters.cellWidget(i, self.__FIXED_COLUMN)
-            variable_name = self.table_parameters.verticalHeaderItem(i).text()
-            values[variable_name] = variable_guess.findChild(QtWidgets.QCheckBox).checkState() > 0
-
-        return values
-
-    def get_expression(self):
-        return self.input_fit_equation.text()
-
-    def get_lower_bounds(self):
-        values = {}
-        for i in range(self.table_parameters.rowCount()):
-            variable_name = self.table_parameters.verticalHeaderItem(i).text()
-            variable_guess = self.table_parameters.item(i, self.__LOWER_COLUMN)
-
-            if variable_guess is None:
-                values[variable_name] = -np.inf
+            if item_symbol is None:
                 continue
 
-            variable_guess = variable_guess.text()
+            symbol = item_symbol.text()
+            value = item_value.text() if item_value.text() != '' else 1
+            value_min = item_min.text() if item_min.text() != '' else -np.inf
+            value_max = item_max.text() if item_max.text() != '' else np.inf
+            value_fixed = item_fixed_run_value.text() if item_fixed_run_value.text() != '' else None
+            value_output = item_output_value.text() if item_output_value.text() != '' else None
+            value_uncertainty = item_output_uncertainty.text() if item_output_uncertainty.text() != '' else None
+            is_fixed = item_fixed.findChild(QtWidgets.QCheckBox).checkState() > 0
+            is_global = item_global.findChild(QtWidgets.QCheckBox).checkState() > 0
+            is_fixed_run = item_fixed_run.findChild(QtWidgets.QCheckBox).checkState() > 0
 
-            try:
-                variable_guess = -np.inf if variable_guess == '' else float(variable_guess)
-            except ValueError:
-                return None
+            parameters.append((symbol, value, value_min, value_max, value_fixed, value_output,
+                               value_uncertainty, is_fixed, is_global, is_fixed_run))
 
-            values[variable_name] = variable_guess
-
-        return values
-
-    def get_upper_bounds(self):
-        values = {}
-        for i in range(self.table_parameters.rowCount()):
-            variable_name = self.table_parameters.verticalHeaderItem(i).text()
-            variable_guess = self.table_parameters.item(i, self.__UPPER_COLUMN)
-
-            if variable_guess is None:
-                values[variable_name] = np.inf
-                continue
-
-            variable_guess = variable_guess.text()
-
-            try:
-                variable_guess = np.inf if variable_guess == '' else float(variable_guess)
-            except ValueError:
-                return None
-
-            values[variable_name] = variable_guess
-
-        return values
-
-    def get_check_global(self):
-        values = {}
-        for i in range(self.table_parameters.rowCount()):
-            variable_guess = self.table_parameters.cellWidget(i, self.__GLOBAL_COLUMN)
-            variable_name = self.table_parameters.verticalHeaderItem(i).text()
-            values[variable_name] = variable_guess.findChild(QtWidgets.QCheckBox).checkState() > 0
-
-        return values
+        return parameters
 
     def highlight_input_red(self, box, red):
         if red:
             box.setStyleSheet("border: 1px solid red;")
         else:
             box.setStyleSheet(self._line_edit_style)
-
-    def update_variable_table(self, variables):
-        n = self.table_parameters.verticalHeader().count()
-
-        for i in range(self.table_parameters.verticalHeader().count() - 1, -1, -1):
-            item = self.table_parameters.verticalHeaderItem(i)
-
-            if item is None:
-                continue
-
-            old_var = item.text()
-
-            var_exists = False
-
-            if old_var in variables:
-                variables.remove(old_var)
-                continue
-
-            for new_var in variables:
-                if old_var in new_var:
-                    var_exists = True
-                    replace_item = QtWidgets.QTableWidgetItem()
-                    replace_item.setText(new_var)
-                    self.table_parameters.setVerticalHeaderItem(i, replace_item)
-                    old_var = new_var
-
-            if not var_exists:
-                self.table_parameters.removeRow(i)
-                n -= 1
-            else:
-                variables.remove(old_var)
-
-        self.table_parameters.setRowCount(len(variables) + self.table_parameters.verticalHeader().count())
-
-        for new_var in variables:
-            new_item = QtWidgets.QTableWidgetItem()
-            new_item.setText(new_var)
-            self.table_parameters.setVerticalHeaderItem(n, new_item)
-            self.table_parameters.setCellWidget(n, self.__GLOBAL_COLUMN, self._create_check_box_for_table())
-            self.table_parameters.setCellWidget(n, self.__FIXED_COLUMN, self._create_check_box_for_table())
-            n += 1
 
     def update_run_table(self, runs):
         self.run_list.clear()
