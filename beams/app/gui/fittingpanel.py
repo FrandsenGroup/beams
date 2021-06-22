@@ -455,9 +455,63 @@ class FittingPanel(Panel):
         def set_bin_slider(self, value):
             self.slider_bin.setValue(int(value))
 
+    class ParameterTable(QtWidgets.QTabWidget):
+        VALUE_COLUMN = 0
+        MIN_COLUMN = 1
+        MAX_COLUMN = 2
+        FIXED_COLUMN = 3
+        GLOBAL_COLUMN = 0
+        FIXED_RUN_COLUMN = 1
+        FIXED_VALUE_COLUMN = 2
+        OUTPUT_VALUE_COLUMN = 0
+        UNCERTAINTY_COLUMN = 1
+
+        def __init__(self):
+            super(FittingPanel.ParameterTable, self).__init__()
+            self.config_table = QtWidgets.QTableWidget()
+            self.batch_table = QtWidgets.QTableWidget()
+            self.output_table = QtWidgets.QTableWidget()
+
+            self.addTab(self.config_table, "Config")
+            self.addTab(self.batch_table, "Batch")
+            self.addTab(self.output_table, "Output")
+
+            self._set_attributes()
+
+        def _set_attributes(self):
+            self.config_table.setColumnCount(4)
+            self.config_table.setHorizontalHeaderLabels(['Value', 'Min', 'Max', 'Fixed'])
+            self.config_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+            self.config_table.horizontalHeader().setSectionResizeMode(self.VALUE_COLUMN,
+                                                                      QtWidgets.QHeaderView.Stretch)
+            self.config_table.horizontalHeader().setSectionResizeMode(self.MIN_COLUMN, QtWidgets.QHeaderView.Stretch)
+            self.config_table.horizontalHeader().setSectionResizeMode(self.MAX_COLUMN, QtWidgets.QHeaderView.Stretch)
+            self.config_table.horizontalHeader().setSectionResizeMode(self.FIXED_COLUMN, QtWidgets.QHeaderView.Stretch)
+
+            self.batch_table.setColumnCount(3)
+            self.batch_table.setHorizontalHeaderLabels(['Global', 'Fixed - Run Dep.', 'Value'])
+            self.batch_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+            self.batch_table.horizontalHeader().setSectionResizeMode(self.FIXED_VALUE_COLUMN,
+                                                                      QtWidgets.QHeaderView.Stretch)
+            self.batch_table.horizontalHeader().setSectionResizeMode(self.GLOBAL_COLUMN,
+                                                                     QtWidgets.QHeaderView.Stretch)
+            self.batch_table.horizontalHeader().setSectionResizeMode(self.FIXED_RUN_COLUMN,
+                                                                     QtWidgets.QHeaderView.Stretch)
+
+            self.output_table.setColumnCount(2)
+            self.output_table.setHorizontalHeaderLabels(['Value', 'Uncertainty'])
+            self.output_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+            self.output_table.horizontalHeader().setSectionResizeMode(self.OUTPUT_VALUE_COLUMN,
+                                                                      QtWidgets.QHeaderView.Stretch)
+            self.output_table.horizontalHeader().setSectionResizeMode(self.UNCERTAINTY_COLUMN,
+                                                                      QtWidgets.QHeaderView.Stretch)
+
     def __init__(self):
         super(FittingPanel, self).__init__()
         self.support_panel = FittingPanel.SupportPanel()
+
+        self.parameter_table = self.ParameterTable()
+        self.add_parameter('a', 1, 2, 3, True, False, True, 1, 2, 3)
 
         self.input_fit_equation = QtWidgets.QLineEdit()
         self.input_user_equation = QtWidgets.QLineEdit()
