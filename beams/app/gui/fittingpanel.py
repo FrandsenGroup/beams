@@ -532,7 +532,6 @@ class FittingPanel(Panel):
         self.special_characters.toggle_button.released.connect(self.special_characters.on_pressed)
 
         self.table_parameters = QtWidgets.QTableWidget()
-        self.user_functions = QtWidgets.QTableWidget()
         self.run_list = QtWidgets.QListWidget()
 
         self.button_check_equation = widgets.StyleOneButton("Check")
@@ -743,7 +742,7 @@ class FittingPanel(Panel):
         # Create and add GroupBox for table parameters
         left_side = QtWidgets.QVBoxLayout()
         row = QtWidgets.QHBoxLayout()
-        row.addWidget(self.table_parameters)
+        row.addWidget(self.parameter_table)
         self.group_table_parameters.setLayout(row)
         left_side.addWidget(self.group_table_parameters)
 
@@ -807,6 +806,151 @@ class FittingPanel(Panel):
         layout.setContentsMargins(0, 0, 0, 0)
         widget.setLayout(layout)
         return widget
+
+    def add_parameter(self, symbol: str, config_value: float = None, config_lower: float = None,
+                      config_upper: float = None, config_fixed: bool = None, batch_global: bool = None,
+                      batch_run_dependent: bool = None, batch_value: float = None, output_value: float = None,
+                      output_uncertainty: float = None):
+
+        n = self.parameter_table.config_table.verticalHeader().count()
+
+        in_table = False
+        for i in range(n - 1, -1, -1):
+            item = self.parameter_table.config_table.verticalHeaderItem(i)
+
+            if item is None:
+                continue
+
+            if symbol == item.text():
+                in_table = True
+                # TODO Inline the text assignment with the variable assignment
+                if config_value:
+                    item_value = QtWidgets.QTableWidgetItem()
+                    item_value.setText(str(config_value))
+                    self.parameter_table.config_table.setItem(i, self.ParameterTable.VALUE_COLUMN, item_value)
+
+                if config_lower:
+                    item_lower = QtWidgets.QTableWidgetItem()
+                    item_lower.setText(str(config_lower))
+                    self.parameter_table.config_table.setItem(i, self.ParameterTable.MIN_COLUMN, item_lower)
+
+                if config_upper:
+                    item_upper = QtWidgets.QTableWidgetItem()
+                    item_upper.setText(str(config_upper))
+                    self.parameter_table.config_table.setItem(i, self.ParameterTable.MAX_COLUMN, item_upper)
+
+                if config_fixed is not None:
+                    item_fixed = self._create_check_box_for_table(config_fixed)
+                    self.parameter_table.config_table.setCellWidget(i, self.ParameterTable.FIXED_COLUMN, item_fixed)
+
+        if not in_table:
+            self.parameter_table.config_table.setRowCount(n + 1)
+
+            item_symbol = QtWidgets.QTableWidgetItem()
+            item_symbol.setText(symbol)
+            self.parameter_table.config_table.setVerticalHeaderItem(n, item_symbol)
+
+            if config_value:
+                item_value = QtWidgets.QTableWidgetItem()
+                item_value.setText(str(config_value))
+                self.parameter_table.config_table.setItem(n, self.ParameterTable.VALUE_COLUMN, item_value)
+
+            if config_lower:
+                item_lower = QtWidgets.QTableWidgetItem()
+                item_lower.setText(str(config_lower))
+                self.parameter_table.config_table.setItem(n, self.ParameterTable.MIN_COLUMN, item_lower)
+
+            if config_upper:
+                item_upper = QtWidgets.QTableWidgetItem()
+                item_upper.setText(str(config_upper))
+                self.parameter_table.config_table.setItem(n, self.ParameterTable.MAX_COLUMN, item_upper)
+
+            if config_fixed is not None:
+                item_fixed = self._create_check_box_for_table(config_fixed)
+                self.parameter_table.config_table.setCellWidget(n, self.ParameterTable.FIXED_COLUMN, item_fixed)
+
+        n = self.parameter_table.batch_table.verticalHeader().count()
+
+        in_table = False
+        for i in range(n - 1, -1, -1):
+            item = self.parameter_table.batch_table.verticalHeaderItem(i)
+
+            if item is None:
+                continue
+
+            if symbol == item.text():
+                in_table = True
+                # TODO Inline the text assignment with the variable assignment
+                if batch_value:
+                    item_value = QtWidgets.QTableWidgetItem()
+                    item_value.setText(str(batch_value))
+                    self.parameter_table.batch_table.setItem(i, self.ParameterTable.FIXED_VALUE_COLUMN, item_value)
+
+                if batch_global is not None:
+                    item_global = self._create_check_box_for_table(batch_global)
+                    self.parameter_table.batch_table.setCellWidget(i, self.ParameterTable.GLOBAL_COLUMN, item_global)
+
+                if batch_run_dependent is not None:
+                    item_fixed = self._create_check_box_for_table(batch_run_dependent)
+                    self.parameter_table.batch_table.setCellWidget(i, self.ParameterTable.FIXED_RUN_COLUMN, item_fixed)
+
+        if not in_table:
+            self.parameter_table.batch_table.setRowCount(n + 1)
+
+            item_symbol = QtWidgets.QTableWidgetItem()
+            item_symbol.setText(symbol)
+            self.parameter_table.batch_table.setVerticalHeaderItem(n, item_symbol)
+
+            if batch_value:
+                item_value = QtWidgets.QTableWidgetItem()
+                item_value.setText(str(batch_value))
+                self.parameter_table.batch_table.setItem(n, self.ParameterTable.FIXED_VALUE_COLUMN, item_value)
+
+            if batch_global is not None:
+                item_global = self._create_check_box_for_table(batch_global)
+                self.parameter_table.batch_table.setCellWidget(n, self.ParameterTable.GLOBAL_COLUMN, item_global)
+
+            if batch_run_dependent is not None:
+                item_fixed = self._create_check_box_for_table(batch_run_dependent)
+                self.parameter_table.batch_table.setCellWidget(n, self.ParameterTable.FIXED_RUN_COLUMN, item_fixed)
+
+        n = self.parameter_table.output_table.verticalHeader().count()
+
+        in_table = False
+        for i in range(n - 1, -1, -1):
+            item = self.parameter_table.output_table.verticalHeaderItem(i)
+
+            if item is None:
+                continue
+
+            if symbol == item.text():
+                in_table = True
+                if output_value:
+                    item_value = QtWidgets.QTableWidgetItem()
+                    item_value.setText(str(output_value))
+                    self.parameter_table.output_table.setItem(i, self.ParameterTable.OUTPUT_VALUE_COLUMN, item_value)
+
+                if output_uncertainty:
+                    item_value = QtWidgets.QTableWidgetItem()
+                    item_value.setText(str(output_uncertainty))
+                    self.parameter_table.output_table.setItem(i, self.ParameterTable.UNCERTAINTY_COLUMN, item_value)
+
+        if not in_table:
+            self.parameter_table.output_table.setRowCount(n + 1)
+
+            item_symbol = QtWidgets.QTableWidgetItem()
+            item_symbol.setText(symbol)
+            self.parameter_table.output_table.setVerticalHeaderItem(n, item_symbol)
+
+            if output_value:
+                item_value = QtWidgets.QTableWidgetItem()
+                item_value.setText(str(output_value))
+                self.parameter_table.output_table.setItem(n, self.ParameterTable.OUTPUT_VALUE_COLUMN, item_value)
+
+            if output_uncertainty:
+                item_value = QtWidgets.QTableWidgetItem()
+                item_value.setText(str(output_uncertainty))
+                self.parameter_table.output_table.setItem(n, self.ParameterTable.UNCERTAINTY_COLUMN, item_value)
 
     def get_selected_run_titles(self):
         titles = []
