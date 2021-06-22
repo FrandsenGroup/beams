@@ -505,6 +505,7 @@ class FittingPanel(Panel):
                                                                       QtWidgets.QHeaderView.Stretch)
             self.output_table.horizontalHeader().setSectionResizeMode(self.UNCERTAINTY_COLUMN,
                                                                       QtWidgets.QHeaderView.Stretch)
+            self.output_table.setEnabled(False)
 
     def __init__(self):
         super(FittingPanel, self).__init__()
@@ -822,7 +823,6 @@ class FittingPanel(Panel):
 
             if symbol == item.text():
                 in_table = True
-                # TODO Inline the text assignment with the variable assignment
                 if config_value:
                     item_value = QtWidgets.QTableWidgetItem()
                     item_value.setText(str(config_value))
@@ -853,19 +853,34 @@ class FittingPanel(Panel):
                 item_value = QtWidgets.QTableWidgetItem()
                 item_value.setText(str(config_value))
                 self.parameter_table.config_table.setItem(n, self.ParameterTable.VALUE_COLUMN, item_value)
+            else:
+                item_value = QtWidgets.QTableWidgetItem()
+                item_value.setText('1')
+                self.parameter_table.config_table.setItem(n, self.ParameterTable.VALUE_COLUMN, item_value)
 
             if config_lower:
                 item_lower = QtWidgets.QTableWidgetItem()
                 item_lower.setText(str(config_lower))
+                self.parameter_table.config_table.setItem(n, self.ParameterTable.MIN_COLUMN, item_lower)
+            else:
+                item_lower = QtWidgets.QTableWidgetItem()
+                item_lower.setText(str(-np.inf))
                 self.parameter_table.config_table.setItem(n, self.ParameterTable.MIN_COLUMN, item_lower)
 
             if config_upper:
                 item_upper = QtWidgets.QTableWidgetItem()
                 item_upper.setText(str(config_upper))
                 self.parameter_table.config_table.setItem(n, self.ParameterTable.MAX_COLUMN, item_upper)
+            else:
+                item_upper = QtWidgets.QTableWidgetItem()
+                item_upper.setText(str(np.inf))
+                self.parameter_table.config_table.setItem(n, self.ParameterTable.MAX_COLUMN, item_upper)
 
             if config_fixed is not None:
                 item_fixed = self._create_check_box_for_table(config_fixed)
+                self.parameter_table.config_table.setCellWidget(n, self.ParameterTable.FIXED_COLUMN, item_fixed)
+            else:
+                item_fixed = self._create_check_box_for_table(False)
                 self.parameter_table.config_table.setCellWidget(n, self.ParameterTable.FIXED_COLUMN, item_fixed)
 
         n = self.parameter_table.batch_table.verticalHeader().count()
@@ -879,7 +894,6 @@ class FittingPanel(Panel):
 
             if symbol == item.text():
                 in_table = True
-                # TODO Inline the text assignment with the variable assignment
                 if batch_value:
                     item_value = QtWidgets.QTableWidgetItem()
                     item_value.setText(str(batch_value))
@@ -908,9 +922,15 @@ class FittingPanel(Panel):
             if batch_global is not None:
                 item_global = self._create_check_box_for_table(batch_global)
                 self.parameter_table.batch_table.setCellWidget(n, self.ParameterTable.GLOBAL_COLUMN, item_global)
+            else:
+                item_global = self._create_check_box_for_table(False)
+                self.parameter_table.batch_table.setCellWidget(n, self.ParameterTable.GLOBAL_COLUMN, item_global)
 
             if batch_run_dependent is not None:
                 item_fixed = self._create_check_box_for_table(batch_run_dependent)
+                self.parameter_table.batch_table.setCellWidget(n, self.ParameterTable.FIXED_RUN_COLUMN, item_fixed)
+            else:
+                item_fixed = self._create_check_box_for_table(False)
                 self.parameter_table.batch_table.setCellWidget(n, self.ParameterTable.FIXED_RUN_COLUMN, item_fixed)
 
         n = self.parameter_table.output_table.verticalHeader().count()
@@ -1022,6 +1042,9 @@ class FittingPanel(Panel):
                                value_uncertainty, is_fixed, is_global, is_fixed_run))
 
         return parameters
+
+    def get_expression(self):
+        return self.input_fit_equation.text()
 
     def highlight_input_red(self, box, red):
         if red:
@@ -1160,7 +1183,9 @@ class FitTabPresenter(PanelPresenter):
         self._view.fit_spectrum_settings.input_bin.returnPressed.connect(self._update_display)
         self._view.fit_spectrum_settings.slider_bin.sliderMoved.connect(self._update_display)
         self._view.button_plot.released.connect(self._update_display)
-        self._view.table_parameters.itemChanged.connect(self._plot_fit)
+        self._view.parameter_table.config_table.itemChanged.connect(self._plot_fit)
+        self._view.parameter_table.batch_table.itemChanged.connect(self._plot_fit)
+        self._view.parameter_table.output_table.itemChanged.connect(self._plot_fit)
         self._view.button_fit.released.connect(self._fit)
         self._view.button_save_results.released.connect(self._save_fit_results)
         self._view.support_panel.new_button.released.connect(self._new_empty_fit)
@@ -1187,8 +1212,12 @@ class FitTabPresenter(PanelPresenter):
             variables.discard(fit.INDEPENDENT_VARIABLE)
             variables.add(fit.ALPHA)
 
-            self._view.update_variable_table(variables=variables)
-            self._view.set_variable_value(fit.ALPHA, name='Alpha', is_global=True)
+            self._view.clear_parameters(variables)
+
+            self._view.add_parameter(symbol=fit.ALPHA, batch_global=True)
+            for var in variables:
+                self._view.add_parameter(symbol=var)
+
         else:
             self._view.highlight_input_red(self._view.input_fit_equation, True)
 
