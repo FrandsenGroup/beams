@@ -571,7 +571,7 @@ class FittingPanel(Panel):
         self.group_table_runs = QtWidgets.QGroupBox("Runs")
         self.group_function = QtWidgets.QGroupBox("Function")
 
-        self._set_logging()
+        # self._set_logging()
         self._set_widget_layout()
         self._set_widget_attributes()
         self._set_widget_dimensions()
@@ -1346,27 +1346,30 @@ class FitTabPresenter(PanelPresenter):
         if not self.__update_if_table_changes:
             return
 
-        expression, values = self._get_expression_and_values()
+        expression, parameters = self._get_expression_and_values()
         self.__expression = expression
-        if values is None:
+        if len(parameters) == 0:
             self.__variable_groups = []
             return
 
-        self.__variable_groups = [values]
+        self.__variable_groups = [parameters]
         self._update_display()
 
     def _get_expression_and_values(self):
-        values = self._view.get_initial_values()
+        parameters = self._view.get_parameters()
         expression = self._view.get_expression()
 
-        if fit.is_valid_expression("A(t) = " + expression) and values is not None:
-            variables = set(values.keys())
-            variables.discard(fit.INDEPENDENT_VARIABLE)
+        final_parameters = []
+        for symbol, value, value_min, value_max, value_fixed, value_output, value_uncertainty, \
+                is_fixed, is_global, is_fixed_run in parameters:
+            value = value_output if value_output is not None else value
+            value = value_fixed if is_fixed_run else value
+            final_parameters.append(fit.FitParameter(symbol=symbol, value=value, lower=value_min, upper=value_max,
+                                                     is_global=is_global, is_fixed=is_fixed))
 
-            lambda_expression = fit.FitExpression(expression, variables)            
-
-            return lambda_expression, values
-
+        if fit.is_valid_expression("A(t) = " + expression):
+            lambda_expression = fit.FitExpression(expression)
+            return lambda_expression, final_parameters
         else:
             return None, None
 

@@ -83,24 +83,30 @@ class FitVar:
         return "{}\t{:.4f}\t{}\t{}".format(self.name, self.value, self.lower, self.upper)
 
 
-class FitExpression:
-    def __init__(self, expression, variables, expression_as_lambda=None):
-        self.__expression_as_string = expression
+# class FitExpression:
+#     def __init__(self, expression, variables, expression_as_lambda=None):
+#         self.__expression_as_string = expression
+#
+#         if expression_as_lambda:
+#             self.expression_as_lambda = expression_as_lambda
+#             return
+#
+#         expression = replace_symbols(expression)
+#         variables = [replace_symbols(k) for k in variables]
+#         self.expression_as_lambda = lambdify(expression, variables, INDEPENDENT_VARIABLE)
+#
+#     def __call__(self, *args, **kwds):
+#         kwds = {replace_symbols(k): v for k, v in kwds.items()}
+#         return self.expression_as_lambda(*args, **kwds)
+#
+#     def __str__(self):
+#         return self.__expression_as_string
 
-        if expression_as_lambda:
-            self.expression_as_lambda = expression_as_lambda
-            return
 
-        expression = replace_symbols(expression)
-        variables = [replace_symbols(k) for k in variables]
-        self.expression_as_lambda = lambdify(expression, variables, INDEPENDENT_VARIABLE)
 
-    def __call__(self, *args, **kwds):
-        kwds = {replace_symbols(k): v for k, v in kwds.items()}
-        return self.expression_as_lambda(*args, **kwds)
 
-    def __str__(self):
-        return self.__expression_as_string
+
+
 
 class FitSpec:
     def __init__(self):
@@ -858,6 +864,23 @@ def _residual(lambda_expression):
     return residual
 
 
+t0 = 'a + b + c + d + x + t'
+t1 = FitExpression(t0)
+t6 = _residual(t1)
+t2 = FitParameter('a', 1, 0, None, None, False, False)
+t3 = FitParameter('b', 2, 0, None, None, False, False)
+t4 = FitParameter('c', 3, 0, None, None, False, False)
+t5 = np.array([0, 1, 2, 3])
+
+print(t2, t3, t4)
+print(t1)
+print(t1(t5, *(1, 2, 3, 4, 5)))
+print(t1(t5, a=1, b=2, c=3, d=4, x=5))
+print(t1(t5, *(t2, t3, t4), d=4, x=5))
+
+opt = least_squares(t6, [1, 2, 3, 4, 5], bounds=[[-100, -100, -100, -100, -100], [100, 100, 100, 100, 100]],
+                                    args=(np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), np.array([5, 2, 1, 4, 5, 2, 7, 6, 9, 10]), np.array([1, 2, 1, 2, 1, 2, 1, 1, 1, 2])))
+
 # tspec = FitSpec()
 # tfunction = 't + az - bz - dz + cz'
 # tvara = FitVar('az', 'a', 1, False, 0, 4, True, False)
@@ -894,8 +917,6 @@ def _residual(lambda_expression):
 # fit = Fit()
 # fit.variables = {'c': FitVar('c', 'c', 0, 1, -3, 3, True, False), 'b': FitVar('b', 'b', 1, 1, -3, 3, True, False)}
 # fit.expression_as_lambda = test_lambda
-# time = np.array([1,2,3,4])
-# asy = fit(time)
 # print(asy)
 
 # f(x, t)
