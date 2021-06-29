@@ -1014,18 +1014,18 @@ class FittingPanel(Panel):
                 continue
 
             symbol = item_symbol.text()
-            value = item_value.text() if item_value.text() != '' else 1
-            value_min = item_min.text() if item_min.text() != '' else -np.inf
-            value_max = item_max.text() if item_max.text() != '' else np.inf
-            value_fixed = item_fixed_run_value.text() if item_fixed_run_value.text() != '' else None
-            value_output = item_output_value.text() if item_output_value.text() != '' else None
-            value_uncertainty = item_output_uncertainty.text() if item_output_uncertainty.text() != '' else None
+            value = 1 if item_value.text() == '' else float(item_value.text())
+            value_min = -np.inf if item_min.text() == '' else float(item_min.text())
+            value_max = np.inf if item_max.text() == '' else float(item_max.text())
+            value_fixed = None if item_fixed_run_value.text() == '' else float(item_fixed_run_value.text())
+            value_output = None if item_output_value.text() == '' else float(item_output_value.text())
+            value_uncertainty = None if item_output_uncertainty.text() == '' else float(item_output_uncertainty.text())
             is_fixed = item_fixed.findChild(QtWidgets.QCheckBox).checkState() > 0
             is_global = item_global.findChild(QtWidgets.QCheckBox).checkState() > 0
             is_fixed_run = item_fixed_run.findChild(QtWidgets.QCheckBox).checkState() > 0
 
             parameters.append((symbol, value, value_min, value_max, value_fixed, value_output,
-                               value_uncertainty, is_fixed, is_global, is_fixed_run))
+                              value_uncertainty, is_fixed, is_global, is_fixed_run))
 
         return parameters
 
@@ -1361,7 +1361,7 @@ class FitTabPresenter(PanelPresenter):
 
     def _fit(self):
         self.__update_if_table_changes = False
-        spec = fit.FitSpec()
+        config = fit.FitConfig()
 
         # Check user input on fit equation and update spec
         expression = self._view.get_expression()
@@ -1371,16 +1371,11 @@ class FitTabPresenter(PanelPresenter):
             return
         else:
             self._view.highlight_input_red(self._view.input_fit_equation, False)
-        spec.function = expression
+        config.expression = expression
 
         # Check user input on parameters and update spec
         try:
-            guesses = self._view.get_initial_values()
-            names = self._view.get_names()
-            fixed = self._view.get_fixed()
-            lowers = self._view.get_lower_bounds()
-            uppers = self._view.get_upper_bounds()
-            globs = self._view.get_check_global()
+            parameters = self._view.get_parameters()
         except ValueError:
             self._view.highlight_input_red(self._view.table_parameters, True)
             self.__update_if_table_changes = True
