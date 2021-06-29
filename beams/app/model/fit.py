@@ -777,13 +777,15 @@ def _shortened_run_id(run_id):
 
 
 class FitParameter:
-    def __init__(self, symbol, value, lower, upper, is_global, is_fixed, uncertainty=None):
+    def __init__(self, symbol, value, lower, upper, is_global, is_fixed, is_fixed_run=False, output=None, uncertainty=None):
         self.uncertainty = uncertainty
+        self.output = output
         self.upper = upper
         self.lower = lower
         self.value = value
         self.symbol = symbol
         self.is_fixed = is_fixed
+        self.is_fixed_run = is_fixed_run
         self.is_global = is_global
 
     def __str__(self):
@@ -839,6 +841,11 @@ class FitConfig:
         self.parameters = {}
         self.data = {}
         self.flags = 0
+
+    def set_flags(self, *flags):
+        self.flags = 0
+        for flag in flags:
+            self.flags = self.flags & flag
 
     def is_least_squares(self):
         return bool(self.flags & FitConfig.LEAST_SQUARES)

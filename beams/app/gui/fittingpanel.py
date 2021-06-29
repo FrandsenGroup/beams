@@ -1363,7 +1363,7 @@ class FitTabPresenter(PanelPresenter):
         self.__update_if_table_changes = False
         config = fit.FitConfig()
 
-        # Check user input on fit equation and update spec
+        # Check user input on fit equation and update config
         expression = self._view.get_expression()
         if not fit.is_valid_expression("A(t) = " + expression):
             self._view.highlight_input_red(self._view.input_fit_equation, True)
@@ -1373,7 +1373,7 @@ class FitTabPresenter(PanelPresenter):
             self._view.highlight_input_red(self._view.input_fit_equation, False)
         config.expression = expression
 
-        # Check user input on parameters and update spec
+        # Check user input on parameters and update config
         try:
             parameters = self._view.get_parameters()
         except ValueError:
@@ -1381,23 +1381,17 @@ class FitTabPresenter(PanelPresenter):
             self.__update_if_table_changes = True
             return
 
-        if guesses is None:
-            self._view.highlight_input_red(self._view.table_parameters, True)
-            self.__update_if_table_changes = True
-            return
-        else:
-            self._view.highlight_input_red(self._view.table_parameters, False)
-
+        # Assemble a dictionary of symbol -> FitParameter for config
         variables = {}
-        for symbol in guesses.keys():
-            variables[symbol] = fit.FitVar(symbol, names[symbol], guesses[symbol],
-                                        fixed[symbol], lowers[symbol], uppers[symbol],
-                                        globs[symbol], symbol == fit.INDEPENDENT_VARIABLE)
-        spec.variables = variables
+        for symbol, value, value_min, value_max, value_fixed, value_output, value_uncertainty, is_fixed, \
+                is_global, is_fixed_run in parameters:
+            variables[symbol] = fit.FitParameter(symbol, value, value_min, value_max, is_global, is_fixed, is_fixed_run,
+                                                 value_output, value_uncertainty)
+        config.parameters = variables
 
-        # Check user input on runs and update spec
+        # Check user input on runs and update config
         titles = self._view.get_selected_run_titles()
-        if len(titles) == 0:
+        if len(titles) == 0: # User needs to select a run to fit
             self._view.highlight_input_red(self._view.run_list, True)
             self.__update_if_table_changes = True
             return
@@ -1408,21 +1402,20 @@ class FitTabPresenter(PanelPresenter):
             for run in self._runs:
                 if run.meta[files.TITLE_KEY] == title:
                     if run.id in self._asymmetries.keys():
-                        spec.asymmetries[run.id] = self._asymmetries[title]
+                        config.data[run.id] = self._asymmetries[run.id]
                     else:
                         min_time = self._view.fit_spectrum_settings.get_min_time()
                         max_time = self._view.fit_spectrum_settings.get_max_time()
                         bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
                         raw_asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time, max_time=max_time)
-                        self._asymmetries[title] = raw_asymmetry
-                        spec.asymmetries[run.id] = self._asymmetries[title]
+                        self._asymmetries[run.id] = raw_asymmetry
+                        config.data[run.id] = self._asymmetries[run.id]
 
-        spec.options[fit.FitOptions.ALPHA_CORRECT] = True
-        spec.options[fit.FitOptions.GLOBAL] = self._view.check_global_plus.isChecked()
+        config.set_flags(config.LEAST_SQUARES, config.GLOBAL_PLUS if self._view.check_global_plus.isChecked() else 0)
 
         # Fit to spec
         engine = fit.FitEngine()
-        dataset = engine.fit(spec)
+        dataset = engine.fit(config)
         self._fit_service.add_dataset([dataset])
         self._update_alphas(dataset)
         self._update_fit_changes(dataset)
