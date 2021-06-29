@@ -181,20 +181,6 @@ class FittingPanel(Panel):
             FigureCanvas.__init__(self, Figure())
             self.canvas_axes = self.figure.add_subplot()
 
-    class FitToolbar(NavigationToolbar2QT):
-        # only display the buttons we need
-        NavigationToolbar2QT.toolitems = (
-            ('Home', 'Reset original view', 'home', 'home'),
-            ('Back', 'Back to previous view', 'back', 'back'),
-            ('Forward', 'Forward to next view', 'forward', 'forward'),
-            # (None, None, None, None),
-            ('Pan', 'Pan axes with left mouse, zoom with right', 'move', 'pan'),
-            ('Zoom', 'Zoom to rectangle', 'zoom_to_rect', 'zoom'),
-            # ('Subplots', 'Configure subplots', 'subplots', 'configure_subplots'),
-            # (None, None, None, None),
-            ('Save', 'Save the figure', 'filesave', 'save_figure'),
-        )
-
     class PlotDisplay(FigureCanvas):
         def __init__(self, settings):
             self._draw_pending = True
