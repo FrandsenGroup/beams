@@ -307,19 +307,19 @@ class FitEngine:
     def __init__(self):
         self.__run_service = domain.RunService()
 
-    def fit(self, spec: FitSpec) -> FitDataset:
-        if len(set([len(asymmetry) for asymmetry in spec.get_data()])) != 1:
+    def fit(self, config: FitConfig) -> FitDataset:
+        if len(set([len(asymmetry) for asymmetry in config.data.values()])) != 1:
             raise ValueError("Must have one or more datasets all of equal length to fit")
 
-        if spec.function == '':
+        if config.expression == '':
             raise ValueError("Empty function attribute")
 
-        if spec.options[FitOptions.GLOBAL]:
-            if spec.options[FitOptions.LEAST_SQUARES]:
-                return self._least_squares_fit_global(spec)
+        if config.is_global_plus():
+            if config.is_least_squares():
+                return self._least_squares_fit_global(config)
         else:
-            if spec.options[FitOptions.LEAST_SQUARES]:
-                return self._least_squares_fit_non_global(spec)
+            if config.is_least_squares():
+                return self._least_squares_fit_non_global(config)
 
     def _least_squares_fit_global(self, spec):
         # (0) Get the parameters for our variables. These are generated to work with our stepwise approach.
@@ -391,33 +391,22 @@ class FitEngine:
 
         return dataset
 
-    def _least_squares_fit_non_global(self, spec) -> FitDataset:
-        # 1) We create another string version of the fit function that basically lies inside a function for alpha correction
-        # 2) We replace all fixed variable with their numberican values
-        if spec.options[FitOptions.ALPHA_CORRECT]:
-            alpha_corrected_function = ALPHA_CORRECTION.format(spec.function, spec.function)
-            function = FitEngine._replace_fixed(alpha_corrected_function, spec.get_fixed_symbols(), spec.get_fixed_guesses())
-        else:
-            function = FitEngine._replace_fixed(spec.function, spec.get_fixed_symbols(), spec.get_fixed_guesses())
+    def _least_squares_fit_non_global(self, config) -> FitDataset:
+        alpha_corrected_function = ALPHA_CORRECTION.format(config.expression, config.expression)
+        function = FitEngine._replace_fixed(alpha_corrected_function, config.get_fixed_symbols(), config.get_fixed_values())
 
-        # 3) Use lambdify to make a callable function out of our string and unfixed variables.
-        lambda_expression = lambdify(function, spec.get_unfixed_symbols(), INDEPENDENT_VARIABLE)
+        lambda_expression = lambdify(function, config.get_unfixed_symbols(), INDEPENDENT_VARIABLE)
         residual = FitEngine._residual(lambda_expression)
 
-        guesses = spec.get_unfixed_guesses()
-        lowers = spec.get_unfixed_lower_bounds()
-        uppers = spec.get_unfixed_upper_bounds()
-
-        # 4) Iterate through each fit dataset, this is not a global fit so they are fitted completely independent of eachother
         dataset = FitDataset()
-        for run_id, asymmetry in spec.get_data().items():
+        for run_id, asymmetry in config.data.items():
             new_fit = Fit()
 
             # 5) Create a copy of our initial variables (we will replace the values with our fitted values)
             final_variables = {k: FitVar(v.symbol, v.name, v.value, v.is_fixed, v.lower, v.upper, v.is_global, v.independent) for k, v in spec.variables.items()}
 
             # 6) Assuming we have a variable that is not fixed, perform a least squares fit
-            if len(spec.get_unfixed_symbols()) != 0:
+            if len(config.get_unfixed_symbols()) != 0:
                 opt = least_squares(residual, guesses, bounds=[lowers, uppers],
                                     args=(asymmetry.time, asymmetry, asymmetry.uncertainty))
 
@@ -449,7 +438,7 @@ class FitEngine:
         return dataset
 
     @staticmethod
-    def _lambdify_global(spec: FitSpec, concatenated_time):
+    def _lambdify_global(spec: FitConfig, concatenated_time):
         if spec.options[FitOptions.ALPHA_CORRECT]:
             alpha_corrected_function = ALPHA_CORRECTION.format(spec.function, spec.function)
             function = FitEngine._replace_fixed(alpha_corrected_function, spec.get_fixed_symbols(), spec.get_fixed_guesses())
@@ -692,82 +681,7 @@ def _shortened_run_id(run_id):
     return run_id.split('-')[0]
 
 
-class FitParameter:
-    def __init__(self, symbol, value, lower, upper, is_global, is_fixed, is_fixed_run=False, output=None, uncertainty=None):
-        self.uncertainty = uncertainty
-        self.output = output
-        self.upper = upper
-        self.lower = lower
-        self.value = value
-        self.symbol = symbol
-        self.is_fixed = is_fixed
-        self.is_fixed_run = is_fixed_run
-        self.is_global = is_global
 
-    def __str__(self):
-        return '{}={}'.format(self.symbol, self.value)
-
-
-class FitExpression:
-    def __init__(self, expression_string):
-        self.__expression_string = expression_string
-
-        variables = parse(self.__expression_string)
-        variables.discard(INDEPENDENT_VARIABLE)
-        self.__expression = lambdify(self.__expression_string, variables, INDEPENDENT_VARIABLE)
-
-    def __str__(self):
-        return self.__expression_string
-
-    def __call__(self, *args, **kwargs):
-        if len(args) == 0:
-            raise ValueError("FitExpression needs at least one parameter (an array).")
-        elif not isinstance(args[0], np.ndarray):
-            try:
-                iter(args[0])
-                time_array = np.array(args[0])
-            except TypeError:
-                raise ValueError("First parameter to FitExpression needs to be an array.")
-        else:
-            time_array = args[0]
-
-        pars = {}
-        unnamed_pars = []
-        if len(args) > 1:
-            for arg in args[1:]:
-                if isinstance(arg, FitParameter):
-                    pars[arg.symbol] = arg.value
-                else:
-                    try:
-                        unnamed_pars.append(float(arg))
-                    except ValueError:
-                        raise ValueError("Every parameter after the array should be of type FitParameter.")
-        for k, v in kwargs.items():
-            pars[k] = v
-
-        return self.__expression(time_array, *unnamed_pars, **pars)
-
-
-class FitConfig:
-    LEAST_SQUARES = 1
-    GLOBAL_PLUS = 2
-
-    def __init__(self):
-        self.expression = ''
-        self.parameters = {}
-        self.data = {}
-        self.flags = 0
-
-    def set_flags(self, *flags):
-        self.flags = 0
-        for flag in flags:
-            self.flags = self.flags & flag
-
-    def is_least_squares(self):
-        return bool(self.flags & FitConfig.LEAST_SQUARES)
-
-    def is_global_plus(self):
-        return bool(self.flags & FitConfig.GLOBAL_PLUS)
 
 
 class Fit(np.ndarray):
