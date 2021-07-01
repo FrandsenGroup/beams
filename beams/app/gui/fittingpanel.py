@@ -495,6 +495,10 @@ class FittingPanel(Panel):
 
     def __init__(self):
         super(FittingPanel, self).__init__()
+        self.__batch_table_states = {}
+        self.__update_states = True
+        self.__logger = logging.getLogger('QtFitting')
+
         self.support_panel = FittingPanel.SupportPanel()
 
         self.parameter_table = self.ParameterTable()
@@ -566,30 +570,27 @@ class FittingPanel(Panel):
         self._line_edit_style = self.input_fit_equation.styleSheet()
 
     def _set_logging(self):
-        logger = logging.getLogger('qt_fitting')
-
-        #self.support_panel.tree.itemSelectionChanged.connect(lambda: "support_panel.tree.itemSelectionChanged (none)" if not self.support_panel.tree.currentItem() else logger.debug("support_panel.tree.itemSelectionChanged ({})".format(self.support_panel.tree.selectedItems()[0].text(0))))
-        self.input_fit_equation.textChanged.connect(lambda: logger.debug("input_fit_equation.textChanged ({})".format(self.input_fit_equation.text())))
-        self.button_insert_preset_equation.released.connect(lambda: logger.debug("button_insert_preset_equation.released ({})".format(self.option_preset_fit_equations.currentText())))
-        self.button_insert_user_equation.released.connect(lambda: logger.debug("button_insert_user_equation.released ({})".format(self.option_user_fit_equations.currentText())))
-        self.button_save_user_equation.released.connect(lambda: logger.debug("button_save_user_equation.released ({})".format(self.option_user_fit_equations.currentText())))
-        self.insert_sigma.released.connect(lambda: logger.debug("insert_sigma.released"))
-        self.insert_pi.released.connect(lambda: logger.debug("insert_pi.released"))
-        self.insert_phi.released.connect(lambda: logger.debug("insert_phi.released"))
-        self.insert_naught.released.connect(lambda: logger.debug("insert_naught.released"))
-        self.insert_lambda.released.connect(lambda: logger.debug("insert_lambda.released"))
-        self.insert_delta.released.connect(lambda: logger.debug("insert_delta.released"))
-        self.insert_alpha.released.connect(lambda: logger.debug("insert_alpha.released"))
-        self.insert_beta.released.connect(lambda: logger.debug("insert_beta.released"))
-        self.fit_spectrum_settings.input_time_xmax.returnPressed.connect(lambda: logger.debug("fit_spectrum_settings.input_time_xmax.returnPressed ({})".format(self.fit_spectrum_settings.input_time_xmax.text())))
-        self.fit_spectrum_settings.input_time_xmin.returnPressed.connect(lambda: logger.debug("fit_spectrum_settings.input_time_xmin.returnPressed ({})".format(self.fit_spectrum_settings.input_time_xmin.text())))
-        self.fit_spectrum_settings.input_bin.returnPressed.connect(lambda: logger.debug("fit_spectrum_settings.input_bin.returnPressed ({})".format(self.fit_spectrum_settings.input_bin.text())))
-        self.fit_spectrum_settings.slider_bin.sliderMoved.connect(lambda: logger.debug("fit_spectrum_settings.slider_bin.sliderMoved ({})".format(self.fit_spectrum_settings.slider_bin.value())))
-        self.button_plot.released.connect(lambda: logger.debug("button_plot.released ({})".format(self.get_selected_run_titles())))
-        self.table_parameters.itemChanged.connect(lambda: logger.debug("table_parameters.itemChanged"))
-        self.button_fit.released.connect(lambda: logger.debug("button_fit.released ({}, {}, {}, {}, {}, {}, {}, {}, batch {}, global {})".format(self.get_names(), self.get_initial_values(), self.get_lower_bounds(), self.get_upper_bounds(), self.get_fixed(), self.get_check_global(), self.get_expression(), self.get_selected_run_titles(), self.check_batch_fit.isChecked(), self.check_global_plus.isChecked())))
-        self.button_save_results.released.connect(lambda: logger.debug("button_save_results.released"))
-        self.support_panel.new_button.released.connect(lambda: logger.debug("support_panel.new_button.released"))
+        self.input_fit_equation.textChanged.connect(lambda: self.__logger.debug("input_fit_equation.textChanged ({})".format(self.input_fit_equation.text())))
+        self.button_insert_preset_equation.released.connect(lambda: self.__logger.debug("button_insert_preset_equation.released ({})".format(self.option_preset_fit_equations.currentText())))
+        self.button_insert_user_equation.released.connect(lambda: self.__logger.debug("button_insert_user_equation.released ({})".format(self.option_user_fit_equations.currentText())))
+        self.button_save_user_equation.released.connect(lambda: self.__logger.debug("button_save_user_equation.released ({})".format(self.option_user_fit_equations.currentText())))
+        self.insert_sigma.released.connect(lambda: self.__logger.debug("insert_sigma.released"))
+        self.insert_pi.released.connect(lambda: self.__logger.debug("insert_pi.released"))
+        self.insert_phi.released.connect(lambda: self.__logger.debug("insert_phi.released"))
+        self.insert_naught.released.connect(lambda: self.__logger.debug("insert_naught.released"))
+        self.insert_lambda.released.connect(lambda: self.__logger.debug("insert_lambda.released"))
+        self.insert_delta.released.connect(lambda: self.__logger.debug("insert_delta.released"))
+        self.insert_alpha.released.connect(lambda: self.__logger.debug("insert_alpha.released"))
+        self.insert_beta.released.connect(lambda: self.__logger.debug("insert_beta.released"))
+        self.fit_spectrum_settings.input_time_xmax.returnPressed.connect(lambda: self.__logger.debug("fit_spectrum_settings.input_time_xmax.returnPressed ({})".format(self.fit_spectrum_settings.input_time_xmax.text())))
+        self.fit_spectrum_settings.input_time_xmin.returnPressed.connect(lambda: self.__logger.debug("fit_spectrum_settings.input_time_xmin.returnPressed ({})".format(self.fit_spectrum_settings.input_time_xmin.text())))
+        self.fit_spectrum_settings.input_bin.returnPressed.connect(lambda: self.__logger.debug("fit_spectrum_settings.input_bin.returnPressed ({})".format(self.fit_spectrum_settings.input_bin.text())))
+        self.fit_spectrum_settings.slider_bin.sliderMoved.connect(lambda: self.__logger.debug("fit_spectrum_settings.slider_bin.sliderMoved ({})".format(self.fit_spectrum_settings.slider_bin.value())))
+        self.button_plot.released.connect(lambda: self.__logger.debug("button_plot.released ({})".format(self.get_checked_run_titles())))
+        self.table_parameters.itemChanged.connect(lambda: self.__logger.debug("table_parameters.itemChanged"))
+        self.button_fit.released.connect(lambda: self.__logger.debug("button_fit.released ({}, {}, {}, {}, {}, {}, {}, {}, batch {}, global {})".format(self.get_names(), self.get_initial_values(), self.get_lower_bounds(), self.get_upper_bounds(), self.get_fixed(), self.get_check_global(), self.get_expression(), self.get_checked_run_titles(), self.check_batch_fit.isChecked(), self.check_global_plus.isChecked())))
+        self.button_save_results.released.connect(lambda: self.__logger.debug("button_save_results.released"))
+        self.support_panel.new_button.released.connect(lambda: self.__logger.debug("support_panel.new_button.released"))
 
     def _set_widget_attributes(self):
         # self.table_parameters.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
