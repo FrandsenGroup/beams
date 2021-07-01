@@ -55,226 +55,142 @@ else:
 resources.SAVED_USER_DATA["funs"] = USER_EQUATION_DICTIONARY
 
 
-class FitOptions(enum.IntEnum):
-    GLOBAL = 0
-    LEAST_SQUARES = 1
-    ALPHA_CORRECT = 2
-    SAVE_1 = 3
-    SAVE_2 = 4
-
-
-class FitVar:
-    def __init__(self, symbol, name, value, is_fixed, lower, upper, is_global, independent):
-        self.symbol = symbol
-        self.name = name
-        self.value = value
-        self.is_fixed = is_fixed
-        self.lower = lower
+class FitParameter:
+    def __init__(self, symbol, value, lower, upper, is_global, is_fixed, is_fixed_run=False, fixed_value=None, output=None, uncertainty=None):
+        self.uncertainty = uncertainty
+        self.output = output
         self.upper = upper
+        self.lower = lower
+        self.value = value
+        self.symbol = symbol
+        self.is_fixed = is_fixed
+        self.fixed_value = fixed_value
+        self.is_fixed_run = is_fixed_run
         self.is_global = is_global
-        self.independent = independent
 
-    def __repr__(self):
-        return "FitVar(symbol={}, name={}, value={}, fixed={}, lower={}, upper={}, global={}, independent={})".format(
-            self.symbol, self.name, self.value, self.is_fixed, self.lower, self.upper, self.is_global, self.independent
-        )
+    def __eq__(self, other):
+        return other.symbol == self.symbol \
+            and other.value == self.value \
+            and other.lower == self.lower \
+            and other.upper == self.upper \
+            and other.is_global == self.is_global \
+            and other.is_fixed == self.is_fixed \
+            and other.is_fixed_run == self.is_fixed_run \
+            and other.fixed_value == self.fixed_value \
+            and other.output == self.output \
+            and other.uncertainty == self.uncertainty
 
     def __str__(self):
-        return "{}\t{:.4f}\t{}\t{}".format(self.name, self.value, self.lower, self.upper)
+        return '{}={}'.format(self.symbol, self.value)
+
+    def get_value(self):
+        return float(self.value if not self.is_fixed_run else self.fixed_value)
 
 
-# class FitExpression:
-#     def __init__(self, expression, variables, expression_as_lambda=None):
-#         self.__expression_as_string = expression
-#
-#         if expression_as_lambda:
-#             self.expression_as_lambda = expression_as_lambda
-#             return
-#
-#         expression = replace_symbols(expression)
-#         variables = [replace_symbols(k) for k in variables]
-#         self.expression_as_lambda = lambdify(expression, variables, INDEPENDENT_VARIABLE)
-#
-#     def __call__(self, *args, **kwds):
-#         kwds = {replace_symbols(k): v for k, v in kwds.items()}
-#         return self.expression_as_lambda(*args, **kwds)
-#
-#     def __str__(self):
-#         return self.__expression_as_string
+class FitExpression:
+    def __init__(self, expression_string):
+        self.__expression_string = expression_string
+
+        variables = parse(self.__expression_string)
+        variables.discard(INDEPENDENT_VARIABLE)
+        self.__expression = lambdify(self.__expression_string, variables, INDEPENDENT_VARIABLE)
+
+    def __eq__(self, other):
+        return str(other) == self.__expression_string
+
+    def __str__(self):
+        return self.__expression_string
+
+    def __call__(self, *args, **kwargs):
+        if len(args) == 0:
+            raise ValueError("FitExpression needs at least one parameter (an array).")
+        elif not isinstance(args[0], np.ndarray):
+            try:
+                iter(args[0])
+                time_array = np.array(args[0])
+            except TypeError:
+                raise ValueError("First parameter to FitExpression needs to be an array.")
+        else:
+            time_array = args[0]
+
+        pars = {}
+        unnamed_pars = []
+        if len(args) > 1:
+            for arg in args[1:]:
+                if isinstance(arg, FitParameter):
+                    pars[arg.symbol] = arg.value
+                else:
+                    try:
+                        unnamed_pars.append(float(arg))
+                    except ValueError:
+                        raise ValueError("Every parameter after the array should be of type FitParameter.")
+        for k, v in kwargs.items():
+            pars[k] = v
+
+        try:
+            return self.__expression(time_array, *unnamed_pars, **pars)
+        except TypeError:
+            if ALPHA in pars.keys():
+                pars.pop(ALPHA)
+                return self.__expression(time_array, *unnamed_pars, **pars)
+            raise
 
 
+class FitConfig:
+    LEAST_SQUARES = 1
+    GLOBAL_PLUS = 2
 
-
-
-
-
-class FitSpec:
     def __init__(self):
-        self.function = ''
-        self.variables = dict()
-        self.asymmetries = dict()
-        self.options = {FitOptions.GLOBAL: False,
-                        FitOptions.LEAST_SQUARES: True,
-                        FitOptions.ALPHA_CORRECT: False}
+        self.expression = ''
+        self.parameters = {}
+        self.data = {}
+        self.flags = 0
 
-    def get_lower_bounds(self):
-        return [var.lower for var in self.variables.values()]
+    def set_flags(self, *flags):
+        self.flags = 0
+        for flag in flags:
+            self.flags = self.flags & flag
 
-    def get_upper_bounds(self):
-        return [var.upper for var in self.variables.values()]
+    def is_least_squares(self):
+        return bool(self.flags & FitConfig.LEAST_SQUARES)
 
-    def get_symbols(self):
-        return [var.symbol for var in self.variables.values()]
+    def is_global_plus(self):
+        return bool(self.flags & FitConfig.GLOBAL_PLUS)
 
-    def get_guesses(self):
-        return [var.value for var in self.variables.values()]
-
-    def get_fixed_symbols(self):
+    def get_symbols_for_run(self, run_id, is_fixed=None, is_global=None):
         symbols = []
-        for var in self.variables.values():
-            if var.is_fixed:
-                symbols.append(var.symbol)
-        return symbols
 
-    def get_fixed_guesses(self):
-        guesses = []
-        for var in self.variables.values():
-            if var.is_fixed:
-                guesses.append(var.value)
-        return guesses
+
+    def get_values_for_run(self, run_id, is_fixed=None, is_global=None):
+        pass
 
     def get_unfixed_symbols(self):
-        symbols = []
-        for var in self.variables.values():
-            if not var.is_fixed:
-                symbols.append(var.symbol)
-        return symbols
+        unfixed_symbols = []
+        for symbol, parameter in self.parameters.items():
+            if not parameter.is_fixed:
+                unfixed_symbols.append(symbol)
+        return unfixed_symbols
 
-    def get_unfixed_lower_bounds(self):
-        lowers = []
-        for var in self.variables.values():
-            if not var.is_fixed:
-                lowers.append(var.lower)
-        return lowers
+    def get_fixed_symbols(self):
+        fixed_symbols = []
+        for symbol, parameter in self.parameters.items():
+            if parameter.is_fixed:
+                fixed_symbols.append(symbol)
+        return fixed_symbols
 
-    def get_unfixed_upper_bounds(self):
-        uppers = []
-        for var in self.variables.values():
-            if not var.is_fixed:
-                uppers.append(var.upper)
-        return uppers
+    def get_unfixed_values(self):
+        unfixed_values = []
+        for parameter in self.parameters.values():
+            if not parameter.is_fixed:
+                unfixed_values.append(parameter.value)
+        return unfixed_values
 
-    def get_unfixed_guesses(self):
-        guesses = []
-        for var in self.variables.values():
-            if not var.is_fixed:
-                guesses.append(var.value)
-        return guesses
-
-    def get_non_global_symbols(self):
-        symbols = []
-        for var in self.variables.values():
-            if not var.is_global:
-                symbols.append(var.symbol)
-
-        return symbols
-
-    def get_global_symbols(self):
-        symbols = []
-        for var in self.variables.values():
-            if var.is_global and not var.is_fixed:
-                symbols.append(var.symbol)
-
-        return symbols
-
-    def get_global_fit_variable_set(self):
-        symbols = set()
-        for var in self.get_non_global_symbols():
-            if self.variables[var].is_fixed:
-                continue
-
-            symbols.update([var + _shortened_run_id(run_id) for run_id, _ in self.asymmetries.items()])
-
-        symbols.update(self.get_global_symbols())
-
-        return symbols
-
-    def get_global_fit_symbols(self):
-        symbols = []
-        for symbol, variable in self.variables.items():
-            if variable.is_fixed:
-                continue
-
-            if not variable.is_global:
-                for run_id, _ in self.asymmetries.items():
-                    symbols.append(symbol + _shortened_run_id(run_id))
-            else:
-                symbols.append(symbol)
-
-        return symbols
-
-    def get_global_fit_guesses(self):
-        guesses = []
-        for _, variable in self.variables.items():
-            if variable.is_fixed:
-                continue
-
-            if not variable.is_global:
-                for run_id, _ in self.asymmetries.items():
-                    guesses.append(variable.value)
-            else:
-                guesses.append(variable.value)
-
-        return guesses
-
-    def get_global_fit_lowers(self):
-        lowers = []
-        for _, variable in self.variables.items():
-            if variable.is_fixed:
-                continue
-
-            if not variable.is_global:
-                for run_id, _ in self.asymmetries.items():
-                    lowers.append(variable.lower)
-            else:
-                lowers.append(variable.lower)
-
-        return lowers
-
-    def get_global_fit_uppers(self):
-        uppers = []
-        for _, variable in self.variables.items():
-            if variable.is_fixed:
-                continue
-
-            if not variable.is_global:
-                for run_id, _ in self.asymmetries.items():
-                    uppers.append(variable.upper)
-            else:
-                uppers.append(variable.upper)
-
-        return uppers
-
-    def get_data(self):
-        return self.asymmetries
-
-    def get_data_length(self):
-        return len(list(self.asymmetries.values())[0])
-
-    def get_num_datasets(self):
-        return len(self.asymmetries)
-
-    def get_bin_size(self):
-        return list(self.asymmetries.values())[0].bin_size
-
-    def get_min_time(self):
-        return list(self.asymmetries.values())[0].time[0]
-
-    def get_max_time(self):
-        return list(self.asymmetries.values())[0].time[-1]
-
-    def get_time_zero(self):
-        return list(self.asymmetries.values())[0].time[0]
+    def get_fixed_values(self):
+        fixed_values = []
+        for parameter in self.parameters.values():
+            if parameter.is_fixed:
+                fixed_values.append(parameter.value)
+        return fixed_values
 
 
 class FitDataset:
