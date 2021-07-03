@@ -423,31 +423,36 @@ class FitEngine:
         return dataset
 
     def _least_squares_fit_non_global(self, config) -> FitDataset:
-        alpha_corrected_function = ALPHA_CORRECTION.format(config.expression, config.expression)
-        function = FitEngine._replace_fixed(alpha_corrected_function, config.get_fixed_symbols(), config.get_fixed_values())
-
-        lambda_expression = lambdify(function, config.get_unfixed_symbols(), INDEPENDENT_VARIABLE)
-        residual = FitEngine._residual(lambda_expression)
-
         dataset = FitDataset()
+
         for run_id, asymmetry in config.data.items():
-            new_fit = Fit()
+            if len(config.get_symbols_for_run(run_id, is_fixed=False)) == 0:
+                # TODO Performing a fit will break in this case so we need to handle it.
+                pass
 
-            # 5) Create a copy of our initial variables (we will replace the values with our fitted values)
-            final_variables = {k: FitVar(v.symbol, v.name, v.value, v.is_fixed, v.lower, v.upper, v.is_global, v.independent) for k, v in spec.variables.items()}
+            fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
+            fixed_values = config.get_values_for_run(run_id, is_fixed=True)
 
-            # 6) Assuming we have a variable that is not fixed, perform a least squares fit
-            if len(config.get_unfixed_symbols()) != 0:
-                opt = least_squares(residual, guesses, bounds=[lowers, uppers],
-                                    args=(asymmetry.time, asymmetry, asymmetry.uncertainty))
+            # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
+            alpha_corrected_function = ALPHA_CORRECTION.format(config.expression, config.expression)
+            function = FitEngine._replace_fixed(alpha_corrected_function, fixed_symbols, fixed_values)
+            lambda_expression = FitExpression(function)
+            residual = FitEngine._residual(lambda_expression)
 
-                # 7) Replace initial values with fitted values for unfixed variables
-                for i, symbol in enumerate(spec.get_unfixed_symbols()):
-                    final_variables[symbol].value = opt.x[i]
+            guesses = config.get_values_for_run(run_id, is_fixed=False)
+            lowers = config.get_lower_values_for_run(run_id, is_fixed=False)
+            uppers = config.get_upper_values_for_run(run_id, is_fixed=False)
 
-            # 8) Create a callable function of our original string function 
-            lambda_expression_without_alpha = lambdify(FitEngine._replace_fixed(spec.function, spec.get_fixed_symbols(), spec.get_fixed_guesses()),
-                                                       list(spec.get_unfixed_symbols()), INDEPENDENT_VARIABLE)
+            # 6) Perform a least squares fit
+            opt = least_squares(residual, guesses, bounds=[lowers, uppers],
+                                args=(asymmetry.time, asymmetry, asymmetry.uncertainty))
+
+            # 7) Replace initial values with fitted values for unfixed variables
+            for i, symbol in enumerate(config.get_symbols_for_run(run_id, is_fixed=False)):
+                config.set_outputs(run_id, symbol, opt.x[i], 0)
+
+            # 8) Create a callable function of our original string function
+            lambda_expression = FitExpression(config.expression)
 
             # 9) Fill in all values for our new fit object
             new_fit.variables = final_variables
