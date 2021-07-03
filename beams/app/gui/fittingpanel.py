@@ -1240,7 +1240,7 @@ class FitTabPresenter(PanelPresenter):
         self.__update_if_table_changes = True
         self.__variable_groups = {}
         self.__expression = None
-        self.__logger = logging.getLogger('qt_fitting_presenter')
+        self.__logger = logging.getLogger('QtFittingPresenter')
 
     def _set_callbacks(self):
         self._view.support_panel.tree.itemSelectionChanged.connect(self._selection_changed)
@@ -1522,17 +1522,18 @@ class FitTabPresenter(PanelPresenter):
                     for symbol, value, value_min, value_max, value_output, value_uncertainty, is_fixed, \
                             is_global, run_dependent_dict in parameters:
 
-                        is_fixed_run, fixed_value = (None, None) if run.id not in run_dependent_dict.keys() else \
-                                                    (run_dependent_dict[run.id][1], run_dependent_dict[run.id][2])
+                        is_fixed_run, fixed_value = (run_dependent_dict[run.meta[files.TITLE_KEY]][1],
+                                                     run_dependent_dict[run.meta[files.TITLE_KEY]][2])
 
                         run_parameters[symbol] = fit.FitParameter(symbol=symbol, value=value, lower=value_min, upper=value_max,
-                                                                  is_global=is_global, is_fixed=is_fixed, is_fixed_run=is_fixed_run)
+                                                                  is_global=is_global, is_fixed=is_fixed, is_fixed_run=is_fixed_run,
+                                                                  fixed_value=fixed_value)
 
                     variables[run.id] = run_parameters
-        print(variables)
-        config.parameters = variables
 
+        config.parameters = variables
         config.set_flags(config.LEAST_SQUARES, config.GLOBAL_PLUS if self._view.check_global_plus.isChecked() else 0)
+        self.__logger.debug(str(config))
 
         # Fit to spec
         # engine = fit.FitEngine()
