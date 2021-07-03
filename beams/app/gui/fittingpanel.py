@@ -1379,7 +1379,12 @@ class FitTabPresenter(PanelPresenter):
                                                   fit_linestyle='none',
                                                   label=run.meta[files.TITLE_KEY])
 
-        for run_id, parameters in self.__variable_groups.items():
+        checked_titles = self._view.get_checked_run_titles()
+        for i, run in enumerate(runs):
+            if run.meta[files.TITLE_KEY] not in checked_titles or run.id not in self.__variable_groups.keys():
+                continue
+
+            parameters = self.__variable_groups[run.id]
             time = domain.Time(input_array=None, bin_size=(max_time - min_time) * 1000 / 200, length=200,
                                time_zero=min_time)
             print("PLOTTING:", {symbol: par.get_value() for symbol, par in parameters.items()})
@@ -1401,20 +1406,20 @@ class FitTabPresenter(PanelPresenter):
                 local_min = np.min(fit_asymmetry[start_index:end_index])
                 min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
 
-            self.__logger.debug("{}, {}, {}, {}".format(self.__expression, run_id, parameters, len(time)))
+            self.__logger.debug("{}, {}, {}, {}".format(self.__expression, run.id, parameters, len(time)))
             self._view.fit_display.plot_asymmetry(time, fit_asymmetry, None, None,
-                                                  color=colors[run_id],
+                                                  color=colors[run.id],
                                                   marker='.',
                                                   linestyle='-',
                                                   fillstyle='none',
-                                                  marker_color=colors[run_id],
+                                                  marker_color=colors[run.id],
                                                   marker_size=1,
-                                                  line_color=colors[run_id],
+                                                  line_color=colors[run.id],
                                                   line_width=1,
-                                                  errorbar_color=colors[run_id],
+                                                  errorbar_color=colors[run.id],
                                                   errorbar_style='none',
                                                   errorbar_width=1,
-                                                  fit_color=colors[run_id],
+                                                  fit_color=colors[run.id],
                                                   fit_linestyle='none',
                                                   label=None)
 
@@ -1444,8 +1449,13 @@ class FitTabPresenter(PanelPresenter):
         self._update_display()
 
     def _get_expression_and_values(self):
-        parameters = self._view.get_parameters()
-        expression = self._view.get_expression()
+        try:
+            parameters = self._view.get_parameters()
+            expression = self._view.get_expression()
+        except ValueError:
+            self._view.highlight_input_red(self._view.parameter_table, True)
+            return
+        self._view.highlight_input_red(self._view.parameter_table, False)
 
         final_parameters = {}
         for run in self._runs:
