@@ -1340,6 +1340,8 @@ class FitTabPresenter(PanelPresenter):
         max_time = self._view.fit_spectrum_settings.get_max_time()
         bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
 
+        colors = {run.id: list(self._plot_model.color_options_values.values())[-i] for i, run in enumerate(runs)}
+
         for i, run in enumerate(runs):
             if run.meta[files.TITLE_KEY] not in titles:
                 continue
@@ -1359,22 +1361,21 @@ class FitTabPresenter(PanelPresenter):
             max_asymmetry = local_max if local_max > max_asymmetry else max_asymmetry
             local_min = np.min(asymmetry[start_index:end_index])
             min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
-            color = list(self._plot_model.color_options_values.values())[-i]
-            self.__logger.debug("{}, {}, {}, {}, {}".format(time, asymmetry, uncertainty, color, run.meta[files.TITLE_KEY]))
+            self.__logger.debug("{}, {}, {}, {}".format(time, asymmetry, uncertainty, run.meta[files.TITLE_KEY]))
 
             self._view.fit_display.plot_asymmetry(time, asymmetry, uncertainty, None,
-                                                  color=color,
+                                                  color=colors[run.id],
                                                   marker='.',
                                                   linestyle='none',
                                                   fillstyle='none',
-                                                  marker_color=color,
+                                                  marker_color=colors[run.id],
                                                   marker_size=5,
-                                                  line_color=color,
+                                                  line_color=colors[run.id],
                                                   line_width=1,
-                                                  errorbar_color=color,
+                                                  errorbar_color=colors[run.id],
                                                   errorbar_style='none',
                                                   errorbar_width=1,
-                                                  fit_color=color,
+                                                  fit_color=colors[run.id],
                                                   fit_linestyle='none',
                                                   label=run.meta[files.TITLE_KEY])
 
@@ -1400,21 +1401,20 @@ class FitTabPresenter(PanelPresenter):
                 local_min = np.min(fit_asymmetry[start_index:end_index])
                 min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
 
-            color = 'Black'
             self.__logger.debug("{}, {}, {}, {}".format(self.__expression, run_id, parameters, len(time)))
             self._view.fit_display.plot_asymmetry(time, fit_asymmetry, None, None,
-                                                  color=color,
+                                                  color=colors[run_id],
                                                   marker='.',
                                                   linestyle='-',
                                                   fillstyle='none',
-                                                  marker_color=color,
+                                                  marker_color=colors[run_id],
                                                   marker_size=1,
-                                                  line_color=color,
+                                                  line_color=colors[run_id],
                                                   line_width=1,
-                                                  errorbar_color=color,
+                                                  errorbar_color=colors[run_id],
                                                   errorbar_style='none',
                                                   errorbar_width=1,
-                                                  fit_color=color,
+                                                  fit_color=colors[run_id],
                                                   fit_linestyle='none',
                                                   label=None)
 
