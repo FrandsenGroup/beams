@@ -966,6 +966,10 @@ class FittingPanel(Panel):
                 item_value = QtWidgets.QTableWidgetItem()
                 item_value.setText(str(batch_value))
                 self.parameter_table.batch_table.setItem(n, self.ParameterTable.FIXED_VALUE_COLUMN, item_value)
+            else:
+                item_value = QtWidgets.QTableWidgetItem()
+                item_value.setText('1')
+                self.parameter_table.batch_table.setItem(n, self.ParameterTable.FIXED_VALUE_COLUMN, item_value)
 
             if batch_global is not None:
                 item_global = self._create_check_box_for_table(batch_global)
@@ -975,7 +979,6 @@ class FittingPanel(Panel):
                 self.parameter_table.batch_table.setCellWidget(n, self.ParameterTable.GLOBAL_COLUMN, item_global)
 
             if batch_run_dependent is not None:
-                print('here2')
                 item_fixed = self._create_check_box_for_table(batch_run_dependent, self._update_batch_table_states)
                 self.parameter_table.batch_table.setCellWidget(n, self.ParameterTable.FIXED_RUN_COLUMN, item_fixed)
             else:
