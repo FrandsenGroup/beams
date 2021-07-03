@@ -2,7 +2,6 @@ import numpy as np
 import sympy as sp
 from scipy.optimize import least_squares
 
-import enum
 from collections import OrderedDict
 import time
 import re
@@ -83,6 +82,11 @@ class FitParameter:
     def __str__(self):
         return '{}={}'.format(self.symbol, self.value)
 
+    def __repr__(self):
+        return 'FitParameter ({})=({},{},{},{},{},{},{})'.format(self.symbol, self.value, self.lower, self.upper,
+                                                                 self.is_global, self.is_fixed, self.is_fixed_run,
+                                                                 self.fixed_value)
+
     def get_value(self):
         return float(self.value if not self.is_fixed_run else self.fixed_value)
 
@@ -102,6 +106,8 @@ class FitExpression:
         return self.__expression_string
 
     def __call__(self, *args, **kwargs):
+        # The length of this function is due to the fact I have trust issues.
+
         if len(args) == 0:
             raise ValueError("FitExpression needs at least one parameter (an array).")
         elif not isinstance(args[0], np.ndarray):
@@ -146,6 +152,9 @@ class FitConfig:
         self.data = {}
         self.flags = 0
 
+    def __str__(self):
+        return "FitConfig ({})=({}, {})".format(self.expression, self.flags, self.parameters)
+
     def set_flags(self, *flags):
         self.flags = 0
         for flag in flags:
@@ -160,37 +169,59 @@ class FitConfig:
     def get_symbols_for_run(self, run_id, is_fixed=None, is_global=None):
         symbols = []
 
+        for symbol, parameter in self.parameters[run_id].items():
+            if (is_fixed is None and is_global is None) \
+                    or (is_fixed and (parameter.is_fixed or parameter.is_fixed_run)) \
+                    or (is_fixed is not None and not (is_fixed and (parameter.is_fixed or parameter.is_fixed_run))) \
+                    or (is_global and parameter.is_global) \
+                    or (is_global is not None and not (is_global and parameter.is_global)):
+                symbols.append(symbol)
+
+        return symbols
 
     def get_values_for_run(self, run_id, is_fixed=None, is_global=None):
-        pass
+        values = []
 
-    def get_unfixed_symbols(self):
-        unfixed_symbols = []
-        for symbol, parameter in self.parameters.items():
-            if not parameter.is_fixed:
-                unfixed_symbols.append(symbol)
-        return unfixed_symbols
+        for _, parameter in self.parameters[run_id].items():
+            if (is_fixed is None and is_global is None) \
+                    or (is_fixed and (parameter.is_fixed or parameter.is_fixed_run)) \
+                    or (is_fixed is not None and not (is_fixed and (parameter.is_fixed or parameter.is_fixed_run))) \
+                    or (is_global and parameter.is_global) \
+                    or (is_global is not None and not (is_global and parameter.is_global)):
+                values.append(parameter.get_value())
 
-    def get_fixed_symbols(self):
-        fixed_symbols = []
-        for symbol, parameter in self.parameters.items():
-            if parameter.is_fixed:
-                fixed_symbols.append(symbol)
-        return fixed_symbols
+        return values
 
-    def get_unfixed_values(self):
-        unfixed_values = []
-        for parameter in self.parameters.values():
-            if not parameter.is_fixed:
-                unfixed_values.append(parameter.value)
-        return unfixed_values
+    def get_lower_values_for_run(self, run_id, is_fixed=None, is_global=None):
+        values = []
 
-    def get_fixed_values(self):
-        fixed_values = []
-        for parameter in self.parameters.values():
-            if parameter.is_fixed:
-                fixed_values.append(parameter.value)
-        return fixed_values
+        for _, parameter in self.parameters[run_id].items():
+            if (is_fixed is None and is_global is None) \
+                    or (is_fixed and (parameter.is_fixed or parameter.is_fixed_run)) \
+                    or (is_fixed is not None and not (is_fixed and (parameter.is_fixed or parameter.is_fixed_run))) \
+                    or (is_global and parameter.is_global) \
+                    or (is_global is not None and not (is_global and parameter.is_global)):
+                values.append(parameter.lower)
+
+        return values
+
+    def get_upper_values_for_run(self, run_id, is_fixed=None, is_global=None):
+        values = []
+
+        for _, parameter in self.parameters[run_id].items():
+            if (is_fixed is None and is_global is None) \
+                    or (is_fixed and (parameter.is_fixed or parameter.is_fixed_run)) \
+                    or (is_fixed is not None and not (is_fixed and (parameter.is_fixed or parameter.is_fixed_run))) \
+                    or (is_global and parameter.is_global) \
+                    or (is_global is not None and not (is_global and parameter.is_global)):
+                values.append(parameter.upper)
+
+        return values
+
+    def set_outputs(self, run_id, symbol, output, uncertainty):
+        self.parameters[run_id][symbol].value = output  # You may be tempted to keep this value. Go for it.
+        self.parameters[run_id][symbol].output = output
+        self.parameters[run_id][symbol].uncertainty = uncertainty
 
 
 class FitDataset:
