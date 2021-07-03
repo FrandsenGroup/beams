@@ -1222,6 +1222,12 @@ class FittingPanel(Panel):
 
 # TODO Checking box in fixed run dep doesn't update screen because we use the update states variable.
 
+# TODO We should probably set output to 1 and uncertainty to 0, or equal to fixed value (but only when sending to fit).
+
+# TODO We should treat fixed and non fixed identical after running a fit. Probably emphasize reference to output.
+
+# TODO Put write method in the domain objects (Asymmetry, Histogram etc).
+
 class FitTabPresenter(PanelPresenter):
     def __init__(self, view: FittingPanel):
         super().__init__(view)
