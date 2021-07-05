@@ -149,6 +149,7 @@ class FitConfig:
     def __init__(self):
         self.expression = ''
         self.parameters = {}
+        self.titles = {}
         self.data = {}
         self.flags = 0
 
@@ -158,7 +159,7 @@ class FitConfig:
     def set_flags(self, *flags):
         self.flags = 0
         for flag in flags:
-            self.flags = self.flags & flag
+            self.flags = self.flags | flag
 
     def is_least_squares(self):
         return bool(self.flags & FitConfig.LEAST_SQUARES)
@@ -168,13 +169,12 @@ class FitConfig:
 
     def get_symbols_for_run(self, run_id, is_fixed=None, is_global=None):
         symbols = []
-
         for symbol, parameter in self.parameters[run_id].items():
             if (is_fixed is None and is_global is None) \
                     or (is_fixed and (parameter.is_fixed or parameter.is_fixed_run)) \
-                    or (is_fixed is not None and not (is_fixed and (parameter.is_fixed or parameter.is_fixed_run))) \
+                    or (is_fixed is not None and (is_fixed == parameter.is_fixed and is_fixed == parameter.is_fixed_run)) \
                     or (is_global and parameter.is_global) \
-                    or (is_global is not None and not (is_global and parameter.is_global)):
+                    or (is_global is not None and (is_global == parameter.is_global)):
                 symbols.append(symbol)
 
         return symbols
@@ -185,9 +185,9 @@ class FitConfig:
         for _, parameter in self.parameters[run_id].items():
             if (is_fixed is None and is_global is None) \
                     or (is_fixed and (parameter.is_fixed or parameter.is_fixed_run)) \
-                    or (is_fixed is not None and not (is_fixed and (parameter.is_fixed or parameter.is_fixed_run))) \
+                    or (is_fixed is not None and (is_fixed == parameter.is_fixed and is_fixed == parameter.is_fixed_run)) \
                     or (is_global and parameter.is_global) \
-                    or (is_global is not None and not (is_global and parameter.is_global)):
+                    or (is_global is not None and (is_global == parameter.is_global)):
                 values.append(parameter.get_value())
 
         return values
@@ -198,9 +198,9 @@ class FitConfig:
         for _, parameter in self.parameters[run_id].items():
             if (is_fixed is None and is_global is None) \
                     or (is_fixed and (parameter.is_fixed or parameter.is_fixed_run)) \
-                    or (is_fixed is not None and not (is_fixed and (parameter.is_fixed or parameter.is_fixed_run))) \
+                    or (is_fixed is not None and (is_fixed == parameter.is_fixed and is_fixed == parameter.is_fixed_run)) \
                     or (is_global and parameter.is_global) \
-                    or (is_global is not None and not (is_global and parameter.is_global)):
+                    or (is_global is not None and (is_global == parameter.is_global)):
                 values.append(parameter.lower)
 
         return values
@@ -211,28 +211,49 @@ class FitConfig:
         for _, parameter in self.parameters[run_id].items():
             if (is_fixed is None and is_global is None) \
                     or (is_fixed and (parameter.is_fixed or parameter.is_fixed_run)) \
-                    or (is_fixed is not None and not (is_fixed and (parameter.is_fixed or parameter.is_fixed_run))) \
+                    or (is_fixed is not None and (is_fixed == parameter.is_fixed and is_fixed == parameter.is_fixed_run)) \
                     or (is_global and parameter.is_global) \
-                    or (is_global is not None and not (is_global and parameter.is_global)):
+                    or (is_global is not None and (is_global == parameter.is_global)):
                 values.append(parameter.upper)
 
         return values
 
+    def get_kwargs(self, run_id):
+        kwargs = {}
+        for symbol, parameter in self.parameters[run_id].items():
+            if symbol != ALPHA:
+                kwargs[symbol] = parameter.get_value()
+        return kwargs
+
     def set_outputs(self, run_id, symbol, output, uncertainty):
-        self.parameters[run_id][symbol].value = output  # You may be tempted to keep this value. Go for it.
+        self.parameters[run_id][symbol].value = output  # You may be tempted to keep this value... Go for it.
         self.parameters[run_id][symbol].output = output
         self.parameters[run_id][symbol].uncertainty = uncertainty
+
+
+class Fit(np.ndarray):
+    def __new__(cls, input_array, parameters, expression, asymmetry, uncertainty, time, title, run_id, *args, **kwargs):
+        self = np.asarray(input_array).view(cls)
+        self.parameters = parameters
+        self.expression = expression
+        self.title = title
+        self.run_id = run_id
+
+        return self
+
+    def __call__(self, *args, **kwargs):
+        pass
 
 
 class FitDataset:
     def __init__(self):
         t = time.localtime()
-        current_time = time.strftime("%d-%m-%Y-%H-%M-%S", t)
+        current_time = time.strftime("%d-%m-%YT%H:%M:%S", t)
 
         self.id = str(current_time)
         self.fits = {}
-        self.options = {}
-        self.function = None
+        self.flags = 0
+        self.expression = None
 
     def write(self, out_file, save_format=None):
         if save_format is None or save_format == FitOptions.SAVE_1:
@@ -284,7 +305,7 @@ class FitDataset:
                         + full_string)
 
 
-class Fit:
+class Fit_OLD:
     def __init__(self):
         self.__variables = dict()
         self.kwargs = dict()
@@ -422,54 +443,51 @@ class FitEngine:
 
         return dataset
 
-    def _least_squares_fit_non_global(self, config) -> FitDataset:
+    @staticmethod
+    def _least_squares_fit_non_global(config) -> FitDataset:
         dataset = FitDataset()
-
         for run_id, asymmetry in config.data.items():
             if len(config.get_symbols_for_run(run_id, is_fixed=False)) == 0:
-                # TODO Performing a fit will break in this case so we need to handle it.
-                pass
+                for i, symbol in enumerate(config.get_symbols_for_run(run_id, is_fixed=True)):
+                    config.set_outputs(run_id, symbol, config.parameters[symbol].get_value(), 0)
+            else:
+                fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
+                fixed_values = config.get_values_for_run(run_id, is_fixed=True)
 
-            fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
-            fixed_values = config.get_values_for_run(run_id, is_fixed=True)
+                # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
+                alpha_corrected_function = ALPHA_CORRECTION.format(config.expression, config.expression)
+                function = FitEngine._replace_fixed(alpha_corrected_function, fixed_symbols, fixed_values)
+                lambda_expression = FitExpression(function)
+                residual = FitEngine._residual(lambda_expression)
 
-            # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
-            alpha_corrected_function = ALPHA_CORRECTION.format(config.expression, config.expression)
-            function = FitEngine._replace_fixed(alpha_corrected_function, fixed_symbols, fixed_values)
-            lambda_expression = FitExpression(function)
-            residual = FitEngine._residual(lambda_expression)
+                guesses = config.get_values_for_run(run_id, is_fixed=False)
+                lowers = config.get_lower_values_for_run(run_id, is_fixed=False)
+                uppers = config.get_upper_values_for_run(run_id, is_fixed=False)
 
-            guesses = config.get_values_for_run(run_id, is_fixed=False)
-            lowers = config.get_lower_values_for_run(run_id, is_fixed=False)
-            uppers = config.get_upper_values_for_run(run_id, is_fixed=False)
+                # 6) Perform a least squares fit
+                opt = least_squares(residual, guesses, bounds=[lowers, uppers],
+                                    args=(asymmetry.time, asymmetry, asymmetry.uncertainty))
 
-            # 6) Perform a least squares fit
-            opt = least_squares(residual, guesses, bounds=[lowers, uppers],
-                                args=(asymmetry.time, asymmetry, asymmetry.uncertainty))
-
-            # 7) Replace initial values with fitted values for unfixed variables
-            for i, symbol in enumerate(config.get_symbols_for_run(run_id, is_fixed=False)):
-                config.set_outputs(run_id, symbol, opt.x[i], 0)
+                # 7) Replace initial values with fitted values for unfixed variables
+                for i, symbol in enumerate(config.get_symbols_for_run(run_id, is_fixed=False)):
+                    config.set_outputs(run_id, symbol, opt.x[i], 0)
+                for i, symbol in enumerate(config.get_symbols_for_run(run_id, is_fixed=True)):
+                    config.set_outputs(run_id, symbol, config.parameters[run_id][symbol].get_value(), 0)
 
             # 8) Create a callable function of our original string function
             lambda_expression = FitExpression(config.expression)
 
             # 9) Fill in all values for our new fit object
-            new_fit.variables = final_variables
-            new_fit.expression = FitExpression(spec.function, None, lambda_expression_without_alpha)
-            new_fit.expression_as_string = spec.function
-            new_fit.run_id = run_id
-            new_fit.title = self.__run_service.get_runs_by_ids([run_id])[0].meta['Title']
-            new_fit.bin_size = spec.get_bin_size()
-            new_fit.x_min = spec.get_min_time()
-            new_fit.x_max = spec.get_max_time()
+            fitted_asymmetry = lambda_expression(asymmetry.time, **config.get_kwargs(run_id))
+            new_fit = Fit(fitted_asymmetry, config.parameters[run_id], lambda_expression,
+                          asymmetry, None, asymmetry.time, config.titles[run_id], run_id)
 
             # 10) Add fit to our dataset
             dataset.fits[run_id] = new_fit
 
         # 11) Attach fit spec options and function to dataset (mostly for debugging purposes)
-        dataset.options = spec.options.copy()
-        dataset.function = spec.function
+        dataset.expression = config.expression
+        dataset.flags = config.flags
 
         return dataset
 
@@ -713,19 +731,6 @@ def lambdify(expression, variables, independent_variable):
 
 def _shortened_run_id(run_id):
     return run_id.split('-')[0]
-
-
-
-
-
-class Fit(np.ndarray):
-    def __new__(cls, *args, **kwargs):
-        pass
-
-
-class FitDataset:
-    def __init__(self):
-        pass
 
 
 def _residual(lambda_expression):
