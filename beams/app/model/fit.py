@@ -515,16 +515,14 @@ class FitEngine:
         return residual
 
     @staticmethod
-    # fixme bug when smaller variable names (like 'd') occur in other variables.
     def _replace_fixed(function, symbols, values):
         for symbol, value in zip(symbols, values):
             function = re.sub(r'(?<=\b){}(?=\b)'.format(symbol), str(value), function)
         return function
 
     @staticmethod
-    # fixme bug when smaller variable names (like 'd') occur in other variables.
     def _replace_var_with(function, old_symbol, new_symbol):
-        return function.replace(old_symbol, new_symbol)
+        return re.sub(r'(?<=\b){}(?=\b)'.format(old_symbol), str(new_symbol), function)
 
 
 def get_std_unc(result, data, error=None, num_constraints=0):
