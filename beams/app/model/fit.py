@@ -5,6 +5,7 @@ from scipy.optimize import least_squares
 from collections import OrderedDict
 import time
 import re
+import logging
 
 from app.resources import resources
 from app.model import domain, files
@@ -414,6 +415,7 @@ class Fit_OLD:
 class FitEngine:
     def __init__(self):
         self.__run_service = domain.RunService()
+        self.__logger = logging.getLogger('FitEngine')
 
     def fit(self, config: FitConfig) -> FitDataset:
         if len(set([len(asymmetry) for asymmetry in config.data.values()])) != 1:
@@ -429,17 +431,22 @@ class FitEngine:
             if config.is_least_squares():
                 return self._least_squares_fit_non_global(config)
 
-    def _least_squares_fit_global(self, spec):
+    def _least_squares_fit_global(self, config: FitConfig):
         # (0) Get the parameters for our variables. These are generated to work with our stepwise approach.
-        guesses = spec.get_global_fit_guesses()
-        lowers = spec.get_global_fit_lowers()
-        uppers = spec.get_global_fit_uppers()
+        guesses = config.get_adjusted_global_values()
+        lowers = config.get_adjusted_global_lowers()
+        uppers = config.get_adjusted_global_uppers()
+
+        self.__logger.debug(config.get_adjusted_global_symbols())
+        self.__logger.debug(guesses)
+        self.__logger.debug(lowers)
+        self.__logger.debug(uppers)
 
         # 1) Concatenate our time, asymmetry and uncertainty arrays for each dataset together.
         concatenated_asymmetry = np.array([])
         concatenated_uncertainty = np.array([])
         concatenated_time = np.array([])
-        for _, asymmetry in spec.get_data().items():
+        for _, asymmetry in config.data.items():
             concatenated_asymmetry = np.concatenate((concatenated_asymmetry, asymmetry))
             concatenated_uncertainty = np.concatenate((concatenated_uncertainty, asymmetry.uncertainty))
             concatenated_time = np.concatenate((concatenated_time, asymmetry.time))
@@ -447,55 +454,35 @@ class FitEngine:
         # 2) Create a single global lambda function for all the datasets. Essentially, it acts like a 
         #    stepwise function, once you pass into the asymmetry of another dataset, a separate function
         #    in the lambda will start being used. See its definition for more on why.
-        global_lambda_expression = FitEngine._lambdify_global(spec, concatenated_time)
+        global_lambda_expression = self._lambdify_global(config, concatenated_time)
         residual = FitEngine._residual(global_lambda_expression)
 
         dataset = FitDataset()
         
-        # 3) Run a lease squres fit on the global lambda and concatenated datasets
-        try:
-            opt = least_squares(residual, guesses, bounds=[lowers, uppers], args=(concatenated_time, concatenated_asymmetry, concatenated_uncertainty))
-        except ValueError:
-            print('You have found an elusive bug. Please submit an issue on github with your actions prior to pressing "fit"')
-            print(residual, guesses, [lowers, uppers], (len(concatenated_time), len(concatenated_asymmetry), len(concatenated_uncertainty)))
-            import traceback
-            traceback.print_exc()
-            raise ValueError("Provide all the information above and submit to a github issue please!")
+        # 3) Run a lease squares fit on the global lambda and concatenated datasets
+        opt = least_squares(residual, guesses, bounds=[lowers, uppers], args=(concatenated_time, concatenated_asymmetry, concatenated_uncertainty))
 
         values = {}
-        for i, symbol in enumerate(spec.get_global_fit_symbols()):
+        for i, symbol in enumerate(config.get_adjusted_global_symbols()):
             values[symbol] = opt.x[i]
 
-        for run_id, _ in spec.get_data().items():
-            new_fit = Fit()
-            final_variables = {k: FitVar(v.symbol, v.name, v.value,
-                                         v.is_fixed, v.lower, v.upper,
-                                         v.is_global, v.independent) for k, v in spec.variables.items()}
-
-            for symbol, var in final_variables.items():
-                if var.is_fixed:
-                    continue
-
-                if not var.is_global:
-                    final_variables[symbol].value = values[symbol + _shortened_run_id(run_id)]
+        for run_id, asymmetry in config.data.items():
+            for symbol, parameter in config.parameters[run_id].items():
+                if not parameter.is_global:
+                    config.set_outputs(run_id, symbol, values[symbol + _shortened_run_id(run_id)], 0)
                 else:
-                    final_variables[symbol].value = values[symbol]
+                    config.set_outputs(run_id, symbol, values[symbol], 0)
 
-            lambda_expression_without_alpha = lambdify(FitEngine._replace_fixed(spec.function, spec.get_fixed_symbols(), spec.get_fixed_guesses()),
-                                                       list(spec.get_unfixed_symbols()), INDEPENDENT_VARIABLE)
+            lambda_expression = FitExpression(config.expression)
 
-            new_fit.variables = final_variables
-            new_fit.expression = FitExpression(spec.function, None, lambda_expression_without_alpha)
-            new_fit.expression_as_string = spec.function
-            new_fit.run_id = run_id
-            new_fit.title = self.__run_service.get_runs_by_ids([run_id])[0].meta['Title']
-            new_fit.bin_size = spec.get_bin_size()
-            new_fit.x_min = spec.get_min_time()
-            new_fit.x_max = spec.get_max_time()
+            fitted_asymmetry = lambda_expression(asymmetry.time, **config.get_kwargs(run_id))
+            new_fit = Fit(fitted_asymmetry, config.parameters[run_id], lambda_expression,
+                          asymmetry, None, asymmetry.time, config.titles[run_id], run_id)
+
             dataset.fits[run_id] = new_fit
 
-        dataset.options = spec.options.copy()
-        dataset.function = spec.function
+        dataset.expression = config.expression
+        dataset.flags = config.flags
 
         return dataset
 
@@ -547,24 +534,20 @@ class FitEngine:
 
         return dataset
 
-    @staticmethod
-    def _lambdify_global(spec: FitConfig, concatenated_time):
-        if spec.options[FitOptions.ALPHA_CORRECT]:
-            alpha_corrected_function = ALPHA_CORRECTION.format(spec.function, spec.function)
-            function = FitEngine._replace_fixed(alpha_corrected_function, spec.get_fixed_symbols(), spec.get_fixed_guesses())
-        else:
-            function = FitEngine._replace_fixed(spec.function, spec.get_fixed_symbols(), spec.get_fixed_guesses())
+    def _lambdify_global(self, config: FitConfig, concatenated_time):
+        function = ALPHA_CORRECTION.format(config.expression, config.expression)
+        self.__logger.debug('_lambdify_global: {}'.format(function))
 
-        print('Initial Function : ', function)
         lambdas = OrderedDict()
         run_id_order = []
-        for i, (run_id, asymmetry) in enumerate(spec.get_data().items()):
+        for i, (run_id, asymmetry) in enumerate(config.data.items()):
             new_function = function
-            for var in spec.get_non_global_symbols():
-                new_function = FitEngine._replace_var_with(new_function, var, var + _shortened_run_id(run_id))
+            print('Replacing these symbols: ', config.get_symbols_for_run(run_id, is_global=False))
+            for symbol in config.get_symbols_for_run(run_id, is_global=False):
+                new_function = FitEngine._replace_var_with(new_function, symbol, symbol + _shortened_run_id(run_id))
 
-            print('For run (' + run_id + ') we have function : ', new_function)
-            new_lambda_expression = lambdify(new_function, spec.get_global_fit_symbols(), INDEPENDENT_VARIABLE)
+            self.__logger.debug("_lambdify_global: f({})={}".format(run_id, new_function))
+            new_lambda_expression = FitExpression(new_function, variables=config.get_adjusted_global_symbols())
             lambdas[run_id] = new_lambda_expression
             run_id_order.append(run_id)
 
@@ -786,7 +769,7 @@ def lambdify(expression, variables, independent_variable):
 
 
 def _shortened_run_id(run_id):
-    return run_id.split('-')[0]
+    return "_" + run_id.split('-')[0]
 
 
 def _residual(lambda_expression):
