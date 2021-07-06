@@ -50,8 +50,8 @@ class BEAMS(QtWidgets.QApplication):
         vbox = QtWidgets.QVBoxLayout(frame.content_widget())
         vbox.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))
         vbox.addWidget(self.main_program_window)
-        sizeObject = QtWidgets.QDesktopWidget().screenGeometry(-1)
-        frame.setGeometry(10, 10, sizeObject.width()-20, sizeObject.height()-100)
+        size_object = QtWidgets.QDesktopWidget().screenGeometry(-1)
+        frame.setGeometry(10, 10, size_object.width()-20, size_object.height()-100)
         frame.show()
 
         self.splash.finish(frame)
