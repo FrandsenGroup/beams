@@ -362,56 +362,6 @@ class FitDataset:
                         + full_string)
 
 
-class Fit_OLD:
-    def __init__(self):
-        self.__variables = dict()
-        self.kwargs = dict()
-        self.expression_as_string = None
-        self.expression = None
-        self.bin_size = None
-        self.x_min = None
-        self.x_max = None
-        self.title = None
-        self.run_id = None
-
-    @property
-    def variables(self):
-        return self.__variables
-
-    @variables.setter
-    def variables(self, variables):
-        self.__variables = variables
-        self.kwargs = {}
-        for var in self.__variables.values():
-            if not var.is_fixed:
-                self.kwargs[var.symbol] = var.value
-
-    def __call__(self, *args, **kwargs):
-        if len(args) < 1 or not isinstance(args[0], np.ndarray):
-            raise ValueError("Only takes numpy array of values as an input.")
-        return self.expression(args[0], **self.kwargs)
-
-    def write(self, out_file):
-        run = domain.RunService.get_runs_by_ids([self.run_id])[0]
-        meta_string = files.TITLE_KEY + ":" + str(run.meta[files.TITLE_KEY]) + "," \
-                      + files.BIN_SIZE_KEY + ":" + str(self.bin_size) + "," \
-                      + files.TEMPERATURE_KEY + ":" + str(run.meta[files.TEMPERATURE_KEY]) + "," \
-                      + files.FIELD_KEY + ":" + str(run.meta[files.FIELD_KEY]) + "," \
-                      + files.T0_KEY + ":" + str(run.meta[files.T0_KEY])
-
-        asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].raw()
-
-        for v in self.__variables.values():
-            if v.symbol == ALPHA:
-                asymmetry = asymmetry.correct(v.value)
-
-        asymmetry = asymmetry.bin(self.bin_size).cut(self.x_min, self.x_max)
-        calculated_asymmetry = self(asymmetry.time)
-
-        np.savetxt(out_file, np.c_[asymmetry.time, asymmetry, calculated_asymmetry, asymmetry.uncertainty],
-                   fmt='%2.9f, %2.4f, %2.4f, %2.4f', header="BEAMS\n" + meta_string + "\nTime, Asymmetry, Calculated, Uncertainty")
-
-
 class FitEngine:
     def __init__(self):
         self.__run_service = domain.RunService()
