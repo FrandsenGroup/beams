@@ -138,6 +138,9 @@ class FitExpression:
                 return self.__expression(time_array, *unnamed_pars, **pars)
             raise
 
+    def set_fixed(self, parameters):
+        self.__fixed = {symbol: parameter.value for symbol, parameter in parameters}
+
 
 class FitConfig:
     LEAST_SQUARES = 1
