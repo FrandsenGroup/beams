@@ -8,7 +8,7 @@ import re
 import logging
 
 from app.resources import resources
-from app.model import domain, files
+from app.model import domain
 
 INDEPENDENT_VARIABLE = "t"
 
@@ -406,12 +406,12 @@ class FitEngine:
         #    in the lambda will start being used. See its definition for more on why.
         global_lambda_expression = self._lambdify_global(config, concatenated_time)
         residual = FitEngine._residual(global_lambda_expression)
-
-        dataset = FitDataset()
         
         # 3) Run a lease squares fit on the global lambda and concatenated datasets
         opt = least_squares(residual, guesses, bounds=[lowers, uppers], args=(concatenated_time, concatenated_asymmetry, concatenated_uncertainty))
+        self.__logger.debug(opt)
 
+        dataset = FitDataset()
         values = {}
         for i, symbol in enumerate(config.get_adjusted_global_symbols()):
             values[symbol] = opt.x[i]
@@ -460,6 +460,7 @@ class FitEngine:
                 # 6) Perform a least squares fit
                 opt = least_squares(residual, guesses, bounds=[lowers, uppers],
                                     args=(asymmetry.time, asymmetry, asymmetry.uncertainty))
+                self.__logger.debug(opt)
 
                 # 7) Replace initial values with fitted values for unfixed variables
                 for i, symbol in enumerate(config.get_symbols_for_run(run_id, is_fixed=False)):
@@ -492,7 +493,6 @@ class FitEngine:
         run_id_order = []
         for i, (run_id, asymmetry) in enumerate(config.data.items()):
             new_function = function
-            print('Replacing these symbols: ', config.get_symbols_for_run(run_id, is_global=False))
             for symbol in config.get_symbols_for_run(run_id, is_global=False):
                 new_function = FitEngine._replace_var_with(new_function, symbol, symbol + _shortened_run_id(run_id))
 
