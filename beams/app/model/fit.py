@@ -92,12 +92,15 @@ class FitParameter:
 
 
 class FitExpression:
-    def __init__(self, expression_string):
+    def __init__(self, expression_string, variables=None):
         self.__expression_string = expression_string
 
-        variables = parse(self.__expression_string)
-        variables.discard(INDEPENDENT_VARIABLE)
+        if variables is None:
+            variables = parse(self.__expression_string)
+            variables.discard(INDEPENDENT_VARIABLE)
+
         self.__expression = lambdify(self.__expression_string, variables, INDEPENDENT_VARIABLE)
+        self.__fixed = {}
 
     def __eq__(self, other):
         return str(other) == self.__expression_string
@@ -108,16 +111,7 @@ class FitExpression:
     def __call__(self, *args, **kwargs):
         # The length of this function is due to the fact I have trust issues.
 
-        if len(args) == 0:
-            raise ValueError("FitExpression needs at least one parameter (an array).")
-        elif not isinstance(args[0], np.ndarray):
-            try:
-                iter(args[0])
-                time_array = np.array(args[0])
-            except TypeError:
-                raise ValueError("First parameter to FitExpression needs to be an array.")
-        else:
-            time_array = args[0]
+        time_array = args[0]
 
         pars = {}
         unnamed_pars = []
@@ -132,6 +126,9 @@ class FitExpression:
                         raise ValueError("Every parameter after the array should be of type FitParameter.")
         for k, v in kwargs.items():
             pars[k] = v
+
+        for symbol, value in self.__fixed.items():
+            pars[symbol] = value
 
         try:
             return self.__expression(time_array, *unnamed_pars, **pars)
