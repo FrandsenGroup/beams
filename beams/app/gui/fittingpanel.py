@@ -491,7 +491,7 @@ class FittingPanel(Panel):
                                                                       QtWidgets.QHeaderView.Stretch)
             self.output_table.horizontalHeader().setSectionResizeMode(self.UNCERTAINTY_COLUMN,
                                                                       QtWidgets.QHeaderView.Stretch)
-            self.output_table.setEnabled(False)
+            self.output_table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
 
     def __init__(self):
         super(FittingPanel, self).__init__()
@@ -859,7 +859,7 @@ class FittingPanel(Panel):
     def add_parameter(self, symbol: str, config_value: float = None, config_lower: float = None,
                       config_upper: float = None, config_fixed: bool = None, batch_global: bool = None,
                       batch_run_dependent: bool = None, batch_value: float = None, output_value: float = None,
-                      output_uncertainty: float = None):
+                      output_uncertainty: float = None, run_id: str = None):
         n = self.parameter_table.config_table.verticalHeader().count()
 
         in_table = False
@@ -873,17 +873,17 @@ class FittingPanel(Panel):
                 in_table = True
                 if config_value:
                     item_value = QtWidgets.QTableWidgetItem()
-                    item_value.setText(str(config_value))
+                    item_value.setText('{:.5f}'.format(float(config_value)))
                     self.parameter_table.config_table.setItem(i, self.ParameterTable.VALUE_COLUMN, item_value)
 
                 if config_lower:
                     item_lower = QtWidgets.QTableWidgetItem()
-                    item_lower.setText(str(config_lower))
+                    item_lower.setText('{:.5f}'.format(float(config_lower)))
                     self.parameter_table.config_table.setItem(i, self.ParameterTable.MIN_COLUMN, item_lower)
 
                 if config_upper:
                     item_upper = QtWidgets.QTableWidgetItem()
-                    item_upper.setText(str(config_upper))
+                    item_upper.setText('{:.5f}'.format(float(config_upper)))
                     self.parameter_table.config_table.setItem(i, self.ParameterTable.MAX_COLUMN, item_upper)
 
                 if config_fixed is not None:
@@ -899,7 +899,7 @@ class FittingPanel(Panel):
 
             if config_value:
                 item_value = QtWidgets.QTableWidgetItem()
-                item_value.setText(str(config_value))
+                item_value.setText('{:.5f}'.format(float(config_value)))
                 self.parameter_table.config_table.setItem(n, self.ParameterTable.VALUE_COLUMN, item_value)
             else:
                 item_value = QtWidgets.QTableWidgetItem()
@@ -908,7 +908,7 @@ class FittingPanel(Panel):
 
             if config_lower:
                 item_lower = QtWidgets.QTableWidgetItem()
-                item_lower.setText(str(config_lower))
+                item_lower.setText('{:.5f}'.format(float(config_lower)))
                 self.parameter_table.config_table.setItem(n, self.ParameterTable.MIN_COLUMN, item_lower)
             else:
                 item_lower = QtWidgets.QTableWidgetItem()
@@ -917,7 +917,7 @@ class FittingPanel(Panel):
 
             if config_upper:
                 item_upper = QtWidgets.QTableWidgetItem()
-                item_upper.setText(str(config_upper))
+                item_upper.setText('{:.5f}'.format(float(config_upper)))
                 self.parameter_table.config_table.setItem(n, self.ParameterTable.MAX_COLUMN, item_upper)
             else:
                 item_upper = QtWidgets.QTableWidgetItem()
@@ -941,10 +941,13 @@ class FittingPanel(Panel):
                 continue
 
             if symbol == item.text():
+                if run_id:
+                    self.__batch_table_states[run_id] = (batch_value, batch_global, batch_run_dependent)
+
                 in_table = True
                 if batch_value:
                     item_value = QtWidgets.QTableWidgetItem()
-                    item_value.setText(str(batch_value))
+                    item_value.setText('{:.5f}'.format(float(batch_value)))
                     self.parameter_table.batch_table.setItem(i, self.ParameterTable.FIXED_VALUE_COLUMN, item_value)
 
                 if batch_global is not None:
@@ -956,6 +959,9 @@ class FittingPanel(Panel):
                     self.parameter_table.batch_table.setCellWidget(i, self.ParameterTable.FIXED_RUN_COLUMN, item_fixed)
 
         if not in_table:
+            if run_id:
+                self.__batch_table_states[run_id] = (batch_value, batch_global, batch_run_dependent)
+
             self.parameter_table.batch_table.setRowCount(n + 1)
 
             item_symbol = QtWidgets.QTableWidgetItem()
@@ -964,7 +970,7 @@ class FittingPanel(Panel):
 
             if batch_value:
                 item_value = QtWidgets.QTableWidgetItem()
-                item_value.setText(str(batch_value))
+                item_value.setText('{:.5f}'.format(float(batch_value)))
                 self.parameter_table.batch_table.setItem(n, self.ParameterTable.FIXED_VALUE_COLUMN, item_value)
             else:
                 item_value = QtWidgets.QTableWidgetItem()
@@ -998,12 +1004,12 @@ class FittingPanel(Panel):
                 in_table = True
                 if output_value:
                     item_value = QtWidgets.QTableWidgetItem()
-                    item_value.setText(str(output_value))
+                    item_value.setText('{:.8f}'.format(float(output_value)))
                     self.parameter_table.output_table.setItem(i, self.ParameterTable.OUTPUT_VALUE_COLUMN, item_value)
 
                 if output_uncertainty:
                     item_value = QtWidgets.QTableWidgetItem()
-                    item_value.setText(str(output_uncertainty))
+                    item_value.setText('{:.8f}'.format(float(output_uncertainty)))
                     self.parameter_table.output_table.setItem(i, self.ParameterTable.UNCERTAINTY_COLUMN, item_value)
 
         if not in_table:
@@ -1015,12 +1021,12 @@ class FittingPanel(Panel):
 
             if output_value:
                 item_value = QtWidgets.QTableWidgetItem()
-                item_value.setText(str(output_value))
+                item_value.setText('{:.8f}'.format(float(output_value)))
                 self.parameter_table.output_table.setItem(n, self.ParameterTable.OUTPUT_VALUE_COLUMN, item_value)
 
             if output_uncertainty:
                 item_value = QtWidgets.QTableWidgetItem()
-                item_value.setText(str(output_uncertainty))
+                item_value.setText('{:.8f}'.format(float(output_uncertainty)))
                 self.parameter_table.output_table.setItem(n, self.ParameterTable.UNCERTAINTY_COLUMN, item_value)
 
         self._update_batch_table_states()
@@ -1064,6 +1070,14 @@ class FittingPanel(Panel):
                 titles.append(item.text())
         return titles
 
+    def get_checked_run_ids(self):
+        ids = []
+        for i in range(self.run_list.count()):
+            item = self.run_list.item(i)
+            if item.checkState():
+                ids.append(item.identifier)
+        return ids
+
     def get_selected_run_titles(self):
         titles = []
         for i in range(self.run_list.count()):
@@ -1072,12 +1086,27 @@ class FittingPanel(Panel):
                 titles.append(item.text())
         return titles
 
+    def get_selected_run_ids(self):
+        ids = []
+        for i in range(self.run_list.count()):
+            item = self.run_list.item(i)
+            if item.isSelected():
+                ids.append(item.identifier)
+        return ids
+
     def get_all_run_titles(self):
         titles = []
         for i in range(self.run_list.count()):
             item = self.run_list.item(i)
             titles.append(item.text())
         return titles
+
+    def get_all_run_ids(self):
+        ids = []
+        for i in range(self.run_list.count()):
+            item = self.run_list.item(i)
+            ids.append(item.identifier)
+        return ids
 
     def get_parameters(self):
         parameters = []
@@ -1130,9 +1159,9 @@ class FittingPanel(Panel):
         self.run_list.clear()
 
         for run in runs:
-            file_item = QtWidgets.QListWidgetItem(run.meta[files.TITLE_KEY], self.run_list)
-            file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsUserCheckable)
-            file_item.setCheckState(QtCore.Qt.Unchecked)
+            run_item = widgets.IdentifiableListWidgetItem(run.id, run.meta[files.TITLE_KEY], self.run_list)
+            run_item.setFlags(run_item.flags() | QtCore.Qt.ItemIsUserCheckable)
+            run_item.setCheckState(QtCore.Qt.Unchecked)
 
     def copy_loaded_function_to_cursor(self):
         self.input_fit_equation.insert(fit.EQUATION_DICTIONARY[self.option_preset_fit_equations.currentText()])
@@ -1165,39 +1194,6 @@ class FittingPanel(Panel):
             else:
                 item.setCheckState(QtCore.Qt.Unchecked)
 
-    def set_variable_value(self, variable, value=None, name=None, is_fixed=None, lower=None, upper=None, is_global=None):
-        for i in range(self.table_parameters.rowCount()):
-            if self.table_parameters.verticalHeaderItem(i).text() == variable:
-
-                if value:
-                    item = QtWidgets.QTableWidgetItem()
-                    item.setText(str(value))
-                    self.table_parameters.setItem(i, self.__VALUE_COLUMN, item)
-
-                # if name:
-                #     item = QtWidgets.QTableWidgetItem()
-                #     item.setText(str(name))
-                #     self.table_parameters.setItem(i, self.__NAME_COLUMN, item)
-
-                if is_fixed:
-                    self.table_parameters.setCellWidget(i, self.__FIXED_COLUMN, self._create_check_box_for_table(is_fixed))
-
-                if lower:
-                    item = QtWidgets.QTableWidgetItem()
-                    item.setText(str(lower))
-                    self.table_parameters.setItem(i, self.__LOWER_COLUMN, item)
-
-                if upper:
-                    item = QtWidgets.QTableWidgetItem()
-                    item.setText(str(upper))
-                    self.table_parameters.setItem(i, self.__UPPER_COLUMN, item)
-
-                if is_global:
-                    self.table_parameters.setCellWidget(i, self.__GLOBAL_COLUMN, self._create_check_box_for_table(is_global))
-
-    def should_update_display(self):
-        return self.__update_states
-
     def clear(self):
         self.input_fit_equation.clear()
         for i in range(self.table_parameters.rowCount()):
@@ -1227,6 +1223,15 @@ class FittingPanel(Panel):
 # TODO We should treat fixed and non fixed identical after running a fit. Probably emphasize reference to output.
 
 # TODO Put write method in the domain objects (Asymmetry, Histogram etc).
+
+# TODO Replace List and Table Widget items with custom identifiable widgets. Store run ids, fit ids etc. This way we
+#   can stop relying on titles entirely. Though we need to figure out on what level we should update to a new title.
+
+# TODO Switch all constants like 'Checked' to new class, if its not compatible make our own module.
+
+# TODO Change how lambda works so we can get uncertainty of all parameters, even the fixed ones.
+
+# TODO Global and fixed-run-dependent can't be checked at the same time. Make a callback on the state changed.
 
 class FitTabPresenter(PanelPresenter):
     def __init__(self, view: FittingPanel):
@@ -1460,7 +1465,7 @@ class FitTabPresenter(PanelPresenter):
             expression = self._view.get_expression()
         except ValueError:
             self._view.highlight_input_red(self._view.parameter_table, True)
-            return
+            return None, {}
         self._view.highlight_input_red(self._view.parameter_table, False)
 
         final_parameters = {}
@@ -1511,9 +1516,11 @@ class FitTabPresenter(PanelPresenter):
             self._view.highlight_input_red(self._view.run_list, False)
 
         variables = {}
+        fit_titles = {}
         for title in titles:
             for run in self._runs:
                 if run.meta[files.TITLE_KEY] == title:
+                    fit_titles[run.id] = title
                     if run.id in self._asymmetries.keys():
                         config.data[run.id] = self._asymmetries[run.id]
                     else:
@@ -1538,15 +1545,16 @@ class FitTabPresenter(PanelPresenter):
                     variables[run.id] = run_parameters
 
         config.parameters = variables
+        config.titles = fit_titles
         config.set_flags(config.LEAST_SQUARES, config.GLOBAL_PLUS if self._view.check_global_plus.isChecked() else 0)
         self.__logger.debug(str(config))
 
         # Fit to spec
-        # engine = fit.FitEngine()
-        # dataset = engine.fit(config)
-        # self._fit_service.add_dataset([dataset])
-        # self._update_alphas(dataset)
-        # self._update_fit_changes(dataset)
+        engine = fit.FitEngine()
+        dataset = engine.fit(config)
+        self._fit_service.add_dataset([dataset])
+        self._update_alphas(dataset)
+        self._update_fit_changes(dataset)
         # self.__update_if_table_changes = True
 
     def _new_empty_fit(self):
@@ -1563,44 +1571,53 @@ class FitTabPresenter(PanelPresenter):
             return
 
         if type(selected_data) == fit.Fit:
-            print('here')
             for i in range(self._view.run_list.count()):
                 item = self._view.run_list.item(i)
-                if item.text() == selected_data.title:
+                if item.identifier == selected_data.run_id:
                     item.setCheckState(QtCore.Qt.Checked)
                 else:
                     item.setCheckState(QtCore.Qt.Unchecked)
 
-            self._view.update_variable_table(list(selected_data.variables.keys()))
-            for symbol, variable in selected_data.variables.items():
-                self._view.set_variable_value(symbol, value='{:.4f}'.format(variable.value))
+            self._view.clear_parameters(selected_data.parameters.keys())
+            for symbol, parameter in selected_data.parameters.items():
+                self._view.add_parameter(symbol=parameter.symbol, config_value=parameter.value,
+                                         config_lower=parameter.lower, config_upper=parameter.upper,
+                                         config_fixed=parameter.is_fixed, batch_global=parameter.is_global,
+                                         batch_run_dependent=parameter.is_fixed_run, batch_value=parameter.fixed_value,
+                                         output_value=parameter.output, output_uncertainty=parameter.uncertainty,
+                                         run_id=selected_data.run_id)
 
-            run = self._run_service.get_runs_by_ids([selected_data.run_id])[0]
-            self._view.input_file_name.setText('{}_fit.txt'.format(run.meta['RunNumber']))
+            self._view.input_file_name.setText('{}_fit.txt'.format(selected_data.title))
             self._view.input_folder_name.setText(files.load_last_used_directory())
             self.__expression = selected_data.expression
-            self.__variable_groups = [selected_data.kwargs]
-            self._view.input_fit_equation.setText(selected_data.expression_as_string)
+            self.__variable_groups = {selected_data.run_id: selected_data.parameters}
+            self._view.input_fit_equation.setText(str(selected_data.expression))
             self._update_display()
 
         elif type(selected_data) == fit.FitDataset:
-            titles = [f.title for f in selected_data.fits.values()]
             for i in range(self._view.run_list.count()):
                 item = self._view.run_list.item(i)
-                if item.text() in titles:
+                if item.identifier in selected_data.fits.keys():
                     item.setCheckState(QtCore.Qt.Checked)
                 else:
                     item.setCheckState(QtCore.Qt.Unchecked)
 
-            self._view.update_variable_table(list(list(selected_data.fits.values())[0].variables.keys()))
-            for symbol in list(selected_data.fits.values())[0].variables.keys():
-                self._view.set_variable_value(symbol, value='*')
+            for run_id, f in selected_data.fits.items():
+                self._view.clear_parameters(f.parameters.keys())
+                for symbol, parameter in f.parameters.items():
+                    self._view.add_parameter(symbol=parameter.symbol, config_value=parameter.value,
+                                             config_lower=parameter.lower, config_upper=parameter.upper,
+                                             config_fixed=parameter.is_fixed, batch_global=parameter.is_global,
+                                             batch_run_dependent=parameter.is_fixed_run, batch_value=parameter.fixed_value,
+                                             output_value=parameter.output, output_uncertainty=parameter.uncertainty,
+                                             run_id=run_id)
+
+            fits = list(selected_data.fits.values())
             self._view.input_file_name.setText('{}_fit.txt'.format(selected_data.id))
             self._view.input_folder_name.setText(files.load_last_used_directory())
-            fits = list(selected_data.fits.values())
-            self._view.input_fit_equation.setText(fits[0].expression_as_string)
+            self._view.input_fit_equation.setText(str(fits[0].expression))
             self.__expression = fits[0].expression
-            self.__variable_groups = [f.kwargs for f in fits]
+            self.__variable_groups = {f.run_id: f.parameters for f in fits}
             self._update_display()
 
         else:
@@ -1614,27 +1631,15 @@ class FitTabPresenter(PanelPresenter):
         self._view.select_first_fit_from_dataset(dataset.id)
         self.__update_if_table_changes = False
         self._view.select_top_child_run(dataset.id)
-        self.__update_if_table_changes = False
-
-        titles = self._view.get_checked_run_titles()
-        for f in dataset.fits.values():
-            if f.title in titles:
-                for symbol, variable in f.variables.items():
-                    self.__update_if_table_changes = False
-                    self._view.set_variable_value(symbol, value='{:.4f}'.format(variable.value), name=variable.name,
-                                                  is_fixed=variable.is_fixed, lower=variable.lower, upper=variable.upper,
-                                                  is_global=variable.is_global)
-                    self.__update_if_table_changes = False
         self.__update_if_table_changes = True
         self._update_display()
 
     def _update_alphas(self, dataset):
         ids = []
         alphas = []
-        for f in dataset.fits.values():
-            if fit.ALPHA in f.variables.keys():
-                ids.append(f.run_id)
-                alphas.append(f.variables[fit.ALPHA].value)
+        for run_id, f in dataset.fits.items():
+            ids.append(run_id)
+            alphas.append(f.parameters[fit.ALPHA].value)
 
         if len(ids) > 0:
             self._run_service.update_alphas(ids, alphas)
