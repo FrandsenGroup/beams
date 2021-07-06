@@ -218,6 +218,62 @@ class FitConfig:
 
         return values
 
+    def get_adjusted_global_symbols(self):
+        symbols = []
+        for i, run_id in enumerate(self.parameters.keys()):
+            for symbol, parameter in self.parameters[run_id].items():
+                if parameter.is_global and i == 0:
+                    symbols.append(symbol)
+                elif not parameter.is_global:
+                    symbols.append(symbol + _shortened_run_id(run_id))
+
+        return symbols
+
+    def get_adjusted_global_values(self):
+        values = []
+        for i, run_id in enumerate(self.parameters.keys()):
+            for _, parameter in self.parameters[run_id].items():
+                if parameter.is_global and i == 0:
+                    values.append(parameter.value)
+                elif not parameter.is_global:
+                    values.append(parameter.value)
+
+        return values
+
+    def get_adjusted_global_lowers(self):
+        lowers = []
+        for i, run_id in enumerate(self.parameters.keys()):
+            for _, parameter in self.parameters[run_id].items():
+                if parameter.is_global and i == 0:
+                    if parameter.is_fixed:
+                        lowers.append(parameter.value - 0.0000001)
+                    else:
+                        lowers.append(parameter.lower)
+                elif not parameter.is_global:
+                    if parameter.is_fixed or parameter.is_fixed_run:
+                        lowers.append(parameter.value - 0.0000001)
+                    else:
+                        lowers.append(parameter.lower)
+
+        return lowers
+
+    def get_adjusted_global_uppers(self):
+        uppers = []
+        for i, run_id in enumerate(self.parameters.keys()):
+            for _, parameter in self.parameters[run_id].items():
+                if parameter.is_global and i == 0:
+                    if parameter.is_fixed:
+                        uppers.append(parameter.value + 0.0000001)
+                    else:
+                        uppers.append(parameter.upper)
+                elif not parameter.is_global:
+                    if parameter.is_fixed or parameter.is_fixed_run:
+                        uppers.append(parameter.value + 0.0000001)
+                    else:
+                        uppers.append(parameter.upper)
+
+        return uppers
+
     def get_kwargs(self, run_id):
         kwargs = {}
         for symbol, parameter in self.parameters[run_id].items():
