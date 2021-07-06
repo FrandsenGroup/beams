@@ -350,6 +350,17 @@ class StyleOneLabel(QtWidgets.QLabel):
         super(StyleOneLabel, self).__init__(*args)
 
 
+class IdentifiableListWidgetItem(QtWidgets.QListWidgetItem):
+    def __init__(self, identifier, *pars, **kwargs):
+        super().__init__(*pars, **kwargs)
+        self.identifier = identifier
+
+
+class IdentifiableTableWidgetItem(QtWidgets.QTableWidgetItem):
+    def __init__(self, identifier, *pars, **kwargs):
+        super().__init__(*pars, **kwargs)
+        self.identifier = identifier
+
 """
 The MIT License (MIT)
 Copyright (c) 2012-2014 Alexander Turkin
