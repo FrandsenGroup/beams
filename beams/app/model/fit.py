@@ -202,7 +202,11 @@ class FitConfig:
                     or (is_fixed is not None and (is_fixed == parameter.is_fixed and is_fixed == parameter.is_fixed_run)) \
                     or (is_global and parameter.is_global) \
                     or (is_global is not None and (is_global == parameter.is_global)):
-                values.append(parameter.lower)
+
+                if parameter.is_fixed or parameter.is_fixed_run:
+                    values.append(parameter.get_value() - 0.0000001)
+                else:
+                    values.append(parameter.lower)
 
         return values
 
@@ -215,7 +219,11 @@ class FitConfig:
                     or (is_fixed is not None and (is_fixed == parameter.is_fixed and is_fixed == parameter.is_fixed_run)) \
                     or (is_global and parameter.is_global) \
                     or (is_global is not None and (is_global == parameter.is_global)):
-                values.append(parameter.upper)
+
+                if parameter.is_fixed or parameter.is_fixed_run:
+                    values.append(parameter.get_value() + 0.0000001)
+                else:
+                    values.append(parameter.upper)
 
         return values
 
@@ -246,13 +254,13 @@ class FitConfig:
         for i, run_id in enumerate(self.parameters.keys()):
             for _, parameter in self.parameters[run_id].items():
                 if parameter.is_global and i == 0:
-                    if parameter.is_fixed:
-                        lowers.append(parameter.value - 0.0000001)
+                    if parameter.is_fixed or parameter.is_fixed_run:
+                        lowers.append(parameter.get_value() - 0.0000001)
                     else:
                         lowers.append(parameter.lower)
                 elif not parameter.is_global:
                     if parameter.is_fixed or parameter.is_fixed_run:
-                        lowers.append(parameter.value - 0.0000001)
+                        lowers.append(parameter.get_value() - 0.0000001)
                     else:
                         lowers.append(parameter.lower)
 
@@ -263,13 +271,13 @@ class FitConfig:
         for i, run_id in enumerate(self.parameters.keys()):
             for _, parameter in self.parameters[run_id].items():
                 if parameter.is_global and i == 0:
-                    if parameter.is_fixed:
-                        uppers.append(parameter.value + 0.0000001)
+                    if parameter.is_fixed or parameter.is_fixed_run:
+                        uppers.append(parameter.get_value() + 0.0000001)
                     else:
                         uppers.append(parameter.upper)
                 elif not parameter.is_global:
                     if parameter.is_fixed or parameter.is_fixed_run:
-                        uppers.append(parameter.value + 0.0000001)
+                        uppers.append(parameter.get_value() + 0.0000001)
                     else:
                         uppers.append(parameter.upper)
 
@@ -285,6 +293,7 @@ class FitConfig:
     def set_outputs(self, run_id, symbol, output, uncertainty):
         self.parameters[run_id][symbol].value = output  # You may be tempted to keep this value... Go for it.
         self.parameters[run_id][symbol].output = output
+        self.parameters[run_id][symbol].fixed_value = output
         self.parameters[run_id][symbol].uncertainty = uncertainty
 
 
@@ -382,17 +391,21 @@ class FitEngine:
                 return self._least_squares_fit_non_global(config)
 
     def _least_squares_fit_global(self, config: FitConfig):
-        # (0) Get the parameters for our variables. These are generated to work with our stepwise approach.
+        # The methods from config will get the adjusted symbols, values, etc. in the same order every time for a global
+        #   fit (which is necessary because we can't specify which value belongs to which symbol in the scipy least
+        #   squares function.
         guesses = config.get_adjusted_global_values()
         lowers = config.get_adjusted_global_lowers()
         uppers = config.get_adjusted_global_uppers()
 
+        # Don't mind me, just using your io to log for my personal needs.
         self.__logger.debug(config.get_adjusted_global_symbols())
         self.__logger.debug(guesses)
         self.__logger.debug(lowers)
         self.__logger.debug(uppers)
 
-        # 1) Concatenate our time, asymmetry and uncertainty arrays for each dataset together.
+        # We are essentially doing one big fit where you will have global and local (local to a specific section of the
+        #   concatenated asymmetry) parameters being refined.
         concatenated_asymmetry = np.array([])
         concatenated_uncertainty = np.array([])
         concatenated_time = np.array([])
@@ -401,16 +414,18 @@ class FitEngine:
             concatenated_uncertainty = np.concatenate((concatenated_uncertainty, asymmetry.uncertainty))
             concatenated_time = np.concatenate((concatenated_time, asymmetry.time))
 
-        # 2) Create a single global lambda function for all the datasets. Essentially, it acts like a 
+        # Create a single global lambda function for all the datasets. Essentially, it acts like a
         #    stepwise function, once you pass into the asymmetry of another dataset, a separate function
         #    in the lambda will start being used. See its definition for more on why.
         global_lambda_expression = self._lambdify_global(config, concatenated_time)
         residual = FitEngine._residual(global_lambda_expression)
         
-        # 3) Run a lease squares fit on the global lambda and concatenated datasets
+        # Run a lease squares fit with the global lambda and concatenated datasets
         opt = least_squares(residual, guesses, bounds=[lowers, uppers], args=(concatenated_time, concatenated_asymmetry, concatenated_uncertainty))
         self.__logger.debug(opt)
 
+        # Assemble the Fit object, first by updating the parameters in the config with the outputs from
+        #   the fit, as well as adding a FitExpression object that can be called.
         dataset = FitDataset()
         values = {}
         for i, symbol in enumerate(config.get_adjusted_global_symbols()):
@@ -436,37 +451,32 @@ class FitEngine:
 
         return dataset
 
-    @staticmethod
-    def _least_squares_fit_non_global(config) -> FitDataset:
+    # FIXME We need to update this to use the new BETTER ;) fixed method
+    def _least_squares_fit_non_global(self, config) -> FitDataset:
         dataset = FitDataset()
         for run_id, asymmetry in config.data.items():
-            if len(config.get_symbols_for_run(run_id, is_fixed=False)) == 0:
-                for i, symbol in enumerate(config.get_symbols_for_run(run_id, is_fixed=True)):
-                    config.set_outputs(run_id, symbol, config.parameters[symbol].get_value(), 0)
-            else:
-                fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
-                fixed_values = config.get_values_for_run(run_id, is_fixed=True)
+            # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
+            function = ALPHA_CORRECTION.format(config.expression, config.expression)
+            lambda_expression = FitExpression(function, variables=config.get_symbols_for_run(run_id))
+            residual = FitEngine._residual(lambda_expression)
 
-                # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
-                alpha_corrected_function = ALPHA_CORRECTION.format(config.expression, config.expression)
-                function = FitEngine._replace_fixed(alpha_corrected_function, fixed_symbols, fixed_values)
-                lambda_expression = FitExpression(function)
-                residual = FitEngine._residual(lambda_expression)
+            guesses = config.get_values_for_run(run_id)
+            lowers = config.get_lower_values_for_run(run_id)
+            uppers = config.get_upper_values_for_run(run_id)
 
-                guesses = config.get_values_for_run(run_id, is_fixed=False)
-                lowers = config.get_lower_values_for_run(run_id, is_fixed=False)
-                uppers = config.get_upper_values_for_run(run_id, is_fixed=False)
+            self.__logger.debug(config.get_symbols_for_run(run_id))
+            self.__logger.debug(guesses)
+            self.__logger.debug(lowers)
+            self.__logger.debug(uppers)
 
-                # 6) Perform a least squares fit
-                opt = least_squares(residual, guesses, bounds=[lowers, uppers],
-                                    args=(asymmetry.time, asymmetry, asymmetry.uncertainty))
-                self.__logger.debug(opt)
+            # 6) Perform a least squares fit
+            opt = least_squares(residual, guesses, bounds=[lowers, uppers],
+                                args=(asymmetry.time, asymmetry, asymmetry.uncertainty))
+            self.__logger.debug(opt)
 
-                # 7) Replace initial values with fitted values for unfixed variables
-                for i, symbol in enumerate(config.get_symbols_for_run(run_id, is_fixed=False)):
-                    config.set_outputs(run_id, symbol, opt.x[i], 0)
-                for i, symbol in enumerate(config.get_symbols_for_run(run_id, is_fixed=True)):
-                    config.set_outputs(run_id, symbol, config.parameters[run_id][symbol].get_value(), 0)
+            # 7) Replace initial values with fitted values for unfixed variables
+            for i, symbol in enumerate(config.get_symbols_for_run(run_id)):
+                config.set_outputs(run_id, symbol, opt.x[i], 0)
 
             # 8) Create a callable function of our original string function
             lambda_expression = FitExpression(config.expression)
