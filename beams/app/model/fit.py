@@ -551,8 +551,6 @@ class FitEngine:
             lambdas[run_id] = new_lambda_expression
             run_id_order.append(run_id)
 
-            print('\tThis function will apply until time : ', concatenated_time[((i + 1) * spec.get_data_length()) - 1])
-
         def _lambda_expression(arr, *pars, **kwargs):
             values = []
             length = len(arr)
@@ -777,61 +775,3 @@ def _residual(lambda_expression):
         y_calc = lambda_expression(x, *pars)
         return (y_data - y_calc) / dy_data
     return residual
-
-
-t0 = 'a + b + c + d + x + t'
-t1 = FitExpression(t0)
-t6 = _residual(t1)
-t2 = FitParameter('a', 1, 0, None, None, False, False)
-t3 = FitParameter('b', 2, 0, None, None, False, False)
-t4 = FitParameter('c', 3, 0, None, None, False, False)
-t5 = np.array([0, 1, 2, 3])
-
-print(t2, t3, t4)
-print(t1)
-print(t1(t5, *(1, 2, 3, 4, 5)))
-print(t1(t5, a=1, b=2, c=3, d=4, x=5))
-print(t1(t5, *(t2, t3, t4), d=4, x=5))
-
-opt = least_squares(t6, [1, 2, 3, 4, 5], bounds=[[-100, -100, -100, -100, -100], [100, 100, 100, 100, 100]],
-                                    args=(np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), np.array([5, 2, 1, 4, 5, 2, 7, 6, 9, 10]), np.array([1, 2, 1, 2, 1, 2, 1, 1, 1, 2])))
-
-# tspec = FitSpec()
-# tfunction = 't + az - bz - dz + cz'
-# tvara = FitVar('az', 'a', 1, False, 0, 4, True, False)
-# tvarb = FitVar('bz', 'b', 1, False, 0, 4, False, False)
-# tvarc = FitVar('cz', 'c', 1, True, 0, 4, True, False)
-# tvard = FitVar('dz', 'd', 1, False, 0, 4, False, False)
-# tdata1 = [1, 2, 3, 4, 5]
-# tdata2 = [2, 3, 4, 5, 6]
-# tdataid1 = 'data1'
-# tdataid2 = 'data2'
-# tspec.function = tfunction
-# tspec.variables = {'az': tvara, 'bz': tvarb, 'cz': tvarc, 'dz': tvard}
-# tspec.asymmetries = {tdataid1: tdata1, tdataid2: tdata2}
-# # tspec.options[FitOptions.ALPHA_CORRECT] = True
-# ttime = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-#
-# # print(tspec.get_data())
-# # for i, j in enumerate(tspec.get_data().items()):
-# #     print(i, j)
-#
-# print(tspec.get_global_fit_symbols())
-# texpr = FitEngine._lambdify_global(tspec, ttime)
-# print(texpr(4, az=2, bzdata1=3, bzdata2=4, dzdata1=5, dzdata2=6), texpr(11, az=2, bzdata1=3, bzdata2=4, dzdata1=5, dzdata2=6))
-
-
-# test_expression = 't + c - b'
-# test_variables = {'c', 'b', 'd'}
-# test_independent = 't'
-# test_lambda = lambdify(test_expression, test_variables, test_independent)
-# print(test_lambda(1, d=3, b=7, c=11))
-# # print(np.array([4.2, 3, 2, 1]).dtype)
-# # print(test_lambda(np.array([4.2,3,2,1]), **{'c': 4, 'b': 1}))
-#
-# fit = Fit()
-# fit.variables = {'c': FitVar('c', 'c', 0, 1, -3, 3, True, False), 'b': FitVar('b', 'b', 1, 1, -3, 3, True, False)}
-# fit.expression_as_lambda = test_lambda
-# print(asy)
-
-# f(x, t)
