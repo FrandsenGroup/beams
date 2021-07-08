@@ -278,19 +278,12 @@ class MuonAsymmetryFile(ReadableFile):
             f.readline()
             metadata_line = f.readline().rstrip('\n').rsplit('# ')[1].rsplit(',')
 
-        metadata = [pair.rsplit(':') for pair in metadata_line[:-4]]
+        metadata = [pair.rsplit(':') for pair in metadata_line]
         for pair in metadata:
             if len(pair) < 2:
                 pair.append('n/a')
         metadata = {pair[0]: pair[1] for pair in metadata}
-
-        t0_dict = ''.join(metadata_line[-4:])
-        t0_values = t0_dict.split('{')[1].split('}')[0].split('\'')
-        metadata[T0_KEY] = {t0_values[1]: t0_values[3],
-                            t0_values[5]: t0_values[7],
-                            t0_values[9]: t0_values[11],
-                            t0_values[13]: t0_values[15]}
-
+        metadata[T0_KEY] = 0
         return metadata
 
 
