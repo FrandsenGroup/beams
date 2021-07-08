@@ -245,6 +245,9 @@ class Asymmetry(np.ndarray):
                          time=self.time.bin(packing), uncertainty=self.uncertainty.bin(packing), alpha=self.alpha)
 
     def correct(self, alpha):
+        if self.alpha == alpha:
+            return self
+
         current_asymmetry = self
 
         if self.alpha != 1:
