@@ -240,9 +240,9 @@ class Asymmetry(np.ndarray):
 
         return binned_asymmetry
 
-    def bin(self, packing, use_t0=True):
+    def bin(self, packing):
         return Asymmetry(input_array=self._bin_asymmetry(packing), time_zero=self.time_zero, bin_size=packing,
-                         time=self.time.bin(packing, use_t0), uncertainty=self.uncertainty.bin(packing), alpha=self.alpha)
+                         time=self.time.bin(packing), uncertainty=self.uncertainty.bin(packing), alpha=self.alpha)
 
     def correct(self, alpha):
         input_array = ((alpha - 1) + ((alpha + 1) * self)) / \
@@ -363,7 +363,7 @@ class Time(np.ndarray):
 
         return self
 
-    def bin(self, packing, use_t0=True):
+    def bin(self, packing):
         bin_full = float(self.bin_size) / 1000
         bin_binned = float(packing) / 1000
         num_bins = len(self)
@@ -376,12 +376,7 @@ class Time(np.ndarray):
         binned_indices_total = int(np.floor(num_bins / binned_indices_per_bin))
         time_per_binned = binned_indices_per_bin * bin_full
 
-        print(t0, bin_binned, bin_full, num_bins, binned_indices_per_bin, binned_indices_total, time_per_binned)
-
-        if use_t0:
-            return (np.arange(binned_indices_total) * time_per_binned) + (t0 * bin_full) + (time_per_binned / 2)
-        else:
-            return (np.arange(binned_indices_total) * time_per_binned)+ (time_per_binned / 2)
+        return (np.arange(binned_indices_total) * time_per_binned) + (t0 * bin_full) + (time_per_binned / 2)
 
 
 # min, max
@@ -473,7 +468,7 @@ class RunDataset:
                           + files.T0_KEY + ":" + str(self.asymmetries[self.FULL_ASYMMETRY].time.time_zero)
 
             if bin_size:
-                asymmetry = self.asymmetries[RunDataset.FULL_ASYMMETRY].bin(bin_size, use_t0=False)
+                asymmetry = self.asymmetries[RunDataset.FULL_ASYMMETRY].bin(bin_size)
             else:
                 asymmetry = self.asymmetries[RunDataset.FULL_ASYMMETRY]
 
