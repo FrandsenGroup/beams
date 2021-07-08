@@ -245,8 +245,16 @@ class Asymmetry(np.ndarray):
                          time=self.time.bin(packing), uncertainty=self.uncertainty.bin(packing), alpha=self.alpha)
 
     def correct(self, alpha):
-        input_array = ((alpha - 1) + ((alpha + 1) * self)) / \
-                      ((alpha + 1) + ((alpha - 1) * self))
+        if self.alpha == alpha:
+            return self
+
+        current_asymmetry = self
+
+        if self.alpha != 1:
+            current_asymmetry = self.raw()
+
+        input_array = ((alpha - 1) + ((alpha + 1) * current_asymmetry)) / \
+                      ((alpha + 1) + ((alpha - 1) * current_asymmetry))
 
         return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
                          time=self.time, uncertainty=self.uncertainty, alpha=alpha)
@@ -463,6 +471,7 @@ class RunDataset:
         if self.asymmetries[self.FULL_ASYMMETRY] is not None:
             meta_string = files.TITLE_KEY + ":" + str(self.meta[files.TITLE_KEY]) + "," \
                           + files.BIN_SIZE_KEY + ":" + str(bin_size) + "," \
+                          + files.RUN_NUMBER_KEY + ":" + str(self.meta[files.RUN_NUMBER_KEY]) + "," \
                           + files.TEMPERATURE_KEY + ":" + str(self.meta[files.TEMPERATURE_KEY]) + "," \
                           + files.FIELD_KEY + ":" + str(self.meta[files.FIELD_KEY]) + "," \
                           + files.T0_KEY + ":" + str(self.asymmetries[self.FULL_ASYMMETRY].time.time_zero)
@@ -731,9 +740,6 @@ class RunService:
 
         for rid, alpha in zip(ids, alphas):
             run = RunService.__dao.get_runs_by_ids([rid])[0]
-
-            if run.asymmetries[RunDataset.FULL_ASYMMETRY].alpha != 1:
-                run.asymmetries[RunDataset.FULL_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].raw()
 
             run.asymmetries[RunDataset.FULL_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].correct(alpha)
 

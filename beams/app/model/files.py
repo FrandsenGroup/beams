@@ -52,6 +52,7 @@ BACKGROUND_ONE_KEY = 'BkgdOne'
 BACKGROUND_TWO_KEY = 'BkgdTwo'
 GOOD_BIN_ONE_KEY = 'GoodBinOne'
 GOOD_BIN_TWO_KEY = 'GoodBinTwo'
+RUN_NUMBER_KEY = 'RunNumber'
 T0_KEY = 'T0'
 CALC_HISTS_KEY = 'CalcHists'
 
