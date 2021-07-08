@@ -635,10 +635,10 @@ class DataBuilder:
             data = f.read_data()
             asymmetry_values = np.array(data['Asymmetry'].values)
             uncertainty_values = np.array(data['Uncertainty'].values)
-            time_values = np.array(data['Values'].values)
+            time_values = np.array(data['Time'].values)
 
             asymmetry = Asymmetry(input_array=asymmetry_values,
-                                  time_zero=d.meta[files.T0_KEY],
+                                  time_zero=d.meta[files.T0_KEY][list(d.meta[files.T0_KEY].keys())[0]],
                                   bin_size=d.meta[files.BIN_SIZE_KEY],
                                   uncertainty=uncertainty_values,
                                   time=time_values)

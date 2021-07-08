@@ -122,9 +122,10 @@ class MainConsolePanel(QtWidgets.QDockWidget):
             if isinstance(data_object, RunDataset):
                 if data_object.isLoaded:
                     histogram_node = MainConsolePanel.HeadingNode("Histograms")
-                    for histogram in data_object.histograms.values():
-                        histogram_node.addChild(MainConsolePanel.HistogramNode(histogram))
-                    self.addChild(histogram_node)
+                    if data_object.histograms:
+                        for histogram in data_object.histograms.values():
+                            histogram_node.addChild(MainConsolePanel.HistogramNode(histogram))
+                        self.addChild(histogram_node)
 
                     asymmetry_node = MainConsolePanel.HeadingNode("Asymmetries")
                     for asymmetry in data_object.asymmetries.values():
