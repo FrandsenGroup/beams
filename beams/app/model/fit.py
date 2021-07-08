@@ -29,7 +29,7 @@ LORENTZIAN_KT = "1/3 + 2/3*(1 - \u03BB*t)*exp(-\u03BB*t)"
 COMBINED_KT = "1/3 + 2/3*(1-\u03C3^2*t^2-\u03BB*t)*exp(-\u03C3^2*t^2/2-\u03BB*t)"
 STRETCHED_KT = "1/3 + 2/3*(1-(\u03C3*t)^\u03B2)*exp(-(\u03C3*t)^\u03B2/\u03B2)"
 COSINE = "a*cos(2*\u03C0*v*t + \u03C0*\u03A6/180)*exp(-\u03B2*t)"
-INTERNAL_COSINE = "a*cos(2*\u03C0*v*t + \u03C0*\u03A6/180)*exp(-\u03BB*t) + (1-\u03B1)*exp(-\u03BB*t)"
+INTERNAL_COSINE = "a*cos(2*\u03C0*v*t + \u03C0*\u03A6/180)*exp(-\u03BB*t) + (1-\u03B12)*exp(-\u03BB*t)"
 BESSEL = "j\u2080*(2*\u03C0*v*t + \u03C0*\u03A6/180)"
 INTERNAL_BESSEL = "\u03B1*j\u2080*(2*\u03C0*v*t + \u03C0*\u03A6/180)*exp(-\u03BB*t) + (1-\u03B1)*exp(-\u03BB*t)"
 
@@ -574,6 +574,7 @@ def parse(s):
     # Add to these sets any keywords you want to be recognized as not variables.
     # Keep keywords lowercase, user input will be cast to lowercase for comparison.
     operator_set = ('+', '-', '/', '*', '(', ')', '[', ']', '{', '}', '^', '!')
+    operating_set = ('+', '-', '/', '*', '^')
     key_1_char_set = ('e', 'i', PI)
     key_2_char_set = ('pi')
     key_3_char_set = ('sin', 'cos', 'tan', 'exp')
@@ -582,29 +583,41 @@ def parse(s):
     free_set = set()
     free_variable = []
     skip_chars = 0
-
+    last_was_operator = False
     for i, character in enumerate(s):
         if skip_chars > 0:
             skip_chars -= 1
             continue
 
         if character.isspace() or character in operator_set:
+            if last_was_operator and character in operating_set and character != '-':
+                raise ValueError('Bad expression')
+            last_was_operator = character in operating_set
+
             free_variable_joined = "".join(free_variable)
             free_set.add(free_variable_joined)
             free_variable = []
 
         elif character.isalpha():
             if s[i:i + 4].lower() in key_4_char_set:
+                if len(free_variable) > 0:
+                    raise ValueError('Bad expression')
                 skip_chars = 3
                 continue
             elif s[i:i + 3].lower() in key_3_char_set:
+                if len(free_variable) > 0:
+                    raise ValueError('Bad expression')
                 skip_chars = 2
                 continue
             elif s[i:i + 2].lower() in key_2_char_set:
+                if len(free_variable) > 0:
+                    raise ValueError('Bad expression')
                 skip_chars = 1
                 continue
             elif len(free_variable) == 0 and (s[i] in key_1_char_set or s[i].lower() in key_1_char_set) and \
                     (i == len(s) - 1 or s[i + 1] in operator_set or s[i + 1].isspace()):
+                if len(free_variable) > 0:
+                    raise ValueError('Bad expression')
                 continue
             else:
                 free_variable.append(character)
@@ -615,12 +628,21 @@ def parse(s):
 
     free_variable_joined = "".join(free_variable)
     free_set.add(free_variable_joined)
-    free_set.remove('')
+
+    try:
+        free_set.remove('')
+    except KeyError:
+        pass
 
     return free_set
 
 
 def is_valid_expression(expression):
+    try:
+        parse(split_expression(expression)[1])
+    except (ValueError, TypeError):
+        return False
+
     if "=" not in expression:
         return False
 

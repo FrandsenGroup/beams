@@ -1478,7 +1478,7 @@ class FitTabPresenter(PanelPresenter):
                                                           fixed_value=float(fixed_run_dict[run.meta[files.TITLE_KEY]][2]))
             final_parameters[run.id] = run_parameters
 
-        if fit.is_valid_expression("A(t) = " + expression):
+        if fit.is_valid_expression("A(t) = " + expression) and len(parameters) > 1:
             lambda_expression = fit.FitExpression(expression)
             return lambda_expression, final_parameters
         else:
