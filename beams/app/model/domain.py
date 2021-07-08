@@ -245,8 +245,13 @@ class Asymmetry(np.ndarray):
                          time=self.time.bin(packing), uncertainty=self.uncertainty.bin(packing), alpha=self.alpha)
 
     def correct(self, alpha):
-        input_array = ((alpha - 1) + ((alpha + 1) * self)) / \
-                      ((alpha + 1) + ((alpha - 1) * self))
+        current_asymmetry = self
+
+        if self.alpha != 1:
+            current_asymmetry = self.raw()
+
+        input_array = ((alpha - 1) + ((alpha + 1) * current_asymmetry)) / \
+                      ((alpha + 1) + ((alpha - 1) * current_asymmetry))
 
         return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
                          time=self.time, uncertainty=self.uncertainty, alpha=alpha)
@@ -732,9 +737,6 @@ class RunService:
 
         for rid, alpha in zip(ids, alphas):
             run = RunService.__dao.get_runs_by_ids([rid])[0]
-
-            if run.asymmetries[RunDataset.FULL_ASYMMETRY].alpha != 1:
-                run.asymmetries[RunDataset.FULL_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].raw()
 
             run.asymmetries[RunDataset.FULL_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].correct(alpha)
 
