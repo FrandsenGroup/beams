@@ -1313,7 +1313,6 @@ class FitTabPresenter(PanelPresenter):
             return
 
         if type(selected_data) == fit.Fit:
-            print('here')
             for i in range(self._view.run_list.count()):
                 item = self._view.run_list.item(i)
                 if item.text() == selected_data.title:
