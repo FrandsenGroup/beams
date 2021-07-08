@@ -463,6 +463,7 @@ class RunDataset:
         if self.asymmetries[self.FULL_ASYMMETRY] is not None:
             meta_string = files.TITLE_KEY + ":" + str(self.meta[files.TITLE_KEY]) + "," \
                           + files.BIN_SIZE_KEY + ":" + str(bin_size) + "," \
+                          + files.RUN_NUMBER_KEY + ":" + str(self.meta[files.RUN_NUMBER_KEY]) + "," \
                           + files.TEMPERATURE_KEY + ":" + str(self.meta[files.TEMPERATURE_KEY]) + "," \
                           + files.FIELD_KEY + ":" + str(self.meta[files.FIELD_KEY]) + "," \
                           + files.T0_KEY + ":" + str(self.asymmetries[self.FULL_ASYMMETRY].time.time_zero)

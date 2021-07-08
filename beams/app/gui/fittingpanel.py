@@ -1326,7 +1326,7 @@ class FitTabPresenter(PanelPresenter):
                 self._view.set_variable_value(symbol, value='{:.4f}'.format(variable.value))
 
             run = self._run_service.get_runs_by_ids([selected_data.run_id])[0]
-            self._view.input_file_name.setText('{}_fit.txt'.format(run.meta['RunNumber']))
+            self._view.input_file_name.setText('{}_fit.txt'.format(run.meta[files.RUN_NUMBER_KEY]))
             self._view.input_folder_name.setText(files.load_last_used_directory())
             self.__expression = selected_data.expression
             self.__variable_groups = [selected_data.kwargs]
