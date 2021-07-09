@@ -873,17 +873,17 @@ class FittingPanel(Panel):
 
             if symbol == item.text():
                 in_table = True
-                if config_value:
+                if config_value is not None:
                     item_value = QtWidgets.QTableWidgetItem()
                     item_value.setText('{:.5f}'.format(float(config_value)))
                     self.parameter_table.config_table.setItem(i, self.ParameterTable.VALUE_COLUMN, item_value)
 
-                if config_lower:
+                if config_lower is not None:
                     item_lower = QtWidgets.QTableWidgetItem()
                     item_lower.setText('{:.5f}'.format(float(config_lower)))
                     self.parameter_table.config_table.setItem(i, self.ParameterTable.MIN_COLUMN, item_lower)
 
-                if config_upper:
+                if config_upper is not None:
                     item_upper = QtWidgets.QTableWidgetItem()
                     item_upper.setText('{:.5f}'.format(float(config_upper)))
                     self.parameter_table.config_table.setItem(i, self.ParameterTable.MAX_COLUMN, item_upper)
@@ -899,7 +899,7 @@ class FittingPanel(Panel):
             item_symbol.setText(symbol)
             self.parameter_table.config_table.setVerticalHeaderItem(n, item_symbol)
 
-            if config_value:
+            if config_value is not None:
                 item_value = QtWidgets.QTableWidgetItem()
                 item_value.setText('{:.5f}'.format(float(config_value)))
                 self.parameter_table.config_table.setItem(n, self.ParameterTable.VALUE_COLUMN, item_value)
@@ -908,7 +908,7 @@ class FittingPanel(Panel):
                 item_value.setText('1')
                 self.parameter_table.config_table.setItem(n, self.ParameterTable.VALUE_COLUMN, item_value)
 
-            if config_lower:
+            if config_lower is not None:
                 item_lower = QtWidgets.QTableWidgetItem()
                 item_lower.setText('{:.5f}'.format(float(config_lower)))
                 self.parameter_table.config_table.setItem(n, self.ParameterTable.MIN_COLUMN, item_lower)
@@ -917,7 +917,7 @@ class FittingPanel(Panel):
                 item_lower.setText(str(-np.inf))
                 self.parameter_table.config_table.setItem(n, self.ParameterTable.MIN_COLUMN, item_lower)
 
-            if config_upper:
+            if config_upper is not None:
                 item_upper = QtWidgets.QTableWidgetItem()
                 item_upper.setText('{:.5f}'.format(float(config_upper)))
                 self.parameter_table.config_table.setItem(n, self.ParameterTable.MAX_COLUMN, item_upper)
@@ -947,7 +947,7 @@ class FittingPanel(Panel):
                     self.__batch_table_states[run_id] = (batch_value, batch_global, batch_run_dependent)
 
                 in_table = True
-                if batch_value:
+                if batch_value is not None:
                     item_value = QtWidgets.QTableWidgetItem()
                     item_value.setText('{:.5f}'.format(float(batch_value)))
                     self.parameter_table.batch_table.setItem(i, self.ParameterTable.FIXED_VALUE_COLUMN, item_value)
@@ -970,7 +970,7 @@ class FittingPanel(Panel):
             item_symbol.setText(symbol)
             self.parameter_table.batch_table.setVerticalHeaderItem(n, item_symbol)
 
-            if batch_value:
+            if batch_value is not None:
                 item_value = QtWidgets.QTableWidgetItem()
                 item_value.setText('{:.5f}'.format(float(batch_value)))
                 self.parameter_table.batch_table.setItem(n, self.ParameterTable.FIXED_VALUE_COLUMN, item_value)
@@ -1004,14 +1004,14 @@ class FittingPanel(Panel):
 
             if symbol == item.text():
                 in_table = True
-                if output_value:
+                if output_value is not None:
                     item_value = QtWidgets.QTableWidgetItem()
-                    item_value.setText('{:.8f}'.format(float(output_value)))
+                    item_value.setText('{:.5f}'.format(float(output_value)))
                     self.parameter_table.output_table.setItem(i, self.ParameterTable.OUTPUT_VALUE_COLUMN, item_value)
 
-                if output_uncertainty:
+                if output_uncertainty is not None:
                     item_value = QtWidgets.QTableWidgetItem()
-                    item_value.setText('{:.8f}'.format(float(output_uncertainty)))
+                    item_value.setText('{:.5f}'.format(float(output_uncertainty)))
                     self.parameter_table.output_table.setItem(i, self.ParameterTable.UNCERTAINTY_COLUMN, item_value)
 
         if not in_table:
@@ -1021,14 +1021,14 @@ class FittingPanel(Panel):
             item_symbol.setText(symbol)
             self.parameter_table.output_table.setVerticalHeaderItem(n, item_symbol)
 
-            if output_value:
+            if output_value is not None:
                 item_value = QtWidgets.QTableWidgetItem()
-                item_value.setText('{:.8f}'.format(float(output_value)))
+                item_value.setText('{:.5f}'.format(float(output_value)))
                 self.parameter_table.output_table.setItem(n, self.ParameterTable.OUTPUT_VALUE_COLUMN, item_value)
 
-            if output_uncertainty:
+            if output_uncertainty is not None:
                 item_value = QtWidgets.QTableWidgetItem()
-                item_value.setText('{:.8f}'.format(float(output_uncertainty)))
+                item_value.setText('{:.5f}'.format(float(output_uncertainty)))
                 self.parameter_table.output_table.setItem(n, self.ParameterTable.UNCERTAINTY_COLUMN, item_value)
 
         self._update_batch_table_states()

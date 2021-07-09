@@ -474,9 +474,21 @@ class FitEngine:
                                 args=(asymmetry.time, asymmetry, asymmetry.uncertainty))
             self.__logger.debug(opt)
 
+            try:
+                unc, chi_sq = get_std_unc(opt, asymmetry)
+
+                for i, symbol in enumerate(config.get_symbols_for_run(run_id)):
+                    if config.parameters[run_id][symbol].is_fixed or config.parameters[run_id][symbol].is_fixed_run:
+                        unc[i] = 0.0
+
+            except np.linalg.LinAlgError:  # Fit did not converge
+                unc = [-1 for _ in opt.x]
+
+            self.__logger.debug("Uncertainty: ".format(str(unc)))
+
             # 7) Replace initial values with fitted values for unfixed variables
             for i, symbol in enumerate(config.get_symbols_for_run(run_id)):
-                config.set_outputs(run_id, symbol, opt.x[i], 0)
+                config.set_outputs(run_id, symbol, opt.x[i], unc[i])
 
             # 8) Create a callable function of our original string function
             lambda_expression = FitExpression(config.expression)
@@ -554,8 +566,10 @@ def get_std_unc(result, data, error=None, num_constraints=0):
         p_unc (numpy array): standard uncertainties of the refined parameters.
         chisq (float): Value of chi^2 for the fit.
     """
+
     if error is None:
         error = np.ones_like(data)
+
     weights = 1.0 / error ** 2
     rw = np.sqrt((result.fun ** 2).sum() / (data ** 2 * weights).sum())
     num_params = len(result.x)
@@ -564,8 +578,9 @@ def get_std_unc(result, data, error=None, num_constraints=0):
     jac = np.dot(j.transpose(), j)
     cov = np.linalg.inv(jac) * rw ** 2 / r_exp ** 2
     p_unc = np.sqrt(cov.diagonal())
-    chisq = rw ** 2 / r_exp ** 2
-    return p_unc, chisq
+    chi_sq = rw ** 2 / r_exp ** 2
+
+    return p_unc, chi_sq
 
 
 def parse(s):
