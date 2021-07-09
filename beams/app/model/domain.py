@@ -245,8 +245,16 @@ class Asymmetry(np.ndarray):
                          time=self.time.bin(packing), uncertainty=self.uncertainty.bin(packing), alpha=self.alpha)
 
     def correct(self, alpha):
-        input_array = ((alpha - 1) + ((alpha + 1) * self)) / \
-                      ((alpha + 1) + ((alpha - 1) * self))
+        if self.alpha == alpha:
+            return self
+
+        current_asymmetry = self
+
+        if self.alpha != 1:
+            current_asymmetry = self.raw()
+
+        input_array = ((alpha - 1) + ((alpha + 1) * current_asymmetry)) / \
+                      ((alpha + 1) + ((alpha - 1) * current_asymmetry))
 
         return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
                          time=self.time, uncertainty=self.uncertainty, alpha=alpha)
@@ -460,19 +468,21 @@ class RunDataset:
         return isinstance(other, self.__class__) and other.id == self.id
 
     def write(self, out_file, bin_size=None):
-        meta_string = files.TITLE_KEY + ":" + str(self.meta[files.TITLE_KEY]) + "," \
-                      + files.BIN_SIZE_KEY + ":" + str(bin_size) + "," \
-                      + files.TEMPERATURE_KEY + ":" + str(self.meta[files.TEMPERATURE_KEY]) + "," \
-                      + files.FIELD_KEY + ":" + str(self.meta[files.FIELD_KEY]) + "," \
-                      + files.T0_KEY + ":" + str(self.meta[files.T0_KEY])
+        if self.asymmetries[self.FULL_ASYMMETRY] is not None:
+            meta_string = files.TITLE_KEY + ":" + str(self.meta[files.TITLE_KEY]) + "," \
+                          + files.BIN_SIZE_KEY + ":" + str(bin_size) + "," \
+                          + files.RUN_NUMBER_KEY + ":" + str(self.meta[files.RUN_NUMBER_KEY]) + "," \
+                          + files.TEMPERATURE_KEY + ":" + str(self.meta[files.TEMPERATURE_KEY]) + "," \
+                          + files.FIELD_KEY + ":" + str(self.meta[files.FIELD_KEY]) + "," \
+                          + files.T0_KEY + ":" + str(self.asymmetries[self.FULL_ASYMMETRY].time.time_zero)
 
-        if bin_size:
-            asymmetry = self.asymmetries[RunDataset.FULL_ASYMMETRY].bin(bin_size)
-        else:
-            asymmetry = self.asymmetries[RunDataset.FULL_ASYMMETRY]
+            if bin_size:
+                asymmetry = self.asymmetries[RunDataset.FULL_ASYMMETRY].bin(bin_size)
+            else:
+                asymmetry = self.asymmetries[RunDataset.FULL_ASYMMETRY]
 
-        np.savetxt(out_file, np.c_[asymmetry.time, asymmetry, asymmetry.uncertainty],
-                   fmt='%2.9f, %2.4f, %2.4f', header="BEAMS\n" + meta_string + "\nTime, Asymmetry, Uncertainty")
+            np.savetxt(out_file, np.c_[asymmetry.time, asymmetry, asymmetry.uncertainty],
+                       fmt='%2.9f, %2.4f, %2.4f', header="BEAMS\n" + meta_string + "\nTime, Asymmetry, Uncertainty")
 
 
 class FileDataset:
@@ -635,7 +645,7 @@ class DataBuilder:
             data = f.read_data()
             asymmetry_values = np.array(data['Asymmetry'].values)
             uncertainty_values = np.array(data['Uncertainty'].values)
-            time_values = np.array(data['Values'].values)
+            time_values = np.array(data['Time'].values)
 
             asymmetry = Asymmetry(input_array=asymmetry_values,
                                   time_zero=d.meta[files.T0_KEY],
@@ -730,9 +740,6 @@ class RunService:
 
         for rid, alpha in zip(ids, alphas):
             run = RunService.__dao.get_runs_by_ids([rid])[0]
-
-            if run.asymmetries[RunDataset.FULL_ASYMMETRY].alpha != 1:
-                run.asymmetries[RunDataset.FULL_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].raw()
 
             run.asymmetries[RunDataset.FULL_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].correct(alpha)
 

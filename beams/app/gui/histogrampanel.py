@@ -113,7 +113,7 @@ class HistogramPanel(Panel):
                 self.__selected_items = None
 
                 if isinstance(run_data, RunDataset):
-                    if run_data.isLoaded:
+                    if run_data.isLoaded and run_data.histograms:
                         for histogram in run_data.histograms.values():
                             self.addChild(HistogramPanel.SupportPanel.HistogramNode(histogram))
 
