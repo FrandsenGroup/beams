@@ -967,6 +967,7 @@ class PlottingPanelPresenter(PanelPresenter):
         self.__run_service.register(RunService.RUNS_ADDED, self)
         self.__run_service.register(RunService.RUNS_CHANGED, self)
         self.__populating_settings = False
+        self.__update_alpha = True
         self._set_callbacks()
 
     def _set_callbacks(self):
@@ -1236,6 +1237,15 @@ class PlottingPanelPresenter(PanelPresenter):
 
     def update(self):
         run_datasets = self.__run_service.get_runs()
+        alphas = {run.asymmetries[run.FULL_ASYMMETRY].alpha for run in run_datasets if run.asymmetries[run.FULL_ASYMMETRY] is not None}
+
+        self.__update_alpha = False
+        if len(alphas) == 1:
+            self._view.support_panel.asymmetry_param_box.alpha_input.setText(str(alphas.pop()))
+        else:
+            self._view.support_panel.asymmetry_param_box.alpha_input.setText('1.0')
+        self.__update_alpha = True
+
         for run in run_datasets:
             self._plot_model.add_style_for_run(run, False, True)
 
@@ -1245,6 +1255,9 @@ class PlottingPanelPresenter(PanelPresenter):
         self._populate_settings()
 
     def update_alpha(self):
+        if not self.__update_alpha:
+            return
+
         try:
             alpha = float(self._view.support_panel.asymmetry_param_box.alpha_input.text())
         except ValueError:
