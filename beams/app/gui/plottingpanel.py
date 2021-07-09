@@ -1237,11 +1237,11 @@ class PlottingPanelPresenter(PanelPresenter):
 
     def update(self):
         run_datasets = self.__run_service.get_runs()
-        alphas = {run.asymmetries[run.FULL_ASYMMETRY].alpha for run in run_datasets if run.asymmetries[run.FULL_ASYMMETRY] is not None}
+        alphas = {'{:.5f}'.format(run.asymmetries[run.FULL_ASYMMETRY].alpha) for run in run_datasets if run.asymmetries[run.FULL_ASYMMETRY] is not None}
 
         self.__update_alpha = False
         if len(alphas) == 1:
-            self._view.support_panel.asymmetry_param_box.alpha_input.setText(str(alphas.pop()))
+            self._view.support_panel.asymmetry_param_box.alpha_input.setText(alphas.pop())
         else:
             self._view.support_panel.asymmetry_param_box.alpha_input.setText('1.0')
         self.__update_alpha = True
