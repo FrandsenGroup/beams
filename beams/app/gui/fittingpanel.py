@@ -1354,6 +1354,7 @@ class FitTabPresenter(PanelPresenter):
         bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
 
         colors = {run.id: list(self._plot_model.color_options_values.values())[-i] for i, run in enumerate(runs)}
+        colors[0] = list(self._plot_model.color_options_values.values())[-len(colors)]
 
         for i, run in enumerate(runs):
             if run.meta[files.TITLE_KEY] not in titles:
@@ -1393,11 +1394,19 @@ class FitTabPresenter(PanelPresenter):
                                                   label=run.meta[files.TITLE_KEY])
 
         checked_titles = self._view.get_checked_run_titles()
-        for i, run in enumerate(runs):
-            if run.meta[files.TITLE_KEY] not in checked_titles or run.id not in self.__variable_groups.keys():
+        checked_run_ids = [0]
+        for run in runs:
+            if run.meta[files.TITLE_KEY] in checked_titles:
+                checked_run_ids.append(run.id)
+        print('Checked Ids', checked_run_ids)
+        print('var groups', self.__variable_groups.keys())
+        for i, (run_id, parameters) in enumerate(self.__variable_groups.items()):
+            print('Attempting to plot', run_id)
+            if run_id not in checked_run_ids:
+                print('Not in the thing')
                 continue
 
-            parameters = self.__variable_groups[run.id]
+            parameters = self.__variable_groups[run_id]
             time = domain.Time(input_array=None, bin_size=(max_time - min_time) * 1000 / 200, length=200,
                                time_zero=min_time)
             print("PLOTTING:", {symbol: par.get_value() for symbol, par in parameters.items()})
@@ -1419,20 +1428,20 @@ class FitTabPresenter(PanelPresenter):
                 local_min = np.min(fit_asymmetry[start_index:end_index])
                 min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
 
-            self.__logger.debug("{}, {}, {}, {}".format(self.__expression, run.id, parameters, len(time)))
+            self.__logger.debug("{}, {}, {}, {}".format(self.__expression, run_id, parameters, len(time)))
             self._view.fit_display.plot_asymmetry(time, fit_asymmetry, None, None,
-                                                  color=colors[run.id],
+                                                  color=colors[run_id],
                                                   marker='.',
                                                   linestyle='-',
                                                   fillstyle='none',
-                                                  marker_color=colors[run.id],
+                                                  marker_color=colors[run_id],
                                                   marker_size=1,
-                                                  line_color=colors[run.id],
+                                                  line_color=colors[run_id],
                                                   line_width=1,
-                                                  errorbar_color=colors[run.id],
+                                                  errorbar_color=colors[run_id],
                                                   errorbar_style='none',
                                                   errorbar_width=1,
-                                                  fit_color=colors[run.id],
+                                                  fit_color=colors[run_id],
                                                   fit_linestyle='none',
                                                   label=None)
 
@@ -1444,24 +1453,19 @@ class FitTabPresenter(PanelPresenter):
         if not self.__update_if_table_changes:
             return
 
-        expression, parameters = self._get_expression_and_values()
+        expression, parameters = self._get_expression_and_values(get_default=True)
 
         if len(parameters) == 0:
             self.__expression = expression
             self.__variable_groups = {}
             return
 
-        if not self._view.is_run_dependent():
-            parameters = {k: v for k, v in [parameters.popitem()]}
-
-        if self.__variable_groups == parameters and self.__expression == expression:
-            return
-
         self.__expression = expression
         self.__variable_groups = parameters
         self._update_display()
 
-    def _get_expression_and_values(self):
+    def _get_expression_and_values(self, get_default=False):
+        print('getting expression and values')
         try:
             parameters = self._view.get_parameters()
             expression = self._view.get_expression()
@@ -1471,6 +1475,7 @@ class FitTabPresenter(PanelPresenter):
         self._view.highlight_input_red(self._view.parameter_table, False)
 
         final_parameters = {}
+        run_dependent = False
         for run in self._runs:
             run_parameters = {}
             for symbol, value, value_min, value_max, value_output, value_uncertainty, \
@@ -1478,8 +1483,21 @@ class FitTabPresenter(PanelPresenter):
                 run_parameters[symbol] = fit.FitParameter(symbol=symbol, value=value, lower=value_min, upper=value_max,
                                                           is_global=is_global, is_fixed=is_fixed, is_fixed_run=fixed_run_dict[run.meta[files.TITLE_KEY]][1],
                                                           fixed_value=float(fixed_run_dict[run.meta[files.TITLE_KEY]][2]))
+                run_dependent = run_dependent or run_parameters[symbol].is_fixed_run
+            print(run.id, run_parameters)
             final_parameters[run.id] = run_parameters
 
+        if get_default and not run_dependent:
+            run_parameters = {}
+            for symbol, value, value_min, value_max, value_output, value_uncertainty, \
+                    is_fixed, is_global, fixed_run_dict in parameters:
+                run_parameters[symbol] = fit.FitParameter(symbol=symbol, value=value, lower=value_min, upper=value_max,
+                                                          is_global=is_global, is_fixed=is_fixed, is_fixed_run=False,
+                                                          fixed_value=0)
+            final_parameters[0] = run_parameters
+
+        print("Num Checked: ", len(self._view.get_checked_run_titles()))
+        print(final_parameters)
         if fit.is_valid_expression("A(t) = " + expression) and len(parameters) > 1:
             lambda_expression = fit.FitExpression(expression)
             return lambda_expression, final_parameters
