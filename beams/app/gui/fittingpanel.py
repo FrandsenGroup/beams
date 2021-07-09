@@ -234,17 +234,19 @@ class FittingPanel(Panel):
             errorbar_color = color if errorbar_color == 'Default' else errorbar_color
             marker_face_color = marker_color if fillstyle != 'none' else 'none'
             fit_color = color if fit_color == 'Default' else fit_color
-
-            if uncertainty is not None and errorbar_style != 'none':
+            self.__logger = logging.getLogger('qt_fitting_panel_plot_fit')
+            self.__logger.debug(
+                "{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}".format(time, asymmetry, marker_face_color, marker_color,
+                                                                    color, linestyle, marker, fillstyle, line_width,
+                                                                    marker_size, label))
+            if uncertainty is not None:
                 self.axes_time.errorbar(time, asymmetry, uncertainty, mfc=marker_face_color, mec=marker_color,
                                         color=color, linestyle=linestyle, marker=marker, fillstyle=fillstyle,
                                         linewidth=line_width, markersize=marker_size,
                                         elinewidth=errorbar_width,
-                                        ecolor=errorbar_color, capsize=errorbar_style)
+                                        ecolor=errorbar_color)
 
             else:
-                self.__logger = logging.getLogger('qt_fitting_panel_plot_fit')
-                self.__logger.debug("{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}".format(time, asymmetry, marker_face_color, marker_color, color, linestyle, marker, fillstyle, line_width, marker_size, label))
                 self.axes_time.plot(time, asymmetry, mfc=marker_face_color, mec=marker_color, color=color,
                                     linestyle=linestyle, marker=marker, fillstyle=fillstyle,
                                     linewidth=line_width,
