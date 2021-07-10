@@ -527,8 +527,7 @@ class FittingPanel(Panel):
         self.run_list = QtWidgets.QListWidget()
 
         self.button_check_equation = widgets.StyleOneButton("Check")
-        self.button_fit = widgets.StyleOneButton("Fit")
-        self.button_done = widgets.StyleOneButton("Done")
+        self.button_fit = widgets.StyleThreeButton("Fit")
         self.button_insert_preset_equation = widgets.StyleTwoButton("Insert")
         self.button_insert_user_equation = widgets.StyleTwoButton("Insert")
         self.button_save_user_equation = widgets.StyleTwoButton("Save")
@@ -622,8 +621,8 @@ class FittingPanel(Panel):
         self.check_batch_fit.setEnabled(False)
 
     def _set_widget_dimensions(self):
-        self.button_done.setFixedWidth(60)
         self.button_fit.setFixedWidth(60)
+        self.button_fit.setFixedHeight(60)
         self.button_check_equation.setFixedWidth(60)
         self.button_insert_user_equation.setFixedWidth(60)
         self.button_insert_preset_equation.setFixedWidth(60)
@@ -757,11 +756,12 @@ class FittingPanel(Panel):
         self.group_save_results.setLayout(layout)
         row_save = QtWidgets.QHBoxLayout()
         row_save.addWidget(self.group_save_results)
+        row_save.addSpacing(20)
         column = QtWidgets.QVBoxLayout()
         column.addWidget(self.button_fit)
         column.addSpacing(4)
-        column.addWidget(self.button_done)
         row_save.addLayout(column)
+        row_save.addSpacing(10)
 
         # Create and add layout for plot display and controls
         right_side = QtWidgets.QVBoxLayout()

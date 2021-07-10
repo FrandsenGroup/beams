@@ -451,7 +451,6 @@ class FitEngine:
 
         return dataset
 
-    # FIXME We need to update this to use the new BETTER ;) fixed method
     def _least_squares_fit_non_global(self, config) -> FitDataset:
         dataset = FitDataset()
         for run_id, asymmetry in config.data.items():
