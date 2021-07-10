@@ -14,12 +14,12 @@ from app.gui.dialogs.dialog_plot_file import PlotFileDialog
 from app.gui.gui import Panel, PanelPresenter
 from app.model import files
 from app.model.domain import RunService, FitService, FileService, RunDataset, FFT
-from app.util import widgets
+from app.util import qt_widgets, qt_constants
 
 
 class PlottingPanel(Panel, QtWidgets.QWidget):
     class SupportPanel(QtWidgets.QDockWidget):
-        class PlotStyleBox(widgets.CollapsibleBox):
+        class PlotStyleBox(qt_widgets.CollapsibleBox):
             def __init__(self) -> None:
                 self.title = 'Plot Style'
                 super().__init__(self.title)
@@ -82,7 +82,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 box_layout.addLayout(layout)
                 self.setContentLayout(box_layout)                
 
-        class AsymmetryParametersBox(widgets.CollapsibleBox):
+        class AsymmetryParametersBox(qt_widgets.CollapsibleBox):
             def __init__(self) -> None:
                 self.title = 'Asymmetry Parameters'
                 super().__init__(self.title)
@@ -94,7 +94,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 layout.addWidget(self.alpha_input, 0, 1)
                 self.setContentLayout(layout)
 
-        class LegendBox(widgets.CollapsibleBox):
+        class LegendBox(qt_widgets.CollapsibleBox):
             def __init__(self) -> None:
                 self.title = 'Legend'
                 super().__init__(self.title)
@@ -147,7 +147,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 super().__init__()
                 self.__manager = PlottingPanel.SupportPanel.TreeManager(self)
                 self.setHeaderHidden(True)
-                self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+                self.setContextMenuPolicy(qt_constants.CustomContextMenu)
                 self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
                 self._set_callbacks()
 
@@ -241,7 +241,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 # noinspection PyTypeChecker
                 for i in range(self.topLevelItemCount()):
                     if self.topLevelItem(i).model.id in ids:
-                        self.topLevelItem(i).setCheckState(0, QtCore.Qt.Checked)
+                        self.topLevelItem(i).setCheckState(0, qt_constants.Checked)
 
         class TreeManager:
             def __init__(self, view):
@@ -270,8 +270,8 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self.model = run_data
                 self.__selected_items = None
                 self.setFlags(self.flags()
-                              | QtCore.Qt.ItemIsUserCheckable)
-                self.setCheckState(0, QtCore.Qt.Unchecked)
+                              | qt_constants.ItemIsUserCheckable)
+                self.setCheckState(0, qt_constants.Unchecked)
 
             def menu(self, items):
                 self.__selected_items = items
@@ -291,9 +291,9 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.setTitleBarWidget(QtWidgets.QWidget())
             self.setWindowTitle("Plotting")
 
-            self.plot_button = widgets.StyleOneButton("Plot")
-            self.plot_all_button = widgets.StyleOneButton("Plot All")
-            self.clear_all_button = widgets.StyleTwoButton("Clear All")
+            self.plot_button = qt_widgets.StyleOneButton("Plot")
+            self.plot_all_button = qt_widgets.StyleOneButton("Plot All")
+            self.clear_all_button = qt_widgets.StyleTwoButton("Clear All")
 
             self.item_tree = self.Tree()
             self.legend_box = self.LegendBox()
@@ -644,7 +644,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self._label_slider_bin = QtWidgets.QLabel('')
             self._label_input_bin = QtWidgets.QLabel('Time Bins (ns)')
 
-            self.slider_bin = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+            self.slider_bin = QtWidgets.QSlider(qt_constants.Horizontal)
             self.input_bin = QtWidgets.QLineEdit()
 
             self._label_time = QtWidgets.QLabel('Time')

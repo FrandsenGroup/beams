@@ -3,6 +3,7 @@ import abc
 import enum
 from pathlib import Path
 from app.resources import resources
+from app.util import qt_constants
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
@@ -41,9 +42,9 @@ class CollapsibleBox(QtWidgets.QWidget):
         text_color = '#070536' if background != '#070536' else '#ffffff'
         self.toggle_button.setStyleSheet("QToolButton {{ border: none; color: {}; background: {}}}".format(text_color, background))
         self.toggle_button.setToolButtonStyle(
-            QtCore.Qt.ToolButtonTextBesideIcon
+            qt_constants.ToolButtonTextBesideIcon
         )
-        self.toggle_button.setArrowType(QtCore.Qt.RightArrow)
+        self.toggle_button.setArrowType(qt_constants.RightArrow)
         # self.toggle_button.pressed.connect(self.on_pressed)
 
         self.toggle_animation = QtCore.QParallelAnimationGroup(self)
@@ -85,7 +86,7 @@ class CollapsibleBox(QtWidgets.QWidget):
     def on_pressed(self):
         checked = self.__dumb_constant
         self.toggle_button.setArrowType(
-            QtCore.Qt.DownArrow if not checked else QtCore.Qt.RightArrow
+            qt_constants.DownArrow if not checked else qt_constants.RightArrow
         )
         self.toggle_animation.setDirection(
             QtCore.QAbstractAnimation.Forward
@@ -237,7 +238,7 @@ class Frame(QtWidgets.QFrame):
 
         self._m_mouse_down = False
         self.setFrameShape(QtWidgets.QFrame.Panel)
-        self.setWindowFlags(QtCore.Qt.FramelessWindowHint)
+        self.setWindowFlags(qt_constants.FramelessWindowHint)
         self.setMouseTracking(True)
 
         self._m_title_bar = TitleBar(self)
@@ -277,7 +278,7 @@ class Frame(QtWidgets.QFrame):
 
     def mousePressEvent(self, me: QtGui.QMouseEvent):
         self._m_old_pos = me.pos()
-        self._m_mouse_down = me.button() == QtCore.Qt.LeftButton
+        self._m_mouse_down = me.button() == qt_constants.LeftButton
 
     def mouseMoveEvent(self, me: QtGui.QMouseEvent):
         x = me.x()
@@ -308,15 +309,15 @@ class Frame(QtWidgets.QFrame):
 
             if hor and self.__bottom:
                 if self.__left:
-                    self.setCursor(QtCore.Qt.SizeBDiagCursor)
+                    self.setCursor(qt_constants.SizeBDiagCursor)
                 else:
-                    self.setCursor(QtCore.Qt.SizeFDiagCursor)
+                    self.setCursor(qt_constants.SizeFDiagCursor)
             elif hor:
-                self.setCursor(QtCore.Qt.SizeHorCursor)
+                self.setCursor(qt_constants.SizeHorCursor)
             elif self.__bottom:
-                self.setCursor(QtCore.Qt.SizeVerCursor)
+                self.setCursor(qt_constants.SizeVerCursor)
             else:
-                self.setCursor(QtCore.Qt.ArrowCursor)
+                self.setCursor(qt_constants.ArrowCursor)
 
     def mouseReleaseEvent(self, me: QtGui.QMouseEvent):
         self._m_mouse_down = False
@@ -341,7 +342,7 @@ class Logo(QtWidgets.QLabel):
     def __init__(self):
         super(Logo, self).__init__()
         logo_icon_pixmap = QtGui.QPixmap(resources.LOGO_IMAGE)
-        self.setPixmap(logo_icon_pixmap.scaledToHeight(30, QtCore.Qt.SmoothTransformation))
+        self.setPixmap(logo_icon_pixmap.scaledToHeight(30, qt_constants.SmoothTransformation))
         self.setMask(logo_icon_pixmap.mask())
 
 
@@ -372,14 +373,14 @@ Copyright (c) 2016 Luca Weiss
 import math
 
 class QtWaitingSpinner(QtWidgets.QWidget):
-    def __init__(self, parent, centerOnParent=True, disableParentWhenSpinning=False, modality=QtCore.Qt.NonModal):
+    def __init__(self, parent, centerOnParent=True, disableParentWhenSpinning=False, modality=qt_constants.NonModal):
         super().__init__(parent)
 
         self._centerOnParent = centerOnParent
         self._disableParentWhenSpinning = disableParentWhenSpinning
 
         # WAS IN initialize()
-        self._color = QtGui.QColor(QtCore.Qt.black)
+        self._color = QtGui.QColor(qt_constants.Black)
         self._roundness = 100.0
         self._minimumTrailOpacity = 3.14159265358979323846
         self._trailFadePercentage = 80.0
@@ -399,18 +400,18 @@ class QtWaitingSpinner(QtWidgets.QWidget):
         # END initialize()
 
         self.setWindowModality(modality)
-        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.setAttribute(qt_constants.WA_TranslucentBackground)
 
     def paintEvent(self, QPaintEvent):
         self.updatePosition()
         painter = QtGui.QPainter(self)
-        painter.fillRect(self.rect(), QtCore.Qt.transparent)
+        painter.fillRect(self.rect(), qt_constants.transparent)
         painter.setRenderHint(QtGui.QPainter.Antialiasing, True)
 
         if self._currentCounter >= self._numberOfLines:
             self._currentCounter = 0
 
-        painter.setPen(QtCore.Qt.NoPen)
+        painter.setPen(qt_constants.NoPen)
         for i in range(0, self._numberOfLines):
             painter.save()
             painter.translate(self._innerRadius + self._lineLength, self._innerRadius + self._lineLength)
@@ -422,7 +423,7 @@ class QtWaitingSpinner(QtWidgets.QWidget):
                                           self._minimumTrailOpacity, self._color)
             painter.setBrush(color)
             painter.drawRoundedRect(QtCore.QRect(0, -self._lineWidth / 2, self._lineLength, self._lineWidth), self._roundness,
-                                    self._roundness, QtCore.Qt.RelativeSize)
+                                    self._roundness, qt_constants.RelativeSize)
             painter.restore()
 
     def start(self):
@@ -498,7 +499,7 @@ class QtWaitingSpinner(QtWidgets.QWidget):
     def setRoundness(self, roundness):
         self._roundness = max(0.0, min(100.0, roundness))
 
-    def setColor(self, color=QtCore.Qt.black):
+    def setColor(self, color=qt_constants.Black):
         self._color = QtGui.QColor(color)
 
     def setRevolutionsPerSecond(self, revolutionsPerSecond):

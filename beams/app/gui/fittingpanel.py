@@ -7,7 +7,7 @@ import numpy as np
 
 from app.gui.plottingpanel import PlotModel
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
-from app.util import widgets
+from app.util import qt_widgets, qt_constants
 from app.model import domain, fit, files
 from app.gui.gui import PanelPresenter, Panel
 
@@ -27,7 +27,7 @@ class FittingPanel(Panel):
                 super().__init__()
                 self.__manager = FittingPanel.SupportPanel.TreeManager(self)
                 self.setHeaderHidden(True)
-                self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+                self.setContextMenuPolicy(qt_constants.CustomContextMenu)
                 self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
                 self._set_callbacks()
 
@@ -160,9 +160,9 @@ class FittingPanel(Panel):
             # self.setMinimumHeight(500)
             layout = QtWidgets.QVBoxLayout()
 
-            self.new_button = widgets.StyleTwoButton("New Empty Fit")
-            self.reset_button = widgets.StyleOneButton("Reset")
-            self.save_button = widgets.StyleTwoButton("Save")
+            self.new_button = qt_widgets.StyleTwoButton("New Empty Fit")
+            self.reset_button = qt_widgets.StyleOneButton("Reset")
+            self.save_button = qt_widgets.StyleTwoButton("Save")
 
             hbox = QtWidgets.QHBoxLayout()
             hbox.addWidget(self.new_button)
@@ -298,7 +298,7 @@ class FittingPanel(Panel):
             self._label_slider_bin = QtWidgets.QLabel('')
             self._label_input_bin = QtWidgets.QLabel('Time Bins (ns)')
 
-            self.slider_bin = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+            self.slider_bin = QtWidgets.QSlider(qt_constants.Horizontal)
             self.input_bin = QtWidgets.QLineEdit()
 
             self._label_time = QtWidgets.QLabel('Time')
@@ -520,20 +520,20 @@ class FittingPanel(Panel):
 
         self.fit_spectrum_settings = FittingPanel.PlotControl()
         self.fit_display = FittingPanel.PlotDisplay(self.fit_spectrum_settings)
-        self.special_characters = widgets.CollapsibleBox("Special Characters", background='#FFFFFF')
+        self.special_characters = qt_widgets.CollapsibleBox("Special Characters", background='#FFFFFF')
         self.special_characters.toggle_button.released.connect(self.special_characters.on_pressed)
 
         self.table_parameters = QtWidgets.QTableWidget()
         self.run_list = QtWidgets.QListWidget()
 
-        self.button_check_equation = widgets.StyleOneButton("Check")
-        self.button_fit = widgets.StyleThreeButton("Fit")
-        self.button_insert_preset_equation = widgets.StyleTwoButton("Insert")
-        self.button_insert_user_equation = widgets.StyleTwoButton("Insert")
-        self.button_save_user_equation = widgets.StyleTwoButton("Save")
-        self.button_save_results = widgets.StyleTwoButton("Save Fit")
-        self.button_lookup_folder = widgets.StyleTwoButton("Folder")
-        self.button_plot = widgets.StyleTwoButton("Plot")
+        self.button_check_equation = qt_widgets.StyleOneButton("Check")
+        self.button_fit = qt_widgets.StyleThreeButton("Fit")
+        self.button_insert_preset_equation = qt_widgets.StyleTwoButton("Insert")
+        self.button_insert_user_equation = qt_widgets.StyleTwoButton("Insert")
+        self.button_save_user_equation = qt_widgets.StyleTwoButton("Save")
+        self.button_save_results = qt_widgets.StyleTwoButton("Save Fit")
+        self.button_lookup_folder = qt_widgets.StyleTwoButton("Folder")
+        self.button_plot = qt_widgets.StyleTwoButton("Plot")
 
         self.label_global_plus = QtWidgets.QLabel("Global+")
         self.label_ordering = QtWidgets.QLabel("Order by")
@@ -543,14 +543,14 @@ class FittingPanel(Panel):
         self.check_global_plus = QtWidgets.QCheckBox()
         self.check_use_previous = QtWidgets.QCheckBox()
 
-        self.insert_phi = widgets.StyleTwoButton(fit.PHI)
-        self.insert_alpha = widgets.StyleTwoButton(fit.ALPHA)
-        self.insert_sigma = widgets.StyleTwoButton(fit.SIGMA)
-        self.insert_naught = widgets.StyleTwoButton(fit.NAUGHT)
-        self.insert_lambda = widgets.StyleTwoButton(fit.LAMBDA)
-        self.insert_delta = widgets.StyleTwoButton(fit.DELTA)
-        self.insert_beta = widgets.StyleTwoButton(fit.BETA)
-        self.insert_pi = widgets.StyleOneButton(fit.PI)
+        self.insert_phi = qt_widgets.StyleTwoButton(fit.PHI)
+        self.insert_alpha = qt_widgets.StyleTwoButton(fit.ALPHA)
+        self.insert_sigma = qt_widgets.StyleTwoButton(fit.SIGMA)
+        self.insert_naught = qt_widgets.StyleTwoButton(fit.NAUGHT)
+        self.insert_lambda = qt_widgets.StyleTwoButton(fit.LAMBDA)
+        self.insert_delta = qt_widgets.StyleTwoButton(fit.DELTA)
+        self.insert_beta = qt_widgets.StyleTwoButton(fit.BETA)
+        self.insert_pi = qt_widgets.StyleOneButton(fit.PI)
 
         self.group_preset_functions = QtWidgets.QGroupBox("Predefined Functions")
         self.group_user_functions = QtWidgets.QGroupBox("User Defined Functions")
@@ -851,9 +851,9 @@ class FittingPanel(Panel):
         check = QtWidgets.QCheckBox()
         if connect:
             check.stateChanged.connect(connect)
-        check.setCheckState(QtCore.Qt.Checked if checked else QtCore.Qt.Unchecked)
+        check.setCheckState(qt_constants.Checked if checked else qt_constants.Unchecked)
         layout.addWidget(check)
-        layout.setAlignment(QtCore.Qt.AlignCenter)
+        layout.setAlignment(qt_constants.AlignCenter)
         layout.setContentsMargins(0, 0, 0, 0)
         widget.setLayout(layout)
         return widget
@@ -1161,9 +1161,9 @@ class FittingPanel(Panel):
         self.run_list.clear()
 
         for run in runs:
-            run_item = widgets.IdentifiableListWidgetItem(run.id, run.meta[files.TITLE_KEY], self.run_list)
-            run_item.setFlags(run_item.flags() | QtCore.Qt.ItemIsUserCheckable)
-            run_item.setCheckState(QtCore.Qt.Unchecked)
+            run_item = qt_widgets.IdentifiableListWidgetItem(run.id, run.meta[files.TITLE_KEY], self.run_list)
+            run_item.setFlags(run_item.flags() | qt_constants.ItemIsUserCheckable)
+            run_item.setCheckState(qt_constants.Unchecked)
 
     def copy_loaded_function_to_cursor(self):
         self.input_fit_equation.insert(fit.EQUATION_DICTIONARY[self.option_preset_fit_equations.currentText()])
@@ -1192,16 +1192,16 @@ class FittingPanel(Panel):
         for i in range(self.run_list.count()):
             item = self.run_list.item(i)
             if item.text() == run_title:
-                item.setCheckState(QtCore.Qt.Checked)
+                item.setCheckState(qt_constants.Checked)
             else:
-                item.setCheckState(QtCore.Qt.Unchecked)
+                item.setCheckState(qt_constants.Unchecked)
 
     def clear(self):
         self.input_fit_equation.clear()
         for i in range(self.table_parameters.rowCount()):
             self.table_parameters.removeRow(0)
         for i in range(self.run_list.count()):
-            self.run_list.item(i).setCheckState(QtCore.Qt.Unchecked)
+            self.run_list.item(i).setCheckState(qt_constants.Unchecked)
         self.table_parameters.setEnabled(True)
         self.run_list.setEnabled(True)
         self.fit_display.set_full_blank()
@@ -1594,9 +1594,9 @@ class FitTabPresenter(PanelPresenter):
             for i in range(self._view.run_list.count()):
                 item = self._view.run_list.item(i)
                 if item.identifier == selected_data.run_id:
-                    item.setCheckState(QtCore.Qt.Checked)
+                    item.setCheckState(qt_constants.Checked)
                 else:
-                    item.setCheckState(QtCore.Qt.Unchecked)
+                    item.setCheckState(qt_constants.Unchecked)
 
             self._view.clear_parameters(selected_data.parameters.keys())
             for symbol, parameter in selected_data.parameters.items():
@@ -1624,9 +1624,9 @@ class FitTabPresenter(PanelPresenter):
             for i in range(self._view.run_list.count()):
                 item = self._view.run_list.item(i)
                 if item.identifier in selected_data.fits.keys():
-                    item.setCheckState(QtCore.Qt.Checked)
+                    item.setCheckState(qt_constants.Checked)
                 else:
-                    item.setCheckState(QtCore.Qt.Unchecked)
+                    item.setCheckState(qt_constants.Unchecked)
 
             for run_id, f in selected_data.fits.items():
                 self._view.clear_parameters(f.parameters.keys())
