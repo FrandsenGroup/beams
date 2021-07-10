@@ -1607,7 +1607,13 @@ class FitTabPresenter(PanelPresenter):
                                          output_value=parameter.output, output_uncertainty=parameter.uncertainty,
                                          run_id=selected_data.run_id)
 
-            self._view.input_file_name.setText('{}_fit.txt'.format(selected_data.title))
+            run = self._run_service.get_runs_by_ids([selected_data.run_id])[0]
+
+            try:
+                self._view.input_file_name.setText('{}_fit.txt'.format(run.meta[files.RUN_NUMBER_KEY]))
+            except KeyError:
+                self._view.input_file_name.setText('{}_fit.txt'.format(run.meta[files.TITLE_KEY]))
+
             self._view.input_folder_name.setText(files.load_last_used_directory())
             self.__expression = selected_data.expression
             self.__variable_groups = {selected_data.run_id: selected_data.parameters}

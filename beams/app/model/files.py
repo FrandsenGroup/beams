@@ -52,6 +52,7 @@ BACKGROUND_ONE_KEY = 'BkgdOne'
 BACKGROUND_TWO_KEY = 'BkgdTwo'
 GOOD_BIN_ONE_KEY = 'GoodBinOne'
 GOOD_BIN_TWO_KEY = 'GoodBinTwo'
+RUN_NUMBER_KEY = 'RunNumber'
 T0_KEY = 'T0'
 CALC_HISTS_KEY = 'CalcHists'
 
@@ -276,14 +277,14 @@ class MuonAsymmetryFile(ReadableFile):
     def read_meta(self):
         with open(self.file_path) as f:
             f.readline()
-            metadata = f.readline().rstrip('\n').rsplit('# ')[1].rsplit(',')
+            metadata_line = f.readline().rstrip('\n').rsplit('# ')[1].rsplit(',')
 
-        metadata = [pair.rsplit(':') for pair in metadata]
+        metadata = [pair.rsplit(':') for pair in metadata_line]
         for pair in metadata:
             if len(pair) < 2:
                 pair.append('n/a')
         metadata = {pair[0]: pair[1] for pair in metadata}
-
+        metadata[T0_KEY] = 0
         return metadata
 
 

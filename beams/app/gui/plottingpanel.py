@@ -1172,6 +1172,7 @@ class PlottingPanelPresenter(PanelPresenter):
 
         if len(runs) == 0:
             display.set_full_blank()
+            self._view.legend_display.set_blank()
             return
         else:
             self._view.setEnabled(True)
