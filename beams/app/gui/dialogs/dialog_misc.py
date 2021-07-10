@@ -6,7 +6,7 @@ from PyQt5 import QtWidgets, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
 
-from app.util import widgets
+from app.util import widgets, qt_constants
 
 
 # noinspection PyArgumentList
@@ -48,16 +48,16 @@ class AddFileDialog(QtWidgets.QDialog):
         col = QtWidgets.QVBoxLayout()
         col.addWidget(message)
 
-        col.setAlignment(message, QtCore.Qt.AlignCenter)
+        col.setAlignment(message, qt_constants.AlignCenter)
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.pos_button)
         row.addWidget(self.neg_button)
         row.addWidget(self.isis_button)
         row.addWidget(self.psi_button)
 
-        row.setAlignment(self.pos_button, QtCore.Qt.AlignRight)
-        row.setAlignment(self.neg_button, QtCore.Qt.AlignLeft)
-        row.setAlignment(self.psi_button, QtCore.Qt.AlignCenter)
+        row.setAlignment(self.pos_button, qt_constants.AlignRight)
+        row.setAlignment(self.neg_button, qt_constants.AlignLeft)
+        row.setAlignment(self.psi_button, qt_constants.AlignCenter)
         col.addLayout(row)
         self.setLayout(col)
 
@@ -98,8 +98,8 @@ class WarningMessageDialog(QtWidgets.QDialog):
 
         col.addWidget(message)
         col.addWidget(pos_button)
-        col.setAlignment(message, QtCore.Qt.AlignCenter)
-        col.setAlignment(pos_button, QtCore.Qt.AlignCenter)
+        col.setAlignment(message, qt_constants.AlignCenter)
+        col.setAlignment(pos_button, qt_constants.AlignCenter)
         self.setLayout(col)
 
     @staticmethod
@@ -134,12 +134,12 @@ class PermissionsMessageDialog(QtWidgets.QDialog):
 
         col = QtWidgets.QVBoxLayout()
         col.addWidget(message)
-        col.setAlignment(message, QtCore.Qt.AlignCenter)
+        col.setAlignment(message, qt_constants.AlignCenter)
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.pos_button)
         row.addWidget(self.neg_button)
-        row.setAlignment(self.pos_button, QtCore.Qt.AlignRight)
-        row.setAlignment(self.neg_button, QtCore.Qt.AlignLeft)
+        row.setAlignment(self.pos_button, qt_constants.AlignRight)
+        row.setAlignment(self.neg_button, qt_constants.AlignLeft)
         col.addLayout(row)
         self.setLayout(col)
 

@@ -7,7 +7,7 @@ from app.gui.dialogs.dialog_misc import FileDisplayDialog, WarningMessageDialog
 from app.gui.gui import Panel, PanelPresenter
 from app.model import files
 from app.model.domain import RunDataset, RunService, FitService, FileService, Histogram
-from app.util import widgets
+from app.util import widgets, qt_constants
 
 
 class HistogramPanel(Panel):
@@ -42,7 +42,7 @@ class HistogramPanel(Panel):
                 super().__init__()
                 self.__manager = HistogramPanel.SupportPanel.TreeManager(self)
                 self.setHeaderHidden(True)
-                self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+                self.setContextMenuPolicy(qt_constants.CustomContextMenu)
                 self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
                 self._set_callbacks()
 

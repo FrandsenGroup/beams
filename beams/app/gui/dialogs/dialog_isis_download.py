@@ -12,7 +12,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 
 from app.model import files
 from app.model.domain import FileService
-from app.util import widgets
+from app.util import widgets, qt_constants
 
 
 # noinspection PyArgumentList
@@ -160,7 +160,7 @@ class ISISDownloadDialog(QtWidgets.QDialog):
         checked_files = []
 
         for i in range(self.output_list.count()):
-            if self.output_list.item(i).checkState() == QtCore.Qt.Checked:
+            if self.output_list.item(i).checkState() == qt_constants.Checked:
                 checked_files.append(self.output_list.item(i).text())
 
         return checked_files
@@ -178,8 +178,8 @@ class ISISDownloadDialog(QtWidgets.QDialog):
 
         for identifier in data:
             run_item = QtWidgets.QListWidgetItem(identifier, self.output_list)
-            run_item.setFlags(run_item.flags() | QtCore.Qt.ItemIsUserCheckable)
-            run_item.setCheckState(QtCore.Qt.Unchecked)
+            run_item.setFlags(run_item.flags() | qt_constants.ItemIsUserCheckable)
+            run_item.setCheckState(qt_constants.Unchecked)
 
         self.download_selected.setEnabled(len(data) > 0)
         self.download_all.setEnabled(len(data) > 0)

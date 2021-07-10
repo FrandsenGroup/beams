@@ -9,6 +9,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from app.util import widgets
 from app.resources import resources
 from app.gui import mainwindow
+from app.util import qt_constants
 
 
 class BEAMS(QtWidgets.QApplication):
@@ -22,7 +23,7 @@ class BEAMS(QtWidgets.QApplication):
         logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
         pix = QtGui.QPixmap(resources.SPLASH_IMAGE)
-        self.splash = QtWidgets.QSplashScreen(pix.scaledToHeight(200, QtCore.Qt.SmoothTransformation))
+        self.splash = QtWidgets.QSplashScreen(pix.scaledToHeight(200, qt_constants.SmoothTransformation))
         self.splash.show()
         self.processEvents()
 

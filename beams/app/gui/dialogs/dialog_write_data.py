@@ -4,11 +4,10 @@ import os
 from PyQt5 import QtWidgets, QtCore
 import numpy as np
 
-from app.util import widgets
+from app.util import widgets, qt_constants
 from app.model.domain import FileService
 from app.model import files, domain
-from app.gui.dialogs.dialog_plot_file import PlotFileDialog
-from app.gui.dialogs.dialog_misc import PermissionsMessageDialog, WarningMessageDialog
+from app.gui.dialogs.dialog_misc import WarningMessageDialog
 
 
 # noinspection PyArgumentList
@@ -130,7 +129,7 @@ class WriteDataDialog(QtWidgets.QDialog):
         row_two.addWidget(self.label_fft)
         row_two.addWidget(self.radio_fft)
         row_two.addSpacing(10)
-        row_two.setAlignment(QtCore.Qt.AlignLeft)
+        row_two.setAlignment(qt_constants.AlignLeft)
         row_two.addStretch()
         col_one.addLayout(row_two)
         col_one.addSpacing(15)
@@ -143,7 +142,7 @@ class WriteDataDialog(QtWidgets.QDialog):
         row_thr.addWidget(self.write_all)
         row_thr.addWidget(self.done_button)
         row_thr.addStretch()
-        row_thr.setAlignment(QtCore.Qt.AlignLeft)
+        row_thr.setAlignment(qt_constants.AlignLeft)
         col_one.addLayout(row_thr)
 
         col_one.addWidget(self.status_bar)
