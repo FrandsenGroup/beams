@@ -181,9 +181,22 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 return ids
 
-            def get_selected(self):
+            def get_checked(self):
                 # noinspection PyTypeChecker
                 iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Checked)
+
+                ids = []
+                while iterator.value():
+                    if isinstance(iterator.value().model, RunDataset):
+                        ids.append(iterator.value().model.id)
+
+                    iterator += 1
+
+                return ids
+
+            def get_selected(self):
+                # noinspection PyTypeChecker
+                iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Selected)
 
                 ids = []
                 while iterator.value():
@@ -1293,8 +1306,19 @@ class PlottingPanelPresenter(PanelPresenter):
 
     def _populate_settings(self):
         self.__populating_settings = True  # Because this sends a lot of signals because QComboBoxes are changing
+
         ids = self._view.support_panel.item_tree.get_selected()
+        runs = self.__run_service.get_runs_by_ids(ids)
         styles = [self._plot_model.get_style_by_run_id(rid) for rid in ids]
+
+        alphas = {'{:.5f}'.format(run.asymmetries[run.FULL_ASYMMETRY].alpha) for run in runs if
+                  run.asymmetries[run.FULL_ASYMMETRY] is not None}
+        if len(alphas) == 1:
+            self._view.support_panel.asymmetry_param_box.alpha_input.setText(alphas.pop())
+        else:
+            self._view.support_panel.asymmetry_param_box.alpha_input.setText('1.0')
+
+        self.__update_alpha = True
         if len(styles) > 1:
             self._populate_with_multiple_selected(styles)
         elif len(styles) == 1:

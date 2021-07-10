@@ -1306,7 +1306,7 @@ class FitTabPresenter(PanelPresenter):
 
             self._view.clear_parameters(variables)
 
-            self._view.add_parameter(symbol=fit.ALPHA, batch_global=True)
+            self._view.add_parameter(symbol=fit.ALPHA)
             for var in variables:
                 self._view.add_parameter(symbol=var)
 
