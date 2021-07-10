@@ -7,7 +7,7 @@ import numpy as np
 
 from app.gui.plottingpanel import PlotModel
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
-from app.util import widgets, qt_constants
+from app.util import qt_widgets, qt_constants
 from app.model import domain, fit, files
 from app.gui.gui import PanelPresenter, Panel
 
@@ -160,9 +160,9 @@ class FittingPanel(Panel):
             # self.setMinimumHeight(500)
             layout = QtWidgets.QVBoxLayout()
 
-            self.new_button = widgets.StyleTwoButton("New Empty Fit")
-            self.reset_button = widgets.StyleOneButton("Reset")
-            self.save_button = widgets.StyleTwoButton("Save")
+            self.new_button = qt_widgets.StyleTwoButton("New Empty Fit")
+            self.reset_button = qt_widgets.StyleOneButton("Reset")
+            self.save_button = qt_widgets.StyleTwoButton("Save")
 
             hbox = QtWidgets.QHBoxLayout()
             hbox.addWidget(self.new_button)
@@ -520,20 +520,20 @@ class FittingPanel(Panel):
 
         self.fit_spectrum_settings = FittingPanel.PlotControl()
         self.fit_display = FittingPanel.PlotDisplay(self.fit_spectrum_settings)
-        self.special_characters = widgets.CollapsibleBox("Special Characters", background='#FFFFFF')
+        self.special_characters = qt_widgets.CollapsibleBox("Special Characters", background='#FFFFFF')
         self.special_characters.toggle_button.released.connect(self.special_characters.on_pressed)
 
         self.table_parameters = QtWidgets.QTableWidget()
         self.run_list = QtWidgets.QListWidget()
 
-        self.button_check_equation = widgets.StyleOneButton("Check")
-        self.button_fit = widgets.StyleThreeButton("Fit")
-        self.button_insert_preset_equation = widgets.StyleTwoButton("Insert")
-        self.button_insert_user_equation = widgets.StyleTwoButton("Insert")
-        self.button_save_user_equation = widgets.StyleTwoButton("Save")
-        self.button_save_results = widgets.StyleTwoButton("Save Fit")
-        self.button_lookup_folder = widgets.StyleTwoButton("Folder")
-        self.button_plot = widgets.StyleTwoButton("Plot")
+        self.button_check_equation = qt_widgets.StyleOneButton("Check")
+        self.button_fit = qt_widgets.StyleThreeButton("Fit")
+        self.button_insert_preset_equation = qt_widgets.StyleTwoButton("Insert")
+        self.button_insert_user_equation = qt_widgets.StyleTwoButton("Insert")
+        self.button_save_user_equation = qt_widgets.StyleTwoButton("Save")
+        self.button_save_results = qt_widgets.StyleTwoButton("Save Fit")
+        self.button_lookup_folder = qt_widgets.StyleTwoButton("Folder")
+        self.button_plot = qt_widgets.StyleTwoButton("Plot")
 
         self.label_global_plus = QtWidgets.QLabel("Global+")
         self.label_ordering = QtWidgets.QLabel("Order by")
@@ -543,14 +543,14 @@ class FittingPanel(Panel):
         self.check_global_plus = QtWidgets.QCheckBox()
         self.check_use_previous = QtWidgets.QCheckBox()
 
-        self.insert_phi = widgets.StyleTwoButton(fit.PHI)
-        self.insert_alpha = widgets.StyleTwoButton(fit.ALPHA)
-        self.insert_sigma = widgets.StyleTwoButton(fit.SIGMA)
-        self.insert_naught = widgets.StyleTwoButton(fit.NAUGHT)
-        self.insert_lambda = widgets.StyleTwoButton(fit.LAMBDA)
-        self.insert_delta = widgets.StyleTwoButton(fit.DELTA)
-        self.insert_beta = widgets.StyleTwoButton(fit.BETA)
-        self.insert_pi = widgets.StyleOneButton(fit.PI)
+        self.insert_phi = qt_widgets.StyleTwoButton(fit.PHI)
+        self.insert_alpha = qt_widgets.StyleTwoButton(fit.ALPHA)
+        self.insert_sigma = qt_widgets.StyleTwoButton(fit.SIGMA)
+        self.insert_naught = qt_widgets.StyleTwoButton(fit.NAUGHT)
+        self.insert_lambda = qt_widgets.StyleTwoButton(fit.LAMBDA)
+        self.insert_delta = qt_widgets.StyleTwoButton(fit.DELTA)
+        self.insert_beta = qt_widgets.StyleTwoButton(fit.BETA)
+        self.insert_pi = qt_widgets.StyleOneButton(fit.PI)
 
         self.group_preset_functions = QtWidgets.QGroupBox("Predefined Functions")
         self.group_user_functions = QtWidgets.QGroupBox("User Defined Functions")
@@ -1161,7 +1161,7 @@ class FittingPanel(Panel):
         self.run_list.clear()
 
         for run in runs:
-            run_item = widgets.IdentifiableListWidgetItem(run.id, run.meta[files.TITLE_KEY], self.run_list)
+            run_item = qt_widgets.IdentifiableListWidgetItem(run.id, run.meta[files.TITLE_KEY], self.run_list)
             run_item.setFlags(run_item.flags() | qt_constants.ItemIsUserCheckable)
             run_item.setCheckState(qt_constants.Unchecked)
 

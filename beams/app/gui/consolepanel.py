@@ -10,7 +10,7 @@ from app.gui.dialogs.dialog_write_data import WriteDataDialog
 from app.gui.gui import PanelPresenter
 from app.model import files
 from app.model.domain import RunService, FileService, FitService, FileDataset, RunDataset
-from app.util import widgets, qt_constants
+from app.util import qt_widgets, qt_constants
 
 
 class MainConsolePanel(QtWidgets.QDockWidget):
@@ -316,14 +316,14 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         self._full_widget = QtWidgets.QWidget()
 
         # Create Widgets
-        self.file_list_box = widgets.CollapsibleBox("Files")
-        self.file_list = widgets.StyleOneListWidget()
+        self.file_list_box = qt_widgets.CollapsibleBox("Files")
+        self.file_list = qt_widgets.StyleOneListWidget()
         self.select_all = QtWidgets.QCheckBox()
-        self.write_button = widgets.StyleOneButton("Write")
-        self.import_button = widgets.StyleTwoButton("+")
-        self.remove_button = widgets.StyleTwoButton('-')
-        self.load_button = widgets.StyleOneButton("Load")
-        self.convert_button = widgets.StyleOneButton("Convert")
+        self.write_button = qt_widgets.StyleOneButton("Write")
+        self.import_button = qt_widgets.StyleTwoButton("+")
+        self.remove_button = qt_widgets.StyleTwoButton('-')
+        self.load_button = qt_widgets.StyleOneButton("Load")
+        self.convert_button = qt_widgets.StyleOneButton("Convert")
         self.tree_view = self.Tree()
 
         # Set Widget Dimensions
@@ -372,7 +372,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         self.setFloating(False)
 
         self._presenter = MainConsolePanelPresenter(self)
-        self._spinner = widgets.QtWaitingSpinner(self)
+        self._spinner = qt_widgets.QtWaitingSpinner(self)
 
     def get_checked_items(self):
         return self.tree_view.get_file_ids()

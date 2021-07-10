@@ -6,7 +6,7 @@ from PyQt5 import QtWidgets, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
 
-from app.util import widgets, qt_constants
+from app.util import qt_widgets, qt_constants
 
 
 # noinspection PyArgumentList
@@ -22,10 +22,10 @@ class AddFileDialog(QtWidgets.QDialog):
 
         self.setWindowTitle('Permission')
         message = QtWidgets.QLabel('Would you like to add files from the local file system or online.')
-        self.pos_button = widgets.StyleOneButton('From disk')
-        self.neg_button = widgets.StyleOneButton('From TRIUMF')
-        self.psi_button = widgets.StyleOneButton('From PSI')
-        self.isis_button = widgets.StyleOneButton('From ISIS')
+        self.pos_button = qt_widgets.StyleOneButton('From disk')
+        self.neg_button = qt_widgets.StyleOneButton('From TRIUMF')
+        self.psi_button = qt_widgets.StyleOneButton('From PSI')
+        self.isis_button = qt_widgets.StyleOneButton('From ISIS')
         self.setMinimumWidth(300)
         self.setMinimumWidth(80)
         self.pos_button.setFixedWidth(100)
@@ -84,7 +84,7 @@ class WarningMessageDialog(QtWidgets.QDialog):
 
         self.setWindowTitle('Error')
         message = QtWidgets.QLabel(error_message)
-        pos_button = widgets.StyleOneButton('Okay')
+        pos_button = qt_widgets.StyleOneButton('Okay')
         self.setMinimumWidth(300)
         self.setMinimumHeight(80)
         pos_button.setFixedWidth(80)
@@ -118,8 +118,8 @@ class PermissionsMessageDialog(QtWidgets.QDialog):
         super(PermissionsMessageDialog, self).__init__()
         self.setWindowTitle('Permission')
         message = QtWidgets.QLabel(args[0])
-        self.pos_button = widgets.StyleOneButton('Okay')
-        self.neg_button = widgets.StyleTwoButton('Cancel')
+        self.pos_button = qt_widgets.StyleOneButton('Okay')
+        self.neg_button = qt_widgets.StyleTwoButton('Cancel')
         self.setMinimumWidth(300)
         self.setMinimumWidth(80)
         self.pos_button.setFixedWidth(80)

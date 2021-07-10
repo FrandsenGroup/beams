@@ -14,12 +14,12 @@ from app.gui.dialogs.dialog_plot_file import PlotFileDialog
 from app.gui.gui import Panel, PanelPresenter
 from app.model import files
 from app.model.domain import RunService, FitService, FileService, RunDataset, FFT
-from app.util import widgets, qt_constants
+from app.util import qt_widgets, qt_constants
 
 
 class PlottingPanel(Panel, QtWidgets.QWidget):
     class SupportPanel(QtWidgets.QDockWidget):
-        class PlotStyleBox(widgets.CollapsibleBox):
+        class PlotStyleBox(qt_widgets.CollapsibleBox):
             def __init__(self) -> None:
                 self.title = 'Plot Style'
                 super().__init__(self.title)
@@ -82,7 +82,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 box_layout.addLayout(layout)
                 self.setContentLayout(box_layout)                
 
-        class AsymmetryParametersBox(widgets.CollapsibleBox):
+        class AsymmetryParametersBox(qt_widgets.CollapsibleBox):
             def __init__(self) -> None:
                 self.title = 'Asymmetry Parameters'
                 super().__init__(self.title)
@@ -94,7 +94,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 layout.addWidget(self.alpha_input, 0, 1)
                 self.setContentLayout(layout)
 
-        class LegendBox(widgets.CollapsibleBox):
+        class LegendBox(qt_widgets.CollapsibleBox):
             def __init__(self) -> None:
                 self.title = 'Legend'
                 super().__init__(self.title)
@@ -291,9 +291,9 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.setTitleBarWidget(QtWidgets.QWidget())
             self.setWindowTitle("Plotting")
 
-            self.plot_button = widgets.StyleOneButton("Plot")
-            self.plot_all_button = widgets.StyleOneButton("Plot All")
-            self.clear_all_button = widgets.StyleTwoButton("Clear All")
+            self.plot_button = qt_widgets.StyleOneButton("Plot")
+            self.plot_all_button = qt_widgets.StyleOneButton("Plot All")
+            self.clear_all_button = qt_widgets.StyleTwoButton("Clear All")
 
             self.item_tree = self.Tree()
             self.legend_box = self.LegendBox()

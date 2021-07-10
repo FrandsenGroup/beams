@@ -7,7 +7,7 @@ from app.gui.dialogs.dialog_misc import FileDisplayDialog, WarningMessageDialog
 from app.gui.gui import Panel, PanelPresenter
 from app.model import files
 from app.model.domain import RunDataset, RunService, FitService, FileService, Histogram
-from app.util import widgets, qt_constants
+from app.util import qt_widgets, qt_constants
 
 
 class HistogramPanel(Panel):
@@ -163,9 +163,9 @@ class HistogramPanel(Panel):
             self.setMinimumHeight(500)
             layout = QtWidgets.QVBoxLayout()
 
-            self.see_file_button = widgets.StyleOneButton("See File")
-            self.reset_button = widgets.StyleOneButton("Reset")
-            self.save_button = widgets.StyleTwoButton("Save")
+            self.see_file_button = qt_widgets.StyleOneButton("See File")
+            self.reset_button = qt_widgets.StyleOneButton("Reset")
+            self.save_button = qt_widgets.StyleTwoButton("Save")
 
             hbox = QtWidgets.QHBoxLayout()
             hbox.addWidget(self.see_file_button)

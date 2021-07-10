@@ -12,7 +12,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 
 from app.model import files
 from app.model.domain import FileService
-from app.util import widgets, qt_constants
+from app.util import qt_widgets, qt_constants
 
 
 # noinspection PyArgumentList
@@ -35,12 +35,12 @@ class ISISDownloadDialog(QtWidgets.QDialog):
         self.output_list = QtWidgets.QListWidget()
         self.output_web = QtWidgets.QPlainTextEdit()
         self.title_search = QtWidgets.QLineEdit()
-        self.download_selected = widgets.StyleOneButton('Download Selected')
-        self.download_all = widgets.StyleOneButton('Download All')
-        self.select_button = widgets.StyleTwoButton('Save to')
-        self.download_button = widgets.StyleOneButton('Download')
-        self.search_button = widgets.StyleOneButton('Search')
-        self.done_button = widgets.StyleOneButton('Done')
+        self.download_selected = qt_widgets.StyleOneButton('Download Selected')
+        self.download_all = qt_widgets.StyleOneButton('Download All')
+        self.select_button = qt_widgets.StyleTwoButton('Save to')
+        self.download_button = qt_widgets.StyleOneButton('Download')
+        self.search_button = qt_widgets.StyleOneButton('Search')
+        self.done_button = qt_widgets.StyleOneButton('Done')
         self._label_description = QtWidgets.QLabel('Provide the information below to search and download runs from '
                                                    'musr.ca.\n')
 

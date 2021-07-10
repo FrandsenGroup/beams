@@ -4,7 +4,7 @@ import os
 from PyQt5 import QtWidgets, QtCore
 import numpy as np
 
-from app.util import widgets, qt_constants
+from app.util import qt_widgets, qt_constants
 from app.model.domain import FileService
 from app.model import files, domain
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
@@ -18,11 +18,11 @@ class WriteDataDialog(QtWidgets.QDialog):
 
         self.status_bar = QtWidgets.QStatusBar()
         self.file_list = QtWidgets.QComboBox()
-        self.select_folder = widgets.StyleTwoButton('Custom')
-        self.skip_file = widgets.StyleOneButton('Skip File')
-        self.write_file = widgets.StyleOneButton('Write')
-        self.write_all = widgets.StyleOneButton('Write All')
-        self.done_button = widgets.StyleOneButton('Done')
+        self.select_folder = qt_widgets.StyleTwoButton('Custom')
+        self.skip_file = qt_widgets.StyleOneButton('Skip File')
+        self.write_file = qt_widgets.StyleOneButton('Write')
+        self.write_all = qt_widgets.StyleOneButton('Write All')
+        self.done_button = qt_widgets.StyleOneButton('Done')
         self.input_filename = QtWidgets.QLineEdit()
         self.input_filename.setPlaceholderText('Default is [run number].asy')
         self.label_full = QtWidgets.QLabel('Full Data')
