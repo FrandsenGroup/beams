@@ -57,6 +57,10 @@ StyleOneToolButton {
     border-style: None;
 }
 
+StyleOneToolButton:hover:!pressed {
+    background-color: @contrast;
+}
+
 StyleOneDockWidget {
     background-color: @brand_zero;
     border: 2px solid #FFFFFF;
