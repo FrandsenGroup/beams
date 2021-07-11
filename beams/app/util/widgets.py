@@ -254,7 +254,7 @@ class Frame(QtWidgets.QFrame):
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self._m_content)
         layout.setSpacing(0)
-        layout.setContentsMargins(QtCore.QMargins(5, 5, 5, 5))
+        layout.setContentsMargins(QtCore.QMargins(25, 25, 25, 25))
         col.addLayout(layout)
 
         self._m_old_pos = None
