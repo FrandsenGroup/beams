@@ -58,7 +58,7 @@ StyleOneToolButton {
 }
 
 StyleOneToolButton:hover:!pressed {
-    background-color: @contrast;
+    background-color: @brand_minus_one;
 }
 
 StyleOneDockWidget {
@@ -93,43 +93,6 @@ QListWidget::item:selected:!active {
     background: @low_contrast;
 }
 
-
-QTabWidget::pane { /* The tab widget frame */
-    background: #FFFFFF;
-}
-
-QTabWidget::tab-bar {
-    background: pink;
-    border-top: 5px solid red;
-}
-
-QTabBar {
-    background: @brand_zero;
-    border-top: None;
-    margin-top: 0px;
-    padding: 0px;
-}
-
-/* Style the tab using the tab sub-control. Note that it reads QTabBar _not_ QTabWidget */
-QTabBar::tab {
-    background: #070536;
-    min-width: 45px;
-    max-width: 45px;
-    min-height: 45px;
-    max-height: 45px;
-    padding: 0px;
-    padding-left:20px;
-    padding-right:20px;
-    font: bold 12px;
-    color: #FFFFFF;
-}
-QTabBar::tab:selected, QTabBar::tab:hover {
-    background: #000031;
-}
-QTabBar::tab:selected {
-    border-color: #000031;
-    border-bottom-color: #FFFFFF; /* same as pane color */
-}
 
 
 
