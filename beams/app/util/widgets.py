@@ -143,6 +143,9 @@ class TitleBar(QtWidgets.QWidget):
         super(TitleBar, self).__init__()
         self.parent = parent
         self.setParent(parent)
+
+        self.setContentsMargins(0, 0, 0, 0)
+
         self.setAutoFillBackground(True)
         self.setBackgroundRole(QtGui.QPalette.Base)
         p = self.palette()
@@ -155,8 +158,17 @@ class TitleBar(QtWidgets.QWidget):
                            "}")
 
         self.minimize = StyleOneToolButton()
+        self.minimize.setFixedWidth(40)
+        self.minimize.setFixedHeight(40)
+
         self.maximize = StyleOneToolButton()
+        self.maximize.setFixedWidth(40)
+        self.maximize.setFixedHeight(40)
+
         self.close = StyleOneToolButton()
+        self.close.setFixedWidth(40)
+        self.close.setFixedHeight(40)
+        self.close.setStyleSheet("StyleOneToolButton:hover:!pressed { background-color: #ff3333 }")
 
         pix = QtGui.QIcon(resources.CLOSE_IMAGE)
         self.close.setIcon(pix)
@@ -176,11 +188,15 @@ class TitleBar(QtWidgets.QWidget):
         self.close.setMinimumHeight(25)
 
         row = QtWidgets.QHBoxLayout(self)
-        row.addWidget(Logo())
+        row.setContentsMargins(0, 0, 0, 0)
+        row.addSpacing(15)
+        col = QtWidgets.QVBoxLayout()
+        col.setContentsMargins(0, 0, 0, 0)
+        col.addSpacing(5)
+        col.addWidget(Logo())
+        row.addLayout(col)
         row.addWidget(self.minimize)
-        row.addSpacing(25)
         row.addWidget(self.maximize)
-        row.addSpacing(25)
         row.addWidget(self.close)
         row.addSpacing(15)
 
@@ -254,7 +270,7 @@ class Frame(QtWidgets.QFrame):
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self._m_content)
         layout.setSpacing(0)
-        layout.setContentsMargins(QtCore.QMargins(5, 5, 5, 5))
+        layout.setContentsMargins(QtCore.QMargins(25, 0, 25, 25))
         col.addLayout(layout)
 
         self._m_old_pos = None
