@@ -9,7 +9,7 @@ import requests
 from PyQt5 import QtWidgets, QtCore
 
 from app.model.domain import FileService
-from app.util import widgets
+from app.util import qt_widgets, qt_constants
 from app.model import files
 
 
@@ -31,12 +31,12 @@ class MusrDownloadDialog(QtWidgets.QDialog):
         self.output_list = QtWidgets.QListWidget()
         self.output_web = QtWidgets.QPlainTextEdit()
         self.title_search = QtWidgets.QLineEdit()
-        self.download_selected = widgets.StyleOneButton('Download Selected')
-        self.download_all = widgets.StyleOneButton('Download All')
-        self.select_button = widgets.StyleTwoButton('Save to')
-        self.download_button = widgets.StyleOneButton('Download')
-        self.search_button = widgets.StyleOneButton('Search')
-        self.done_button = widgets.StyleOneButton('Done')
+        self.download_selected = qt_widgets.StyleOneButton('Download Selected')
+        self.download_all = qt_widgets.StyleOneButton('Download All')
+        self.select_button = qt_widgets.StyleTwoButton('Save to')
+        self.download_button = qt_widgets.StyleOneButton('Download')
+        self.search_button = qt_widgets.StyleOneButton('Search')
+        self.done_button = qt_widgets.StyleOneButton('Done')
         self._label_description = QtWidgets.QLabel('Provide the information below to search and download runs from '
                                                    'musr.ca.\n')
 
@@ -165,7 +165,7 @@ class MusrDownloadDialog(QtWidgets.QDialog):
         checked_files = []
 
         for i in range(self.output_list.count()):
-            if self.output_list.item(i).checkState() == QtCore.Qt.Checked:
+            if self.output_list.item(i).checkState() == qt_constants.Checked:
                 checked_files.append(self.output_list.item(i).text())
 
         return checked_files
@@ -183,8 +183,8 @@ class MusrDownloadDialog(QtWidgets.QDialog):
 
         for identifier in data:
             run_item = QtWidgets.QListWidgetItem(identifier, self.output_list)
-            run_item.setFlags(run_item.flags() | QtCore.Qt.ItemIsUserCheckable)
-            run_item.setCheckState(QtCore.Qt.Unchecked)
+            run_item.setFlags(run_item.flags() | qt_constants.ItemIsUserCheckable)
+            run_item.setCheckState(qt_constants.Unchecked)
 
         self.download_selected.setEnabled(len(data) > 0)
         self.download_all.setEnabled(len(data) > 0)
