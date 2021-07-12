@@ -493,7 +493,7 @@ class FittingPanel(Panel):
                                                                       QtWidgets.QHeaderView.Stretch)
             self.output_table.horizontalHeader().setSectionResizeMode(self.UNCERTAINTY_COLUMN,
                                                                       QtWidgets.QHeaderView.Stretch)
-            self.output_table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
+            self.output_table.setEditTriggers(qt_constants.NoEditTriggers)
 
     def __init__(self):
         super(FittingPanel, self).__init__()

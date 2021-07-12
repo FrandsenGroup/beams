@@ -1,5 +1,5 @@
 
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtWidgets
 
 try:
     Checked = QtCore.Qt.Checked
@@ -30,6 +30,7 @@ try:
     Transparent = QtCore.Qt.transparent
     NoPen = QtCore.Qt.NoPen
     RelativeSize = QtCore.Qt.RelativeSize
+    NoEditTriggers = QtWidgets.QAbstractItemView.NoEditTriggers
 
 except AttributeError:
     Checked = QtCore.Qt.CheckState.Checked
@@ -60,3 +61,4 @@ except AttributeError:
     Transparent = QtCore.Qt.GlobalColor.transparent
     NoPen = QtCore.Qt.PenStyle.NoPen
     RelativeSize = QtCore.Qt.SizeMode.RelativeSize
+    NoEditTriggers = QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers
