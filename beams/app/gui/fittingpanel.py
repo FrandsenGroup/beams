@@ -1212,29 +1212,6 @@ class FittingPanel(Panel):
         return dialog.exec()
 
 
-# TODO make sure display is updating only when necessary. Cause it definitely ain't right now.
-
-# TODO need to redo populating, in conjunction with above.
-
-# TODO need to create some kind of loading popup or something when it is fitting.
-
-# TODO Checking box in fixed run dep doesn't update screen because we use the update states variable.
-
-# TODO We should probably set output to 1 and uncertainty to 0, or equal to fixed value (but only when sending to fit).
-
-# TODO We should treat fixed and non fixed identical after running a fit. Probably emphasize reference to output.
-
-# TODO Put write method in the domain objects (Asymmetry, Histogram etc).
-
-# TODO Replace List and Table Widget items with custom identifiable widgets. Store run ids, fit ids etc. This way we
-#   can stop relying on titles entirely. Though we need to figure out on what level we should update to a new title.
-
-# TODO Switch all constants like 'Checked' to new class, if its not compatible make our own module.
-
-# TODO Change how lambda works so we can get uncertainty of all parameters, even the fixed ones.
-
-# TODO Global and fixed-run-dependent can't be checked at the same time. Make a callback on the state changed.
-
 class FitTabPresenter(PanelPresenter):
     def __init__(self, view: FittingPanel):
         super().__init__(view)
@@ -1300,6 +1277,7 @@ class FitTabPresenter(PanelPresenter):
 
         if fit.is_valid_expression(expression):
             self._view.highlight_input_red(self._view.input_fit_equation, False)
+
             variables = fit.parse(fit.split_expression(expression)[1])
             variables.discard(fit.INDEPENDENT_VARIABLE)
             variables.add(fit.ALPHA)
