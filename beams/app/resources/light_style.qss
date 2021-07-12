@@ -43,7 +43,7 @@ StyleTwoButton:hover:pressed {
 }
 
 StyleThreeButton {
-    background-color: @brand_minus_two;
+    background-color: @brand_plus_one;
     border-style: None;
     border-radius: 3px;
     font: bold 12px;
@@ -51,10 +51,26 @@ StyleThreeButton {
     min-height: 22px;
 }
 
+StyleThreeButton:disabled {
+    background-color: @brand_minus_three;
+}
+
+StyleThreeButton:hover:!pressed {
+    background-color: @brand_plus_two;
+}
+
+StyleThreeButton:hover:pressed {
+    background-color: @highest_contrast;
+}
+
 StyleOneToolButton {
     background-color: #FFFFFF;
     color: #FFFFFF;
     border-style: None;
+}
+
+StyleOneToolButton:hover:!pressed {
+    background-color: @brand_minus_one;
 }
 
 StyleOneDockWidget {
@@ -88,44 +104,3 @@ QLineEdit:disabled {
 QListWidget::item:selected:!active {
     background: @low_contrast;
 }
-
-
-QTabWidget::pane { /* The tab widget frame */
-    background: #FFFFFF;
-}
-
-QTabWidget::tab-bar {
-    background: pink;
-    border-top: 5px solid red;
-}
-
-QTabBar {
-    background: @brand_zero;
-    border-top: None;
-    margin-top: 0px;
-    padding: 0px;
-}
-
-/* Style the tab using the tab sub-control. Note that it reads QTabBar _not_ QTabWidget */
-QTabBar::tab {
-    background: #070536;
-    min-width: 45px;
-    max-width: 45px;
-    min-height: 45px;
-    max-height: 45px;
-    padding: 0px;
-    padding-left:20px;
-    padding-right:20px;
-    font: bold 12px;
-    color: #FFFFFF;
-}
-QTabBar::tab:selected, QTabBar::tab:hover {
-    background: #000031;
-}
-QTabBar::tab:selected {
-    border-color: #000031;
-    border-bottom-color: #FFFFFF; /* same as pane color */
-}
-
-
-

@@ -6,6 +6,7 @@ from app.gui.histogrampanel import HistogramPanel
 from app.gui.plottingpanel import PlottingPanel
 from app.resources import resources
 from app.gui.fittingpanel import FittingPanel
+from app.util import qt_constants
 
 
 # noinspection PyArgumentList
@@ -108,20 +109,20 @@ class MainWindow(QtWidgets.QMainWindow):
             self._current_support = self._fit_support
 
         self._current_support.show()
-        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self._current_support)
+        self.addDockWidget(qt_constants.LeftDockWidgetArea, self._current_support)
 
     def _set_default_panels(self):
         """
         Sets the default panels of the main window for µSR analysis.
         """
-        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, MainConsolePanel())
+        self.addDockWidget(qt_constants.LeftDockWidgetArea, MainConsolePanel())
 
         temp_docking_widget = QtWidgets.QDockWidget()
         temp_docking_widget.setWidget(self._tabs)
         temp_docking_widget.setTitleBarWidget(QtWidgets.QWidget())
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, temp_docking_widget, QtCore.Qt.Horizontal)
+        self.addDockWidget(qt_constants.RightDockWidgetArea, temp_docking_widget, qt_constants.Horizontal)
 
-        self.addDockWidget(QtCore.Qt.LeftDockWidgetArea, self._tabs.plotting_panel.createSupportPanel())
+        self.addDockWidget(qt_constants.LeftDockWidgetArea, self._tabs.plotting_panel.createSupportPanel())
 
     def set_status_message(self, message):
         """

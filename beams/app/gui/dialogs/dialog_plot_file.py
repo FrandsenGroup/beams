@@ -3,7 +3,7 @@ import enum
 from PyQt5 import QtWidgets
 
 from app.model.domain import Asymmetry, RunDataset, RunService
-from app.util import widgets
+from app.util import qt_widgets
 from app.model import files
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
 
@@ -21,11 +21,11 @@ class PlotFileDialog(QtWidgets.QDialog):
         self.c_file_list = QtWidgets.QComboBox()
         self.c_hist_one = QtWidgets.QComboBox()
         self.c_hist_two = QtWidgets.QComboBox()
-        self.b_apply = widgets.StyleOneButton('Apply')
-        self.b_apply_all = widgets.StyleOneButton('Apply All')
-        self.b_plot = widgets.StyleOneButton('Plot')
-        self.b_skip = widgets.StyleOneButton('Skip')
-        self.b_cancel = widgets.StyleTwoButton('Cancel')
+        self.b_apply = qt_widgets.StyleOneButton('Apply')
+        self.b_apply_all = qt_widgets.StyleOneButton('Apply All')
+        self.b_plot = qt_widgets.StyleOneButton('Plot')
+        self.b_skip = qt_widgets.StyleOneButton('Skip')
+        self.b_cancel = qt_widgets.StyleTwoButton('Cancel')
         self.status_bar = QtWidgets.QStatusBar()
 
         self.b_plot.setEnabled(False)

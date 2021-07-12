@@ -14,12 +14,12 @@ from app.gui.dialogs.dialog_plot_file import PlotFileDialog
 from app.gui.gui import Panel, PanelPresenter
 from app.model import files
 from app.model.domain import RunService, FitService, FileService, RunDataset, FFT
-from app.util import widgets
+from app.util import qt_widgets, qt_constants
 
 
 class PlottingPanel(Panel, QtWidgets.QWidget):
     class SupportPanel(QtWidgets.QDockWidget):
-        class PlotStyleBox(widgets.CollapsibleBox):
+        class PlotStyleBox(qt_widgets.CollapsibleBox):
             def __init__(self) -> None:
                 self.title = 'Plot Style'
                 super().__init__(self.title)
@@ -82,7 +82,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 box_layout.addLayout(layout)
                 self.setContentLayout(box_layout)                
 
-        class AsymmetryParametersBox(widgets.CollapsibleBox):
+        class AsymmetryParametersBox(qt_widgets.CollapsibleBox):
             def __init__(self) -> None:
                 self.title = 'Asymmetry Parameters'
                 super().__init__(self.title)
@@ -94,7 +94,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 layout.addWidget(self.alpha_input, 0, 1)
                 self.setContentLayout(layout)
 
-        class LegendBox(widgets.CollapsibleBox):
+        class LegendBox(qt_widgets.CollapsibleBox):
             def __init__(self) -> None:
                 self.title = 'Legend'
                 super().__init__(self.title)
@@ -147,7 +147,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 super().__init__()
                 self.__manager = PlottingPanel.SupportPanel.TreeManager(self)
                 self.setHeaderHidden(True)
-                self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+                self.setContextMenuPolicy(qt_constants.CustomContextMenu)
                 self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
                 self._set_callbacks()
 
@@ -181,9 +181,22 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 return ids
 
-            def get_selected(self):
+            def get_checked(self):
                 # noinspection PyTypeChecker
                 iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Checked)
+
+                ids = []
+                while iterator.value():
+                    if isinstance(iterator.value().model, RunDataset):
+                        ids.append(iterator.value().model.id)
+
+                    iterator += 1
+
+                return ids
+
+            def get_selected(self):
+                # noinspection PyTypeChecker
+                iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Selected)
 
                 ids = []
                 while iterator.value():
@@ -228,7 +241,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 # noinspection PyTypeChecker
                 for i in range(self.topLevelItemCount()):
                     if self.topLevelItem(i).model.id in ids:
-                        self.topLevelItem(i).setCheckState(0, QtCore.Qt.Checked)
+                        self.topLevelItem(i).setCheckState(0, qt_constants.Checked)
 
         class TreeManager:
             def __init__(self, view):
@@ -257,8 +270,8 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self.model = run_data
                 self.__selected_items = None
                 self.setFlags(self.flags()
-                              | QtCore.Qt.ItemIsUserCheckable)
-                self.setCheckState(0, QtCore.Qt.Unchecked)
+                              | qt_constants.ItemIsUserCheckable)
+                self.setCheckState(0, qt_constants.Unchecked)
 
             def menu(self, items):
                 self.__selected_items = items
@@ -278,9 +291,9 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.setTitleBarWidget(QtWidgets.QWidget())
             self.setWindowTitle("Plotting")
 
-            self.plot_button = widgets.StyleOneButton("Plot")
-            self.plot_all_button = widgets.StyleOneButton("Plot All")
-            self.clear_all_button = widgets.StyleTwoButton("Clear All")
+            self.plot_button = qt_widgets.StyleOneButton("Plot")
+            self.plot_all_button = qt_widgets.StyleOneButton("Plot All")
+            self.clear_all_button = qt_widgets.StyleTwoButton("Clear All")
 
             self.item_tree = self.Tree()
             self.legend_box = self.LegendBox()
@@ -631,7 +644,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self._label_slider_bin = QtWidgets.QLabel('')
             self._label_input_bin = QtWidgets.QLabel('Time Bins (ns)')
 
-            self.slider_bin = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+            self.slider_bin = QtWidgets.QSlider(qt_constants.Horizontal)
             self.input_bin = QtWidgets.QLineEdit()
 
             self._label_time = QtWidgets.QLabel('Time')
@@ -967,6 +980,7 @@ class PlottingPanelPresenter(PanelPresenter):
         self.__run_service.register(RunService.RUNS_ADDED, self)
         self.__run_service.register(RunService.RUNS_CHANGED, self)
         self.__populating_settings = False
+        self.__update_alpha = True
         self._set_callbacks()
 
     def _set_callbacks(self):
@@ -1158,6 +1172,7 @@ class PlottingPanelPresenter(PanelPresenter):
 
         if len(runs) == 0:
             display.set_full_blank()
+            self._view.legend_display.set_blank()
             return
         else:
             self._view.setEnabled(True)
@@ -1236,6 +1251,15 @@ class PlottingPanelPresenter(PanelPresenter):
 
     def update(self):
         run_datasets = self.__run_service.get_runs()
+        alphas = {'{:.5f}'.format(run.asymmetries[run.FULL_ASYMMETRY].alpha) for run in run_datasets if run.asymmetries[run.FULL_ASYMMETRY] is not None}
+
+        self.__update_alpha = False
+        if len(alphas) == 1:
+            self._view.support_panel.asymmetry_param_box.alpha_input.setText(alphas.pop())
+        else:
+            self._view.support_panel.asymmetry_param_box.alpha_input.setText('1.0')
+        self.__update_alpha = True
+
         for run in run_datasets:
             self._plot_model.add_style_for_run(run, False, True)
 
@@ -1245,6 +1269,9 @@ class PlottingPanelPresenter(PanelPresenter):
         self._populate_settings()
 
     def update_alpha(self):
+        if not self.__update_alpha:
+            return
+
         try:
             alpha = float(self._view.support_panel.asymmetry_param_box.alpha_input.text())
         except ValueError:
@@ -1280,8 +1307,19 @@ class PlottingPanelPresenter(PanelPresenter):
 
     def _populate_settings(self):
         self.__populating_settings = True  # Because this sends a lot of signals because QComboBoxes are changing
+
         ids = self._view.support_panel.item_tree.get_selected()
+        runs = self.__run_service.get_runs_by_ids(ids)
         styles = [self._plot_model.get_style_by_run_id(rid) for rid in ids]
+
+        alphas = {'{:.5f}'.format(run.asymmetries[run.FULL_ASYMMETRY].alpha) for run in runs if
+                  run.asymmetries[run.FULL_ASYMMETRY] is not None}
+        if len(alphas) == 1:
+            self._view.support_panel.asymmetry_param_box.alpha_input.setText(alphas.pop())
+        else:
+            self._view.support_panel.asymmetry_param_box.alpha_input.setText('1.0')
+
+        self.__update_alpha = True
         if len(styles) > 1:
             self._populate_with_multiple_selected(styles)
         elif len(styles) == 1:

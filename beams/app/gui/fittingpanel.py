@@ -1,4 +1,3 @@
-import warnings
 import logging
 
 from PyQt5 import QtWidgets, QtCore
@@ -8,7 +7,7 @@ import numpy as np
 
 from app.gui.plottingpanel import PlotModel
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
-from app.util import widgets
+from app.util import qt_widgets, qt_constants
 from app.model import domain, fit, files
 from app.gui.gui import PanelPresenter, Panel
 
@@ -28,7 +27,7 @@ class FittingPanel(Panel):
                 super().__init__()
                 self.__manager = FittingPanel.SupportPanel.TreeManager(self)
                 self.setHeaderHidden(True)
-                self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+                self.setContextMenuPolicy(qt_constants.CustomContextMenu)
                 self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
                 self._set_callbacks()
 
@@ -161,9 +160,9 @@ class FittingPanel(Panel):
             # self.setMinimumHeight(500)
             layout = QtWidgets.QVBoxLayout()
 
-            self.new_button = widgets.StyleTwoButton("New Empty Fit")
-            self.reset_button = widgets.StyleOneButton("Reset")
-            self.save_button = widgets.StyleTwoButton("Save")
+            self.new_button = qt_widgets.StyleTwoButton("New Empty Fit")
+            self.reset_button = qt_widgets.StyleOneButton("Reset")
+            self.save_button = qt_widgets.StyleTwoButton("Save")
 
             hbox = QtWidgets.QHBoxLayout()
             hbox.addWidget(self.new_button)
@@ -181,20 +180,6 @@ class FittingPanel(Panel):
             self._is_drawing = True
             FigureCanvas.__init__(self, Figure())
             self.canvas_axes = self.figure.add_subplot()
-
-    class FitToolbar(NavigationToolbar2QT):
-        # only display the buttons we need
-        NavigationToolbar2QT.toolitems = (
-            ('Home', 'Reset original view', 'home', 'home'),
-            ('Back', 'Back to previous view', 'back', 'back'),
-            ('Forward', 'Forward to next view', 'forward', 'forward'),
-            # (None, None, None, None),
-            ('Pan', 'Pan axes with left mouse, zoom with right', 'move', 'pan'),
-            ('Zoom', 'Zoom to rectangle', 'zoom_to_rect', 'zoom'),
-            # ('Subplots', 'Configure subplots', 'subplots', 'configure_subplots'),
-            # (None, None, None, None),
-            ('Save', 'Save the figure', 'filesave', 'save_figure'),
-        )
 
     class PlotDisplay(FigureCanvas):
         def __init__(self, settings):
@@ -249,17 +234,19 @@ class FittingPanel(Panel):
             errorbar_color = color if errorbar_color == 'Default' else errorbar_color
             marker_face_color = marker_color if fillstyle != 'none' else 'none'
             fit_color = color if fit_color == 'Default' else fit_color
-
-            if uncertainty is not None and errorbar_style != 'none':
+            self.__logger = logging.getLogger('qt_fitting_panel_plot_fit')
+            self.__logger.debug(
+                "{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}".format(time, asymmetry, marker_face_color, marker_color,
+                                                                    color, linestyle, marker, fillstyle, line_width,
+                                                                    marker_size, label))
+            if uncertainty is not None:
                 self.axes_time.errorbar(time, asymmetry, uncertainty, mfc=marker_face_color, mec=marker_color,
                                         color=color, linestyle=linestyle, marker=marker, fillstyle=fillstyle,
                                         linewidth=line_width, markersize=marker_size,
                                         elinewidth=errorbar_width,
-                                        ecolor=errorbar_color, capsize=errorbar_style)
+                                        ecolor=errorbar_color)
 
             else:
-                self.__logger = logging.getLogger('qt_fitting_panel_plot_fit')
-                self.__logger.debug("{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}".format(time, asymmetry, marker_face_color, marker_color, color, linestyle, marker, fillstyle, line_width, marker_size, label))
                 self.axes_time.plot(time, asymmetry, mfc=marker_face_color, mec=marker_color, color=color,
                                     linestyle=linestyle, marker=marker, fillstyle=fillstyle,
                                     linewidth=line_width,
@@ -311,7 +298,7 @@ class FittingPanel(Panel):
             self._label_slider_bin = QtWidgets.QLabel('')
             self._label_input_bin = QtWidgets.QLabel('Time Bins (ns)')
 
-            self.slider_bin = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+            self.slider_bin = QtWidgets.QSlider(qt_constants.Horizontal)
             self.input_bin = QtWidgets.QLineEdit()
 
             self._label_time = QtWidgets.QLabel('Time')
@@ -456,9 +443,67 @@ class FittingPanel(Panel):
         def set_bin_slider(self, value):
             self.slider_bin.setValue(int(value))
 
+    class ParameterTable(QtWidgets.QTabWidget):
+        VALUE_COLUMN = 0
+        MIN_COLUMN = 1
+        MAX_COLUMN = 2
+        FIXED_COLUMN = 3
+        GLOBAL_COLUMN = 0
+        FIXED_RUN_COLUMN = 1
+        FIXED_VALUE_COLUMN = 2
+        OUTPUT_VALUE_COLUMN = 0
+        UNCERTAINTY_COLUMN = 1
+
+        def __init__(self):
+            super(FittingPanel.ParameterTable, self).__init__()
+            self.config_table = QtWidgets.QTableWidget()
+            self.batch_table = QtWidgets.QTableWidget()
+            self.output_table = QtWidgets.QTableWidget()
+
+            self.addTab(self.config_table, "Config")
+            self.addTab(self.batch_table, "Batch")
+            self.addTab(self.output_table, "Output")
+
+            self._set_attributes()
+
+        def _set_attributes(self):
+            self.config_table.setColumnCount(4)
+            self.config_table.setHorizontalHeaderLabels(['Value', 'Min', 'Max', 'Fixed'])
+            self.config_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+            self.config_table.horizontalHeader().setSectionResizeMode(self.VALUE_COLUMN,
+                                                                      QtWidgets.QHeaderView.Stretch)
+            self.config_table.horizontalHeader().setSectionResizeMode(self.MIN_COLUMN, QtWidgets.QHeaderView.Stretch)
+            self.config_table.horizontalHeader().setSectionResizeMode(self.MAX_COLUMN, QtWidgets.QHeaderView.Stretch)
+            self.config_table.horizontalHeader().setSectionResizeMode(self.FIXED_COLUMN, QtWidgets.QHeaderView.Stretch)
+
+            self.batch_table.setColumnCount(3)
+            self.batch_table.setHorizontalHeaderLabels(['Global', 'Fixed - Run Dep.', 'Value'])
+            self.batch_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+            self.batch_table.horizontalHeader().setSectionResizeMode(self.FIXED_VALUE_COLUMN,
+                                                                      QtWidgets.QHeaderView.Stretch)
+            self.batch_table.horizontalHeader().setSectionResizeMode(self.GLOBAL_COLUMN,
+                                                                     QtWidgets.QHeaderView.Stretch)
+            self.batch_table.horizontalHeader().setSectionResizeMode(self.FIXED_RUN_COLUMN,
+                                                                     QtWidgets.QHeaderView.Stretch)
+
+            self.output_table.setColumnCount(2)
+            self.output_table.setHorizontalHeaderLabels(['Value', 'Uncertainty'])
+            self.output_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
+            self.output_table.horizontalHeader().setSectionResizeMode(self.OUTPUT_VALUE_COLUMN,
+                                                                      QtWidgets.QHeaderView.Stretch)
+            self.output_table.horizontalHeader().setSectionResizeMode(self.UNCERTAINTY_COLUMN,
+                                                                      QtWidgets.QHeaderView.Stretch)
+            self.output_table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
+
     def __init__(self):
         super(FittingPanel, self).__init__()
+        self.__batch_table_states = {}
+        self.__update_states = True
+        self.__logger = logging.getLogger('QtFitting')
+
         self.support_panel = FittingPanel.SupportPanel()
+
+        self.parameter_table = self.ParameterTable()
 
         self.input_fit_equation = QtWidgets.QLineEdit()
         self.input_user_equation = QtWidgets.QLineEdit()
@@ -475,22 +520,20 @@ class FittingPanel(Panel):
 
         self.fit_spectrum_settings = FittingPanel.PlotControl()
         self.fit_display = FittingPanel.PlotDisplay(self.fit_spectrum_settings)
-        self.special_characters = widgets.CollapsibleBox("Special Characters", background='#FFFFFF')
+        self.special_characters = qt_widgets.CollapsibleBox("Special Characters", background='#FFFFFF')
         self.special_characters.toggle_button.released.connect(self.special_characters.on_pressed)
 
         self.table_parameters = QtWidgets.QTableWidget()
-        self.user_functions = QtWidgets.QTableWidget()
         self.run_list = QtWidgets.QListWidget()
 
-        self.button_check_equation = widgets.StyleOneButton("Check")
-        self.button_fit = widgets.StyleOneButton("Fit")
-        self.button_done = widgets.StyleOneButton("Done")
-        self.button_insert_preset_equation = widgets.StyleTwoButton("Insert")
-        self.button_insert_user_equation = widgets.StyleTwoButton("Insert")
-        self.button_save_user_equation = widgets.StyleTwoButton("Save")
-        self.button_save_results = widgets.StyleTwoButton("Save Fit")
-        self.button_lookup_folder = widgets.StyleTwoButton("Folder")
-        self.button_plot = widgets.StyleTwoButton("Plot")
+        self.button_check_equation = qt_widgets.StyleOneButton("Check")
+        self.button_fit = qt_widgets.StyleThreeButton("Fit")
+        self.button_insert_preset_equation = qt_widgets.StyleTwoButton("Insert")
+        self.button_insert_user_equation = qt_widgets.StyleTwoButton("Insert")
+        self.button_save_user_equation = qt_widgets.StyleTwoButton("Save")
+        self.button_save_results = qt_widgets.StyleTwoButton("Save Fit")
+        self.button_lookup_folder = qt_widgets.StyleTwoButton("Folder")
+        self.button_plot = qt_widgets.StyleTwoButton("Plot")
 
         self.label_global_plus = QtWidgets.QLabel("Global+")
         self.label_ordering = QtWidgets.QLabel("Order by")
@@ -500,14 +543,14 @@ class FittingPanel(Panel):
         self.check_global_plus = QtWidgets.QCheckBox()
         self.check_use_previous = QtWidgets.QCheckBox()
 
-        self.insert_phi = widgets.StyleTwoButton(fit.PHI)
-        self.insert_alpha = widgets.StyleTwoButton(fit.ALPHA)
-        self.insert_sigma = widgets.StyleTwoButton(fit.SIGMA)
-        self.insert_naught = widgets.StyleTwoButton(fit.NAUGHT)
-        self.insert_lambda = widgets.StyleTwoButton(fit.LAMBDA)
-        self.insert_delta = widgets.StyleTwoButton(fit.DELTA)
-        self.insert_beta = widgets.StyleTwoButton(fit.BETA)
-        self.insert_pi = widgets.StyleOneButton(fit.PI)
+        self.insert_phi = qt_widgets.StyleTwoButton(fit.PHI)
+        self.insert_alpha = qt_widgets.StyleTwoButton(fit.ALPHA)
+        self.insert_sigma = qt_widgets.StyleTwoButton(fit.SIGMA)
+        self.insert_naught = qt_widgets.StyleTwoButton(fit.NAUGHT)
+        self.insert_lambda = qt_widgets.StyleTwoButton(fit.LAMBDA)
+        self.insert_delta = qt_widgets.StyleTwoButton(fit.DELTA)
+        self.insert_beta = qt_widgets.StyleTwoButton(fit.BETA)
+        self.insert_pi = qt_widgets.StyleOneButton(fit.PI)
 
         self.group_preset_functions = QtWidgets.QGroupBox("Predefined Functions")
         self.group_user_functions = QtWidgets.QGroupBox("User Defined Functions")
@@ -519,7 +562,7 @@ class FittingPanel(Panel):
         self.group_table_runs = QtWidgets.QGroupBox("Runs")
         self.group_function = QtWidgets.QGroupBox("Function")
 
-        self._set_logging()
+        # self._set_logging()
         self._set_widget_layout()
         self._set_widget_attributes()
         self._set_widget_dimensions()
@@ -528,40 +571,37 @@ class FittingPanel(Panel):
         self._line_edit_style = self.input_fit_equation.styleSheet()
 
     def _set_logging(self):
-        logger = logging.getLogger('qt_fitting')
-
-        #self.support_panel.tree.itemSelectionChanged.connect(lambda: "support_panel.tree.itemSelectionChanged (none)" if not self.support_panel.tree.currentItem() else logger.debug("support_panel.tree.itemSelectionChanged ({})".format(self.support_panel.tree.selectedItems()[0].text(0))))
-        self.input_fit_equation.textChanged.connect(lambda: logger.debug("input_fit_equation.textChanged ({})".format(self.input_fit_equation.text())))
-        self.button_insert_preset_equation.released.connect(lambda: logger.debug("button_insert_preset_equation.released ({})".format(self.option_preset_fit_equations.currentText())))
-        self.button_insert_user_equation.released.connect(lambda: logger.debug("button_insert_user_equation.released ({})".format(self.option_user_fit_equations.currentText())))
-        self.button_save_user_equation.released.connect(lambda: logger.debug("button_save_user_equation.released ({})".format(self.option_user_fit_equations.currentText())))
-        self.insert_sigma.released.connect(lambda: logger.debug("insert_sigma.released"))
-        self.insert_pi.released.connect(lambda: logger.debug("insert_pi.released"))
-        self.insert_phi.released.connect(lambda: logger.debug("insert_phi.released"))
-        self.insert_naught.released.connect(lambda: logger.debug("insert_naught.released"))
-        self.insert_lambda.released.connect(lambda: logger.debug("insert_lambda.released"))
-        self.insert_delta.released.connect(lambda: logger.debug("insert_delta.released"))
-        self.insert_alpha.released.connect(lambda: logger.debug("insert_alpha.released"))
-        self.insert_beta.released.connect(lambda: logger.debug("insert_beta.released"))
-        self.fit_spectrum_settings.input_time_xmax.returnPressed.connect(lambda: logger.debug("fit_spectrum_settings.input_time_xmax.returnPressed ({})".format(self.fit_spectrum_settings.input_time_xmax.text())))
-        self.fit_spectrum_settings.input_time_xmin.returnPressed.connect(lambda: logger.debug("fit_spectrum_settings.input_time_xmin.returnPressed ({})".format(self.fit_spectrum_settings.input_time_xmin.text())))
-        self.fit_spectrum_settings.input_bin.returnPressed.connect(lambda: logger.debug("fit_spectrum_settings.input_bin.returnPressed ({})".format(self.fit_spectrum_settings.input_bin.text())))
-        self.fit_spectrum_settings.slider_bin.sliderMoved.connect(lambda: logger.debug("fit_spectrum_settings.slider_bin.sliderMoved ({})".format(self.fit_spectrum_settings.slider_bin.value())))
-        self.button_plot.released.connect(lambda: logger.debug("button_plot.released ({})".format(self.get_selected_run_titles())))
-        self.table_parameters.itemChanged.connect(lambda: logger.debug("table_parameters.itemChanged"))
-        self.button_fit.released.connect(lambda: logger.debug("button_fit.released ({}, {}, {}, {}, {}, {}, {}, {}, batch {}, global {})".format(self.get_names(), self.get_initial_values(), self.get_lower_bounds(), self.get_upper_bounds(), self.get_fixed(), self.get_check_global(), self.get_expression(), self.get_selected_run_titles(), self.check_batch_fit.isChecked(), self.check_global_plus.isChecked())))
-        self.button_save_results.released.connect(lambda: logger.debug("button_save_results.released"))
-        self.support_panel.new_button.released.connect(lambda: logger.debug("support_panel.new_button.released"))
+        self.input_fit_equation.textChanged.connect(lambda: self.__logger.debug("input_fit_equation.textChanged ({})".format(self.input_fit_equation.text())))
+        self.button_insert_preset_equation.released.connect(lambda: self.__logger.debug("button_insert_preset_equation.released ({})".format(self.option_preset_fit_equations.currentText())))
+        self.button_insert_user_equation.released.connect(lambda: self.__logger.debug("button_insert_user_equation.released ({})".format(self.option_user_fit_equations.currentText())))
+        self.button_save_user_equation.released.connect(lambda: self.__logger.debug("button_save_user_equation.released ({})".format(self.option_user_fit_equations.currentText())))
+        self.insert_sigma.released.connect(lambda: self.__logger.debug("insert_sigma.released"))
+        self.insert_pi.released.connect(lambda: self.__logger.debug("insert_pi.released"))
+        self.insert_phi.released.connect(lambda: self.__logger.debug("insert_phi.released"))
+        self.insert_naught.released.connect(lambda: self.__logger.debug("insert_naught.released"))
+        self.insert_lambda.released.connect(lambda: self.__logger.debug("insert_lambda.released"))
+        self.insert_delta.released.connect(lambda: self.__logger.debug("insert_delta.released"))
+        self.insert_alpha.released.connect(lambda: self.__logger.debug("insert_alpha.released"))
+        self.insert_beta.released.connect(lambda: self.__logger.debug("insert_beta.released"))
+        self.fit_spectrum_settings.input_time_xmax.returnPressed.connect(lambda: self.__logger.debug("fit_spectrum_settings.input_time_xmax.returnPressed ({})".format(self.fit_spectrum_settings.input_time_xmax.text())))
+        self.fit_spectrum_settings.input_time_xmin.returnPressed.connect(lambda: self.__logger.debug("fit_spectrum_settings.input_time_xmin.returnPressed ({})".format(self.fit_spectrum_settings.input_time_xmin.text())))
+        self.fit_spectrum_settings.input_bin.returnPressed.connect(lambda: self.__logger.debug("fit_spectrum_settings.input_bin.returnPressed ({})".format(self.fit_spectrum_settings.input_bin.text())))
+        self.fit_spectrum_settings.slider_bin.sliderMoved.connect(lambda: self.__logger.debug("fit_spectrum_settings.slider_bin.sliderMoved ({})".format(self.fit_spectrum_settings.slider_bin.value())))
+        self.button_plot.released.connect(lambda: self.__logger.debug("button_plot.released ({})".format(self.get_checked_run_titles())))
+        self.table_parameters.itemChanged.connect(lambda: self.__logger.debug("table_parameters.itemChanged"))
+        self.button_fit.released.connect(lambda: self.__logger.debug("button_fit.released ({}, {}, {}, {}, {}, {}, {}, {}, batch {}, global {})".format(self.get_names(), self.get_initial_values(), self.get_lower_bounds(), self.get_upper_bounds(), self.get_fixed(), self.get_check_global(), self.get_expression(), self.get_checked_run_titles(), self.check_batch_fit.isChecked(), self.check_global_plus.isChecked())))
+        self.button_save_results.released.connect(lambda: self.__logger.debug("button_save_results.released"))
+        self.support_panel.new_button.released.connect(lambda: self.__logger.debug("support_panel.new_button.released"))
 
     def _set_widget_attributes(self):
-        # self.table_parameters.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        self.table_parameters.setColumnCount(5) # Set to 6 and add 'Name' below if we want to keep name column
-        self.table_parameters.setHorizontalHeaderLabels(['Value', 'Min', 'Max', 'Fixed', 'Global'])
-        self.table_parameters.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
-        # self.table_parameters.horizontalHeader().setSectionResizeMode(self.__NAME_COLUMN, QtWidgets.QHeaderView.Stretch)
-        self.table_parameters.horizontalHeader().setSectionResizeMode(self.__VALUE_COLUMN, QtWidgets.QHeaderView.Stretch)
-        self.table_parameters.horizontalHeader().setSectionResizeMode(self.__LOWER_COLUMN, QtWidgets.QHeaderView.Stretch)
-        self.table_parameters.horizontalHeader().setSectionResizeMode(self.__UPPER_COLUMN, QtWidgets.QHeaderView.Stretch)
+        self.parameter_table.batch_table.itemChanged.connect(self._update_batch_table_states)
+        self.run_list.itemChanged.connect(self._update_batch_table_states)
+        self.run_list.itemSelectionChanged.connect(self._update_batch_table)
+
+        # TODO We could possibly handle multiple selection, but we would have to put a '*' in fixed value in the batch
+        #   table (because you could be selecting some with different initial values that you want to set to the same)
+        #   which may be more trouble then it is worth but I will leave this note here for future reference.
+        # self.run_list.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
 
         self.option_preset_fit_equations.addItems(list(fit.EQUATION_DICTIONARY.keys()))
         self.option_user_fit_equations.addItems(list(fit.USER_EQUATION_DICTIONARY.keys()))
@@ -581,8 +621,8 @@ class FittingPanel(Panel):
         self.check_batch_fit.setEnabled(False)
 
     def _set_widget_dimensions(self):
-        self.button_done.setFixedWidth(60)
         self.button_fit.setFixedWidth(60)
+        self.button_fit.setFixedHeight(60)
         self.button_check_equation.setFixedWidth(60)
         self.button_insert_user_equation.setFixedWidth(60)
         self.button_insert_preset_equation.setFixedWidth(60)
@@ -690,7 +730,7 @@ class FittingPanel(Panel):
         # Create and add GroupBox for table parameters
         left_side = QtWidgets.QVBoxLayout()
         row = QtWidgets.QHBoxLayout()
-        row.addWidget(self.table_parameters)
+        row.addWidget(self.parameter_table)
         self.group_table_parameters.setLayout(row)
         left_side.addWidget(self.group_table_parameters)
 
@@ -716,11 +756,12 @@ class FittingPanel(Panel):
         self.group_save_results.setLayout(layout)
         row_save = QtWidgets.QHBoxLayout()
         row_save.addWidget(self.group_save_results)
+        row_save.addSpacing(20)
         column = QtWidgets.QVBoxLayout()
         column.addWidget(self.button_fit)
         column.addSpacing(4)
-        column.addWidget(self.button_done)
         row_save.addLayout(column)
+        row_save.addSpacing(10)
 
         # Create and add layout for plot display and controls
         right_side = QtWidgets.QVBoxLayout()
@@ -741,21 +782,289 @@ class FittingPanel(Panel):
 
         self.setLayout(main_layout)
 
+    def _update_batch_table(self):
+        self.__update_states = False
+        for j in range(self.parameter_table.config_table.rowCount()):  # Iterate over every symbol in table
+            symbol = self.parameter_table.config_table.verticalHeaderItem(j).text()
+
+            if len(self.get_selected_run_titles()) > 0 \
+                    and symbol in self.__batch_table_states.keys() \
+                    and self.get_selected_run_titles()[0] in self.__batch_table_states[symbol].keys():
+                value = self.__batch_table_states[symbol][self.get_selected_run_titles()[0]][2]
+                item_value = QtWidgets.QTableWidgetItem()
+                item_value.setText(str(value))
+                self.parameter_table.batch_table.setItem(j, self.parameter_table.FIXED_VALUE_COLUMN, item_value)
+        self.__update_states = True
+
+    def _update_batch_table_states(self):
+        self.__logger.debug("_update_batch_table_states : updating={}".format(self.__update_states))
+        if not self.__update_states:
+            return
+
+        self.__update_states = False
+        for j in range(self.parameter_table.config_table.rowCount()):  # Iterate over every symbol in table
+            symbol = self.parameter_table.config_table.verticalHeaderItem(j).text()
+            item_fixed_run = self.parameter_table.batch_table.cellWidget(j, self.parameter_table.FIXED_RUN_COLUMN)
+            item_fixed_run_value = self.parameter_table.batch_table.item(j, self.parameter_table.FIXED_VALUE_COLUMN)
+
+            if item_fixed_run_value is None:
+                item_fixed_run_value = QtWidgets.QTableWidgetItem()
+                item_fixed_run_value.setText('')
+            else:
+                try:
+                    float(item_fixed_run_value.text())
+                except ValueError:
+                    self.highlight_input_red(self.parameter_table.batch_table, True)
+                    self.__update_states = True
+                    return  # This way the state can only be updated to good values.
+            self.highlight_input_red(self.parameter_table.batch_table, False)
+
+            if item_fixed_run is None:  # Sometimes this happens with QTableWidgets, just skip.
+                continue
+
+            selected_titles = self.get_selected_run_titles()
+            self.__batch_table_states[symbol] = {
+                title: (
+                    symbol,
+                    item_fixed_run.findChild(QtWidgets.QCheckBox).checkState() > 0,
+                    item_fixed_run_value.text() if (title in selected_titles and item_fixed_run_value.text() != '')
+                    else self.parameter_table.config_table.item(j, self.parameter_table.VALUE_COLUMN).text() if (symbol not in self.__batch_table_states.keys() or title not in self.__batch_table_states[symbol].keys())
+                    else self.__batch_table_states[symbol][title][2]
+                ) for title in self.get_all_run_titles()
+            }
+
+            if len(self.get_selected_run_titles()) > 0:
+                value = self.__batch_table_states[symbol][self.get_selected_run_titles()[0]][2]
+                item_value = QtWidgets.QTableWidgetItem()
+                item_value.setText(str(value))
+                self.parameter_table.batch_table.setItem(j, self.parameter_table.FIXED_VALUE_COLUMN, item_value)
+
+        self.__logger.debug(str(self.__batch_table_states))
+        self.__update_states = True
+
     def createSupportPanel(self) -> QtWidgets.QDockWidget:
         return self.support_panel
 
-    def _create_check_box_for_table(self, checked=None):
+    def _create_check_box_for_table(self, checked=None, connect=None):
         widget = QtWidgets.QWidget()
         layout = QtWidgets.QHBoxLayout()
         check = QtWidgets.QCheckBox()
-        check.setCheckState(QtCore.Qt.Checked if checked else QtCore.Qt.Unchecked)
+        if connect:
+            check.stateChanged.connect(connect)
+        check.setCheckState(qt_constants.Checked if checked else qt_constants.Unchecked)
         layout.addWidget(check)
-        layout.setAlignment(QtCore.Qt.AlignCenter)
+        layout.setAlignment(qt_constants.AlignCenter)
         layout.setContentsMargins(0, 0, 0, 0)
         widget.setLayout(layout)
         return widget
 
-    def get_selected_run_titles(self):
+    def add_parameter(self, symbol: str, config_value: float = None, config_lower: float = None,
+                      config_upper: float = None, config_fixed: bool = None, batch_global: bool = None,
+                      batch_run_dependent: bool = None, batch_value: float = None, output_value: float = None,
+                      output_uncertainty: float = None, run_id: str = None):
+        n = self.parameter_table.config_table.verticalHeader().count()
+
+        in_table = False
+        for i in range(n - 1, -1, -1):
+            item = self.parameter_table.config_table.verticalHeaderItem(i)
+
+            if item is None:
+                continue
+
+            if symbol == item.text():
+                in_table = True
+                if config_value is not None:
+                    item_value = QtWidgets.QTableWidgetItem()
+                    item_value.setText('{:.5f}'.format(float(config_value)))
+                    self.parameter_table.config_table.setItem(i, self.ParameterTable.VALUE_COLUMN, item_value)
+
+                if config_lower is not None:
+                    item_lower = QtWidgets.QTableWidgetItem()
+                    item_lower.setText('{:.5f}'.format(float(config_lower)))
+                    self.parameter_table.config_table.setItem(i, self.ParameterTable.MIN_COLUMN, item_lower)
+
+                if config_upper is not None:
+                    item_upper = QtWidgets.QTableWidgetItem()
+                    item_upper.setText('{:.5f}'.format(float(config_upper)))
+                    self.parameter_table.config_table.setItem(i, self.ParameterTable.MAX_COLUMN, item_upper)
+
+                if config_fixed is not None:
+                    item_fixed = self._create_check_box_for_table(config_fixed)
+                    self.parameter_table.config_table.setCellWidget(i, self.ParameterTable.FIXED_COLUMN, item_fixed)
+
+        if not in_table:
+            self.parameter_table.config_table.setRowCount(n + 1)
+
+            item_symbol = QtWidgets.QTableWidgetItem()
+            item_symbol.setText(symbol)
+            self.parameter_table.config_table.setVerticalHeaderItem(n, item_symbol)
+
+            if config_value is not None:
+                item_value = QtWidgets.QTableWidgetItem()
+                item_value.setText('{:.5f}'.format(float(config_value)))
+                self.parameter_table.config_table.setItem(n, self.ParameterTable.VALUE_COLUMN, item_value)
+            else:
+                item_value = QtWidgets.QTableWidgetItem()
+                item_value.setText('1')
+                self.parameter_table.config_table.setItem(n, self.ParameterTable.VALUE_COLUMN, item_value)
+
+            if config_lower is not None:
+                item_lower = QtWidgets.QTableWidgetItem()
+                item_lower.setText('{:.5f}'.format(float(config_lower)))
+                self.parameter_table.config_table.setItem(n, self.ParameterTable.MIN_COLUMN, item_lower)
+            else:
+                item_lower = QtWidgets.QTableWidgetItem()
+                item_lower.setText(str(-np.inf))
+                self.parameter_table.config_table.setItem(n, self.ParameterTable.MIN_COLUMN, item_lower)
+
+            if config_upper is not None:
+                item_upper = QtWidgets.QTableWidgetItem()
+                item_upper.setText('{:.5f}'.format(float(config_upper)))
+                self.parameter_table.config_table.setItem(n, self.ParameterTable.MAX_COLUMN, item_upper)
+            else:
+                item_upper = QtWidgets.QTableWidgetItem()
+                item_upper.setText(str(np.inf))
+                self.parameter_table.config_table.setItem(n, self.ParameterTable.MAX_COLUMN, item_upper)
+
+            if config_fixed is not None:
+                item_fixed = self._create_check_box_for_table(config_fixed)
+                self.parameter_table.config_table.setCellWidget(n, self.ParameterTable.FIXED_COLUMN, item_fixed)
+            else:
+                item_fixed = self._create_check_box_for_table(False)
+                self.parameter_table.config_table.setCellWidget(n, self.ParameterTable.FIXED_COLUMN, item_fixed)
+
+        n = self.parameter_table.batch_table.verticalHeader().count()
+
+        in_table = False
+        for i in range(n - 1, -1, -1):
+            item = self.parameter_table.batch_table.verticalHeaderItem(i)
+
+            if item is None:
+                continue
+
+            if symbol == item.text():
+                if run_id:
+                    self.__batch_table_states[run_id] = (batch_value, batch_global, batch_run_dependent)
+
+                in_table = True
+                if batch_value is not None:
+                    item_value = QtWidgets.QTableWidgetItem()
+                    item_value.setText('{:.5f}'.format(float(batch_value)))
+                    self.parameter_table.batch_table.setItem(i, self.ParameterTable.FIXED_VALUE_COLUMN, item_value)
+
+                if batch_global is not None:
+                    item_global = self._create_check_box_for_table(batch_global)
+                    self.parameter_table.batch_table.setCellWidget(i, self.ParameterTable.GLOBAL_COLUMN, item_global)
+
+                if batch_run_dependent is not None:
+                    item_fixed = self._create_check_box_for_table(batch_run_dependent, self._update_batch_table_states)
+                    self.parameter_table.batch_table.setCellWidget(i, self.ParameterTable.FIXED_RUN_COLUMN, item_fixed)
+
+        if not in_table:
+            if run_id:
+                self.__batch_table_states[run_id] = (batch_value, batch_global, batch_run_dependent)
+
+            self.parameter_table.batch_table.setRowCount(n + 1)
+
+            item_symbol = QtWidgets.QTableWidgetItem()
+            item_symbol.setText(symbol)
+            self.parameter_table.batch_table.setVerticalHeaderItem(n, item_symbol)
+
+            if batch_value is not None:
+                item_value = QtWidgets.QTableWidgetItem()
+                item_value.setText('{:.5f}'.format(float(batch_value)))
+                self.parameter_table.batch_table.setItem(n, self.ParameterTable.FIXED_VALUE_COLUMN, item_value)
+            else:
+                item_value = QtWidgets.QTableWidgetItem()
+                item_value.setText('1')
+                self.parameter_table.batch_table.setItem(n, self.ParameterTable.FIXED_VALUE_COLUMN, item_value)
+
+            if batch_global is not None:
+                item_global = self._create_check_box_for_table(batch_global)
+                self.parameter_table.batch_table.setCellWidget(n, self.ParameterTable.GLOBAL_COLUMN, item_global)
+            else:
+                item_global = self._create_check_box_for_table(False)
+                self.parameter_table.batch_table.setCellWidget(n, self.ParameterTable.GLOBAL_COLUMN, item_global)
+
+            if batch_run_dependent is not None:
+                item_fixed = self._create_check_box_for_table(batch_run_dependent, self._update_batch_table_states)
+                self.parameter_table.batch_table.setCellWidget(n, self.ParameterTable.FIXED_RUN_COLUMN, item_fixed)
+            else:
+                item_fixed = self._create_check_box_for_table(False, self._update_batch_table_states)
+                self.parameter_table.batch_table.setCellWidget(n, self.ParameterTable.FIXED_RUN_COLUMN, item_fixed)
+
+        n = self.parameter_table.output_table.verticalHeader().count()
+
+        in_table = False
+        for i in range(n - 1, -1, -1):
+            item = self.parameter_table.output_table.verticalHeaderItem(i)
+
+            if item is None:
+                continue
+
+            if symbol == item.text():
+                in_table = True
+                if output_value is not None:
+                    item_value = QtWidgets.QTableWidgetItem()
+                    item_value.setText('{:.5f}'.format(float(output_value)))
+                    self.parameter_table.output_table.setItem(i, self.ParameterTable.OUTPUT_VALUE_COLUMN, item_value)
+
+                if output_uncertainty is not None:
+                    item_value = QtWidgets.QTableWidgetItem()
+                    item_value.setText('{:.5f}'.format(float(output_uncertainty)))
+                    self.parameter_table.output_table.setItem(i, self.ParameterTable.UNCERTAINTY_COLUMN, item_value)
+
+        if not in_table:
+            self.parameter_table.output_table.setRowCount(n + 1)
+
+            item_symbol = QtWidgets.QTableWidgetItem()
+            item_symbol.setText(symbol)
+            self.parameter_table.output_table.setVerticalHeaderItem(n, item_symbol)
+
+            if output_value is not None:
+                item_value = QtWidgets.QTableWidgetItem()
+                item_value.setText('{:.5f}'.format(float(output_value)))
+                self.parameter_table.output_table.setItem(n, self.ParameterTable.OUTPUT_VALUE_COLUMN, item_value)
+
+            if output_uncertainty is not None:
+                item_value = QtWidgets.QTableWidgetItem()
+                item_value.setText('{:.5f}'.format(float(output_uncertainty)))
+                self.parameter_table.output_table.setItem(n, self.ParameterTable.UNCERTAINTY_COLUMN, item_value)
+
+        self._update_batch_table_states()
+
+    def clear_parameters(self, symbols):
+        n = self.parameter_table.config_table.verticalHeader().count()
+
+        for i in range(n - 1, -1, -1):
+            item = self.parameter_table.config_table.verticalHeaderItem(i)
+
+            if item is None or item.text() in symbols:
+                continue
+
+            self.parameter_table.config_table.removeRow(i)
+
+        n = self.parameter_table.batch_table.verticalHeader().count()
+
+        for i in range(n - 1, -1, -1):
+            item = self.parameter_table.batch_table.verticalHeaderItem(i)
+
+            if item is None or item.text() in symbols:
+                continue
+
+            self.parameter_table.batch_table.removeRow(i)
+
+        n = self.parameter_table.output_table.verticalHeader().count()
+
+        for i in range(n - 1, -1, -1):
+            item = self.parameter_table.output_table.verticalHeaderItem(i)
+
+            if item is None or item.text() in symbols:
+                continue
+
+            self.parameter_table.output_table.removeRow(i)
+
+    def get_checked_run_titles(self):
         titles = []
         for i in range(self.run_list.count()):
             item = self.run_list.item(i)
@@ -763,108 +1072,84 @@ class FittingPanel(Panel):
                 titles.append(item.text())
         return titles
 
-    def get_initial_values(self):
-        values = {}
-        for i in range(self.table_parameters.rowCount()):
-            variable_guess = self.table_parameters.item(i, self.__VALUE_COLUMN)
+    def get_checked_run_ids(self):
+        ids = []
+        for i in range(self.run_list.count()):
+            item = self.run_list.item(i)
+            if item.checkState():
+                ids.append(item.identifier)
+        return ids
 
-            if variable_guess is None or variable_guess.text() == '':
-                return None
+    def get_selected_run_titles(self):
+        titles = []
+        for i in range(self.run_list.count()):
+            item = self.run_list.item(i)
+            if item.isSelected():
+                titles.append(item.text())
+        return titles
 
-            variable_name = self.table_parameters.verticalHeaderItem(i).text()
-            try:
-                variable_guess = float(variable_guess.text())
-            except ValueError:
-                return None
+    def get_selected_run_ids(self):
+        ids = []
+        for i in range(self.run_list.count()):
+            item = self.run_list.item(i)
+            if item.isSelected():
+                ids.append(item.identifier)
+        return ids
 
-            values[variable_name] = variable_guess
+    def get_all_run_titles(self):
+        titles = []
+        for i in range(self.run_list.count()):
+            item = self.run_list.item(i)
+            titles.append(item.text())
+        return titles
 
-        return values
+    def get_all_run_ids(self):
+        ids = []
+        for i in range(self.run_list.count()):
+            item = self.run_list.item(i)
+            ids.append(item.identifier)
+        return ids
 
-    def get_names(self):
-        values = {}
-        for i in range(self.table_parameters.rowCount()):
-            variable_name = self.table_parameters.verticalHeaderItem(i).text()
-            # variable_guess = self.table_parameters.item(i, self.__NAME_COLUMN)
+    def get_parameters(self):
+        parameters = []
+        for i in range(self.parameter_table.config_table.rowCount()):
+            item_symbol = self.parameter_table.config_table.verticalHeaderItem(i)
+            item_value = self.parameter_table.config_table.item(i, self.parameter_table.VALUE_COLUMN)
+            item_min = self.parameter_table.config_table.item(i, self.parameter_table.MIN_COLUMN)
+            item_max = self.parameter_table.config_table.item(i, self.parameter_table.MAX_COLUMN)
+            item_fixed = self.parameter_table.config_table.cellWidget(i, self.parameter_table.FIXED_COLUMN)
+            item_global = self.parameter_table.batch_table.cellWidget(i, self.parameter_table.GLOBAL_COLUMN)
+            item_output_value = self.parameter_table.output_table.item(i, self.parameter_table.OUTPUT_VALUE_COLUMN)
+            item_output_uncertainty = self.parameter_table.output_table.item(i, self.parameter_table.UNCERTAINTY_COLUMN)
 
-            # if variable_guess is None:
-            #     values[variable_name] = variable_name
-            #     continue
+            if item_symbol is None:
+                continue
 
-            # variable_name = self.table_parameters.verticalHeaderItem(i).text()
-            # variable_guess = variable_guess.text()
+            symbol = item_symbol.text()
+            value = 1 if item_value is None or item_value.text() == '' else float(item_value.text())
+            value_min = -np.inf if item_min is None or item_min.text() == '' else float(item_min.text())
+            value_max = np.inf if item_max is None or item_max.text() == '' else float(item_max.text())
+            value_output = None if item_output_value is None or item_output_value.text() == '' else float(item_output_value.text())
+            value_uncertainty = None if item_output_uncertainty is None or item_output_uncertainty.text() == '' else float(item_output_uncertainty.text())
+            is_fixed = item_fixed is not None and item_fixed.findChild(QtWidgets.QCheckBox).checkState() > 0
+            is_global = item_global is not None and item_global.findChild(QtWidgets.QCheckBox).checkState() > 0
 
-            # variable_guess = variable_name if variable_guess == '' else variable_guess
+            parameters.append((symbol, value, value_min, value_max, value_output, value_uncertainty, is_fixed, is_global,
+                               self.__batch_table_states[symbol]))
 
-            # values[variable_name] = variable_guess
-
-            #TODO Temporary while we aren't using the name column.
-            values[variable_name] = variable_name
-
-        return values
-
-    def get_fixed(self):
-        values = {}
-        for i in range(self.table_parameters.rowCount()):
-            variable_guess = self.table_parameters.cellWidget(i, self.__FIXED_COLUMN)
-            variable_name = self.table_parameters.verticalHeaderItem(i).text()
-            values[variable_name] = variable_guess.findChild(QtWidgets.QCheckBox).checkState() > 0
-
-        return values
+        return parameters
 
     def get_expression(self):
         return self.input_fit_equation.text()
 
-    def get_lower_bounds(self):
-        values = {}
-        for i in range(self.table_parameters.rowCount()):
-            variable_name = self.table_parameters.verticalHeaderItem(i).text()
-            variable_guess = self.table_parameters.item(i, self.__LOWER_COLUMN)
+    def is_run_dependent(self):
+        is_run_dependent = False
 
-            if variable_guess is None:
-                values[variable_name] = -np.inf
-                continue
+        for i in range(self.parameter_table.batch_table.rowCount()):
+            item_fixed = self.parameter_table.batch_table.cellWidget(i, self.parameter_table.FIXED_RUN_COLUMN)
+            is_run_dependent = is_run_dependent or (item_fixed is not None and item_fixed.findChild(QtWidgets.QCheckBox).checkState() > 0)
 
-            variable_guess = variable_guess.text()
-
-            try:
-                variable_guess = -np.inf if variable_guess == '' else float(variable_guess)
-            except ValueError:
-                return None
-
-            values[variable_name] = variable_guess
-
-        return values
-
-    def get_upper_bounds(self):
-        values = {}
-        for i in range(self.table_parameters.rowCount()):
-            variable_name = self.table_parameters.verticalHeaderItem(i).text()
-            variable_guess = self.table_parameters.item(i, self.__UPPER_COLUMN)
-
-            if variable_guess is None:
-                values[variable_name] = np.inf
-                continue
-
-            variable_guess = variable_guess.text()
-
-            try:
-                variable_guess = np.inf if variable_guess == '' else float(variable_guess)
-            except ValueError:
-                return None
-
-            values[variable_name] = variable_guess
-
-        return values
-
-    def get_check_global(self):
-        values = {}
-        for i in range(self.table_parameters.rowCount()):
-            variable_guess = self.table_parameters.cellWidget(i, self.__GLOBAL_COLUMN)
-            variable_name = self.table_parameters.verticalHeaderItem(i).text()
-            values[variable_name] = variable_guess.findChild(QtWidgets.QCheckBox).checkState() > 0
-
-        return values
+        return is_run_dependent
 
     def highlight_input_red(self, box, red):
         if red:
@@ -872,54 +1157,13 @@ class FittingPanel(Panel):
         else:
             box.setStyleSheet(self._line_edit_style)
 
-    def update_variable_table(self, variables):
-        n = self.table_parameters.verticalHeader().count()
-
-        for i in range(self.table_parameters.verticalHeader().count() - 1, -1, -1):
-            item = self.table_parameters.verticalHeaderItem(i)
-
-            if item is None:
-                continue
-
-            old_var = item.text()
-
-            var_exists = False
-
-            if old_var in variables:
-                variables.remove(old_var)
-                continue
-
-            for new_var in variables:
-                if old_var in new_var:
-                    var_exists = True
-                    replace_item = QtWidgets.QTableWidgetItem()
-                    replace_item.setText(new_var)
-                    self.table_parameters.setVerticalHeaderItem(i, replace_item)
-                    old_var = new_var
-
-            if not var_exists:
-                self.table_parameters.removeRow(i)
-                n -= 1
-            else:
-                variables.remove(old_var)
-
-        self.table_parameters.setRowCount(len(variables) + self.table_parameters.verticalHeader().count())
-
-        for new_var in variables:
-            new_item = QtWidgets.QTableWidgetItem()
-            new_item.setText(new_var)
-            self.table_parameters.setVerticalHeaderItem(n, new_item)
-            self.table_parameters.setCellWidget(n, self.__GLOBAL_COLUMN, self._create_check_box_for_table())
-            self.table_parameters.setCellWidget(n, self.__FIXED_COLUMN, self._create_check_box_for_table())
-            n += 1
-
     def update_run_table(self, runs):
         self.run_list.clear()
 
         for run in runs:
-            file_item = QtWidgets.QListWidgetItem(run.meta[files.TITLE_KEY], self.run_list)
-            file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsUserCheckable)
-            file_item.setCheckState(QtCore.Qt.Unchecked)
+            run_item = qt_widgets.IdentifiableListWidgetItem(run.id, run.meta[files.TITLE_KEY], self.run_list)
+            run_item.setFlags(run_item.flags() | qt_constants.ItemIsUserCheckable)
+            run_item.setCheckState(qt_constants.Unchecked)
 
     def copy_loaded_function_to_cursor(self):
         self.input_fit_equation.insert(fit.EQUATION_DICTIONARY[self.option_preset_fit_equations.currentText()])
@@ -948,46 +1192,16 @@ class FittingPanel(Panel):
         for i in range(self.run_list.count()):
             item = self.run_list.item(i)
             if item.text() == run_title:
-                item.setCheckState(QtCore.Qt.Checked)
+                item.setCheckState(qt_constants.Checked)
             else:
-                item.setCheckState(QtCore.Qt.Unchecked)
-
-    def set_variable_value(self, variable, value=None, name=None, is_fixed=None, lower=None, upper=None, is_global=None):
-        for i in range(self.table_parameters.rowCount()):
-            if self.table_parameters.verticalHeaderItem(i).text() == variable:
-
-                if value:
-                    item = QtWidgets.QTableWidgetItem()
-                    item.setText(str(value))
-                    self.table_parameters.setItem(i, self.__VALUE_COLUMN, item)
-
-                # if name:
-                #     item = QtWidgets.QTableWidgetItem()
-                #     item.setText(str(name))
-                #     self.table_parameters.setItem(i, self.__NAME_COLUMN, item)
-
-                if is_fixed:
-                    self.table_parameters.setCellWidget(i, self.__FIXED_COLUMN, self._create_check_box_for_table(is_fixed))
-
-                if lower:
-                    item = QtWidgets.QTableWidgetItem()
-                    item.setText(str(lower))
-                    self.table_parameters.setItem(i, self.__LOWER_COLUMN, item)
-
-                if upper:
-                    item = QtWidgets.QTableWidgetItem()
-                    item.setText(str(upper))
-                    self.table_parameters.setItem(i, self.__UPPER_COLUMN, item)
-
-                if is_global:
-                    self.table_parameters.setCellWidget(i, self.__GLOBAL_COLUMN, self._create_check_box_for_table(is_global))
+                item.setCheckState(qt_constants.Unchecked)
 
     def clear(self):
         self.input_fit_equation.clear()
         for i in range(self.table_parameters.rowCount()):
             self.table_parameters.removeRow(0)
         for i in range(self.run_list.count()):
-            self.run_list.item(i).setCheckState(QtCore.Qt.Unchecked)
+            self.run_list.item(i).setCheckState(qt_constants.Unchecked)
         self.table_parameters.setEnabled(True)
         self.run_list.setEnabled(True)
         self.fit_display.set_full_blank()
@@ -996,13 +1210,6 @@ class FittingPanel(Panel):
     def launch(args):
         dialog = FittingPanel(args)
         return dialog.exec()
-
-
-# fixme, make sure display is updating only when necessary. Cause it definitely ain't right now.
-
-# fixme, need to redo populating, in conjunction with above.
-
-# fixme, need to create some kind of loading popup or something when it is fitting.
 
 
 class FitTabPresenter(PanelPresenter):
@@ -1021,9 +1228,9 @@ class FitTabPresenter(PanelPresenter):
         self._plot_model = PlotModel()
 
         self.__update_if_table_changes = True
-        self.__variable_groups = []
+        self.__variable_groups = {}
         self.__expression = None
-        self.__logger = logging.getLogger('qt_fitting_presenter')
+        self.__logger = logging.getLogger('QtFittingPresenter')
 
     def _set_callbacks(self):
         self._view.support_panel.tree.itemSelectionChanged.connect(self._selection_changed)
@@ -1044,7 +1251,9 @@ class FitTabPresenter(PanelPresenter):
         self._view.fit_spectrum_settings.input_bin.returnPressed.connect(self._update_display)
         self._view.fit_spectrum_settings.slider_bin.sliderMoved.connect(self._update_display)
         self._view.button_plot.released.connect(self._update_display)
-        self._view.table_parameters.itemChanged.connect(self._plot_fit)
+        self._view.parameter_table.config_table.itemChanged.connect(self._plot_fit)
+        self._view.parameter_table.batch_table.itemChanged.connect(self._plot_fit)
+        self._view.parameter_table.output_table.itemChanged.connect(self._plot_fit)
         self._view.button_fit.released.connect(self._fit)
         self._view.button_save_results.released.connect(self._save_fit_results)
         self._view.support_panel.new_button.released.connect(self._new_empty_fit)
@@ -1062,19 +1271,27 @@ class FitTabPresenter(PanelPresenter):
     def _function_input_changed(self):
         if not self.__update_if_table_changes:
             return
+        self.__update_if_table_changes = False
 
         expression = "A(t) = " + self._view.get_expression()
 
         if fit.is_valid_expression(expression):
             self._view.highlight_input_red(self._view.input_fit_equation, False)
+
             variables = fit.parse(fit.split_expression(expression)[1])
             variables.discard(fit.INDEPENDENT_VARIABLE)
             variables.add(fit.ALPHA)
 
-            self._view.update_variable_table(variables=variables)
-            self._view.set_variable_value(fit.ALPHA, name='Alpha', is_global=True)
+            self._view.clear_parameters(variables)
+
+            self._view.add_parameter(symbol=fit.ALPHA)
+            for var in variables:
+                self._view.add_parameter(symbol=var)
+
         else:
             self._view.highlight_input_red(self._view.input_fit_equation, True)
+        self.__update_if_table_changes = True
+        self._plot_fit()
 
     def _save_user_function(self):
         function_name = self._view.input_user_equation_name.text()
@@ -1101,7 +1318,8 @@ class FitTabPresenter(PanelPresenter):
         self._view.input_user_equation.clear()
 
     def _update_display(self):
-        titles = self._view.get_selected_run_titles()
+        print('Updating Display')
+        titles = self._view.get_checked_run_titles()
 
         runs = self._runs
 
@@ -1112,6 +1330,9 @@ class FitTabPresenter(PanelPresenter):
         min_time = self._view.fit_spectrum_settings.get_min_time()
         max_time = self._view.fit_spectrum_settings.get_max_time()
         bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
+
+        colors = {run.id: list(self._plot_model.color_options_values.values())[-i] for i, run in enumerate(runs)}
+        colors[0] = list(self._plot_model.color_options_values.values())[-len(colors)]
 
         for i, run in enumerate(runs):
             if run.meta[files.TITLE_KEY] not in titles:
@@ -1132,33 +1353,43 @@ class FitTabPresenter(PanelPresenter):
             max_asymmetry = local_max if local_max > max_asymmetry else max_asymmetry
             local_min = np.min(asymmetry[start_index:end_index])
             min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
-            color = list(self._plot_model.color_options_values.values())[-i]
-            self.__logger.debug("{}, {}, {}, {}, {}".format(time, asymmetry, uncertainty, color, run.meta[files.TITLE_KEY]))
-  
+            self.__logger.debug("{}, {}, {}, {}".format(time, asymmetry, uncertainty, run.meta[files.TITLE_KEY]))
+
             self._view.fit_display.plot_asymmetry(time, asymmetry, uncertainty, None,
-                                                  color=color,
+                                                  color=colors[run.id],
                                                   marker='.',
                                                   linestyle='none',
                                                   fillstyle='none',
-                                                  marker_color=color,
+                                                  marker_color=colors[run.id],
                                                   marker_size=5,
-                                                  line_color=color,
+                                                  line_color=colors[run.id],
                                                   line_width=1,
-                                                  errorbar_color=color,
+                                                  errorbar_color=colors[run.id],
                                                   errorbar_style='none',
                                                   errorbar_width=1,
-                                                  fit_color=color,
+                                                  fit_color=colors[run.id],
                                                   fit_linestyle='none',
                                                   label=run.meta[files.TITLE_KEY])
 
-        for group in self.__variable_groups:
-            if group is None:
-                break
+        checked_titles = self._view.get_checked_run_titles()
+        checked_run_ids = [0]
+        for run in runs:
+            if run.meta[files.TITLE_KEY] in checked_titles:
+                checked_run_ids.append(run.id)
+        print('Checked Ids', checked_run_ids)
+        print('var groups', self.__variable_groups.keys())
+        for i, (run_id, parameters) in enumerate(self.__variable_groups.items()):
+            print('Attempting to plot', run_id)
+            if run_id not in checked_run_ids:
+                print('Not in the thing')
+                continue
+
+            parameters = self.__variable_groups[run_id]
             time = domain.Time(input_array=None, bin_size=(max_time - min_time) * 1000 / 200, length=200,
                                time_zero=min_time)
+            print("PLOTTING:", {symbol: par.get_value() for symbol, par in parameters.items()})
+            fit_asymmetry = self.__expression(time, **{symbol: par.get_value() for symbol, par in parameters.items()})
 
-            fit_asymmetry = self.__expression(time, **group)
-            
             try:
                 if len(fit_asymmetry) == 1:
                     fit_asymmetry = [fit_asymmetry for _ in time]
@@ -1175,21 +1406,20 @@ class FitTabPresenter(PanelPresenter):
                 local_min = np.min(fit_asymmetry[start_index:end_index])
                 min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
 
-            color = 'Black'
-            self.__logger.debug("{}, {}, {}, {}".format(self.__expression, self.__expression.expression_as_lambda.__kwdefaults__, group, len(time)))
+            self.__logger.debug("{}, {}, {}, {}".format(self.__expression, run_id, parameters, len(time)))
             self._view.fit_display.plot_asymmetry(time, fit_asymmetry, None, None,
-                                                  color=color,
+                                                  color=colors[run_id],
                                                   marker='.',
                                                   linestyle='-',
                                                   fillstyle='none',
-                                                  marker_color=color,
+                                                  marker_color=colors[run_id],
                                                   marker_size=1,
-                                                  line_color=color,
+                                                  line_color=colors[run_id],
                                                   line_width=1,
-                                                  errorbar_color=color,
+                                                  errorbar_color=colors[run_id],
                                                   errorbar_style='none',
                                                   errorbar_width=1,
-                                                  fit_color=color,
+                                                  fit_color=colors[run_id],
                                                   fit_linestyle='none',
                                                   label=None)
 
@@ -1201,35 +1431,62 @@ class FitTabPresenter(PanelPresenter):
         if not self.__update_if_table_changes:
             return
 
-        expression, values = self._get_expression_and_values()
-        self.__expression = expression
-        if values is None:
-            self.__variable_groups = []
+        expression, parameters = self._get_expression_and_values(get_default=True)
+
+        if len(parameters) == 0:
+            self.__expression = expression
+            self.__variable_groups = {}
             return
 
-        self.__variable_groups = [values]
+        self.__expression = expression
+        self.__variable_groups = parameters
         self._update_display()
 
-    def _get_expression_and_values(self):
-        values = self._view.get_initial_values()
-        expression = self._view.get_expression()
+    def _get_expression_and_values(self, get_default=False):
+        print('getting expression and values')
+        try:
+            parameters = self._view.get_parameters()
+            expression = self._view.get_expression()
+        except ValueError:
+            self._view.highlight_input_red(self._view.parameter_table, True)
+            return None, {}
+        self._view.highlight_input_red(self._view.parameter_table, False)
 
-        if fit.is_valid_expression("A(t) = " + expression) and values is not None:
-            variables = set(values.keys())
-            variables.discard(fit.INDEPENDENT_VARIABLE)
+        final_parameters = {}
+        run_dependent = False
+        for run in self._runs:
+            run_parameters = {}
+            for symbol, value, value_min, value_max, value_output, value_uncertainty, \
+                    is_fixed, is_global, fixed_run_dict in parameters:
+                run_parameters[symbol] = fit.FitParameter(symbol=symbol, value=value, lower=value_min, upper=value_max,
+                                                          is_global=is_global, is_fixed=is_fixed, is_fixed_run=fixed_run_dict[run.meta[files.TITLE_KEY]][1],
+                                                          fixed_value=float(fixed_run_dict[run.meta[files.TITLE_KEY]][2]))
+                run_dependent = run_dependent or run_parameters[symbol].is_fixed_run
+            print(run.id, run_parameters)
+            final_parameters[run.id] = run_parameters
 
-            lambda_expression = fit.FitExpression(expression, variables)            
+        if get_default and not run_dependent:
+            run_parameters = {}
+            for symbol, value, value_min, value_max, value_output, value_uncertainty, \
+                    is_fixed, is_global, fixed_run_dict in parameters:
+                run_parameters[symbol] = fit.FitParameter(symbol=symbol, value=value, lower=value_min, upper=value_max,
+                                                          is_global=is_global, is_fixed=is_fixed, is_fixed_run=False,
+                                                          fixed_value=0)
+            final_parameters[0] = run_parameters
 
-            return lambda_expression, values
-
+        print("Num Checked: ", len(self._view.get_checked_run_titles()))
+        print(final_parameters)
+        if fit.is_valid_expression("A(t) = " + expression) and len(parameters) > 1:
+            lambda_expression = fit.FitExpression(expression)
+            return lambda_expression, final_parameters
         else:
-            return None, None
+            return None, {}
 
     def _fit(self):
         self.__update_if_table_changes = False
-        spec = fit.FitSpec()
+        config = fit.FitConfig()
 
-        # Check user input on fit equation and update spec
+        # Check user input on fit equation and update config
         expression = self._view.get_expression()
         if not fit.is_valid_expression("A(t) = " + expression):
             self._view.highlight_input_red(self._view.input_fit_equation, True)
@@ -1237,67 +1494,66 @@ class FitTabPresenter(PanelPresenter):
             return
         else:
             self._view.highlight_input_red(self._view.input_fit_equation, False)
-        spec.function = expression
+        config.expression = expression
 
-        # Check user input on parameters and update spec
+        # Check user input on parameters
         try:
-            guesses = self._view.get_initial_values()
-            names = self._view.get_names()
-            fixed = self._view.get_fixed()
-            lowers = self._view.get_lower_bounds()
-            uppers = self._view.get_upper_bounds()
-            globs = self._view.get_check_global()
+            parameters = self._view.get_parameters()
         except ValueError:
             self._view.highlight_input_red(self._view.table_parameters, True)
             self.__update_if_table_changes = True
             return
 
-        if guesses is None:
-            self._view.highlight_input_red(self._view.table_parameters, True)
-            self.__update_if_table_changes = True
-            return
-        else:
-            self._view.highlight_input_red(self._view.table_parameters, False)
-
-        variables = {}
-        for symbol in guesses.keys():
-            variables[symbol] = fit.FitVar(symbol, names[symbol], guesses[symbol],
-                                        fixed[symbol], lowers[symbol], uppers[symbol],
-                                        globs[symbol], symbol == fit.INDEPENDENT_VARIABLE)
-        spec.variables = variables
-
-        # Check user input on runs and update spec
-        titles = self._view.get_selected_run_titles()
-        if len(titles) == 0:
+        # Check user input on runs and update config
+        titles = self._view.get_checked_run_titles()
+        if len(titles) == 0:  # User needs to select a run to fit
             self._view.highlight_input_red(self._view.run_list, True)
             self.__update_if_table_changes = True
             return
         else:
             self._view.highlight_input_red(self._view.run_list, False)
 
+        variables = {}
+        fit_titles = {}
         for title in titles:
             for run in self._runs:
                 if run.meta[files.TITLE_KEY] == title:
+                    fit_titles[run.id] = title
                     if run.id in self._asymmetries.keys():
-                        spec.asymmetries[run.id] = self._asymmetries[title]
+                        config.data[run.id] = self._asymmetries[run.id]
                     else:
                         min_time = self._view.fit_spectrum_settings.get_min_time()
                         max_time = self._view.fit_spectrum_settings.get_max_time()
                         bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
                         raw_asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time, max_time=max_time)
-                        self._asymmetries[title] = raw_asymmetry
-                        spec.asymmetries[run.id] = self._asymmetries[title]
+                        self._asymmetries[run.id] = raw_asymmetry
+                        config.data[run.id] = self._asymmetries[run.id]
 
-        spec.options[fit.FitOptions.ALPHA_CORRECT] = True
-        spec.options[fit.FitOptions.GLOBAL] = self._view.check_global_plus.isChecked()
+                    run_parameters = {}
+                    for symbol, value, value_min, value_max, value_output, value_uncertainty, is_fixed, \
+                            is_global, run_dependent_dict in parameters:
+
+                        is_fixed_run, fixed_value = (run_dependent_dict[run.meta[files.TITLE_KEY]][1],
+                                                     run_dependent_dict[run.meta[files.TITLE_KEY]][2])
+
+                        run_parameters[symbol] = fit.FitParameter(symbol=symbol, value=value, lower=value_min, upper=value_max,
+                                                                  is_global=is_global, is_fixed=is_fixed, is_fixed_run=is_fixed_run,
+                                                                  fixed_value=fixed_value)
+
+                    variables[run.id] = run_parameters
+
+        config.parameters = variables
+        config.titles = fit_titles
+        config.set_flags(config.LEAST_SQUARES, config.GLOBAL_PLUS if self._view.check_global_plus.isChecked() else 0)
+        self.__logger.debug(str(config))
 
         # Fit to spec
         engine = fit.FitEngine()
-        dataset = engine.fit(spec)
+        dataset = engine.fit(config)
         self._fit_service.add_dataset([dataset])
         self._update_alphas(dataset)
         self._update_fit_changes(dataset)
-        self.__update_if_table_changes = True
+        # self.__update_if_table_changes = True
 
     def _new_empty_fit(self):
         self.__expression = None
@@ -1313,44 +1569,59 @@ class FitTabPresenter(PanelPresenter):
             return
 
         if type(selected_data) == fit.Fit:
-            print('here')
             for i in range(self._view.run_list.count()):
                 item = self._view.run_list.item(i)
-                if item.text() == selected_data.title:
-                    item.setCheckState(QtCore.Qt.Checked)
+                if item.identifier == selected_data.run_id:
+                    item.setCheckState(qt_constants.Checked)
                 else:
-                    item.setCheckState(QtCore.Qt.Unchecked)
+                    item.setCheckState(qt_constants.Unchecked)
 
-            self._view.update_variable_table(list(selected_data.variables.keys()))
-            for symbol, variable in selected_data.variables.items():
-                self._view.set_variable_value(symbol, value='{:.4f}'.format(variable.value))
+            self._view.clear_parameters(selected_data.parameters.keys())
+            for symbol, parameter in selected_data.parameters.items():
+                self._view.add_parameter(symbol=parameter.symbol, config_value=parameter.value,
+                                         config_lower=parameter.lower, config_upper=parameter.upper,
+                                         config_fixed=parameter.is_fixed, batch_global=parameter.is_global,
+                                         batch_run_dependent=parameter.is_fixed_run, batch_value=parameter.fixed_value,
+                                         output_value=parameter.output, output_uncertainty=parameter.uncertainty,
+                                         run_id=selected_data.run_id)
 
             run = self._run_service.get_runs_by_ids([selected_data.run_id])[0]
-            self._view.input_file_name.setText('{}_fit.txt'.format(run.meta['RunNumber']))
+
+            try:
+                self._view.input_file_name.setText('{}_fit.txt'.format(run.meta[files.RUN_NUMBER_KEY]))
+            except KeyError:
+                self._view.input_file_name.setText('{}_fit.txt'.format(run.meta[files.TITLE_KEY]))
+
             self._view.input_folder_name.setText(files.load_last_used_directory())
             self.__expression = selected_data.expression
-            self.__variable_groups = [selected_data.kwargs]
-            self._view.input_fit_equation.setText(selected_data.expression_as_string)
+            self.__variable_groups = {selected_data.run_id: selected_data.parameters}
+            self._view.input_fit_equation.setText(str(selected_data.expression))
             self._update_display()
 
         elif type(selected_data) == fit.FitDataset:
-            titles = [f.title for f in selected_data.fits.values()]
             for i in range(self._view.run_list.count()):
                 item = self._view.run_list.item(i)
-                if item.text() in titles:
-                    item.setCheckState(QtCore.Qt.Checked)
+                if item.identifier in selected_data.fits.keys():
+                    item.setCheckState(qt_constants.Checked)
                 else:
-                    item.setCheckState(QtCore.Qt.Unchecked)
+                    item.setCheckState(qt_constants.Unchecked)
 
-            self._view.update_variable_table(list(list(selected_data.fits.values())[0].variables.keys()))
-            for symbol in list(selected_data.fits.values())[0].variables.keys():
-                self._view.set_variable_value(symbol, value='*')
+            for run_id, f in selected_data.fits.items():
+                self._view.clear_parameters(f.parameters.keys())
+                for symbol, parameter in f.parameters.items():
+                    self._view.add_parameter(symbol=parameter.symbol, config_value=parameter.value,
+                                             config_lower=parameter.lower, config_upper=parameter.upper,
+                                             config_fixed=parameter.is_fixed, batch_global=parameter.is_global,
+                                             batch_run_dependent=parameter.is_fixed_run, batch_value=parameter.fixed_value,
+                                             output_value=parameter.output, output_uncertainty=parameter.uncertainty,
+                                             run_id=run_id)
+
+            fits = list(selected_data.fits.values())
             self._view.input_file_name.setText('{}_fit.txt'.format(selected_data.id))
             self._view.input_folder_name.setText(files.load_last_used_directory())
-            fits = list(selected_data.fits.values())
-            self._view.input_fit_equation.setText(fits[0].expression_as_string)
+            self._view.input_fit_equation.setText(str(fits[0].expression))
             self.__expression = fits[0].expression
-            self.__variable_groups = [f.kwargs for f in fits]
+            self.__variable_groups = {f.run_id: f.parameters for f in fits}
             self._update_display()
 
         else:
@@ -1364,27 +1635,15 @@ class FitTabPresenter(PanelPresenter):
         self._view.select_first_fit_from_dataset(dataset.id)
         self.__update_if_table_changes = False
         self._view.select_top_child_run(dataset.id)
-        self.__update_if_table_changes = False
-
-        titles = self._view.get_selected_run_titles()
-        for f in dataset.fits.values():
-            if f.title in titles:
-                for symbol, variable in f.variables.items():
-                    self.__update_if_table_changes = False
-                    self._view.set_variable_value(symbol, value='{:.4f}'.format(variable.value), name=variable.name,
-                                                  is_fixed=variable.is_fixed, lower=variable.lower, upper=variable.upper,
-                                                  is_global=variable.is_global)
-                    self.__update_if_table_changes = False
         self.__update_if_table_changes = True
         self._update_display()
 
     def _update_alphas(self, dataset):
         ids = []
         alphas = []
-        for f in dataset.fits.values():
-            if fit.ALPHA in f.variables.keys():
-                ids.append(f.run_id)
-                alphas.append(f.variables[fit.ALPHA].value)
+        for run_id, f in dataset.fits.items():
+            ids.append(run_id)
+            alphas.append(f.parameters[fit.ALPHA].value)
 
         if len(ids) > 0:
             self._run_service.update_alphas(ids, alphas)

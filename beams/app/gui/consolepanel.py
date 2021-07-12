@@ -10,7 +10,7 @@ from app.gui.dialogs.dialog_write_data import WriteDataDialog
 from app.gui.gui import PanelPresenter
 from app.model import files
 from app.model.domain import RunService, FileService, FitService, FileDataset, RunDataset
-from app.util import widgets
+from app.util import qt_widgets, qt_constants
 
 
 class MainConsolePanel(QtWidgets.QDockWidget):
@@ -19,7 +19,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
             super().__init__()
             self.__manager = MainConsolePanel.TreeManager(self)
             self.setHeaderHidden(True)
-            self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+            self.setContextMenuPolicy(qt_constants.CustomContextMenu)
             self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
             self._set_callbacks()
 
@@ -58,7 +58,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
             # noinspection PyTypeChecker
             for i in range(self.topLevelItemCount()):
                 if self.topLevelItem(i).model.id in ids:
-                    self.topLevelItem(i).setCheckState(0, QtCore.Qt.Checked)
+                    self.topLevelItem(i).setCheckState(0, qt_constants.Checked)
 
         def set_all_checked(self, checked):
             for i in range(self.topLevelItemCount()):
@@ -114,17 +114,18 @@ class MainConsolePanel(QtWidgets.QDockWidget):
             self.model = file_data
             self.__selected_items = None
             self.setFlags(self.flags()
-                          | QtCore.Qt.ItemIsUserCheckable)
-            self.setCheckState(0, QtCore.Qt.Unchecked)
+                          | qt_constants.ItemIsUserCheckable)
+            self.setCheckState(0, qt_constants.Unchecked)
 
             data_object = file_data.dataset
 
             if isinstance(data_object, RunDataset):
                 if data_object.isLoaded:
                     histogram_node = MainConsolePanel.HeadingNode("Histograms")
-                    for histogram in data_object.histograms.values():
-                        histogram_node.addChild(MainConsolePanel.HistogramNode(histogram))
-                    self.addChild(histogram_node)
+                    if data_object.histograms:
+                        for histogram in data_object.histograms.values():
+                            histogram_node.addChild(MainConsolePanel.HistogramNode(histogram))
+                        self.addChild(histogram_node)
 
                     asymmetry_node = MainConsolePanel.HeadingNode("Asymmetries")
                     for asymmetry in data_object.asymmetries.values():
@@ -315,14 +316,14 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         self._full_widget = QtWidgets.QWidget()
 
         # Create Widgets
-        self.file_list_box = widgets.CollapsibleBox("Files")
-        self.file_list = widgets.StyleOneListWidget()
+        self.file_list_box = qt_widgets.CollapsibleBox("Files")
+        self.file_list = qt_widgets.StyleOneListWidget()
         self.select_all = QtWidgets.QCheckBox()
-        self.write_button = widgets.StyleOneButton("Write")
-        self.import_button = widgets.StyleTwoButton("+")
-        self.remove_button = widgets.StyleTwoButton('-')
-        self.load_button = widgets.StyleOneButton("Load")
-        self.convert_button = widgets.StyleOneButton("Convert")
+        self.write_button = qt_widgets.StyleOneButton("Write")
+        self.import_button = qt_widgets.StyleTwoButton("+")
+        self.remove_button = qt_widgets.StyleTwoButton('-')
+        self.load_button = qt_widgets.StyleOneButton("Load")
+        self.convert_button = qt_widgets.StyleOneButton("Convert")
         self.tree_view = self.Tree()
 
         # Set Widget Dimensions
@@ -356,11 +357,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         hbox_one.addWidget(self.write_button)
         hbox_one.addStretch()
 
-        if hasattr(QtCore.Qt.ScrollBarPolicy, 'ScrollBarAsNeeded'):
-            self.tree_view.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        else: # For older versions of PyQt5
-            self.tree_view.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
-
+        self.tree_view.setHorizontalScrollBarPolicy(qt_constants.ScrollBarAsNeeded)
         self.tree_view.header().setMinimumSectionSize(600)
         self.tree_view.header().setDefaultSectionSize(900)
         self.tree_view.header().setStretchLastSection(False)
@@ -375,7 +372,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         self.setFloating(False)
 
         self._presenter = MainConsolePanelPresenter(self)
-        self._spinner = widgets.QtWaitingSpinner(self)
+        self._spinner = qt_widgets.QtWaitingSpinner(self)
 
     def get_checked_items(self):
         return self.tree_view.get_file_ids()

@@ -7,7 +7,7 @@ from app.gui.dialogs.dialog_misc import FileDisplayDialog, WarningMessageDialog
 from app.gui.gui import Panel, PanelPresenter
 from app.model import files
 from app.model.domain import RunDataset, RunService, FitService, FileService, Histogram
-from app.util import widgets
+from app.util import qt_widgets, qt_constants
 
 
 class HistogramPanel(Panel):
@@ -42,7 +42,7 @@ class HistogramPanel(Panel):
                 super().__init__()
                 self.__manager = HistogramPanel.SupportPanel.TreeManager(self)
                 self.setHeaderHidden(True)
-                self.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+                self.setContextMenuPolicy(qt_constants.CustomContextMenu)
                 self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
                 self._set_callbacks()
 
@@ -113,7 +113,7 @@ class HistogramPanel(Panel):
                 self.__selected_items = None
 
                 if isinstance(run_data, RunDataset):
-                    if run_data.isLoaded:
+                    if run_data.isLoaded and run_data.histograms:
                         for histogram in run_data.histograms.values():
                             self.addChild(HistogramPanel.SupportPanel.HistogramNode(histogram))
 
@@ -163,9 +163,9 @@ class HistogramPanel(Panel):
             self.setMinimumHeight(500)
             layout = QtWidgets.QVBoxLayout()
 
-            self.see_file_button = widgets.StyleOneButton("See File")
-            self.reset_button = widgets.StyleOneButton("Reset")
-            self.save_button = widgets.StyleTwoButton("Save")
+            self.see_file_button = qt_widgets.StyleOneButton("See File")
+            self.reset_button = qt_widgets.StyleOneButton("Reset")
+            self.save_button = qt_widgets.StyleTwoButton("Save")
 
             hbox = QtWidgets.QHBoxLayout()
             hbox.addWidget(self.see_file_button)
