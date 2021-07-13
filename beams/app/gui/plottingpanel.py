@@ -1262,8 +1262,9 @@ class PlottingPanelPresenter(PanelPresenter):
         for run in run_datasets:
             self._plot_model.add_style_for_run(run, False, True)
 
-        self._plot_parameter_changed(self._view.left_settings, self._view.left_display, 'left')
-        self._plot_parameter_changed(self._view.right_settings, self._view.right_display, 'right')
+        if signal == NotificationService.Signals.RUNS_CHANGED:
+            self._plot_parameter_changed(self._view.left_settings, self._view.left_display, 'left')
+            self._plot_parameter_changed(self._view.right_settings, self._view.right_display, 'right')
 
         self._populate_settings()
 
