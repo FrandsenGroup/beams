@@ -243,9 +243,9 @@ class FitConfig:
         for i, run_id in enumerate(self.parameters.keys()):
             for _, parameter in self.parameters[run_id].items():
                 if parameter.is_global and i == 0:
-                    values.append(parameter.value)
+                    values.append(parameter.get_value())
                 elif not parameter.is_global:
-                    values.append(parameter.value)
+                    values.append(parameter.get_value())
 
         return values
 
@@ -377,6 +377,8 @@ class FitEngine:
         self.__logger = logging.getLogger('FitEngine')
 
     def fit(self, config: FitConfig) -> FitDataset:
+        self.__logger.debug(config)
+
         if len(set([len(asymmetry) for asymmetry in config.data.values()])) != 1:
             raise ValueError("Must have one or more datasets all of equal length to fit")
 
