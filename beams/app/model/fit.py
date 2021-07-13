@@ -589,7 +589,7 @@ def parse(s):
     # Keep keywords lowercase, user input will be cast to lowercase for comparison.
     operator_set = ('+', '-', '/', '*', '(', ')', '[', ']', '{', '}', '^', '!')
     operating_set = ('+', '-', '/', '*', '^')
-    key_1_char_set = ('e', 'i', PI)
+    key_1_char_set = ('i', PI)
     key_2_char_set = ('pi')
     key_3_char_set = ('sin', 'cos', 'tan', 'exp')
     key_4_char_set = ('sinh', 'cosh', 'tanh')
@@ -613,6 +613,7 @@ def parse(s):
             free_variable = []
 
         elif character.isalpha():
+            last_was_operator = False
             if s[i:i + 4].lower() in key_4_char_set:
                 if len(free_variable) > 0:
                     raise ValueError('Bad expression')
@@ -637,6 +638,7 @@ def parse(s):
                 free_variable.append(character)
 
         elif character.isdigit():
+            last_was_operator = False
             if free_variable:
                 free_variable.append(character)
 
