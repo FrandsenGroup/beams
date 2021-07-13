@@ -1427,6 +1427,9 @@ class FitTabPresenter(PanelPresenter):
 
         expression, parameters = self._get_expression_and_values(get_default=True)
 
+        if expression == self.__expression and self.__variable_groups == parameters:
+            return
+
         if len(parameters) == 0:
             self.__expression = expression
             self.__variable_groups = {}
