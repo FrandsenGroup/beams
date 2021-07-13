@@ -90,9 +90,9 @@ class FittingPanel(Panel):
                 self.__view = view
                 self.__run_service = domain.RunService()
                 self.__fit_service = domain.FitService()
-                self.__fit_service.register(domain.FitService.FITS_ADDED, self)
+                self.__fit_service.register(domain.NotificationService.Signals.FITS_ADDED, self)
                 self.__file_service = domain.FileService()
-                self.__run_service.register(domain.RunService.RUNS_ADDED, self)
+                self.__run_service.register(domain.NotificationService.Signals.RUNS_ADDED, self)
 
             def _create_tree_model(self, fit_datasets):
                 fit_dataset_nodes = []
@@ -1219,9 +1219,9 @@ class FitTabPresenter(PanelPresenter):
         self._fit_service = domain.FitService()
         self._set_callbacks()
 
-        self._run_service.register(self._run_service.RUNS_ADDED, self)
-        self._run_service.register(self._run_service.RUNS_LOADED, self)
-        self._fit_service.register(self._fit_service.FITS_ADDED, self)
+        self._run_service.register(domain.NotificationService.Signals.RUNS_ADDED, self)
+        self._run_service.register(domain.NotificationService.Signals.RUNS_LOADED, self)
+        self._fit_service.register(domain.NotificationService.Signals.FITS_ADDED, self)
 
         self._runs = []
         self._asymmetries = {}

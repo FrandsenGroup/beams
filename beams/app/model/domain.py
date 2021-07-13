@@ -1,3 +1,5 @@
+import abc
+import enum, logging
 import os
 import sys, traceback
 
@@ -582,6 +584,14 @@ class FileDAO:
 
 class NotificationService:
     __observers = {}
+    __logger = logging.getLogger('NOTIFICATIONS')
+
+    class Signals(enum.Enum):
+        RUNS_ADDED = 0
+        RUNS_LOADED = 1
+        RUNS_CHANGED = 2
+        FITS_ADDED = 3
+        FILES_CHANGED = 4
 
     def register(self, signal, observer):
         if signal not in self.__observers.keys():

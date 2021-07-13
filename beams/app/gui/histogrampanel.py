@@ -6,7 +6,7 @@ from matplotlib.figure import Figure
 from app.gui.dialogs.dialog_misc import FileDisplayDialog, WarningMessageDialog
 from app.gui.gui import Panel, PanelPresenter
 from app.model import files
-from app.model.domain import RunDataset, RunService, FitService, FileService, Histogram
+from app.model.domain import NotificationService, RunDataset, RunService, FitService, FileService, Histogram
 from app.util import qt_widgets, qt_constants
 
 
@@ -93,7 +93,7 @@ class HistogramPanel(Panel):
                 self.__run_service = RunService()
                 self.__fit_service = FitService()
                 self.__file_service = FileService()
-                self.__run_service.register(RunService.RUNS_ADDED, self)
+                self.__run_service.register(NotificationService.Signals.RUNS_ADDED, self)
 
             def _create_tree_model(self, run_datasets):
                 run_nodes = []
