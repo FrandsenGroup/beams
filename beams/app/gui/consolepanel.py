@@ -9,7 +9,7 @@ from app.gui.dialogs.dialog_psi_download import PSIDownloadDialog
 from app.gui.dialogs.dialog_write_data import WriteDataDialog
 from app.gui.gui import PanelPresenter
 from app.model import files
-from app.model.domain import RunService, FileService, FitService, FileDataset, RunDataset
+from app.model.domain import NotificationService, RunService, FileService, FitService, FileDataset, RunDataset
 from app.util import qt_widgets, qt_constants
 
 
@@ -70,9 +70,9 @@ class MainConsolePanel(QtWidgets.QDockWidget):
             self.__run_service = RunService()
             self.__fit_service = FitService()
             self.__file_service = FileService()
-            self.__run_service.register(RunService.RUNS_ADDED, self)
-            self.__file_service.register(FileService.FILES_CHANGED, self)
-            self.__fit_service.register(FitService.FITS_ADDED, self)
+            self.__run_service.register(NotificationService.Signals.RUNS_ADDED, self)
+            self.__file_service.register(NotificationService.Signals.FILES_CHANGED, self)
+            self.__fit_service.register(NotificationService.Signals.FITS_ADDED, self)
 
         def _create_tree_model(self, file_datasets):
             file_nodes = []
@@ -80,7 +80,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
                 file_nodes.append(MainConsolePanel.FileNode(dataset))
             return file_nodes
 
-        def update(self):
+        def update(self, signal):
             ids = self.__view.get_file_ids()
             file_datasets = self.__file_service.get_files()
             tree = self._create_tree_model(file_datasets)
@@ -394,7 +394,7 @@ class MainConsolePanelPresenter(PanelPresenter):
         self._view.remove_button.released.connect(lambda: self._remove_file_clicked())
         self._view.select_all.stateChanged.connect(lambda: self._select_all_checked())
 
-    def update(self):
+    def update(self, signal):
         pass
 
     def _add_file_clicked(self):

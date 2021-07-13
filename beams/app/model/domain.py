@@ -1,3 +1,5 @@
+import abc
+import enum, logging
 import os
 import sys, traceback
 
@@ -582,6 +584,14 @@ class FileDAO:
 
 class NotificationService:
     __observers = {}
+    __logger = logging.getLogger('NOTIFICATIONS')
+
+    class Signals(enum.Enum):
+        RUNS_ADDED = 0
+        RUNS_LOADED = 1
+        RUNS_CHANGED = 2
+        FITS_ADDED = 3
+        FILES_CHANGED = 4
 
     def register(self, signal, observer):
         if signal not in self.__observers.keys():
@@ -589,10 +599,12 @@ class NotificationService:
         else:
             self.__observers[signal].append(observer)
 
-    def notify(self, signal):
+    def notify(self, signal: Signals):
+        self.__logger.debug("NOTIFYING OF : {}".format(signal.name))
         if signal in self.__observers.keys():
             for observer in self.__observers[signal]:
-                observer.update()
+                self.__logger.debug("RECEIVING SIGNAL : {}".format(observer))
+                observer.update(signal)
 
 
 class DataBuilder:
@@ -661,10 +673,6 @@ class DataBuilder:
 
 
 class RunService:
-    RUNS_ADDED = 0
-    RUNS_LOADED = 1
-    RUNS_CHANGED = 2
-
     __dao = RunDAO()
     __notifier = NotificationService()
 
@@ -706,7 +714,7 @@ class RunService:
                     run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY].bin_size)
                     run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
         
-        RunService.__notifier.notify(RunService.RUNS_CHANGED)
+        RunService.__notifier.notify(NotificationService.Signals.RUNS_CHANGED)
 
     @staticmethod
     def add_runs(paths):
@@ -715,22 +723,24 @@ class RunService:
             run = builder.build_minimal(path)
             RunService.__dao.add_runs([run])
 
-        RunService.__notifier.notify(RunService.RUNS_ADDED)
+        RunService.__notifier.notify(NotificationService.Signals.RUNS_ADDED)
 
     @staticmethod
     def remove_runs_by_ids(ids):
         RunService.__dao.remove_runs_by_ids(ids)
-        RunService.__notifier.notify(RunService.RUNS_LOADED)
+        RunService.__notifier.notify(NotificationService.Signals.RUNS_LOADED)
 
     @staticmethod
-    def add_dataset(datasets):
+    def add_dataset(datasets, suppress_signal):
         RunService.__dao.add_runs(datasets)
-        RunService.__notifier.notify(RunService.RUNS_ADDED)
+
+        if not suppress_signal:
+            RunService.__notifier.notify(NotificationService.Signals.RUNS_ADDED)
 
     @staticmethod
     def update_runs_by_ids(ids, asymmetries):
         RunService.__dao.update_runs_by_id(ids, asymmetries)
-        RunService.__notifier.notify(RunService.RUNS_CHANGED)
+        RunService.__notifier.notify(NotificationService.Signals.RUNS_CHANGED)
 
     @staticmethod
     def update_alphas(ids, alphas):
@@ -747,36 +757,34 @@ class RunService:
                 run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY].bin_size)
                 run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
 
-        RunService.__notifier.notify(RunService.RUNS_CHANGED)
+        RunService.__notifier.notify(NotificationService.Signals.RUNS_CHANGED)
 
     @staticmethod
     def changed():
-        RunService.__notifier.notify(RunService.RUNS_ADDED)
+        RunService.__notifier.notify(NotificationService.Signals.RUNS_ADDED)
 
 
 class FitService:
-    FITS_ADDED = 1
-
     __dao = FitDAO()
     __notifier = NotificationService()
 
     def get_fit_datasets(self):
         return self.__dao.get_fits()
 
-    def add_dataset(self, datasets):
+    def add_dataset(self, datasets, suppress_signal=False):
         self.__dao.add_fits(datasets)
-        self.__notifier.notify(FitService.FITS_ADDED)
+
+        if not suppress_signal:
+            self.__notifier.notify(NotificationService.Signals.FITS_ADDED)
 
     def changed(self):
-        self.__notifier.notify(FitService.FITS_ADDED)
+        self.__notifier.notify(NotificationService.Signals.FITS_ADDED)
 
     def register(self, signal, observer):
         self.__notifier.register(signal, observer)
 
 
 class FileService:
-    FILES_CHANGED = 0
-
     __dao = FileDAO()
     __run_service = RunService()
     __fit_service = FitService()
@@ -805,6 +813,9 @@ class FileService:
         self.add_files(new_paths)
 
     def add_files(self, paths):
+        if len(paths) == 0:
+            return
+
         for path in paths:
             if self.__dao.get_files_by_path(path) is not None:
                 continue
@@ -818,13 +829,13 @@ class FileService:
                 file_set.title = data_set.meta[files.TITLE_KEY]
 
                 if isinstance(data_set, RunDataset):
-                    self.__run_service.add_dataset([data_set])
+                    self.__run_service.add_dataset([data_set], suppress_signal=True)
                 else:
-                    self.__fit_service.add_dataset([data_set])
+                    self.__fit_service.add_dataset([data_set], suppress_signal=True)
 
             self.__dao.add_files([file_set])
 
-        self.__notifier.notify(self.FILES_CHANGED)
+        self.__notifier.notify(NotificationService.Signals.FILES_CHANGED)
 
     def load_files(self, ids):
         is_changed = False
@@ -836,7 +847,7 @@ class FileService:
                 file_dataset.isLoaded = True
 
         if is_changed:
-            self.__notifier.notify(self.FILES_CHANGED)
+            self.__notifier.notify(NotificationService.Signals.FILES_CHANGED)
             self.__run_service.changed()
             self.__fit_service.changed()
 
@@ -849,5 +860,5 @@ class FileService:
             self.__dao.remove_files_by_id(rf.id)
 
         self.__run_service.remove_runs_by_ids(run_ids)
-        self.__notifier.notify(self.FILES_CHANGED)
+        self.__notifier.notify(NotificationService.Signals.FILES_CHANGED)
 
