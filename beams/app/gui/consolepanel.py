@@ -80,7 +80,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
                 file_nodes.append(MainConsolePanel.FileNode(dataset))
             return file_nodes
 
-        def update(self):
+        def update(self, signal):
             ids = self.__view.get_file_ids()
             file_datasets = self.__file_service.get_files()
             tree = self._create_tree_model(file_datasets)
@@ -394,7 +394,7 @@ class MainConsolePanelPresenter(PanelPresenter):
         self._view.remove_button.released.connect(lambda: self._remove_file_clicked())
         self._view.select_all.stateChanged.connect(lambda: self._select_all_checked())
 
-    def update(self):
+    def update(self, signal):
         pass
 
     def _add_file_clicked(self):

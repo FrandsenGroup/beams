@@ -257,7 +257,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                     run_nodes.append(PlottingPanel.SupportPanel.RunNode(dataset))
                 return run_nodes
 
-            def update(self):
+            def update(self, signal):
                 ids = self.__view.get_run_ids()
                 run_datasets = self.__run_service.get_loaded_runs()
                 tree = self._create_tree_model(run_datasets)
@@ -543,7 +543,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                            fit_color, linestyle, marker, errorbar_style, fillstyle, line_width, marker_size,
                            errorbar_width,
                            fit_linestyle):
-
             marker_color = color if marker_color == 'Default' else marker_color
             line_color = color if line_color == 'Default' else line_color
             errorbar_color = color if errorbar_color == 'Default' else errorbar_color
@@ -1249,7 +1248,7 @@ class PlottingPanelPresenter(PanelPresenter):
 
         self._view.legend_display.set_legend(legend_values)
 
-    def update(self):
+    def update(self, signal):
         run_datasets = self.__run_service.get_runs()
         alphas = {'{:.5f}'.format(run.asymmetries[run.FULL_ASYMMETRY].alpha) for run in run_datasets if run.asymmetries[run.FULL_ASYMMETRY] is not None}
 

@@ -101,7 +101,7 @@ class HistogramPanel(Panel):
                     run_nodes.append(HistogramPanel.SupportPanel.RunNode(dataset))
                 return run_nodes
 
-            def update(self):
+            def update(self, signal):
                 run_datasets = self.__run_service.get_loaded_runs()
                 tree = self._create_tree_model(run_datasets)
                 self.__view.set_tree(tree)

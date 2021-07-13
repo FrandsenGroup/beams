@@ -100,7 +100,7 @@ class FittingPanel(Panel):
                     fit_dataset_nodes.append(FittingPanel.SupportPanel.FitDatasetNode(dataset))
                 return fit_dataset_nodes
 
-            def update(self):
+            def update(self, signal):
                 fit_datasets = self.__fit_service.get_fit_datasets()
                 tree = self._create_tree_model(fit_datasets)
                 self.__view.set_tree(tree)
@@ -1318,7 +1318,6 @@ class FitTabPresenter(PanelPresenter):
         self._view.input_user_equation.clear()
 
     def _update_display(self):
-        print('Updating Fitting Display')
         titles = self._view.get_checked_run_titles()
 
         runs = self._runs
@@ -1639,7 +1638,7 @@ class FitTabPresenter(PanelPresenter):
         if len(ids) > 0:
             self._run_service.update_alphas(ids, alphas)
 
-    def update(self):
+    def update(self, signal):
         runs = []
         for run in self._run_service.get_loaded_runs():
             if run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] is not None:

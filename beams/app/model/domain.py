@@ -606,7 +606,7 @@ class NotificationService:
             for observer in self.__observers[signal]:
                 self.__logger.debug("RECEIVING SIGNAL : {}".format(observer))
                 print("SENDING SIGNAL TO: ", observer)
-                observer.update()
+                observer.update(signal)
 
 
 class DataBuilder:
