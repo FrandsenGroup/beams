@@ -17,5 +17,5 @@ class PanelPresenter(abc.ABC):
     def __init__(self, view: Panel):
         self._view = view
 
-    def update(self):
+    def update(self, signal):
         pass

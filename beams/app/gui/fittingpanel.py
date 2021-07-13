@@ -90,9 +90,9 @@ class FittingPanel(Panel):
                 self.__view = view
                 self.__run_service = domain.RunService()
                 self.__fit_service = domain.FitService()
-                self.__fit_service.register(domain.FitService.FITS_ADDED, self)
+                self.__fit_service.register(domain.NotificationService.Signals.FITS_ADDED, self)
                 self.__file_service = domain.FileService()
-                self.__run_service.register(domain.RunService.RUNS_ADDED, self)
+                self.__run_service.register(domain.NotificationService.Signals.RUNS_ADDED, self)
 
             def _create_tree_model(self, fit_datasets):
                 fit_dataset_nodes = []
@@ -100,7 +100,7 @@ class FittingPanel(Panel):
                     fit_dataset_nodes.append(FittingPanel.SupportPanel.FitDatasetNode(dataset))
                 return fit_dataset_nodes
 
-            def update(self):
+            def update(self, signal):
                 fit_datasets = self.__fit_service.get_fit_datasets()
                 tree = self._create_tree_model(fit_datasets)
                 self.__view.set_tree(tree)
@@ -1219,9 +1219,9 @@ class FitTabPresenter(PanelPresenter):
         self._fit_service = domain.FitService()
         self._set_callbacks()
 
-        self._run_service.register(self._run_service.RUNS_ADDED, self)
-        self._run_service.register(self._run_service.RUNS_LOADED, self)
-        self._fit_service.register(self._fit_service.FITS_ADDED, self)
+        self._run_service.register(domain.NotificationService.Signals.RUNS_ADDED, self)
+        self._run_service.register(domain.NotificationService.Signals.RUNS_LOADED, self)
+        self._fit_service.register(domain.NotificationService.Signals.FITS_ADDED, self)
 
         self._runs = []
         self._asymmetries = {}
@@ -1318,7 +1318,6 @@ class FitTabPresenter(PanelPresenter):
         self._view.input_user_equation.clear()
 
     def _update_display(self):
-        print('Updating Display')
         titles = self._view.get_checked_run_titles()
 
         runs = self._runs
@@ -1376,18 +1375,13 @@ class FitTabPresenter(PanelPresenter):
         for run in runs:
             if run.meta[files.TITLE_KEY] in checked_titles:
                 checked_run_ids.append(run.id)
-        print('Checked Ids', checked_run_ids)
-        print('var groups', self.__variable_groups.keys())
         for i, (run_id, parameters) in enumerate(self.__variable_groups.items()):
-            print('Attempting to plot', run_id)
             if run_id not in checked_run_ids:
-                print('Not in the thing')
                 continue
 
             parameters = self.__variable_groups[run_id]
             time = domain.Time(input_array=None, bin_size=(max_time - min_time) * 1000 / 200, length=200,
                                time_zero=min_time)
-            print("PLOTTING:", {symbol: par.get_value() for symbol, par in parameters.items()})
             fit_asymmetry = self.__expression(time, **{symbol: par.get_value() for symbol, par in parameters.items()})
 
             try:
@@ -1433,6 +1427,9 @@ class FitTabPresenter(PanelPresenter):
 
         expression, parameters = self._get_expression_and_values(get_default=True)
 
+        if expression == self.__expression and self.__variable_groups == parameters:
+            return
+
         if len(parameters) == 0:
             self.__expression = expression
             self.__variable_groups = {}
@@ -1443,7 +1440,6 @@ class FitTabPresenter(PanelPresenter):
         self._update_display()
 
     def _get_expression_and_values(self, get_default=False):
-        print('getting expression and values')
         try:
             parameters = self._view.get_parameters()
             expression = self._view.get_expression()
@@ -1462,7 +1458,6 @@ class FitTabPresenter(PanelPresenter):
                                                           is_global=is_global, is_fixed=is_fixed, is_fixed_run=fixed_run_dict[run.meta[files.TITLE_KEY]][1],
                                                           fixed_value=float(fixed_run_dict[run.meta[files.TITLE_KEY]][2]))
                 run_dependent = run_dependent or run_parameters[symbol].is_fixed_run
-            print(run.id, run_parameters)
             final_parameters[run.id] = run_parameters
 
         if get_default and not run_dependent:
@@ -1474,8 +1469,6 @@ class FitTabPresenter(PanelPresenter):
                                                           fixed_value=0)
             final_parameters[0] = run_parameters
 
-        print("Num Checked: ", len(self._view.get_checked_run_titles()))
-        print(final_parameters)
         if fit.is_valid_expression("A(t) = " + expression) and len(parameters) > 1:
             lambda_expression = fit.FitExpression(expression)
             return lambda_expression, final_parameters
@@ -1648,7 +1641,7 @@ class FitTabPresenter(PanelPresenter):
         if len(ids) > 0:
             self._run_service.update_alphas(ids, alphas)
 
-    def update(self):
+    def update(self, signal):
         runs = []
         for run in self._run_service.get_loaded_runs():
             if run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] is not None:

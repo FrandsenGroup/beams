@@ -159,16 +159,16 @@ class TitleBar(QtWidgets.QWidget):
                            "}")
 
         self.minimize = StyleOneToolButton()
-        self.minimize.setFixedWidth(40)
-        self.minimize.setFixedHeight(40)
+        self.minimize.setFixedWidth(60)
+        self.minimize.setFixedHeight(45)
 
         self.maximize = StyleOneToolButton()
-        self.maximize.setFixedWidth(40)
-        self.maximize.setFixedHeight(40)
+        self.maximize.setFixedWidth(60)
+        self.maximize.setFixedHeight(45)
 
         self.close = StyleOneToolButton()
-        self.close.setFixedWidth(40)
-        self.close.setFixedHeight(40)
+        self.close.setFixedWidth(60)
+        self.close.setFixedHeight(45)
         self.close.setStyleSheet("StyleOneToolButton:hover:!pressed { background-color: #ff3333 }")
 
         pix = QtGui.QIcon(resources.CLOSE_IMAGE)
@@ -199,7 +199,6 @@ class TitleBar(QtWidgets.QWidget):
         row.addWidget(self.minimize)
         row.addWidget(self.maximize)
         row.addWidget(self.close)
-        row.addSpacing(15)
 
         row.setSpacing(0)
 

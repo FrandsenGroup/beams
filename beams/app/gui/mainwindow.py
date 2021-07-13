@@ -132,7 +132,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.setStatusTip(message)
 
-    def update(self):
+    def update(self, signal):
         pass
 
 

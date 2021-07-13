@@ -13,7 +13,7 @@ from app.gui.dialogs.dialog_misc import WarningMessageDialog
 from app.gui.dialogs.dialog_plot_file import PlotFileDialog
 from app.gui.gui import Panel, PanelPresenter
 from app.model import files
-from app.model.domain import RunService, FitService, FileService, RunDataset, FFT
+from app.model.domain import NotificationService, RunService, FitService, FileService, RunDataset, FFT
 from app.util import qt_widgets, qt_constants
 
 
@@ -249,7 +249,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self.__run_service = RunService()
                 self.__fit_service = FitService()
                 self.__file_service = FileService()
-                self.__run_service.register(RunService.RUNS_ADDED, self)
+                self.__run_service.register(NotificationService.Signals.RUNS_ADDED, self)
 
             def _create_tree_model(self, run_datasets):
                 run_nodes = []
@@ -257,7 +257,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                     run_nodes.append(PlottingPanel.SupportPanel.RunNode(dataset))
                 return run_nodes
 
-            def update(self):
+            def update(self, signal):
                 ids = self.__view.get_run_ids()
                 run_datasets = self.__run_service.get_loaded_runs()
                 tree = self._create_tree_model(run_datasets)
@@ -543,7 +543,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                            fit_color, linestyle, marker, errorbar_style, fillstyle, line_width, marker_size,
                            errorbar_width,
                            fit_linestyle):
-
             marker_color = color if marker_color == 'Default' else marker_color
             line_color = color if line_color == 'Default' else line_color
             errorbar_color = color if errorbar_color == 'Default' else errorbar_color
@@ -977,8 +976,8 @@ class PlottingPanelPresenter(PanelPresenter):
         super().__init__(view)
         self._plot_model = PlotModel()
         self.__run_service = RunService()
-        self.__run_service.register(RunService.RUNS_ADDED, self)
-        self.__run_service.register(RunService.RUNS_CHANGED, self)
+        self.__run_service.register(NotificationService.Signals.RUNS_ADDED, self)
+        self.__run_service.register(NotificationService.Signals.RUNS_CHANGED, self)
         self.__populating_settings = False
         self.__update_alpha = True
         self._set_callbacks()
@@ -1249,7 +1248,7 @@ class PlottingPanelPresenter(PanelPresenter):
 
         self._view.legend_display.set_legend(legend_values)
 
-    def update(self):
+    def update(self, signal):
         run_datasets = self.__run_service.get_runs()
         alphas = {'{:.5f}'.format(run.asymmetries[run.FULL_ASYMMETRY].alpha) for run in run_datasets if run.asymmetries[run.FULL_ASYMMETRY] is not None}
 
@@ -1263,8 +1262,9 @@ class PlottingPanelPresenter(PanelPresenter):
         for run in run_datasets:
             self._plot_model.add_style_for_run(run, False, True)
 
-        self._plot_parameter_changed(self._view.left_settings, self._view.left_display, 'left')
-        self._plot_parameter_changed(self._view.right_settings, self._view.right_display, 'right')
+        if signal == NotificationService.Signals.RUNS_CHANGED:
+            self._plot_parameter_changed(self._view.left_settings, self._view.left_display, 'left')
+            self._plot_parameter_changed(self._view.right_settings, self._view.right_display, 'right')
 
         self._populate_settings()
 
