@@ -166,7 +166,11 @@ class FitConfig:
         return bool(self.flags & FitConfig.LEAST_SQUARES)
 
     def is_global_plus(self):
-        return bool(self.flags & FitConfig.GLOBAL_PLUS)
+        is_global = False
+        for par_dict in self.parameters.values():
+            for par in par_dict.values():
+                is_global = is_global or par.is_global
+        return is_global
 
     def get_symbols_for_run(self, run_id, is_fixed=None, is_global=None):
         symbols = []
