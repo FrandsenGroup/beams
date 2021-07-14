@@ -1330,8 +1330,11 @@ class FitTabPresenter(PanelPresenter):
         max_time = self._view.fit_spectrum_settings.get_max_time()
         bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
 
-        colors = {run.id: list(self._plot_model.color_options_values.values())[-i] for i, run in enumerate(runs)}
-        colors[0] = list(self._plot_model.color_options_values.values())[-len(colors)]
+        colors = {}
+        available_colors = list(self._plot_model.color_options_values.values())
+
+        colors = {run.id: available_colors[i % len(available_colors)] for i, run in enumerate(runs)}
+        colors[0] = '#000000'
 
         for i, run in enumerate(runs):
             if run.meta[files.TITLE_KEY] not in titles:
