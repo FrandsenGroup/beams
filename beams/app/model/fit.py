@@ -528,17 +528,16 @@ class FitEngine:
 
             self.__logger.debug("_lambdify_global: f({})={}".format(run_id, new_function))
             new_lambda_expression = FitExpression(new_function, variables=config.get_adjusted_global_symbols())
+            new_lambda_expression.safe = False
             lambdas[run_id] = new_lambda_expression
             run_id_order.append(run_id)
 
         def _lambda_expression(arr, *pars, **kwargs):
-            values = []
-            length = len(arr)
-            section_length = length / len(lambdas)
-            for i_x, x in enumerate(arr):
-                n = i_x // section_length
-                values.append(lambdas[run_id_order[int(n)]](x, *pars, **kwargs))
-            return values
+            section_length = int(len(arr) / len(lambdas))
+            values = np.array(
+                [lambdas[rid](arr[j * section_length: (j + 1) * section_length], *pars, **kwargs) for j, rid in
+                 enumerate(run_id_order)])
+            return values.flatten()
 
         return _lambda_expression
 
@@ -546,7 +545,7 @@ class FitEngine:
     def _residual(lambda_expression):
         def residual(pars, x, y_data, dy_data):
             y_calc = lambda_expression(x, *pars)
-            return (y_data - y_calc) / dy_data
+            return np.divide(np.subtract(y_data, y_calc), dy_data)
         return residual
 
     @staticmethod
