@@ -102,6 +102,7 @@ class FitExpression:
 
         self.__expression = lambdify(self.__expression_string, variables, INDEPENDENT_VARIABLE)
         self.__fixed = {}
+        self.safe = True
 
     def __eq__(self, other):
         return str(other) == self.__expression_string
@@ -111,6 +112,8 @@ class FitExpression:
 
     def __call__(self, *args, **kwargs):
         # The length of this function is due to the fact I have trust issues.
+        if not self.safe:
+            return self.__expression(*args, **kwargs)
 
         time_array = args[0]
 
