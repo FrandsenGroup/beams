@@ -384,7 +384,7 @@ class FitEngine:
         self.__logger = logging.getLogger('FitEngine')
 
     def fit(self, config: FitConfig) -> FitDataset:
-        self.__logger.debug(config)
+        self.__logger.debug(str(config))
 
         if len(set([len(asymmetry) for asymmetry in config.data.values()])) != 1:
             raise ValueError("Must have one or more datasets all of equal length to fit")
