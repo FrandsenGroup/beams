@@ -1,4 +1,5 @@
 import logging
+from concurrent import futures
 
 from PyQt5 import QtWidgets, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
@@ -1226,6 +1227,7 @@ class FitTabPresenter(PanelPresenter):
         self._runs = []
         self._asymmetries = {}
         self._plot_model = PlotModel()
+        self._threadpool = QtCore.QThreadPool()
 
         self.__update_if_table_changes = True
         self.__variable_groups = {}
@@ -1546,12 +1548,9 @@ class FitTabPresenter(PanelPresenter):
         self.__logger.debug(str(config))
 
         # Fit to spec
-        engine = fit.FitEngine()
-        dataset = engine.fit(config)
-        self._fit_service.add_dataset([dataset])
-        self._update_alphas(dataset)
-        self._update_fit_changes(dataset)
-        # self.__update_if_table_changes = True
+        worker = FitWorker(config)
+        worker.signals.result.connect(self._update_fit_changes)
+        self._threadpool.start(worker)
 
     def _new_empty_fit(self):
         self.__expression = None
@@ -1629,6 +1628,8 @@ class FitTabPresenter(PanelPresenter):
         self.__update_if_table_changes = True
 
     def _update_fit_changes(self, dataset):
+        self._fit_service.add_dataset([dataset])
+        self._update_alphas(dataset)
         self.__update_if_table_changes = False
         self._view.select_first_fit_from_dataset(dataset.id)
         self.__update_if_table_changes = False
@@ -1653,3 +1654,43 @@ class FitTabPresenter(PanelPresenter):
                 runs.append(run)
         self._runs = runs
         self._view.update_run_table(runs)
+
+
+class FitWorker(QtCore.QRunnable):
+    def __init__(self, config: fit.FitConfig):
+        super(FitWorker, self).__init__()
+        self.config = config
+        self.signals = FitSignals()
+        self.__engine = fit.FitEngine()
+        self.__pool = futures.ProcessPoolExecutor()
+        self.__process = None
+
+    @QtCore.pyqtSlot()
+    def run(self):
+        try:
+            # Start a separate process to run fits
+            self.__process = self.__pool.submit(self.__engine.fit, self.config)
+
+            # Wait on process to finish
+            x = futures.wait([self.__process], return_when=futures.ALL_COMPLETED)
+
+            # TODO We also need to handle errors.
+            # TODO We should move all processing after fit is finished to this method. They aren't intensive.
+            #   Plus then we keep everything in one place and the process only deals in primitive data types..sort of.
+            dataset = x.done.pop().result()
+            for run_id, fit_data in dataset.fits.items():
+                fit_data.expression = fit.FitExpression(fit_data.string_expression)
+
+        except Exception:
+            self.signals.error.emit("Error running fit.")
+        else:
+            self.signals.result.emit(dataset)
+        finally:
+            self.signals.finished.emit()
+
+
+class FitSignals(QtCore.QObject):
+    finished = QtCore.pyqtSignal()
+    result = QtCore.pyqtSignal(fit.FitDataset)
+    error = QtCore.pyqtSignal(str)
+    progress = QtCore.pyqtSignal(int)
