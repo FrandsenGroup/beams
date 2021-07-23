@@ -8,5 +8,5 @@ class Signals(QtCore.QObject):
     changed = QtCore.pyqtSignal()
 
 
-class StyleService:
-    __dao = dao.StyleDAO()
+class SystemService:
+    __dao = dao.SystemDAO()

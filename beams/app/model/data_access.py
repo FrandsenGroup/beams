@@ -35,56 +35,63 @@ class RunDAO:
             self.__database.run_table[rid] = run
 
     def clear(self):
-        self.__database.runs = {}
+        self.__database.run_table = {}
 
 
 class FitDAO:
     __database = Database()
 
     def get_fits(self):
-        return self.__database.fits.values()
+        return self.__database.fit_table.values()
 
     def get_fits_by_ids(self, ids):
-        return [self.__database.fits[fid] for fid in ids]
+        return [self.__database.fit_table[fid] for fid in ids]
 
     def add_fits(self, fits):
         for fit in fits:
-            self.__database.fits[fit.id] = fit
+            self.__database.fit_table[fit.id] = fit
 
     def remove_runs_by_ids(self, ids):
         for fid in ids:
-            self.__database.fits.pop(fid)
+            self.__database.fit_table.pop(fid)
 
     def clear(self):
-        self.__database.fits = {}
+        self.__database.fit_table = {}
 
 
 class FileDAO:
     __database = Database()
 
     def get_files(self):
-        return self.__database.files.values()
+        return self.__database.file_table.values()
 
     def get_files_by_ids(self, ids):
-        return [self.__database.files[file_id] for file_id in ids]
+        return [self.__database.file_table[file_id] for file_id in ids]
 
     def get_files_by_path(self, path):
-        for file in self.__database.files.values():
+        for file in self.__database.file_table.values():
             if file.file_path == path:
                 return file
 
     def add_files(self, file_datasets):
         for dataset in file_datasets:
-            self.__database.files[dataset.id] = dataset
+            self.__database.file_table[dataset.id] = dataset
 
     def remove_files_by_paths(self, paths):
         for path in paths:
-            self.__database.files.pop(path)
+            self.__database.file_table.pop(path)
 
     def remove_files_by_id(self, fid):
-        self.__database.files.pop(fid)
+        self.__database.file_table.pop(fid)
 
     def clear(self):
-        self.__database.files = {}
+        self.__database.file_table = {}
 
+
+class StyleDAO:
+    __database = Database()
+
+
+class SystemDAO:
+    __database = Database()
 
