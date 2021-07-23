@@ -102,6 +102,7 @@ class FitExpression:
 
         self.__expression = lambdify(self.__expression_string, variables, INDEPENDENT_VARIABLE)
         self.__fixed = {}
+        self.safe = True
 
     def __eq__(self, other):
         return str(other) == self.__expression_string
@@ -111,6 +112,8 @@ class FitExpression:
 
     def __call__(self, *args, **kwargs):
         # The length of this function is due to the fact I have trust issues.
+        if not self.safe:
+            return self.__expression(*args, **kwargs)
 
         time_array = args[0]
 
@@ -381,7 +384,7 @@ class FitEngine:
         self.__logger = logging.getLogger('FitEngine')
 
     def fit(self, config: FitConfig) -> FitDataset:
-        self.__logger.debug(config)
+        self.__logger.debug(str(config))
 
         if len(set([len(asymmetry) for asymmetry in config.data.values()])) != 1:
             raise ValueError("Must have one or more datasets all of equal length to fit")
@@ -525,17 +528,16 @@ class FitEngine:
 
             self.__logger.debug("_lambdify_global: f({})={}".format(run_id, new_function))
             new_lambda_expression = FitExpression(new_function, variables=config.get_adjusted_global_symbols())
+            new_lambda_expression.safe = False
             lambdas[run_id] = new_lambda_expression
             run_id_order.append(run_id)
 
         def _lambda_expression(arr, *pars, **kwargs):
-            values = []
-            length = len(arr)
-            section_length = length / len(lambdas)
-            for i_x, x in enumerate(arr):
-                n = i_x // section_length
-                values.append(lambdas[run_id_order[int(n)]](x, *pars, **kwargs))
-            return values
+            section_length = int(len(arr) / len(lambdas))
+            values = np.array(
+                [lambdas[rid](arr[j * section_length: (j + 1) * section_length], *pars, **kwargs) for j, rid in
+                 enumerate(run_id_order)])
+            return values.flatten()
 
         return _lambda_expression
 
@@ -543,7 +545,7 @@ class FitEngine:
     def _residual(lambda_expression):
         def residual(pars, x, y_data, dy_data):
             y_calc = lambda_expression(x, *pars)
-            return (y_data - y_calc) / dy_data
+            return np.divide(np.subtract(y_data, y_calc), dy_data)
         return residual
 
     @staticmethod
