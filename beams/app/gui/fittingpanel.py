@@ -1516,14 +1516,16 @@ class FitTabPresenter(PanelPresenter):
                 if run.meta[files.TITLE_KEY] == title:
                     fit_titles[run.id] = title
                     if run.id in self._asymmetries.keys():
-                        config.data[run.id] = self._asymmetries[run.id]
+                        # We have to store references to all three instead of just the asymmetry because the
+                        #   new process won't pick up those references.
+                        config.data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id], self._asymmetries[run.id].uncertainty)
                     else:
                         min_time = self._view.fit_spectrum_settings.get_min_time()
                         max_time = self._view.fit_spectrum_settings.get_max_time()
                         bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
                         raw_asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time, max_time=max_time)
                         self._asymmetries[run.id] = raw_asymmetry
-                        config.data[run.id] = self._asymmetries[run.id]
+                        config.data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id], self._asymmetries[run.id].uncertainty)
 
                     run_parameters = {}
                     for symbol, value, value_min, value_max, value_output, value_uncertainty, is_fixed, \

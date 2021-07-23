@@ -418,10 +418,10 @@ class FitEngine:
         concatenated_asymmetry = np.array([])
         concatenated_uncertainty = np.array([])
         concatenated_time = np.array([])
-        for _, asymmetry in config.data.items():
+        for _, (time, asymmetry, uncertainty) in config.data.items():
             concatenated_asymmetry = np.concatenate((concatenated_asymmetry, asymmetry))
-            concatenated_uncertainty = np.concatenate((concatenated_uncertainty, asymmetry.uncertainty))
-            concatenated_time = np.concatenate((concatenated_time, asymmetry.time))
+            concatenated_uncertainty = np.concatenate((concatenated_uncertainty, uncertainty))
+            concatenated_time = np.concatenate((concatenated_time, time))
 
         # Create a single global lambda function for all the datasets. Essentially, it acts like a
         #    stepwise function, once you pass into the asymmetry of another dataset, a separate function
@@ -440,7 +440,7 @@ class FitEngine:
         for i, symbol in enumerate(config.get_adjusted_global_symbols()):
             values[symbol] = opt.x[i]
 
-        for run_id, asymmetry in config.data.items():
+        for run_id, (time, asymmetry, uncertainty) in config.data.items():
             for symbol, parameter in config.parameters[run_id].items():
                 if not parameter.is_global:
                     config.set_outputs(run_id, symbol, values[symbol + _shortened_run_id(run_id)], 0)
@@ -462,7 +462,7 @@ class FitEngine:
 
     def _least_squares_fit_non_global(self, config) -> FitDataset:
         dataset = FitDataset()
-        for run_id, asymmetry in config.data.items():
+        for run_id, (time, asymmetry,  uncertainty) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
             function = ALPHA_CORRECTION.format(config.expression, config.expression)
             lambda_expression = FitExpression(function, variables=config.get_symbols_for_run(run_id))
@@ -479,7 +479,7 @@ class FitEngine:
 
             # 6) Perform a least squares fit
             opt = least_squares(residual, guesses, bounds=[lowers, uppers],
-                                args=(asymmetry.time, asymmetry, asymmetry.uncertainty))
+                                args=(time, asymmetry, uncertainty))
             self.__logger.debug(opt)
 
             try:
@@ -489,7 +489,7 @@ class FitEngine:
                     if config.parameters[run_id][symbol].is_fixed or config.parameters[run_id][symbol].is_fixed_run:
                         unc[i] = 0.0
 
-            except np.linalg.LinAlgError:  # Fit did not converge
+            except (np.linalg.LinAlgError, NameError):  # Fit did not converge
                 unc = [-1 for _ in opt.x]
 
             self.__logger.debug("Uncertainty: ".format(str(unc)))
