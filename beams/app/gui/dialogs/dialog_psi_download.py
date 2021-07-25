@@ -1,15 +1,13 @@
 
 import enum
 import os
-import sys
-from urllib import parse
 import tarfile
 from datetime import datetime
 
 import requests
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets
 
-from app.model.domain import FileService
+from app.services import file_service
 from app.util import qt_widgets, qt_constants
 from app.model import files
 
@@ -209,7 +207,7 @@ class PSIDownloadDialogPresenter:
         self._search_url = 'http://musruser.psi.ch/cgi-bin/SearchDB.cgi'
         self._data_url = 'http://musruser.psi.ch/cgi-bin/SearchDB.cgi'
         self._new_files = False
-        self.__file_service = FileService()
+        self.__file_service = file_service.FileService()
         self._current_identifier_uris = {}
         self._counter = 0
 

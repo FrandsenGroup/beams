@@ -1,15 +1,16 @@
-import os
+import os, logging
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets
 
 from app.gui.dialogs.dialog_isis_download import ISISDownloadDialog
-from app.gui.dialogs.dialog_misc import AddFileDialog, PermissionsMessageDialog, ProgressBarDialog
+from app.gui.dialogs.dialog_misc import AddFileDialog, PermissionsMessageDialog
 from app.gui.dialogs.dialog_musr_download import MusrDownloadDialog
 from app.gui.dialogs.dialog_psi_download import PSIDownloadDialog
 from app.gui.dialogs.dialog_write_data import WriteDataDialog
 from app.gui.gui import PanelPresenter
 from app.model import files
-from app.model.domain import NotificationService, RunService, FileService, FitService, FileDataset, RunDataset
+from app.services import file_service, run_service, fit_service
+from app.model.domain import FileDataset, RunDataset
 from app.util import qt_widgets, qt_constants
 
 
@@ -67,12 +68,14 @@ class MainConsolePanel(QtWidgets.QDockWidget):
     class TreeManager:
         def __init__(self, view):
             self.__view = view
-            self.__run_service = RunService()
-            self.__fit_service = FitService()
-            self.__file_service = FileService()
-            self.__run_service.register(NotificationService.Signals.RUNS_ADDED, self)
-            self.__file_service.register(NotificationService.Signals.FILES_CHANGED, self)
-            self.__fit_service.register(NotificationService.Signals.FITS_ADDED, self)
+            self.__logger = logging.getLogger("MainConsolePanelTreeManager")
+            self.__run_service = run_service.RunService()
+            self.__fit_service = fit_service.FitService()
+            self.__file_service = file_service.FileService()
+
+            self.__run_service.signals.added.connect(self.update)
+            self.__file_service.signals.changed.connect(self.update)
+            self.__fit_service.signals.added.connect(self.update)
 
         def _create_tree_model(self, file_datasets):
             file_nodes = []
@@ -80,7 +83,8 @@ class MainConsolePanel(QtWidgets.QDockWidget):
                 file_nodes.append(MainConsolePanel.FileNode(dataset))
             return file_nodes
 
-        def update(self, signal):
+        def update(self):
+            self.__logger.debug("Accepted Signal")
             ids = self.__view.get_file_ids()
             file_datasets = self.__file_service.get_files()
             tree = self._create_tree_model(file_datasets)
@@ -382,7 +386,8 @@ class MainConsolePanelPresenter(PanelPresenter):
     def __init__(self, view: MainConsolePanel):
         super().__init__(view)
         
-        self.__file_service = FileService()
+        self.__file_service = file_service.FileService()
+        self.__logger = logging.getLogger("MainConsolePanelPresenter")
         
         self._set_callbacks()
         

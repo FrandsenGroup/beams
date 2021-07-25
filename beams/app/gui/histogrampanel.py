@@ -1,12 +1,15 @@
 
-from PyQt5 import QtWidgets, QtCore
+import logging
+
+from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
 
 from app.gui.dialogs.dialog_misc import FileDisplayDialog, WarningMessageDialog
 from app.gui.gui import Panel, PanelPresenter
 from app.model import files
-from app.model.domain import NotificationService, RunDataset, RunService, FitService, FileService, Histogram
+from app.services import run_service, fit_service, file_service
+from app.model.domain import RunDataset, Histogram
 from app.util import qt_widgets, qt_constants
 
 
@@ -90,10 +93,13 @@ class HistogramPanel(Panel):
         class TreeManager:
             def __init__(self, view):
                 self.__view = view
-                self.__run_service = RunService()
-                self.__fit_service = FitService()
-                self.__file_service = FileService()
-                self.__run_service.register(NotificationService.Signals.RUNS_ADDED, self)
+                self.__logger = logging.getLogger("HistogramPanelTreeManager")
+                self.__run_service = run_service.RunService()
+                self.__fit_service = fit_service.FitService()
+                self.__file_service = file_service.FileService()
+
+                self.__run_service.signals.added.connect(self.update)
+                self.__run_service.signals.changed.connect(self.update)
 
             def _create_tree_model(self, run_datasets):
                 run_nodes = []
@@ -101,7 +107,8 @@ class HistogramPanel(Panel):
                     run_nodes.append(HistogramPanel.SupportPanel.RunNode(dataset))
                 return run_nodes
 
-            def update(self, signal):
+            def update(self):
+                self.__logger.debug("Accepted Signal")
                 run_datasets = self.__run_service.get_loaded_runs()
                 tree = self._create_tree_model(run_datasets)
                 self.__view.set_tree(tree)
@@ -523,7 +530,8 @@ class HistogramPanel(Panel):
 class HistogramPanelPresenter(PanelPresenter):
     def __init__(self, view: Panel):
         super().__init__(view)
-        self.__run_service = RunService()
+        self.__logger = logging.getLogger("HistogramPanelPresenter")
+        self.__run_service = run_service.RunService()
         self.__alterations = {}
         self.__current_histogram = None
         self.__editing = False

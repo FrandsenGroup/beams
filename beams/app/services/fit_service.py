@@ -1,4 +1,6 @@
 
+import logging
+
 from PyQt5 import QtCore
 
 import app.model.data_access as dao
@@ -11,6 +13,7 @@ class Signals(QtCore.QObject):
 
 class FitService:
     __dao = dao.FitDAO()
+    __logger = logging.getLogger('FitService')
     signals = Signals()
 
     @staticmethod
@@ -22,8 +25,10 @@ class FitService:
         FitService.__dao.add_fits(datasets)
 
         if not suppress_signal:
+            FitService.__logger.debug("Emitted: added")
             FitService.signals.added.emit()
 
     @staticmethod
     def changed():
+        FitService.__logger.debug("Emitted: changed")
         FitService.signals.changed.emit()

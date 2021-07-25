@@ -8,6 +8,7 @@ import logging
 import time as ti
 
 from app.resources import resources
+from app.services import run_service
 from app.model import domain
 
 INDEPENDENT_VARIABLE = "t"
@@ -368,7 +369,7 @@ class FitDataset:
             for f in self.fits.values():
                 for name, v in f.variables.items():
                     full_string += "{:.4f}\t".format(v.value)
-                run = domain.RunService.get_runs_by_ids([f.run_id])[0]
+                run = run_service.RunService.get_runs_by_ids([f.run_id])[0]
                 full_string += run.meta["RunNumber"] + "\n"
 
             with open(out_file, 'w', encoding="utf-8") as f:
@@ -378,7 +379,7 @@ class FitDataset:
 
 class FitEngine:
     def __init__(self):
-        self.__run_service = domain.RunService()
+        self.__run_service = run_service.RunService()
         self.__logger = logging.getLogger('FitEngine')
 
     def fit(self, config: FitConfig) -> FitDataset:

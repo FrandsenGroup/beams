@@ -6,11 +6,11 @@ from urllib import parse
 from datetime import datetime
 
 import requests
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets
 
-from app.model.domain import FileService
 from app.util import qt_widgets, qt_constants
 from app.model import files
+from app.services import file_service
 
 
 # noinspection PyArgumentList
@@ -207,7 +207,7 @@ class MusrDownloadDialogPresenter:
         self._search_url = "http://musr.ca/mud/runSel.php"
         self._data_url = "http://musr.ca/mud/data/"
         self._new_files = False
-        self.__file_service = FileService()
+        self.__file_service = file_service.FileService()
 
         self._set_callbacks()
 

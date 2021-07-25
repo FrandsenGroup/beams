@@ -5,7 +5,7 @@ from PyQt5 import QtWidgets, QtCore
 import numpy as np
 
 from app.util import qt_widgets, qt_constants
-from app.model.domain import FileService
+from app.services import file_service
 from app.model import files, domain
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
 
@@ -158,7 +158,7 @@ class WriteDataDialog(QtWidgets.QDialog):
 class WriteDataDialogPresenter:
     def __init__(self, view: WriteDataDialog):
         self._view = view
-        self.__service = FileService()
+        self.__service = file_service.FileService()
         self.__files = self.__service.get_files(self._view.files)
 
         # fixme, we will want to allow for fits but for now we will just do runs

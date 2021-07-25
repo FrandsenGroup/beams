@@ -2,7 +2,7 @@ import logging
 from concurrent import futures
 
 from PyQt5 import QtWidgets, QtCore
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
 
@@ -10,6 +10,7 @@ from app.gui.plottingpanel import PlotModel
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
 from app.util import qt_widgets, qt_constants
 from app.model import domain, fit, files
+from app.services import run_service, fit_service, file_service
 from app.gui.gui import PanelPresenter, Panel
 
 
@@ -89,11 +90,14 @@ class FittingPanel(Panel):
         class TreeManager:
             def __init__(self, view):
                 self.__view = view
-                self.__run_service = domain.RunService()
-                self.__fit_service = domain.FitService()
-                self.__fit_service.register(domain.NotificationService.Signals.FITS_ADDED, self)
-                self.__file_service = domain.FileService()
-                self.__run_service.register(domain.NotificationService.Signals.RUNS_ADDED, self)
+                self.__logger = logging.getLogger("FittingPanelTreeManager")
+                self.__run_service = run_service.RunService()
+                self.__fit_service = fit_service.FitService()
+                self.__file_service = file_service.FileService()
+                self.__run_service.signals.added.connect(self.update)
+                self.__fit_service.signals.added.connect(self.update)
+                self.__run_service.signals.changed.connect(self.update)
+                self.__fit_service.signals.changed.connect(self.update)
 
             def _create_tree_model(self, fit_datasets):
                 fit_dataset_nodes = []
@@ -101,7 +105,8 @@ class FittingPanel(Panel):
                     fit_dataset_nodes.append(FittingPanel.SupportPanel.FitDatasetNode(dataset))
                 return fit_dataset_nodes
 
-            def update(self, signal):
+            def update(self):
+                self.__logger.debug("Accepted Signal")
                 fit_datasets = self.__fit_service.get_fit_datasets()
                 tree = self._create_tree_model(fit_datasets)
                 self.__view.set_tree(tree)
@@ -1216,13 +1221,15 @@ class FittingPanel(Panel):
 class FitTabPresenter(PanelPresenter):
     def __init__(self, view: FittingPanel):
         super().__init__(view)
-        self._run_service = domain.RunService()
-        self._fit_service = domain.FitService()
+        self._run_service = run_service.RunService()
+        self._fit_service = fit_service.FitService()
         self._set_callbacks()
 
-        self._run_service.register(domain.NotificationService.Signals.RUNS_ADDED, self)
-        self._run_service.register(domain.NotificationService.Signals.RUNS_LOADED, self)
-        self._fit_service.register(domain.NotificationService.Signals.FITS_ADDED, self)
+        self._run_service.signals.added.connect(self.update)
+        self._run_service.signals.changed.connect(self.update)
+        self._run_service.signals.loaded.connect(self.update)
+        self._fit_service.signals.added.connect(self.update)
+        self._fit_service.signals.changed.connect(self.update)
 
         self._runs = []
         self._asymmetries = {}
@@ -1232,7 +1239,7 @@ class FitTabPresenter(PanelPresenter):
         self.__update_if_table_changes = True
         self.__variable_groups = {}
         self.__expression = None
-        self.__logger = logging.getLogger('QtFittingPresenter')
+        self.__logger = logging.getLogger('FittingPanelPresenter')
 
     def _set_callbacks(self):
         self._view.support_panel.tree.itemSelectionChanged.connect(self._selection_changed)
@@ -1647,7 +1654,8 @@ class FitTabPresenter(PanelPresenter):
         if len(ids) > 0:
             self._run_service.update_alphas(ids, alphas)
 
-    def update(self, signal):
+    def update(self):
+        self.__logger.debug("Accepted Signal")
         runs = []
         for run in self._run_service.get_loaded_runs():
             if run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] is not None:

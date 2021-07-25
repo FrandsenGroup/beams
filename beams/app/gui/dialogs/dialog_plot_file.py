@@ -2,9 +2,10 @@ import enum
 
 from PyQt5 import QtWidgets
 
-from app.model.domain import Asymmetry, RunDataset, RunService
+from app.model.domain import Asymmetry, RunDataset
 from app.util import qt_widgets
 from app.model import files
+from app.services import run_service
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
 
 
@@ -101,7 +102,7 @@ class PlotFileDialog(QtWidgets.QDialog):
 
 class PlotFileDialogPresenter:
     def __init__(self, view: PlotFileDialog, runs):
-        self.__run_service = RunService()
+        self.__run_service = run_service.RunService()
         self._view = view
         self._runs = runs
         self._formats = {run.file.file_path: None for run in runs}

@@ -3,17 +3,17 @@ import warnings
 from enum import Enum
 import logging
 
-from PyQt5 import QtGui, QtWidgets, QtCore
+from PyQt5 import QtGui, QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
-from matplotlib.patches import Patch
 import numpy as np
 
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
 from app.gui.dialogs.dialog_plot_file import PlotFileDialog
 from app.gui.gui import Panel, PanelPresenter
 from app.model import files
-from app.model.domain import NotificationService, RunService, FitService, FileService, RunDataset, FFT
+from app.services import run_service, fit_service, file_service
+from app.model.domain import RunDataset, FFT
 from app.util import qt_widgets, qt_constants
 
 
@@ -246,10 +246,13 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         class TreeManager:
             def __init__(self, view):
                 self.__view = view
-                self.__run_service = RunService()
-                self.__fit_service = FitService()
-                self.__file_service = FileService()
-                self.__run_service.register(NotificationService.Signals.RUNS_ADDED, self)
+                self.__logger = logging.getLogger("PlottingPanelTreeManager")
+                self.__run_service = run_service.RunService()
+                self.__fit_service = fit_service.FitService()
+                self.__file_service = file_service.FileService()
+                self.__run_service.signals.added.connect(self.update)
+                self.__run_service.signals.loaded.connect(self.update)
+                self.__run_service.signals.changed.connect(self.update)
 
             def _create_tree_model(self, run_datasets):
                 run_nodes = []
@@ -257,7 +260,8 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                     run_nodes.append(PlottingPanel.SupportPanel.RunNode(dataset))
                 return run_nodes
 
-            def update(self, signal):
+            def update(self):
+                self.__logger.debug("Accepted Signal")
                 ids = self.__view.get_run_ids()
                 run_datasets = self.__run_service.get_loaded_runs()
                 tree = self._create_tree_model(run_datasets)
@@ -975,11 +979,12 @@ class PlottingPanelPresenter(PanelPresenter):
     def __init__(self, view: PlottingPanel):
         super().__init__(view)
         self._plot_model = PlotModel()
-        self.__run_service = RunService()
-        self.__run_service.register(NotificationService.Signals.RUNS_ADDED, self)
-        self.__run_service.register(NotificationService.Signals.RUNS_CHANGED, self)
+        self.__run_service = run_service.RunService()
+        self.__run_service.signals.added.connect(self.update)
+        self.__run_service.signals.changed.connect(self.update_after_change)
         self.__populating_settings = False
         self.__update_alpha = True
+        self.__logger = logging.getLogger("PlottingPanelPresenter")
         self._set_callbacks()
 
     def _set_callbacks(self):
@@ -1248,7 +1253,8 @@ class PlottingPanelPresenter(PanelPresenter):
 
         self._view.legend_display.set_legend(legend_values)
 
-    def update(self, signal):
+    def update(self, runs_changed=False):
+        self.__logger.debug("Accepted Signal")
         run_datasets = self.__run_service.get_runs()
         alphas = {'{:.5f}'.format(run.asymmetries[run.FULL_ASYMMETRY].alpha) for run in run_datasets if run.asymmetries[run.FULL_ASYMMETRY] is not None}
 
@@ -1262,11 +1268,14 @@ class PlottingPanelPresenter(PanelPresenter):
         for run in run_datasets:
             self._plot_model.add_style_for_run(run, False, True)
 
-        if signal == NotificationService.Signals.RUNS_CHANGED:
+        if runs_changed:
             self._plot_parameter_changed(self._view.left_settings, self._view.left_display, 'left')
             self._plot_parameter_changed(self._view.right_settings, self._view.right_display, 'right')
 
         self._populate_settings()
+
+    def update_after_change(self):
+        self.update(True)
 
     def update_alpha(self):
         if not self.__update_alpha:

@@ -1,4 +1,6 @@
 
+import logging
+
 from PyQt5 import QtCore
 
 import app.model.data_access as dao
@@ -8,11 +10,13 @@ import app.model.domain as domain
 class Signals(QtCore.QObject):
     added = QtCore.pyqtSignal()
     changed = QtCore.pyqtSignal()
+    loaded = QtCore.pyqtSignal()
 
 
 class RunService:
     signals = Signals()
     __dao = dao.RunDAO()
+    __logger = logging.getLogger("RunService")
 
     @staticmethod
     def get_runs():
@@ -51,6 +55,7 @@ class RunService:
                     run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(
                         run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
 
+        RunService.__logger.debug("Emitted: changed")
         RunService.signals.changed.emit()
 
     @staticmethod
@@ -60,23 +65,28 @@ class RunService:
             run = builder.build_minimal(path)
             RunService.__dao.add_runs([run])
 
+        RunService.__logger.debug("Emitted: added")
         RunService.signals.added.emit()
 
     @staticmethod
     def remove_runs_by_ids(ids):
         RunService.__dao.remove_runs_by_ids(ids)
-        RunService.signals.added.emit()
+
+        RunService.__logger.debug("Emitted: loaded")
+        RunService.signals.loaded.emit()
 
     @staticmethod
     def add_dataset(datasets, suppress_signal):
         RunService.__dao.add_runs(datasets)
 
         if not suppress_signal:
+            RunService.__logger.debug("Emitted: added")
             RunService.signals.added.emit()
 
     @staticmethod
     def update_runs_by_ids(ids, asymmetries):
         RunService.__dao.update_runs_by_id(ids, asymmetries)
+        RunService.__logger.debug("Emitted: changed")
         RunService.signals.changed.emit()
 
     @staticmethod
@@ -96,8 +106,10 @@ class RunService:
                 run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(
                     run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
 
+        RunService.__logger.debug("Emitted: changed")
         RunService.signals.changed.emit()
 
     @staticmethod
     def changed():
+        RunService.__logger.debug("Emitted: changed")
         RunService.signals.changed.emit()

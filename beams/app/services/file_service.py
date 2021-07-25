@@ -1,5 +1,5 @@
 
-import os
+import os, logging
 
 from PyQt5 import QtCore
 
@@ -14,6 +14,7 @@ class Signals(QtCore.QObject):
 
 class FileService:
     __dao = dao.FileDAO()
+    __logger = logging.getLogger("FileService")
     __run_service = run_service.RunService()
     __fit_service = fit_service.FitService()
     signals = Signals()
@@ -63,6 +64,7 @@ class FileService:
 
             FileService.__dao.add_files([file_set])
 
+        FileService.__logger.debug("Emitted: changed")
         FileService.signals.changed.emit()
 
     @staticmethod
@@ -76,6 +78,7 @@ class FileService:
                 file_dataset.isLoaded = True
 
         if is_changed:
+            FileService.__logger.debug("Emitted: changed")
             FileService.signals.changed.emit()
             FileService.__run_service.changed()
             FileService.__fit_service.changed()
@@ -90,4 +93,5 @@ class FileService:
             FileService.__dao.remove_files_by_id(rf.id)
 
         FileService.__run_service.remove_runs_by_ids(run_ids)
+        FileService.__logger.debug("Emitted: changed")
         FileService.signals.changed.emit()
