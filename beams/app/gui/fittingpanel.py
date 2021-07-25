@@ -9,8 +9,7 @@ import numpy as np
 from app.gui.plottingpanel import PlotModel
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
 from app.util import qt_widgets, qt_constants
-from app.model import domain, fit, files
-from app.services import run_service, fit_service, file_service
+from app.model import domain, fit, files, services
 from app.gui.gui import PanelPresenter, Panel
 
 
@@ -91,9 +90,9 @@ class FittingPanel(Panel):
             def __init__(self, view):
                 self.__view = view
                 self.__logger = logging.getLogger("FittingPanelTreeManager")
-                self.__run_service = run_service.RunService()
-                self.__fit_service = fit_service.FitService()
-                self.__file_service = file_service.FileService()
+                self.__run_service = services.RunService()
+                self.__fit_service = services.FitService()
+                self.__file_service = services.FileService()
                 self.__run_service.signals.added.connect(self.update)
                 self.__fit_service.signals.added.connect(self.update)
                 self.__run_service.signals.changed.connect(self.update)
@@ -1221,8 +1220,8 @@ class FittingPanel(Panel):
 class FitTabPresenter(PanelPresenter):
     def __init__(self, view: FittingPanel):
         super().__init__(view)
-        self._run_service = run_service.RunService()
-        self._fit_service = fit_service.FitService()
+        self._run_service = services.RunService()
+        self._fit_service = services.FitService()
         self._set_callbacks()
 
         self._run_service.signals.added.connect(self.update)

@@ -7,9 +7,7 @@ from matplotlib.figure import Figure
 
 from app.gui.dialogs.dialog_misc import FileDisplayDialog, WarningMessageDialog
 from app.gui.gui import Panel, PanelPresenter
-from app.model import files
-from app.services import run_service, fit_service, file_service
-from app.model.domain import RunDataset, Histogram
+from app.model import files, services, domain
 from app.util import qt_widgets, qt_constants
 
 
@@ -72,7 +70,7 @@ class HistogramPanel(Panel):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, Histogram):
+                    if isinstance(iterator.value().model, domain.Histogram):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -85,7 +83,7 @@ class HistogramPanel(Panel):
 
                 histograms = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, Histogram):
+                    if isinstance(iterator.value().model, domain.Histogram):
                         histograms.append(iterator.value().model)
                     iterator += 1
                 return histograms
@@ -94,9 +92,9 @@ class HistogramPanel(Panel):
             def __init__(self, view):
                 self.__view = view
                 self.__logger = logging.getLogger("HistogramPanelTreeManager")
-                self.__run_service = run_service.RunService()
-                self.__fit_service = fit_service.FitService()
-                self.__file_service = file_service.FileService()
+                self.__run_service = services.RunService()
+                self.__fit_service = services.FitService()
+                self.__file_service = services.FileService()
 
                 self.__run_service.signals.added.connect(self.update)
                 self.__run_service.signals.changed.connect(self.update)
@@ -119,7 +117,7 @@ class HistogramPanel(Panel):
                 self.model = run_data
                 self.__selected_items = None
 
-                if isinstance(run_data, RunDataset):
+                if isinstance(run_data, domain.RunDataset):
                     if run_data.isLoaded and run_data.histograms:
                         for histogram in run_data.histograms.values():
                             self.addChild(HistogramPanel.SupportPanel.HistogramNode(histogram))
@@ -531,7 +529,7 @@ class HistogramPanelPresenter(PanelPresenter):
     def __init__(self, view: Panel):
         super().__init__(view)
         self.__logger = logging.getLogger("HistogramPanelPresenter")
-        self.__run_service = run_service.RunService()
+        self.__run_service = services.RunService()
         self.__alterations = {}
         self.__current_histogram = None
         self.__editing = False

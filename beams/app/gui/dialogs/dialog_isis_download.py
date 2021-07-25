@@ -10,8 +10,7 @@ from datetime import datetime
 import requests
 from PyQt5 import QtWidgets, QtCore
 
-from app.model import files
-from app.services import file_service
+from app.model import files, services
 from app.util import qt_widgets, qt_constants
 
 
@@ -210,7 +209,7 @@ class ISISDownloadDialogPresenter:
         self._session_id = None
         self._session_start = None
         self._new_files = False
-        self.__file_service = file_service.FileService()
+        self.__file_service = services.FileService()
 
         self._set_callbacks()
 

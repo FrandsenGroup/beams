@@ -8,9 +8,7 @@ from app.gui.dialogs.dialog_musr_download import MusrDownloadDialog
 from app.gui.dialogs.dialog_psi_download import PSIDownloadDialog
 from app.gui.dialogs.dialog_write_data import WriteDataDialog
 from app.gui.gui import PanelPresenter
-from app.model import files
-from app.services import file_service, run_service, fit_service
-from app.model.domain import FileDataset, RunDataset
+from app.model import files, services, domain
 from app.util import qt_widgets, qt_constants
 
 
@@ -48,7 +46,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
             ids = []
             while iterator.value():
-                if isinstance(iterator.value().model, FileDataset):
+                if isinstance(iterator.value().model, domain.FileDataset):
                     ids.append(iterator.value().model.id)
 
                 iterator += 1
@@ -69,9 +67,9 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         def __init__(self, view):
             self.__view = view
             self.__logger = logging.getLogger("MainConsolePanelTreeManager")
-            self.__run_service = run_service.RunService()
-            self.__fit_service = fit_service.FitService()
-            self.__file_service = file_service.FileService()
+            self.__run_service = services.RunService()
+            self.__fit_service = services.FitService()
+            self.__file_service = services.FileService()
 
             self.__run_service.signals.added.connect(self.update)
             self.__file_service.signals.changed.connect(self.update)
@@ -123,7 +121,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
             data_object = file_data.dataset
 
-            if isinstance(data_object, RunDataset):
+            if isinstance(data_object, domain.RunDataset):
                 if data_object.isLoaded:
                     histogram_node = MainConsolePanel.HeadingNode("Histograms")
                     if data_object.histograms:
@@ -386,7 +384,7 @@ class MainConsolePanelPresenter(PanelPresenter):
     def __init__(self, view: MainConsolePanel):
         super().__init__(view)
         
-        self.__file_service = file_service.FileService()
+        self.__file_service = services.FileService()
         self.__logger = logging.getLogger("MainConsolePanelPresenter")
         
         self._set_callbacks()

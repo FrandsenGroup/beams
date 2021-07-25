@@ -11,9 +11,7 @@ import numpy as np
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
 from app.gui.dialogs.dialog_plot_file import PlotFileDialog
 from app.gui.gui import Panel, PanelPresenter
-from app.model import files
-from app.services import run_service, fit_service, file_service
-from app.model.domain import RunDataset, FFT
+from app.model import files, domain, services
 from app.util import qt_widgets, qt_constants
 
 
@@ -174,7 +172,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, RunDataset):
+                    if isinstance(iterator.value().model, domain.RunDataset):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -187,7 +185,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, RunDataset):
+                    if isinstance(iterator.value().model, domain.RunDataset):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -200,7 +198,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, RunDataset):
+                    if isinstance(iterator.value().model, domain.RunDataset):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -213,7 +211,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, RunDataset):
+                    if isinstance(iterator.value().model, domain.RunDataset):
                         ids.append(iterator.value().model.meta[files.TITLE_KEY])
 
                     iterator += 1
@@ -226,7 +224,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, RunDataset):
+                    if isinstance(iterator.value().model, domain.RunDataset):
                         ids.append(iterator.value().model.meta[files.TITLE_KEY])
 
                     iterator += 1
@@ -247,9 +245,9 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             def __init__(self, view):
                 self.__view = view
                 self.__logger = logging.getLogger("PlottingPanelTreeManager")
-                self.__run_service = run_service.RunService()
-                self.__fit_service = fit_service.FitService()
-                self.__file_service = file_service.FileService()
+                self.__run_service = services.RunService()
+                self.__fit_service = services.FitService()
+                self.__file_service = services.FileService()
                 self.__run_service.signals.added.connect(self.update)
                 self.__run_service.signals.loaded.connect(self.update)
                 self.__run_service.signals.changed.connect(self.update)
@@ -979,7 +977,7 @@ class PlottingPanelPresenter(PanelPresenter):
     def __init__(self, view: PlottingPanel):
         super().__init__(view)
         self._plot_model = PlotModel()
-        self.__run_service = run_service.RunService()
+        self.__run_service = services.RunService()
         self.__run_service.signals.added.connect(self.update)
         self.__run_service.signals.changed.connect(self.update_after_change)
         self.__populating_settings = False
@@ -1159,7 +1157,7 @@ class PlottingPanelPresenter(PanelPresenter):
     def _verify_asymmetries_are_calculated(self, runs):
         runs_without_asymmetries = []
         for run in runs:
-            if run.asymmetries[RunDataset.FULL_ASYMMETRY] is None:
+            if run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] is None:
                 runs_without_asymmetries.append(run)
 
         if len(runs_without_asymmetries) > 0:
@@ -1190,19 +1188,19 @@ class PlottingPanelPresenter(PanelPresenter):
 
         legend_values = {}
         for run in runs:
-            if run.asymmetries[RunDataset.FULL_ASYMMETRY] is None:
+            if run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] is None:
                 continue
 
             if side == 'left':
-                asymmetry = run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY]
+                asymmetry = run.asymmetries[domain.RunDataset.LEFT_BINNED_ASYMMETRY]
                 if asymmetry is None or asymmetry.bin_size != bin_size or True:
-                    asymmetry = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(bin_size)
-                    run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY] = asymmetry
+                    asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(bin_size)
+                    run.asymmetries[domain.RunDataset.LEFT_BINNED_ASYMMETRY] = asymmetry
             else:
-                asymmetry = run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY]
+                asymmetry = run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY]
                 if asymmetry is None or asymmetry.bin_size != bin_size or True:
-                    asymmetry = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(bin_size)
-                    run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY] = asymmetry
+                    asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(bin_size)
+                    run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY] = asymmetry
 
             time = asymmetry.time
             uncertainty = asymmetry.uncertainty
@@ -1293,7 +1291,7 @@ class PlottingPanelPresenter(PanelPresenter):
     def get_fft_data(self, time, asymmetry, xmin, xmax, bin_size):
         num_bins = self.get_num_bins(xmin, xmax, bin_size)
         start_bin = self.get_start_bin(xmin, bin_size)
-        fft = FFT(asymmetry[start_bin:start_bin + num_bins], time[start_bin:start_bin + num_bins])
+        fft = domain.FFT(asymmetry[start_bin:start_bin + num_bins], time[start_bin:start_bin + num_bins])
         return fft.z, fft.fft/max(fft.fft)
 
     def get_num_bins(self, xmin, xmax, bin_size):
