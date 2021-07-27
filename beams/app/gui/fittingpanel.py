@@ -6,7 +6,6 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
 
-from app.gui.plottingpanel import PlotModel
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
 from app.util import qt_widgets, qt_constants
 from app.model import domain, fit, files, services
@@ -1223,6 +1222,7 @@ class FitTabPresenter(PanelPresenter):
         self._run_service = services.RunService()
         self._fit_service = services.FitService()
         self._system_service = services.SystemService()
+        self._style_service = services.StyleService()
         self._set_callbacks()
 
         fit.USER_EQUATION_DICTIONARY = self._system_service.get_user_defined_functions()
@@ -1236,7 +1236,6 @@ class FitTabPresenter(PanelPresenter):
 
         self._runs = []
         self._asymmetries = {}
-        self._plot_model = PlotModel()
         self._threadpool = QtCore.QThreadPool()
 
         self.__update_if_table_changes = True
@@ -1344,9 +1343,11 @@ class FitTabPresenter(PanelPresenter):
         bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
 
         colors = {}
-        available_colors = list(self._plot_model.color_options_values.values())
+        available_colors = list(self._style_service.color_options_values.values())
 
-        colors = {run.id: available_colors[i % len(available_colors)] for i, run in enumerate(runs)}
+        styles = self._style_service.get_styles()
+        colors = {run.id: styles[run.id][self._style_service.Keys.DEFAULT_COLOR] for run in runs}
+        # colors = {run.id: available_colors[i % len(available_colors)] for i, run in enumerate(runs)}
         colors[0] = '#000000'
 
         for i, run in enumerate(runs):

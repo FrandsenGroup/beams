@@ -1,3 +1,4 @@
+import enum
 import json
 import os
 import logging
@@ -235,8 +236,244 @@ class StyleService:
     class Signals(QtCore.QObject):
         changed = QtCore.pyqtSignal()
 
+    class Keys(enum.Enum):
+        ID = 1
+        LABEL = 2
+        VISIBLE = 3
+        ERROR_BARS = 4
+        LINE = 5
+        MARKER = 6
+        LINE_COLOR = 7
+        MARKER_COLOR = 8
+        FILLSTYLE = 9
+        DEFAULT_COLOR = 10
+        LINESTYLE = 11
+        LINE_WIDTH = 12
+        MARKER_SIZE = 13
+        ERRORBAR_STYLE = 14
+        ERRORBAR_COLOR = 15
+        ERRORBAR_WIDTH = 16
+        FIT_COLOR = 17
+        FIT_LINESTYLE = 18
+
+    color_options_values = {'Blue': '#0000ff', 'Red': '#ff0000', 'Purple': '#9900ff', 'Green': '#009933',
+                            'Orange': '#ff9900', 'Maroon': '#800000', 'Pink': '#ff66ff', 'Dark Blue': '#000099',
+                            'Dark Green': '#006600', 'Light Blue': '#0099ff', 'Light Purple': '#cc80ff',
+                            'Dark Orange': '#ff6600', 'Yellow': '#ffcc00', 'Light Red': '#ff6666',
+                            'Light Green': '#00cc66', 'Black': '#000000'}
+    color_options = {v: k for k, v in color_options_values.items()}
+
+    color_options_extra_values = {'Default': 'Default', 'Blue': '#0000ff', 'Red': '#ff0000', 'Purple': '#9900ff',
+                                  'Orange': '#ff9900', 'Maroon': '#800000', 'Pink': '#ff66ff', 'Dark Blue': '#000099',
+                                  'Dark Green': '#006600', 'Light Blue': '#0099ff', 'Light Purple': '#cc80ff',
+                                  'Dark Orange': '#ff6600', 'Yellow': '#ffcc00', 'Light Red': '#ff6666',
+                                  'Light Green': '#00cc66', 'Green': '#009933', 'Black': '#000000'}
+
+    color_options_extra = {v: k for k, v in color_options_extra_values.items()}
+
+    marker_options_values = {'point': '.', 'triangle_down': 'v', 'triangle_up': '^', 'triangle_left': '<',
+                             'triangle_right': '>', 'octagon': '8', 'square': 's', 'pentagon': 'p',
+                             'plus': 'P',
+                             'star': '*', 'hexagon_1': 'h', 'hexagon_2': 'H', 'x': 'X', 'diamond': 'D',
+                             'thin_diamond': 'd'}
+
+    marker_options = {v: k for k, v in marker_options_values.items()}
+
+    linestyle_options_values = {'Solid': '-', 'Dashed': '--', 'Dash-Dot': '-.', 'Dotted': ':', 'None': ''}
+
+    linestyle_options = {v: k for k, v in linestyle_options_values.items()}
+
+    line_width_options_values = {'Very Thin': 1, 'Thin': 2, 'Medium': 3, 'Thick': 4, 'Very Thick': 5}
+
+    line_width_options = {v: k for k, v in line_width_options_values.items()}
+
+    marker_size_options_values = {'Very Thin': 1, 'Thin': 3, 'Medium': 5, 'Thick': 6, 'Very Thick': 9}
+
+    marker_size_options = {v: k for k, v in marker_size_options_values.items()}
+
+    fillstyle_options_values = {'Full': 'full', 'Left': 'left', 'Right': 'right', 'Bottom': 'bottom',
+                                'Top': 'top', 'None': 'none'}
+
+    fillstyle_options = {v: k for k, v in fillstyle_options_values.items()}
+
+    errorbar_styles_values = {'Caps': 4, 'No Caps': 0, 'No Bars': 'none'}
+
+    errorbar_styles = {v: k for k, v in errorbar_styles_values.items()}
+
+    errorbar_width_values = {'Very Thin': 1, 'Thin': 2, 'Medium': 3, 'Thick': 4, 'Very Thick': 5}
+
+    errorbar_width = {v: k for k, v in errorbar_width_values.items()}
+
+    _unused_colors = color_options.copy()
+    _used_colors = dict()
+
+    _marker_options = {v: k for k, v in marker_options_values.items()}
+    _unused_markers = _marker_options.copy()
+    _used_markers = dict()
+
     __dao = dao.StyleDAO()
     __logger = logging.getLogger("StyleService")
+
+    @staticmethod
+    def get_style_by_run_id(run_id):
+        try:
+            return StyleService.__dao.get_styles([run_id])[0]
+        except KeyError:
+            StyleService.__logger.warning("Style for {} not found. Key Error.".format(run_id))
+            return None
+
+    @staticmethod
+    def get_visible_styles():
+        visible_styles = []
+        for key, style in StyleService.__dao.get_styles().items():
+            if style[StyleService.Keys.VISIBLE]:
+                visible_styles.append(style)
+        return visible_styles
+
+    @staticmethod
+    def add_style_for_run(run, visible=True, error_bars=True):
+        if StyleService.get_style_by_run_id(run.id):
+            return
+
+        if len(StyleService._unused_markers.keys()) == 0:
+            StyleService._unused_markers = StyleService._used_markers.copy()
+        marker = list(StyleService._unused_markers.keys())[0]
+        StyleService._update_markers(marker, True)
+
+        if len(StyleService._unused_colors.keys()) == 0:
+            StyleService._unused_colors = StyleService._used_colors.copy()
+        color = list(StyleService._unused_colors.keys())[0]
+        StyleService._update_colors(color, True)
+
+        style = dict()
+        style[StyleService.Keys.ID] = run.id
+        style[StyleService.Keys.LABEL] = run.meta[files.TITLE_KEY]
+        style[StyleService.Keys.ERROR_BARS] = error_bars
+        style[StyleService.Keys.VISIBLE] = visible
+        style[StyleService.Keys.LINE] = 'none'
+        style[StyleService.Keys.MARKER] = marker
+        style[StyleService.Keys.LINE_COLOR] = 'Default'
+        style[StyleService.Keys.MARKER_COLOR] = 'Default'
+        style[StyleService.Keys.FILLSTYLE] = 'none'
+        style[StyleService.Keys.DEFAULT_COLOR] = color
+        style[StyleService.Keys.LINESTYLE] = ''
+        style[StyleService.Keys.LINE_WIDTH] = 1
+        style[StyleService.Keys.MARKER_SIZE] = 5
+        style[StyleService.Keys.ERRORBAR_STYLE] = 0
+        style[StyleService.Keys.ERRORBAR_COLOR] = 'Default'
+        style[StyleService.Keys.ERRORBAR_WIDTH] = 1
+        style[StyleService.Keys.FIT_COLOR] = 'Default'
+        style[StyleService.Keys.FIT_LINESTYLE] = '-'
+
+        StyleService.__dao.add_style(run.id, style)
+
+    @staticmethod
+    def change_color_for_run(run_id, color, stop_signal=None):
+        style = StyleService.get_style_by_run_id(run_id)
+        color = StyleService.color_options_values[color]
+        if color in StyleService._unused_colors.keys():
+            StyleService._update_colors(color, used=True)
+        if style[StyleService.Keys.DEFAULT_COLOR] in StyleService._used_colors.keys():
+            StyleService._update_colors(style[StyleService.Keys.DEFAULT_COLOR], used=False)
+        if style[StyleService.Keys.DEFAULT_COLOR] == color:
+            return
+
+        StyleService.__dao.update_style(run_id, StyleService.Keys.DEFAULT_COLOR, color)
+        StyleService.__dao.update_style(run_id, StyleService.Keys.LINE_COLOR, 'Default')
+        StyleService.__dao.update_style(run_id, StyleService.Keys.ERRORBAR_COLOR, 'Default')
+        StyleService.__dao.update_style(run_id, StyleService.Keys.MARKER_COLOR, 'Default')
+        StyleService.__dao.update_style(run_id, StyleService.Keys.FIT_COLOR, 'Default')
+
+    @staticmethod
+    def change_marker_for_run(run_id, marker, stop_signal=None):
+        style = StyleService.get_style_by_run_id(run_id)
+        marker = StyleService.marker_options_values[marker]
+        if marker in StyleService._unused_markers.keys():
+            StyleService._update_markers(marker=marker, used=True)
+
+        if style[StyleService.Keys.MARKER] in StyleService._used_markers.keys():
+            StyleService._update_markers(marker=style[StyleService.Keys.MARKER], used=False)
+        if style[StyleService.Keys.MARKER] == marker:
+            return
+
+        StyleService.__dao.update_style(run_id, StyleService.Keys.MARKER, marker)
+
+    @staticmethod
+    def change_visibilities(visible, run_id=None, stop_signal=None):
+        if run_id is not None:
+            for rid in run_id:
+                StyleService.__dao.update_style(rid, StyleService.Keys.VISIBLE, visible)
+        else:
+            StyleService.__dao.update_style(run_id, StyleService.Keys.VISIBLE, visible)
+
+    @staticmethod
+    def change_style_parameter(run_ids, key, option_key, stop_signal=None):
+        for run_id in run_ids:
+            style = StyleService.get_style_by_run_id(run_id)
+
+            if style is None:
+                return
+
+            if key == StyleService.Keys.LINESTYLE:
+                StyleService.__dao.update_style(run_id, key, StyleService.linestyle_options_values[option_key])
+            elif key == StyleService.Keys.FIT_LINESTYLE:
+                StyleService.__dao.update_style(run_id, key, StyleService.linestyle_options_values[option_key])
+            elif key == StyleService.Keys.ERRORBAR_COLOR or \
+                    key == StyleService.Keys.MARKER_COLOR or \
+                    key == StyleService.Keys.LINE_COLOR or \
+                    key == StyleService.Keys.FIT_COLOR:
+                StyleService.__dao.update_style(run_id, key, StyleService.color_options_extra_values[option_key])
+            elif key == StyleService.Keys.ERRORBAR_WIDTH:
+                StyleService.__dao.update_style(run_id, key, StyleService.errorbar_width_values[option_key])
+            elif key == StyleService.Keys.LINE_WIDTH:
+                StyleService.__dao.update_style(run_id, key, StyleService.line_width_options_values[option_key])
+            elif key == StyleService.Keys.MARKER_SIZE:
+                StyleService.__dao.update_style(run_id, key, StyleService.marker_size_options_values[option_key])
+            elif key == StyleService.Keys.ERRORBAR_STYLE:
+                StyleService.__dao.update_style(run_id, key, StyleService.errorbar_styles_values[option_key])
+            elif key == StyleService.Keys.MARKER:
+                StyleService.change_marker_for_run(run_id, option_key, True)
+            elif key == StyleService.Keys.FILLSTYLE:
+                StyleService.__dao.update_style(run_id, key, StyleService.fillstyle_options_values[option_key])
+            elif key == StyleService.Keys.DEFAULT_COLOR:
+                StyleService.change_color_for_run(run_id, option_key, True)
+
+    @staticmethod
+    def change_label(label, run_id, stop_signal=None):
+        style = StyleService.get_style_by_run_id(run_id)
+        style[StyleService.Keys.LABEL] = label
+
+    @staticmethod
+    def get_styles():
+        return StyleService.__dao.get_styles()
+
+    @staticmethod
+    def _update_markers(marker, used):
+        if used:
+            if marker not in StyleService._used_markers.keys():
+                StyleService._used_markers[marker] = StyleService._marker_options[marker]
+            if marker in StyleService._unused_markers.keys():
+                StyleService._unused_markers.pop(marker)
+        else:
+            if marker not in StyleService._unused_markers.keys():
+                StyleService._unused_markers[marker] = StyleService._marker_options[marker]
+            if marker in StyleService._used_markers.keys():
+                StyleService._used_markers.pop(marker)
+        return True
+
+    @staticmethod
+    def _update_colors(color, used):
+        if used:
+            if color not in StyleService._used_colors.keys():
+                StyleService._used_colors[color] = StyleService.color_options[color]
+            if color in StyleService._unused_colors.keys():
+                StyleService._unused_colors.pop(color)
+        else:
+            if color not in StyleService._unused_colors.keys():
+                StyleService._unused_colors[color] = StyleService.color_options[color]
+            if color in StyleService._used_colors.keys():
+                StyleService._used_colors.pop(color)
+        return True
 
 
 class SystemService:

@@ -91,6 +91,18 @@ class FileDAO:
 class StyleDAO:
     __database = Database()
 
+    def add_style(self, identifier, style):
+        self.__database.style_table[identifier] = style
+
+    def get_styles(self, identifiers=None):
+        if identifiers is not None:
+            return [self.__database.style_table[i] for i in identifiers]
+        else:
+            return self.__database.style_table
+
+    def update_style(self, identifier, key, value):
+        self.__database.style_table[identifier][key] = value
+
 
 class SystemDAO:
     __database = Database()
