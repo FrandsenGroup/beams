@@ -1222,7 +1222,11 @@ class FitTabPresenter(PanelPresenter):
         super().__init__(view)
         self._run_service = services.RunService()
         self._fit_service = services.FitService()
+        self._system_service = services.SystemService()
         self._set_callbacks()
+
+        fit.USER_EQUATION_DICTIONARY = self._system_service.get_user_defined_functions()
+        view.option_user_fit_equations.addItems(fit.USER_EQUATION_DICTIONARY.keys())
 
         self._run_service.signals.added.connect(self.update)
         self._run_service.signals.changed.connect(self.update)
@@ -1319,6 +1323,7 @@ class FitTabPresenter(PanelPresenter):
 
         if function_name not in fit.USER_EQUATION_DICTIONARY.keys():
             self._view.option_user_fit_equations.addItem(function_name)
+            self._system_service.add_user_defined_function(function_name, self._view.input_user_equation.text())
             fit.USER_EQUATION_DICTIONARY[function_name] = self._view.input_user_equation.text()
 
         self._view.option_user_fit_equations.setCurrentText(function_name)
@@ -1595,7 +1600,7 @@ class FitTabPresenter(PanelPresenter):
             except KeyError:
                 self._view.input_file_name.setText('{}_fit.txt'.format(run.meta[files.TITLE_KEY]))
 
-            self._view.input_folder_name.setText(files.load_last_used_directory())
+            self._view.input_folder_name.setText(self._system_service.get_last_used_directory())
             self.__expression = selected_data.expression
             self.__variable_groups = {selected_data.run_id: selected_data.parameters}
             self._view.input_fit_equation.setText(str(selected_data.expression))
@@ -1621,7 +1626,7 @@ class FitTabPresenter(PanelPresenter):
 
             fits = list(selected_data.fits.values())
             self._view.input_file_name.setText('{}_fit.txt'.format(selected_data.id))
-            self._view.input_folder_name.setText(files.load_last_used_directory())
+            self._view.input_folder_name.setText(self._system_service.get_last_used_directory())
             self._view.input_fit_equation.setText(str(fits[0].expression))
             self.__expression = fits[0].expression
             self.__variable_groups = {f.run_id: f.parameters for f in fits}

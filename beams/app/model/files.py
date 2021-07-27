@@ -369,24 +369,3 @@ class ConversionError(Exception):
     """
     def __init__(self):
         super(ConversionError, self).__init__()
-
-
-def set_last_used_directory(path):
-
-    if len(path) == 0:
-        path = "."
-
-    if os.path.exists(path) and os.path.isdir(path):
-        resources.SAVED_USER_DATA["dir"] = path
-        with open(resources.CONFIGURATION_FILE, 'w+') as f:
-            json.dump(resources.SAVED_USER_DATA, f)
-
-
-def load_last_used_directory():
-    if "dir" in resources.SAVED_USER_DATA.keys():
-        path = resources.SAVED_USER_DATA["dir"]
-        if os.path.exists(r'{}'.format(path)) and os.path.isdir(r'{}'.format(path)):
-            return path
-    else:
-        set_last_used_directory(os.getcwd())
-        return os.getcwd()

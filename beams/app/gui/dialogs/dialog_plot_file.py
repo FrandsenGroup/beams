@@ -202,7 +202,7 @@ class PlotFileDialogPresenter:
         for run in self._runs:
             format = self._formats[run.file.file_path]
             run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] = domain.Asymmetry(histogram_one=run.histograms[format[0]],
-                                                                   histogram_two=run.histograms[format[1]])
+                                                                                 histogram_two=run.histograms[format[1]])
             run.histograms_used = format  # We need this for when we have to recalculate the asymmetry from hist panel
 
         self.__run_service.changed()

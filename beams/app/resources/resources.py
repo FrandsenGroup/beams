@@ -45,17 +45,7 @@ if not os.path.exists(CONFIGURATION_FILE):
     with open(CONFIGURATION_FILE, 'w+') as f:
         pass
 
-with open(CONFIGURATION_FILE, 'r') as fp:
-    try:
-        SAVED_USER_DATA = json.load(fp)
-    except Exception:
-        SAVED_USER_DATA = {}
-
 QT_LOG_FILE = str(Path('beams/app/resources/qt.log'))
 
 with open(QT_LOG_FILE, 'w') as fp:
     fp.truncate(0)
-
-def write_saved_data():
-    with open(CONFIGURATION_FILE, 'w') as cf:
-        json.dump(SAVED_USER_DATA, cf)

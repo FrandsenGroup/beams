@@ -158,6 +158,7 @@ class WriteDataDialogPresenter:
     def __init__(self, view: WriteDataDialog):
         self._view = view
         self.__service = services.FileService()
+        self.__system_service = services.SystemService()
         self.__files = self.__service.get_files(self._view.files)
 
         # fixme, we will want to allow for fits but for now we will just do runs
@@ -216,13 +217,14 @@ class WriteDataDialogPresenter:
         # fixme only specifies for .asy files
         # noinspection PyCallByClass,PyArgumentList
         saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self._view, 'Specify file',
-                                                                files.load_last_used_directory(), 'ASY(*.asy)')[0]
+                                                                self.__system_service.get_last_used_directory(),
+                                                                'ASY(*.asy)')[0]
 
         if not saved_file_path:
             return
         else:
             path = os.path.split(saved_file_path)
-            files.set_last_used_directory(path[0])
+            self.__system_service.set_last_used_directory(path[0])
             self._view.set_file_path(saved_file_path)
 
     def _skip_clicked(self):

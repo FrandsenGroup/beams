@@ -385,6 +385,7 @@ class MainConsolePanelPresenter(PanelPresenter):
         super().__init__(view)
         
         self.__file_service = services.FileService()
+        self.__system_service = services.SystemService()
         self.__logger = logging.getLogger("MainConsolePanelPresenter")
         
         self._set_callbacks()
@@ -439,9 +440,9 @@ class MainConsolePanelPresenter(PanelPresenter):
 
     def _get_files_from_system(self):
         filenames = QtWidgets.QFileDialog.getOpenFileNames(self._view, 'Add file',
-                                                           files.load_last_used_directory())[0]
+                                                           self.__system_service.get_last_used_directory())[0]
         if len(filenames) > 0:
             path = os.path.split(filenames[0])
-            files.set_last_used_directory(path[0])
+            self.__system_service.set_last_used_directory(path[0])
 
         self.__file_service.add_files(filenames)

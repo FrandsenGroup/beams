@@ -207,6 +207,7 @@ class PSIDownloadDialogPresenter:
         self._data_url = 'http://musruser.psi.ch/cgi-bin/SearchDB.cgi'
         self._new_files = False
         self.__file_service = services.FileService()
+        self.__system_service = services.SystemService()
         self._current_identifier_uris = {}
         self._counter = 0
 
@@ -450,8 +451,8 @@ class PSIDownloadDialogPresenter:
     # noinspection PyCallByClass
     def _save_to_clicked(self):
         path = QtWidgets.QFileDialog.getExistingDirectory(self._view, 'Select directory to save MUD files to',
-                                                          files.load_last_used_directory(),
+                                                          self.__system_service.get_last_used_directory(),
                                                           options=QtWidgets.QFileDialog.ShowDirsOnly)
         if path:
-            files.set_last_used_directory(path)
+            self.__system_service.set_last_used_directory(path)
             self._view.set_file(path)

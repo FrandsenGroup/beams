@@ -1,4 +1,4 @@
-
+import json
 import os
 import logging
 
@@ -6,6 +6,7 @@ from PyQt5 import QtCore
 
 import app.model.data_access as dao
 from app.model import domain, files
+from app.resources import resources
 
 
 class FitService:
@@ -235,10 +236,83 @@ class StyleService:
         changed = QtCore.pyqtSignal()
 
     __dao = dao.StyleDAO()
+    __logger = logging.getLogger("StyleService")
 
 
 class SystemService:
+    class ConfigKeys:
+        LAST_DIRECTORY = "LAST_DIRECTORY"
+        USER_FUNCTIONS = "USER-DEFINED_FUNCTIONS"
+
     class Signals(QtCore.QObject):
         changed = QtCore.pyqtSignal()
 
     __dao = dao.SystemDAO()
+    __logger = logging.getLogger("SystemService")
+
+    @staticmethod
+    def load_configuration_file():
+        if not os.path.exists(resources.CONFIGURATION_FILE):
+            SystemService._set_default_configuration()
+
+        with open(resources.CONFIGURATION_FILE, 'r') as fp:
+            try:
+                user_data = json.load(fp)
+                SystemService._set_configuration(user_data)
+            except json.JSONDecodeError:
+                SystemService.__logger.error("Unable to load the configuration file.")
+                SystemService._set_default_configuration()
+
+    @staticmethod
+    def write_configuration_file():
+        with open(resources.CONFIGURATION_FILE, 'w+') as f:
+            json.dump(SystemService.__dao.get_configuration(), f)
+
+    @staticmethod
+    def get_user_defined_functions():
+        functions = SystemService.__dao.get_configuration(SystemService.ConfigKeys.USER_FUNCTIONS)
+        if functions is not None:
+            return functions
+        else:
+            return {}
+
+    @staticmethod
+    def add_user_defined_function(name, function):
+        functions = SystemService.get_user_defined_functions()
+        functions[name] = function
+
+        SystemService.__dao.set_configuration(SystemService.ConfigKeys.USER_FUNCTIONS, functions)
+
+    @staticmethod
+    def get_last_used_directory():
+        last_directory = SystemService.__dao.get_configuration(SystemService.ConfigKeys.LAST_DIRECTORY)
+
+        if last_directory is not None:
+            return last_directory
+        else:
+            return os.getcwd()
+
+    @staticmethod
+    def set_last_used_directory(directory):
+        if os.path.exists(directory):
+            SystemService.__dao.set_configuration(SystemService.ConfigKeys.LAST_DIRECTORY, directory)
+        else:
+            SystemService.__logger.warning("Tried to set last used directory to invalid path: {}".format(directory))
+
+    @staticmethod
+    def _set_default_configuration():
+        user_data = {
+            SystemService.ConfigKeys.LAST_DIRECTORY: os.getcwd(),
+            SystemService.ConfigKeys.USER_FUNCTIONS: {}
+        }
+        with open(resources.CONFIGURATION_FILE, 'w+') as f:
+            json.dump(user_data, f)
+
+        for key, value in user_data.items():
+            SystemService.__dao.set_configuration(key, value)
+
+    @staticmethod
+    def _set_configuration(user_data):
+        for key, value in user_data.items():
+            SystemService.__dao.set_configuration(key, value)
+

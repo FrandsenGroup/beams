@@ -95,3 +95,15 @@ class StyleDAO:
 class SystemDAO:
     __database = Database()
 
+    def set_configuration(self, key, value):
+        self.__database.system_table[key] = value
+
+    def get_configuration(self, key=None):
+        if key:
+            if key in self.__database.system_table.keys():
+                return self.__database.system_table[key]
+            else:
+                return None
+        else:
+            return self.__database.system_table
+

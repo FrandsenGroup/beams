@@ -8,8 +8,7 @@ import logging
 import time as ti
 
 from app.resources import resources
-from app.services import run_service
-from app.model import domain
+from app.model import domain, services
 
 INDEPENDENT_VARIABLE = "t"
 
@@ -48,12 +47,7 @@ EQUATION_DICTIONARY = {"Simple Exponential": SIMPLE_EXPONENTIAL,
                        "Bessel": BESSEL,
                        "Internal Bessel": INTERNAL_BESSEL}
 
-if "funs" in resources.SAVED_USER_DATA.keys():
-    USER_EQUATION_DICTIONARY = resources.SAVED_USER_DATA["funs"]
-else:
-    USER_EQUATION_DICTIONARY = {}
-
-resources.SAVED_USER_DATA["funs"] = USER_EQUATION_DICTIONARY
+USER_EQUATION_DICTIONARY = {}
 
 
 class FitParameter:
@@ -379,7 +373,7 @@ class FitDataset:
 
 class FitEngine:
     def __init__(self):
-        self.__run_service = run_service.RunService()
+        self.__run_service = services.RunService()
         self.__logger = logging.getLogger('FitEngine')
 
     def fit(self, config: FitConfig) -> FitDataset:
