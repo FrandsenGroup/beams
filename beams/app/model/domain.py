@@ -49,7 +49,7 @@ class Histogram(np.ndarray):
 
     def __new__(cls, input_array, time_zero, good_bin_start, good_bin_end,
                 background_start, background_end, title, run_id, bin_size, **kwargs):
-        """ Creates a new Histogram.
+        """ Initializes a new Histogram.
 
         Parameters
         ----------
@@ -174,12 +174,62 @@ class Histogram(np.ndarray):
 
 class Asymmetry(np.ndarray):
     """
-    Represents an asymmetry of two histograms with the corresponding attributes. Inherits from numpy.ndarray so we
-    can perform numpy calculations on it with casting it to an numpy array.
+    A class to represent an asymmetry of two histograms with the corresponding attributes. Inherits from numpy.ndarray
+    so we can perform numpy calculations on it with casting it to an numpy array.
+
+    ...
+
+    Attributes
+    ----------
+    bin_size : float
+        Time (ns) per bin.
+    time_zero : float
+        Bin at which the clock starts.
+    alpha : float
+        Alpha for correcting the run. Alpha should match the alpha of the actual asymmetry, not set without correcting.
+    time : Time
+        Time object (inherits from np.ndarray).
+    uncertainty : Uncertainty
+        Uncertainty object (inherits from np.ndarray).
+
+    Methods
+    -------
+    bin(packing)
+        Returns a new asymmetry binned to the provided value.
+    correct(alpha)
+        Returns a new asymmetry corrected to the provided value.
+    raw()
+        Returns a new asymmetry where alpha is equal to 1.
+    cut(min_time, max_time)
+        Returns a new asymmetry between the specified times.
     """
 
     def __new__(cls, input_array=None, time_zero=None, bin_size=None, histogram_one=None, histogram_two=None,
                 uncertainty=None, time=None, alpha=None, **kwargs):
+        """ Initializes a new Asymmetry.
+
+        Parameters
+        ----------
+        FIRST CONSTRUCTOR OPTIONS
+            input_array : Iterable
+                Precalculated asymmetry.
+            time_zero : int
+                Bin at which the clock starts.
+            bin_size : float
+                Time (ns) per bin.
+            uncertainty : Uncertainty
+                Precalculated uncertainty.
+            time : Time
+                Precalculated time.
+
+        SECOND CONSTRUCTOR OPTIONS
+            histogram_one, histogram_two : Histogram
+                Histograms to be used in calculating the new asymmetry.
+
+        OPTIONAL
+            alpha : float
+                Alpha value to correct the asymmetry after it is calculated.
+        """
         if (input_array is None or time_zero is None or bin_size is None or uncertainty is None or time is None) \
                 and (histogram_one is None or histogram_two is None):
             raise ValueError("Not enough constructor parameters satisfied")
@@ -220,7 +270,22 @@ class Asymmetry(np.ndarray):
 
         return self
 
-    def _bin_asymmetry(self, packing):
+    def bin(self, packing):
+        """ Returns new asymmetry binned to the provided packing value.
+
+        Does not alter asymmetry object.
+
+        Parameters
+        ----------
+        packing : float
+            Value (in nanoseconds) to bin the asymmetry to.
+
+        Returns
+        -------
+        asymmetry: Asymmetry
+            A new asymmetry object binned to the provided value.
+        """
+
         bin_full = self.bin_size / 1000
         bin_binned = float(packing) / 1000
         num_bins = len(self)
@@ -240,13 +305,26 @@ class Asymmetry(np.ndarray):
 
         binned_asymmetry = np.apply_along_axis(np.mean, 1, reshaped_asymmetry)
 
-        return binned_asymmetry
-
-    def bin(self, packing):
-        return Asymmetry(input_array=self._bin_asymmetry(packing), time_zero=self.time_zero, bin_size=packing,
+        return Asymmetry(input_array=binned_asymmetry, time_zero=self.time_zero, bin_size=packing,
                          time=self.time.bin(packing), uncertainty=self.uncertainty.bin(packing), alpha=self.alpha)
 
     def correct(self, alpha):
+        """ Returns a new asymmetry corrected to the provided value.
+
+        Does not alter the asymmetry object. Asymmetry is first correct back to a value of 1 before being corrected
+        to the provided value. If alpha of asymmetry is already equal to provided value, the current asymmetry object
+        is returned.
+
+        Parameters
+        ----------
+        alpha : float
+            Alpha value to correct the current asymmetry to.
+
+        Returns
+        -------
+        asymmetry : Asymmetry
+            A new asymmetry object corrected to the provided value.
+        """
         if self.alpha == alpha:
             return self
 
@@ -262,6 +340,16 @@ class Asymmetry(np.ndarray):
                          time=self.time, uncertainty=self.uncertainty, alpha=alpha)
 
     def raw(self):
+        """ Returns a new asymmetry corrected (or uncorrected) to a value of 1.
+
+        Does not alter the current asymmetry object. If alpha of asymmetry is already 1, the current asymmetry object
+        is returned.
+
+        Returns
+        -------
+        asymmetry : Asymmetry
+            A new asymmetry object corrected to a value of 1.
+        """
         if self.alpha == 1:
             return self
 
@@ -272,6 +360,22 @@ class Asymmetry(np.ndarray):
                          time=self.time, uncertainty=self.uncertainty, alpha=1)
 
     def cut(self, min_time, max_time):
+        """ Returns a new asymmetry cut between the specified times.
+
+        Does not alter the current asymmetry object. Based on the Time attribute of the asymmetry.
+
+        Parameters
+        ----------
+        min_time : float
+            Lower boundary of the time for the new asymmetry.
+        max_time : float
+            Upper boundary of the time for the new asymmetry.
+
+        Returns
+        -------
+        asymmetry : Asymmetry
+            A new asymmetry object cut between the specified times.
+        """
         start_index = 0
 
         for i, n in enumerate(self.time):
