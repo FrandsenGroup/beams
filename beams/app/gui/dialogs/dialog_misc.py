@@ -2,11 +2,12 @@
 import socket
 import enum
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore, QtGui
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
 
 from app.util import qt_widgets, qt_constants
+from app.resources import resources
 
 
 # noinspection PyArgumentList
@@ -246,4 +247,39 @@ class ProgressBarDialog(QtWidgets.QProgressDialog):
         self.done(self.Codes.INTERRUPTED)
 
 
+class LoadingDialog(QtWidgets.QDialog):
+    def __init__(self, message, worker):
+        super(LoadingDialog, self).__init__()
+        worker.signals.finished.connect(self._stop)
+        self.setWindowTitle(" ")
+        self.setModal(True)
+        self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowType.Popup)
 
+        self.message = QtWidgets.QLabel(message)
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setPointSize(12)
+        self.message.setFont(font)
+
+        self.label = QtWidgets.QLabel()
+        self.label.setGeometry(QtCore.QRect(25, 25, 200, 200))
+        self.label.setMinimumSize(QtCore.QSize(250, 250))
+        self.label.setMaximumSize(QtCore.QSize(250, 250))
+
+        self.movie = QtGui.QMovie(resources.LOADING_GIF)
+        self.label.setMovie(self.movie)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.setAlignment(qt_constants.AlignCenter)
+        layout.addWidget(self.message, alignment=qt_constants.AlignCenter)
+        layout.addWidget(self.label, alignment=qt_constants.AlignCenter)
+        self.setLayout(layout)
+        self.movie.start()
+
+    @staticmethod
+    def launch(message, worker):
+        dialog = LoadingDialog(message, worker)
+        dialog.exec()
+
+    def _stop(self):
+        self.done(0)

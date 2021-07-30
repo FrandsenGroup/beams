@@ -6,7 +6,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
 
-from app.gui.dialogs.dialog_misc import WarningMessageDialog
+from app.gui.dialogs.dialog_misc import WarningMessageDialog, LoadingDialog
 from app.util import qt_widgets, qt_constants
 from app.model import domain, fit, files, services
 from app.gui.gui import PanelPresenter, Panel
@@ -1564,7 +1564,10 @@ class FitTabPresenter(PanelPresenter):
         worker.signals.result.connect(self._update_fit_changes)
         self._threadpool.start(worker)
 
+        LoadingDialog.launch("Your fit is running!", worker)
+
     def _new_empty_fit(self):
+
         self.__expression = None
         self.__variable_groups = []
         self._view.clear()

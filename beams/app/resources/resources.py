@@ -18,6 +18,7 @@ HISTOGRAM_CLICKED_IMAGE = str(Path('beams/app/resources/icons/histo_icon_clicked
 FITTING_CLICKED_IMAGE = str(Path('beams/app/resources/icons/fitting_icon_clicked.png'))
 DOWNLOAD_CLICKED_IMAGE = str(Path('beams/app/resources/icons/download_icon_clicked.png'))
 QUESTION_CLICKED_IMAGE = str(Path('beams/app/resources/icons/question_icon_clicked.png'))
+LOADING_GIF = str(Path('beams/app/resources/icons/loading.gif'))
 
 LATO_BLACK_FONT = str(Path('beams/app/resources/Lato/Lato-Black.ttf'))
 LATO_BLACK_ITALIC_FONT = str(Path('beams/app/resources/Lato/Lato-BlackItalic.ttf'))
