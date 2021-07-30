@@ -1,6 +1,11 @@
+"""
+Stores constants for the paths of all our non-python resource files.
+"""
+
 from pathlib import Path
 import os
 
+# Using Path from pathlib is an easy way to fix the slash direction issue when switch between windows and unix systems.
 LOGO_IMAGE = str(Path('beams/app/resources/icons/logo_3.jpg'))
 MAXIMIZE_IMAGE = str(Path('beams/app/resources/icons/maximize_black.png'))
 MINIMIZE_IMAGE = str(Path('beams/app/resources/icons/minimize_black.png'))
