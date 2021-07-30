@@ -6,10 +6,10 @@ import logging
 from PyQt5 import QtWidgets, QtCore, QtGui
 
 # BEAMS Modules
-from app.util import qt_widgets
+from app.util import qt_widgets, qt_constants
+from app.model import services
 from app.resources import resources
 from app.gui import mainwindow
-from app.util import qt_constants
 
 
 class BEAMS(QtWidgets.QApplication):
@@ -19,6 +19,7 @@ class BEAMS(QtWidgets.QApplication):
 
     def __init__(self):
         super(BEAMS, self).__init__(sys.argv)
+        services.SystemService.load_configuration_file()
         logging.basicConfig(filename=resources.QT_LOG_FILE, level=logging.DEBUG)
         logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
@@ -61,5 +62,5 @@ class BEAMS(QtWidgets.QApplication):
 
     def exec_(self) -> int:
         i = super(BEAMS, self).exec_()
-        resources.write_saved_data()
+        services.SystemService.write_configuration_file()
         return i

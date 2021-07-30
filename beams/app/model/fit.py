@@ -3,12 +3,12 @@ import sympy as sp
 from scipy.optimize import least_squares
 
 from collections import OrderedDict
-import time
 import re
 import logging
+import time as ti
 
 from app.resources import resources
-from app.model import domain
+from app.model import domain, services
 
 INDEPENDENT_VARIABLE = "t"
 
@@ -33,8 +33,6 @@ INTERNAL_COSINE = "a*cos(2*\u03C0*v*t + \u03C0*\u03A6/180)*exp(-\u03BB*t) + (1-\
 BESSEL = "j\u2080*(2*\u03C0*v*t + \u03C0*\u03A6/180)"
 INTERNAL_BESSEL = "\u03B1*j\u2080*(2*\u03C0*v*t + \u03C0*\u03A6/180)*exp(-\u03BB*t) + (1-\u03B1)*exp(-\u03BB*t)"
 
-ALPHA_CORRECTION = '((1-\u03B1)+((1+\u03B1)*({})))/((1+\u03B1)+((1-\u03B1)*({})))'
-
 EQUATION_DICTIONARY = {"Simple Exponential": SIMPLE_EXPONENTIAL,
                        "Stretched Exponential": STRETCHED_EXPONENTIAL,
                        "Simple Gaussian": SIMPLE_GAUSSIAN,
@@ -47,12 +45,9 @@ EQUATION_DICTIONARY = {"Simple Exponential": SIMPLE_EXPONENTIAL,
                        "Bessel": BESSEL,
                        "Internal Bessel": INTERNAL_BESSEL}
 
-if "funs" in resources.SAVED_USER_DATA.keys():
-    USER_EQUATION_DICTIONARY = resources.SAVED_USER_DATA["funs"]
-else:
-    USER_EQUATION_DICTIONARY = {}
+USER_EQUATION_DICTIONARY = {}
 
-resources.SAVED_USER_DATA["funs"] = USER_EQUATION_DICTIONARY
+ALPHA_CORRECTION = '((1-\u03B1)+((1+\u03B1)*({})))/((1+\u03B1)+((1-\u03B1)*({})))'
 
 
 class FitParameter:
@@ -304,15 +299,13 @@ class FitConfig:
         self.parameters[run_id][symbol].uncertainty = uncertainty
 
 
-class Fit(np.ndarray):
-    def __new__(cls, input_array, parameters, expression, asymmetry, uncertainty, time, title, run_id, *args, **kwargs):
-        self = np.asarray(input_array).view(cls)
+class Fit:
+    def __init__(self, parameters, expression, title, run_id):
         self.parameters = parameters
-        self.expression = expression
+        self.string_expression = expression
+        self.expression = None
         self.title = title
         self.run_id = run_id
-
-        return self
 
     def __call__(self, *args, **kwargs):
         pass
@@ -320,8 +313,8 @@ class Fit(np.ndarray):
 
 class FitDataset:
     def __init__(self):
-        t = time.localtime()
-        current_time = time.strftime("%d-%m-%YT%H:%M:%S", t)
+        t = ti.localtime()
+        current_time = ti.strftime("%d-%m-%YT%H:%M:%S", t)
 
         self.id = str(current_time)
         self.fits = {}
@@ -370,7 +363,7 @@ class FitDataset:
             for f in self.fits.values():
                 for name, v in f.variables.items():
                     full_string += "{:.4f}\t".format(v.value)
-                run = domain.RunService.get_runs_by_ids([f.run_id])[0]
+                run = run_service.RunService.get_runs_by_ids([f.run_id])[0]
                 full_string += run.meta["RunNumber"] + "\n"
 
             with open(out_file, 'w', encoding="utf-8") as f:
@@ -380,7 +373,7 @@ class FitDataset:
 
 class FitEngine:
     def __init__(self):
-        self.__run_service = domain.RunService()
+        self.__run_service = services.RunService()
         self.__logger = logging.getLogger('FitEngine')
 
     def fit(self, config: FitConfig) -> FitDataset:
@@ -418,10 +411,10 @@ class FitEngine:
         concatenated_asymmetry = np.array([])
         concatenated_uncertainty = np.array([])
         concatenated_time = np.array([])
-        for _, asymmetry in config.data.items():
+        for _, (time, asymmetry, uncertainty) in config.data.items():
             concatenated_asymmetry = np.concatenate((concatenated_asymmetry, asymmetry))
-            concatenated_uncertainty = np.concatenate((concatenated_uncertainty, asymmetry.uncertainty))
-            concatenated_time = np.concatenate((concatenated_time, asymmetry.time))
+            concatenated_uncertainty = np.concatenate((concatenated_uncertainty, uncertainty))
+            concatenated_time = np.concatenate((concatenated_time, time))
 
         # Create a single global lambda function for all the datasets. Essentially, it acts like a
         #    stepwise function, once you pass into the asymmetry of another dataset, a separate function
@@ -430,7 +423,19 @@ class FitEngine:
         residual = FitEngine._residual(global_lambda_expression)
         
         # Run a lease squares fit with the global lambda and concatenated datasets
+        # import time
+        # import cProfile, pstats, io
+        # from pstats import SortKey
+        # pr = cProfile.Profile()
+        # pr.enable()
         opt = least_squares(residual, guesses, bounds=[lowers, uppers], args=(concatenated_time, concatenated_asymmetry, concatenated_uncertainty))
+        # pr.disable()
+        # s = io.StringIO()
+        # sortby = SortKey.CUMULATIVE
+        # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        # ps.print_stats()
+        # print(s.getvalue())
+
         self.__logger.debug("Output from least_squares global : ".format(opt))
 
         # Assemble the Fit object, first by updating the parameters in the config with the outputs from
@@ -440,18 +445,14 @@ class FitEngine:
         for i, symbol in enumerate(config.get_adjusted_global_symbols()):
             values[symbol] = opt.x[i]
 
-        for run_id, asymmetry in config.data.items():
+        for run_id, (time, asymmetry, uncertainty) in config.data.items():
             for symbol, parameter in config.parameters[run_id].items():
                 if not parameter.is_global:
                     config.set_outputs(run_id, symbol, values[symbol + _shortened_run_id(run_id)], 0)
                 else:
                     config.set_outputs(run_id, symbol, values[symbol], 0)
 
-            lambda_expression = FitExpression(config.expression)
-
-            fitted_asymmetry = lambda_expression(asymmetry.time, **config.get_kwargs(run_id))
-            new_fit = Fit(fitted_asymmetry, config.parameters[run_id], lambda_expression,
-                          asymmetry, None, asymmetry.time, config.titles[run_id], run_id)
+            new_fit = Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id)
 
             dataset.fits[run_id] = new_fit
 
@@ -462,7 +463,7 @@ class FitEngine:
 
     def _least_squares_fit_non_global(self, config) -> FitDataset:
         dataset = FitDataset()
-        for run_id, asymmetry in config.data.items():
+        for run_id, (time, asymmetry,  uncertainty) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
             function = ALPHA_CORRECTION.format(config.expression, config.expression)
             lambda_expression = FitExpression(function, variables=config.get_symbols_for_run(run_id))
@@ -479,7 +480,8 @@ class FitEngine:
 
             # 6) Perform a least squares fit
             opt = least_squares(residual, guesses, bounds=[lowers, uppers],
-                                args=(asymmetry.time, asymmetry, asymmetry.uncertainty))
+                                args=(time, asymmetry, uncertainty))
+            
             self.__logger.debug("Output from least_squares batch : ".format(opt))
 
             try:
@@ -489,7 +491,7 @@ class FitEngine:
                     if config.parameters[run_id][symbol].is_fixed or config.parameters[run_id][symbol].is_fixed_run:
                         unc[i] = 0.0
 
-            except np.linalg.LinAlgError:  # Fit did not converge
+            except (np.linalg.LinAlgError, NameError):  # Fit did not converge
                 unc = [-1 for _ in opt.x]
 
             self.__logger.debug("Uncertainty: ".format(str(unc)))
@@ -498,13 +500,8 @@ class FitEngine:
             for i, symbol in enumerate(config.get_symbols_for_run(run_id)):
                 config.set_outputs(run_id, symbol, opt.x[i], unc[i])
 
-            # 8) Create a callable function of our original string function
-            lambda_expression = FitExpression(config.expression)
-
             # 9) Fill in all values for our new fit object
-            fitted_asymmetry = lambda_expression(asymmetry.time, **config.get_kwargs(run_id))
-            new_fit = Fit(fitted_asymmetry, config.parameters[run_id], lambda_expression,
-                          asymmetry, None, asymmetry.time, config.titles[run_id], run_id)
+            new_fit = Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id)
 
             # 10) Add fit to our dataset
             dataset.fits[run_id] = new_fit

@@ -8,10 +8,9 @@ import zipfile
 from datetime import datetime
 
 import requests
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5 import QtWidgets, QtCore
 
-from app.model import files
-from app.model.domain import FileService
+from app.model import files, services
 from app.util import qt_widgets, qt_constants
 
 
@@ -210,7 +209,8 @@ class ISISDownloadDialogPresenter:
         self._session_id = None
         self._session_start = None
         self._new_files = False
-        self.__file_service = FileService()
+        self.__file_service = services.FileService()
+        self.__system_service = services.SystemService()
 
         self._set_callbacks()
 
@@ -430,8 +430,8 @@ class ISISDownloadDialogPresenter:
     # noinspection PyCallByClass
     def _save_to_clicked(self):
         path = QtWidgets.QFileDialog.getExistingDirectory(self._view, 'Select directory to save MUD files to',
-                                                          files.load_last_used_directory(),
+                                                          self.__system_service.get_last_used_directory(),
                                                           options=QtWidgets.QFileDialog.ShowDirsOnly)
         if path:
-            files.set_last_used_directory(path)
+            self.__system_service.set_last_used_directory(path)
             self._view.set_file(path)
