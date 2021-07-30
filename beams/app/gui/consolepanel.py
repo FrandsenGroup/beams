@@ -1,15 +1,14 @@
-import os
+import os, logging
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets
 
 from app.gui.dialogs.dialog_isis_download import ISISDownloadDialog
-from app.gui.dialogs.dialog_misc import AddFileDialog, PermissionsMessageDialog, ProgressBarDialog
+from app.gui.dialogs.dialog_misc import AddFileDialog, PermissionsMessageDialog
 from app.gui.dialogs.dialog_musr_download import MusrDownloadDialog
 from app.gui.dialogs.dialog_psi_download import PSIDownloadDialog
 from app.gui.dialogs.dialog_write_data import WriteDataDialog
 from app.gui.gui import PanelPresenter
-from app.model import files
-from app.model.domain import NotificationService, RunService, FileService, FitService, FileDataset, RunDataset
+from app.model import files, services, domain
 from app.util import qt_widgets, qt_constants
 
 
@@ -47,7 +46,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
             ids = []
             while iterator.value():
-                if isinstance(iterator.value().model, FileDataset):
+                if isinstance(iterator.value().model, domain.FileDataset):
                     ids.append(iterator.value().model.id)
 
                 iterator += 1
@@ -67,12 +66,14 @@ class MainConsolePanel(QtWidgets.QDockWidget):
     class TreeManager:
         def __init__(self, view):
             self.__view = view
-            self.__run_service = RunService()
-            self.__fit_service = FitService()
-            self.__file_service = FileService()
-            self.__run_service.register(NotificationService.Signals.RUNS_ADDED, self)
-            self.__file_service.register(NotificationService.Signals.FILES_CHANGED, self)
-            self.__fit_service.register(NotificationService.Signals.FITS_ADDED, self)
+            self.__logger = logging.getLogger("MainConsolePanelTreeManager")
+            self.__run_service = services.RunService()
+            self.__fit_service = services.FitService()
+            self.__file_service = services.FileService()
+
+            self.__run_service.signals.added.connect(self.update)
+            self.__file_service.signals.changed.connect(self.update)
+            self.__fit_service.signals.added.connect(self.update)
 
         def _create_tree_model(self, file_datasets):
             file_nodes = []
@@ -80,7 +81,8 @@ class MainConsolePanel(QtWidgets.QDockWidget):
                 file_nodes.append(MainConsolePanel.FileNode(dataset))
             return file_nodes
 
-        def update(self, signal):
+        def update(self):
+            self.__logger.debug("Accepted Signal")
             ids = self.__view.get_file_ids()
             file_datasets = self.__file_service.get_files()
             tree = self._create_tree_model(file_datasets)
@@ -119,7 +121,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
             data_object = file_data.dataset
 
-            if isinstance(data_object, RunDataset):
+            if isinstance(data_object, domain.RunDataset):
                 if data_object.isLoaded:
                     histogram_node = MainConsolePanel.HeadingNode("Histograms")
                     if data_object.histograms:
@@ -372,7 +374,6 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         self.setFloating(False)
 
         self._presenter = MainConsolePanelPresenter(self)
-        self._spinner = qt_widgets.QtWaitingSpinner(self)
 
     def get_checked_items(self):
         return self.tree_view.get_file_ids()
@@ -382,7 +383,9 @@ class MainConsolePanelPresenter(PanelPresenter):
     def __init__(self, view: MainConsolePanel):
         super().__init__(view)
         
-        self.__file_service = FileService()
+        self.__file_service = services.FileService()
+        self.__system_service = services.SystemService()
+        self.__logger = logging.getLogger("MainConsolePanelPresenter")
         
         self._set_callbacks()
         
@@ -436,9 +439,9 @@ class MainConsolePanelPresenter(PanelPresenter):
 
     def _get_files_from_system(self):
         filenames = QtWidgets.QFileDialog.getOpenFileNames(self._view, 'Add file',
-                                                           files.load_last_used_directory())[0]
+                                                           self.__system_service.get_last_used_directory())[0]
         if len(filenames) > 0:
             path = os.path.split(filenames[0])
-            files.set_last_used_directory(path[0])
+            self.__system_service.set_last_used_directory(path[0])
 
         self.__file_service.add_files(filenames)

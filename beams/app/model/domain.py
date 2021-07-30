@@ -49,7 +49,7 @@ class Histogram(np.ndarray):
 
     def __new__(cls, input_array, time_zero, good_bin_start, good_bin_end,
                 background_start, background_end, title, run_id, bin_size, **kwargs):
-        """ Creates a new Histogram.
+        """ Initializes a new Histogram.
 
         Parameters
         ----------
@@ -174,12 +174,62 @@ class Histogram(np.ndarray):
 
 class Asymmetry(np.ndarray):
     """
-    Represents an asymmetry of two histograms with the corresponding attributes. Inherits from numpy.ndarray so we
-    can perform numpy calculations on it with casting it to an numpy array.
+    A class to represent an asymmetry of two histograms with the corresponding attributes. Inherits from numpy.ndarray
+    so we can perform numpy calculations on it with casting it to an numpy array.
+
+    ...
+
+    Attributes
+    ----------
+    bin_size : float
+        Time (ns) per bin.
+    time_zero : float
+        Bin at which the clock starts.
+    alpha : float
+        Alpha for correcting the run. Alpha should match the alpha of the actual asymmetry, not set without correcting.
+    time : Time
+        Time object (inherits from np.ndarray).
+    uncertainty : Uncertainty
+        Uncertainty object (inherits from np.ndarray).
+
+    Methods
+    -------
+    bin(packing)
+        Returns a new asymmetry binned to the provided value.
+    correct(alpha)
+        Returns a new asymmetry corrected to the provided value.
+    raw()
+        Returns a new asymmetry where alpha is equal to 1.
+    cut(min_time, max_time)
+        Returns a new asymmetry between the specified times.
     """
 
     def __new__(cls, input_array=None, time_zero=None, bin_size=None, histogram_one=None, histogram_two=None,
                 uncertainty=None, time=None, alpha=None, **kwargs):
+        """ Initializes a new Asymmetry.
+
+        Parameters
+        ----------
+        FIRST CONSTRUCTOR OPTIONS
+            input_array : Iterable
+                Precalculated asymmetry.
+            time_zero : int
+                Bin at which the clock starts.
+            bin_size : float
+                Time (ns) per bin.
+            uncertainty : Uncertainty
+                Precalculated uncertainty.
+            time : Time
+                Precalculated time.
+
+        SECOND CONSTRUCTOR OPTIONS
+            histogram_one, histogram_two : Histogram
+                Histograms to be used in calculating the new asymmetry.
+
+        OPTIONAL
+            alpha : float
+                Alpha value to correct the asymmetry after it is calculated.
+        """
         if (input_array is None or time_zero is None or bin_size is None or uncertainty is None or time is None) \
                 and (histogram_one is None or histogram_two is None):
             raise ValueError("Not enough constructor parameters satisfied")
@@ -220,7 +270,22 @@ class Asymmetry(np.ndarray):
 
         return self
 
-    def _bin_asymmetry(self, packing):
+    def bin(self, packing):
+        """ Returns new asymmetry binned to the provided packing value.
+
+        Does not alter asymmetry object.
+
+        Parameters
+        ----------
+        packing : float
+            Value (in nanoseconds) to bin the asymmetry to.
+
+        Returns
+        -------
+        asymmetry: Asymmetry
+            A new asymmetry object binned to the provided value.
+        """
+
         bin_full = self.bin_size / 1000
         bin_binned = float(packing) / 1000
         num_bins = len(self)
@@ -240,13 +305,26 @@ class Asymmetry(np.ndarray):
 
         binned_asymmetry = np.apply_along_axis(np.mean, 1, reshaped_asymmetry)
 
-        return binned_asymmetry
-
-    def bin(self, packing):
-        return Asymmetry(input_array=self._bin_asymmetry(packing), time_zero=self.time_zero, bin_size=packing,
+        return Asymmetry(input_array=binned_asymmetry, time_zero=self.time_zero, bin_size=packing,
                          time=self.time.bin(packing), uncertainty=self.uncertainty.bin(packing), alpha=self.alpha)
 
     def correct(self, alpha):
+        """ Returns a new asymmetry corrected to the provided value.
+
+        Does not alter the asymmetry object. Asymmetry is first correct back to a value of 1 before being corrected
+        to the provided value. If alpha of asymmetry is already equal to provided value, the current asymmetry object
+        is returned.
+
+        Parameters
+        ----------
+        alpha : float
+            Alpha value to correct the current asymmetry to.
+
+        Returns
+        -------
+        asymmetry : Asymmetry
+            A new asymmetry object corrected to the provided value.
+        """
         if self.alpha == alpha:
             return self
 
@@ -262,6 +340,16 @@ class Asymmetry(np.ndarray):
                          time=self.time, uncertainty=self.uncertainty, alpha=alpha)
 
     def raw(self):
+        """ Returns a new asymmetry corrected (or uncorrected) to a value of 1.
+
+        Does not alter the current asymmetry object. If alpha of asymmetry is already 1, the current asymmetry object
+        is returned.
+
+        Returns
+        -------
+        asymmetry : Asymmetry
+            A new asymmetry object corrected to a value of 1.
+        """
         if self.alpha == 1:
             return self
 
@@ -272,6 +360,22 @@ class Asymmetry(np.ndarray):
                          time=self.time, uncertainty=self.uncertainty, alpha=1)
 
     def cut(self, min_time, max_time):
+        """ Returns a new asymmetry cut between the specified times.
+
+        Does not alter the current asymmetry object. Based on the Time attribute of the asymmetry.
+
+        Parameters
+        ----------
+        min_time : float
+            Lower boundary of the time for the new asymmetry.
+        max_time : float
+            Upper boundary of the time for the new asymmetry.
+
+        Returns
+        -------
+        asymmetry : Asymmetry
+            A new asymmetry object cut between the specified times.
+        """
         start_index = 0
 
         for i, n in enumerate(self.time):
@@ -501,112 +605,6 @@ class FileDataset:
         return isinstance(other, self.__class__) and other.id == self.id
 
 
-class Database:
-    runs = {}
-    fits = {}
-    files = {}
-
-
-class RunDAO:
-    __database = Database()
-
-    def get_runs(self):
-        return self.__database.runs.values()
-
-    def get_runs_by_ids(self, ids):
-        return [self.__database.runs[rid] for rid in ids]
-
-    def add_runs(self, runs):
-        for run in runs:
-            self.__database.runs[run.id] = run
-
-    def remove_runs_by_ids(self, ids):
-        for rid in ids:
-            self.__database.runs.pop(rid)
-
-    def update_runs_by_id(self, ids, runs):
-        for rid, run in zip(ids, runs):
-            self.__database.runs[rid] = run
-
-    def clear(self):
-        self.__database.runs = {}
-
-
-class FitDAO:
-    __database = Database()
-
-    def get_fits(self):
-        return self.__database.fits.values()
-
-    def get_fits_by_ids(self, ids):
-        return [self.__database.fits[fid] for fid in ids]
-
-    def add_fits(self, fits):
-        for fit in fits:
-            self.__database.fits[fit.id] = fit
-
-    def remove_runs_by_ids(self, ids):
-        for fid in ids:
-            self.__database.fits.pop(fid)
-
-    def clear(self):
-        self.__database.fits = {}
-
-
-class FileDAO:
-    __database = Database()
-
-    def get_files(self):
-        return self.__database.files.values()
-
-    def get_files_by_ids(self, ids):
-        return [self.__database.files[file_id] for file_id in ids]
-
-    def get_files_by_path(self, path):
-        for file in self.__database.files.values():
-            if file.file_path == path:
-                return file
-
-    def add_files(self, file_datasets):
-        for dataset in file_datasets:
-            self.__database.files[dataset.id] = dataset
-
-    def remove_files_by_paths(self, paths):
-        for path in paths:
-            self.__database.files.pop(path)
-
-    def remove_files_by_id(self, fid):
-        self.__database.files.pop(fid)
-
-    def clear(self):
-        self.__database.files = {}
-
-
-class NotificationService:
-    __observers = {}
-    __logger = logging.getLogger('NOTIFICATIONS')
-
-    class Signals(enum.Enum):
-        RUNS_ADDED = 0
-        RUNS_LOADED = 1
-        RUNS_CHANGED = 2
-        FITS_ADDED = 3
-        FILES_CHANGED = 4
-
-    def register(self, signal, observer):
-        if signal not in self.__observers.keys():
-            self.__observers[signal] = [observer]
-        else:
-            self.__observers[signal].append(observer)
-
-    def notify(self, signal: Signals):
-        self.__logger.debug("NOTIFYING OF : {}".format(signal.name))
-        if signal in self.__observers.keys():
-            for observer in self.__observers[signal]:
-                self.__logger.debug("RECEIVING SIGNAL : {}".format(observer))
-                observer.update(signal)
-
-
 class DataBuilder:
     @staticmethod
     def build_minimal(f):
@@ -670,195 +668,3 @@ class DataBuilder:
             d.isLoaded = True
 
         return d
-
-
-class RunService:
-    __dao = RunDAO()
-    __notifier = NotificationService()
-
-    @staticmethod
-    def register(signal, observer):
-        RunService.__notifier.register(signal, observer)
-
-    @staticmethod
-    def get_runs():
-        return RunService.__dao.get_runs()
-
-    @staticmethod
-    def get_runs_by_ids(ids):
-        return RunService.__dao.get_runs_by_ids(ids)
-
-    @staticmethod
-    def get_loaded_runs():
-        loaded_runs = []
-        for run in RunService.__dao.get_runs():
-            if run.isLoaded:
-                loaded_runs.append(run)
-        return loaded_runs
-
-    def load_runs(self, ids):
-        pass
-
-    def combine_histograms(self, ids, titles):
-        pass
-
-    @staticmethod
-    def recalculate_asymmetries(ids):
-        for run in RunService.__dao.get_runs_by_ids(ids):
-            if len(run.histograms_used) == 2:
-                run.asymmetries[RunDataset.FULL_ASYMMETRY] = Asymmetry(histogram_one=run.histograms[run.histograms_used[0]],
-                                                                       histogram_two=run.histograms[run.histograms_used[1]],
-                                                                       alpha=run.asymmetries[RunDataset.FULL_ASYMMETRY].alpha)
-
-                if run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY] is not None:
-                    run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY].bin_size)
-                    run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
-        
-        RunService.__notifier.notify(NotificationService.Signals.RUNS_CHANGED)
-
-    @staticmethod
-    def add_runs(paths):
-        builder = DataBuilder()
-        for path in paths:
-            run = builder.build_minimal(path)
-            RunService.__dao.add_runs([run])
-
-        RunService.__notifier.notify(NotificationService.Signals.RUNS_ADDED)
-
-    @staticmethod
-    def remove_runs_by_ids(ids):
-        RunService.__dao.remove_runs_by_ids(ids)
-        RunService.__notifier.notify(NotificationService.Signals.RUNS_LOADED)
-
-    @staticmethod
-    def add_dataset(datasets, suppress_signal):
-        RunService.__dao.add_runs(datasets)
-
-        if not suppress_signal:
-            RunService.__notifier.notify(NotificationService.Signals.RUNS_ADDED)
-
-    @staticmethod
-    def update_runs_by_ids(ids, asymmetries):
-        RunService.__dao.update_runs_by_id(ids, asymmetries)
-        RunService.__notifier.notify(NotificationService.Signals.RUNS_CHANGED)
-
-    @staticmethod
-    def update_alphas(ids, alphas):
-        if len(alphas) == 1: # When we update alpha from plotting panel we send one alpha for multiple runs
-            alpha = alphas[0]
-            alphas = [alpha for _ in ids]
-
-        for rid, alpha in zip(ids, alphas):
-            run = RunService.__dao.get_runs_by_ids([rid])[0]
-
-            run.asymmetries[RunDataset.FULL_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].correct(alpha)
-
-            if run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY] is not None:
-                run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY].bin_size)
-                run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
-
-        RunService.__notifier.notify(NotificationService.Signals.RUNS_CHANGED)
-
-    @staticmethod
-    def changed():
-        RunService.__notifier.notify(NotificationService.Signals.RUNS_ADDED)
-
-
-class FitService:
-    __dao = FitDAO()
-    __notifier = NotificationService()
-
-    def get_fit_datasets(self):
-        return self.__dao.get_fits()
-
-    def add_dataset(self, datasets, suppress_signal=False):
-        self.__dao.add_fits(datasets)
-
-        if not suppress_signal:
-            self.__notifier.notify(NotificationService.Signals.FITS_ADDED)
-
-    def changed(self):
-        self.__notifier.notify(NotificationService.Signals.FITS_ADDED)
-
-    def register(self, signal, observer):
-        self.__notifier.register(signal, observer)
-
-
-class FileService:
-    __dao = FileDAO()
-    __run_service = RunService()
-    __fit_service = FitService()
-    __notifier = NotificationService()
-
-    def register(self, signal, observer):
-        self.__notifier.register(signal, observer)
-
-    def get_files(self, ids=None):
-        if ids is not None:
-            return self.__dao.get_files_by_ids(ids)
-        else:
-            return self.__dao.get_files()
-
-    def convert_files(self, ids):
-        new_paths = []
-        datasets = self.__dao.get_files_by_ids(ids)
-        for dataset in datasets:
-            if dataset.file.DATA_FORMAT == files.Format.BINARY:
-                temp = os.path.splitext(dataset.file.file_path)[0]
-                outfile = temp + ".dat"
-                outfile_reader = dataset.file.convert(outfile)
-                new_paths.append(outfile_reader.file_path)
-                self.__dao.remove_files_by_id(dataset.id)
-
-        self.add_files(new_paths)
-
-    def add_files(self, paths):
-        if len(paths) == 0:
-            return
-
-        for path in paths:
-            if self.__dao.get_files_by_path(path) is not None:
-                continue
-
-            f = files.file(path)
-            data_set = DataBuilder.build_minimal(f)
-            file_set = FileDataset(f)
-
-            if data_set is not None:
-                file_set.dataset = data_set
-                file_set.title = data_set.meta[files.TITLE_KEY]
-
-                if isinstance(data_set, RunDataset):
-                    self.__run_service.add_dataset([data_set], suppress_signal=True)
-                else:
-                    self.__fit_service.add_dataset([data_set], suppress_signal=True)
-
-            self.__dao.add_files([file_set])
-
-        self.__notifier.notify(NotificationService.Signals.FILES_CHANGED)
-
-    def load_files(self, ids):
-        is_changed = False
-
-        for file_dataset in self.__dao.get_files_by_ids(ids):
-            if not file_dataset.isLoaded:
-                is_changed = True
-                DataBuilder.build_full(file_dataset.file, file_dataset.dataset)
-                file_dataset.isLoaded = True
-
-        if is_changed:
-            self.__notifier.notify(NotificationService.Signals.FILES_CHANGED)
-            self.__run_service.changed()
-            self.__fit_service.changed()
-
-    def remove_files(self, checked_items):
-        rfiles = self.__dao.get_files_by_ids(checked_items)
-        run_ids = []
-        for rf in rfiles:
-            if rf.isLoaded:
-                run_ids.append(rf.dataset.id)
-            self.__dao.remove_files_by_id(rf.id)
-
-        self.__run_service.remove_runs_by_ids(run_ids)
-        self.__notifier.notify(NotificationService.Signals.FILES_CHANGED)
-

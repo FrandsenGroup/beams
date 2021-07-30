@@ -1,7 +1,11 @@
+"""
+Stores constants for the paths of all our non-python resource files.
+"""
+
 from pathlib import Path
-import json
 import os
 
+# Using Path from pathlib is an easy way to fix the slash direction issue when switch between windows and unix systems.
 LOGO_IMAGE = str(Path('beams/app/resources/icons/logo_3.jpg'))
 MAXIMIZE_IMAGE = str(Path('beams/app/resources/icons/maximize_black.png'))
 MINIMIZE_IMAGE = str(Path('beams/app/resources/icons/minimize_black.png'))
@@ -18,6 +22,7 @@ HISTOGRAM_CLICKED_IMAGE = str(Path('beams/app/resources/icons/histo_icon_clicked
 FITTING_CLICKED_IMAGE = str(Path('beams/app/resources/icons/fitting_icon_clicked.png'))
 DOWNLOAD_CLICKED_IMAGE = str(Path('beams/app/resources/icons/download_icon_clicked.png'))
 QUESTION_CLICKED_IMAGE = str(Path('beams/app/resources/icons/question_icon_clicked.png'))
+LOADING_GIF = str(Path('beams/app/resources/icons/loading.gif'))
 
 LATO_BLACK_FONT = str(Path('beams/app/resources/Lato/Lato-Black.ttf'))
 LATO_BLACK_ITALIC_FONT = str(Path('beams/app/resources/Lato/Lato-BlackItalic.ttf'))
@@ -45,17 +50,7 @@ if not os.path.exists(CONFIGURATION_FILE):
     with open(CONFIGURATION_FILE, 'w+') as f:
         pass
 
-with open(CONFIGURATION_FILE, 'r') as fp:
-    try:
-        SAVED_USER_DATA = json.load(fp)
-    except Exception:
-        SAVED_USER_DATA = {}
-
 QT_LOG_FILE = str(Path('beams/app/resources/qt.log'))
 
 with open(QT_LOG_FILE, 'w') as fp:
     fp.truncate(0)
-
-def write_saved_data():
-    with open(CONFIGURATION_FILE, 'w') as cf:
-        json.dump(SAVED_USER_DATA, cf)

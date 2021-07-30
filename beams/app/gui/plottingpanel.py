@@ -3,17 +3,15 @@ import warnings
 from enum import Enum
 import logging
 
-from PyQt5 import QtGui, QtWidgets, QtCore
+from PyQt5 import QtGui, QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
-from matplotlib.patches import Patch
 import numpy as np
 
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
 from app.gui.dialogs.dialog_plot_file import PlotFileDialog
 from app.gui.gui import Panel, PanelPresenter
-from app.model import files
-from app.model.domain import NotificationService, RunService, FitService, FileService, RunDataset, FFT
+from app.model import files, domain, services
 from app.util import qt_widgets, qt_constants
 
 
@@ -38,19 +36,19 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self.errorbar_color_options = QtWidgets.QComboBox()
                 self.errorbar_width_options = QtWidgets.QComboBox()
 
-                self.all_color_options.addItems(PlotModel.color_options_values.keys())
-                self.fit_color_options.addItems(PlotModel.color_options_extra_values.keys())
-                self.linestyle_options.addItems(PlotModel.linestyle_options_values.keys())
-                self.fit_linestyle_options.addItems(PlotModel.linestyle_options_values.keys())
-                self.line_color_options.addItems(PlotModel.color_options_extra_values.keys())
-                self.line_width_options.addItems(PlotModel.line_width_options_values.keys())
-                self.marker_options.addItems(PlotModel.marker_options_values.keys())
-                self.marker_color_options.addItems(PlotModel.color_options_extra_values.keys())
-                self.marker_size_options.addItems(PlotModel.marker_size_options_values.keys())
-                self.fillstyle_options.addItems(PlotModel.fillstyle_options_values.keys())
-                self.errorbar_style_options.addItems(PlotModel.errorbar_styles_values.keys())
-                self.errorbar_color_options.addItems(PlotModel.color_options_extra_values.keys())
-                self.errorbar_width_options.addItems(PlotModel.errorbar_width_values.keys())
+                self.all_color_options.addItems(services.StyleService.color_options_values.keys())
+                self.fit_color_options.addItems(services.StyleService.color_options_extra_values.keys())
+                self.linestyle_options.addItems(services.StyleService.linestyle_options_values.keys())
+                self.fit_linestyle_options.addItems(services.StyleService.linestyle_options_values.keys())
+                self.line_color_options.addItems(services.StyleService.color_options_extra_values.keys())
+                self.line_width_options.addItems(services.StyleService.line_width_options_values.keys())
+                self.marker_options.addItems(services.StyleService.marker_options_values.keys())
+                self.marker_color_options.addItems(services.StyleService.color_options_extra_values.keys())
+                self.marker_size_options.addItems(services.StyleService.marker_size_options_values.keys())
+                self.fillstyle_options.addItems(services.StyleService.fillstyle_options_values.keys())
+                self.errorbar_style_options.addItems(services.StyleService.errorbar_styles_values.keys())
+                self.errorbar_color_options.addItems(services.StyleService.color_options_extra_values.keys())
+                self.errorbar_width_options.addItems(services.StyleService.errorbar_width_values.keys())
 
                 layout = QtWidgets.QGridLayout()
                 layout.addWidget(QtWidgets.QLabel("Default Color"), 0, 0)
@@ -107,40 +105,40 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self.setContentLayout(box_layout)
 
             def set_legend(self, values: dict):
-                    if len(self.__values) == len(values):
-                        return
-                    
-                    self.__values = values
-                    self.legend_list.clear()
+                if self.__values == values:
+                    return
 
-                    for label, color in values.items():
-                        qlabel = QtWidgets.QLineEdit()
-                        qlabel.setText(label)
+                self.__values = values
+                self.legend_list.clear()
 
-                        pixmap = QtGui.QPixmap(100, 100)
-                        pixmap.fill(QtGui.QColor(color))
-                        qicon = QtGui.QIcon(pixmap)
-                        qcolor = QtWidgets.QToolButton()
-                        qcolor.setIcon(qicon)
+                for label, color in values.items():
+                    qlabel = QtWidgets.QLineEdit()
+                    qlabel.setText(label)
 
-                        file_item = QtWidgets.QListWidgetItem(label, self.legend_list)
-                        file_item.setIcon(qicon)
+                    pixmap = QtGui.QPixmap(100, 100)
+                    pixmap.fill(QtGui.QColor(color))
+                    qicon = QtGui.QIcon(pixmap)
+                    qcolor = QtWidgets.QToolButton()
+                    qcolor.setIcon(qicon)
 
-                        #TODO Since we have to set the color as a toolbutton anyways, it would be pretty cool if the user could press it and have
-                        # a color picker pop up to change the color for that particular run.
+                    file_item = QtWidgets.QListWidgetItem(label, self.legend_list)
+                    file_item.setIcon(qicon)
 
-                        #TODO We need to make it so we can edit the title, this will involve changing the logic quite a bit though in a few places.
-                        # maybe we can go back to our old idea of attaching references to model objects to things like this... OR we just keep a dict
-                        # in this class that references the actual titles to the ones the user has selected. It would have to be persistent for when
-                        # they clear and plot again. I don't imagine we would want to save these values. OR we could have them choose what they want in
-                        # the legend (like select temp or field or material or title). I like that idea, maybe put the options up at the top of the 
-                        # collapsible box.
+                    # TODO Since we have to set the color as a toolbutton anyways, it would be pretty cool if the user could press it and have
+                    #   a color picker pop up to change the color for that particular run.
 
-                        # file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsEditable) 
+                    # TODO We need to make it so we can edit the title, this will involve changing the logic quite a bit though in a few places.
+                    #   maybe we can go back to our old idea of attaching references to model objects to things like this... OR we just keep a dict
+                    #   in this class that references the actual titles to the ones the user has selected. It would have to be persistent for when
+                    #   they clear and plot again. I don't imagine we would want to save these values. OR we could have them choose what they want in
+                    #   the legend (like select temp or field or material or title). I like that idea, maybe put the options up at the top of the
+                    #   collapsible box.
+
+                    # file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsEditable)
 
             def set_blank(self):
-                    self.__values = {}
-                    self.legend_list.clear()
+                self.__values = {}
+                self.legend_list.clear()
 
         class Tree(QtWidgets.QTreeWidget):
             def __init__(self):
@@ -174,7 +172,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, RunDataset):
+                    if isinstance(iterator.value().model, domain.RunDataset):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -187,7 +185,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, RunDataset):
+                    if isinstance(iterator.value().model, domain.RunDataset):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -200,7 +198,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, RunDataset):
+                    if isinstance(iterator.value().model, domain.RunDataset):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -213,7 +211,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, RunDataset):
+                    if isinstance(iterator.value().model, domain.RunDataset):
                         ids.append(iterator.value().model.meta[files.TITLE_KEY])
 
                     iterator += 1
@@ -226,7 +224,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, RunDataset):
+                    if isinstance(iterator.value().model, domain.RunDataset):
                         ids.append(iterator.value().model.meta[files.TITLE_KEY])
 
                     iterator += 1
@@ -246,10 +244,13 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         class TreeManager:
             def __init__(self, view):
                 self.__view = view
-                self.__run_service = RunService()
-                self.__fit_service = FitService()
-                self.__file_service = FileService()
-                self.__run_service.register(NotificationService.Signals.RUNS_ADDED, self)
+                self.__logger = logging.getLogger("PlottingPanelTreeManager")
+                self.__run_service = services.RunService()
+                self.__fit_service = services.FitService()
+                self.__file_service = services.FileService()
+                self.__run_service.signals.added.connect(self.update)
+                self.__run_service.signals.loaded.connect(self.update)
+                self.__run_service.signals.changed.connect(self.update)
 
             def _create_tree_model(self, run_datasets):
                 run_nodes = []
@@ -257,7 +258,8 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                     run_nodes.append(PlottingPanel.SupportPanel.RunNode(dataset))
                 return run_nodes
 
-            def update(self, signal):
+            def update(self):
+                self.__logger.debug("Accepted Signal")
                 ids = self.__view.get_run_ids()
                 run_datasets = self.__run_service.get_loaded_runs()
                 tree = self._create_tree_model(run_datasets)
@@ -974,12 +976,13 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 class PlottingPanelPresenter(PanelPresenter):
     def __init__(self, view: PlottingPanel):
         super().__init__(view)
-        self._plot_model = PlotModel()
-        self.__run_service = RunService()
-        self.__run_service.register(NotificationService.Signals.RUNS_ADDED, self)
-        self.__run_service.register(NotificationService.Signals.RUNS_CHANGED, self)
+        self.__run_service = services.RunService()
+        self.__style_service = services.StyleService()
+        self.__run_service.signals.added.connect(self.update)
+        self.__run_service.signals.changed.connect(self.update_after_change)
         self.__populating_settings = False
         self.__update_alpha = True
+        self.__logger = logging.getLogger("PlottingPanelPresenter")
         self._set_callbacks()
 
     def _set_callbacks(self):
@@ -1046,43 +1049,43 @@ class PlottingPanelPresenter(PanelPresenter):
         self._view.support_panel.asymmetry_param_box.alpha_input.returnPressed.connect(self.update_alpha)
 
         self._view.support_panel.plot_style_box.all_color_options.currentTextChanged.connect(
-            lambda: self._style_parameter_changed(PlotModel.Keys.DEFAULT_COLOR,
+            lambda: self._style_parameter_changed(self.__style_service.Keys.DEFAULT_COLOR,
                                                  self._view.support_panel.plot_style_box.all_color_options.currentText()))
         self._view.support_panel.plot_style_box.linestyle_options.currentTextChanged.connect(
-            lambda: self._style_parameter_changed(PlotModel.Keys.LINESTYLE,
+            lambda: self._style_parameter_changed(self.__style_service.Keys.LINESTYLE,
                                                  self._view.support_panel.plot_style_box.linestyle_options.currentText()))
         self._view.support_panel.plot_style_box.line_color_options.currentTextChanged.connect(
-            lambda: self._style_parameter_changed(PlotModel.Keys.LINE_COLOR,
+            lambda: self._style_parameter_changed(self.__style_service.Keys.LINE_COLOR,
                                                  self._view.support_panel.plot_style_box.line_color_options.currentText()))
         self._view.support_panel.plot_style_box.line_width_options.currentTextChanged.connect(
-            lambda: self._style_parameter_changed(PlotModel.Keys.LINE_WIDTH,
+            lambda: self._style_parameter_changed(self.__style_service.Keys.LINE_WIDTH,
                                                  self._view.support_panel.plot_style_box.line_width_options.currentText()))
         self._view.support_panel.plot_style_box.marker_options.currentTextChanged.connect(
-            lambda: self._style_parameter_changed(PlotModel.Keys.MARKER,
+            lambda: self._style_parameter_changed(self.__style_service.Keys.MARKER,
                                                  self._view.support_panel.plot_style_box.marker_options.currentText()))
         self._view.support_panel.plot_style_box.marker_color_options.currentTextChanged.connect(
-            lambda: self._style_parameter_changed(PlotModel.Keys.MARKER_COLOR,
+            lambda: self._style_parameter_changed(self.__style_service.Keys.MARKER_COLOR,
                                                  self._view.support_panel.plot_style_box.marker_color_options.currentText()))
         self._view.support_panel.plot_style_box.marker_size_options.currentTextChanged.connect(
-            lambda: self._style_parameter_changed(PlotModel.Keys.MARKER_SIZE,
+            lambda: self._style_parameter_changed(self.__style_service.Keys.MARKER_SIZE,
                                                  self._view.support_panel.plot_style_box.marker_size_options.currentText()))
         self._view.support_panel.plot_style_box.fillstyle_options.currentTextChanged.connect(
-            lambda: self._style_parameter_changed(PlotModel.Keys.FILLSTYLE,
+            lambda: self._style_parameter_changed(self.__style_service.Keys.FILLSTYLE,
                                                  self._view.support_panel.plot_style_box.fillstyle_options.currentText()))
         self._view.support_panel.plot_style_box.errorbar_style_options.currentTextChanged.connect(
-            lambda: self._style_parameter_changed(PlotModel.Keys.ERRORBAR_STYLE,
+            lambda: self._style_parameter_changed(self.__style_service.Keys.ERRORBAR_STYLE,
                                                  self._view.support_panel.plot_style_box.errorbar_style_options.currentText()))
         self._view.support_panel.plot_style_box.errorbar_color_options.currentTextChanged.connect(
-            lambda: self._style_parameter_changed(PlotModel.Keys.ERRORBAR_COLOR,
+            lambda: self._style_parameter_changed(self.__style_service.Keys.ERRORBAR_COLOR,
                                                  self._view.support_panel.plot_style_box.errorbar_color_options.currentText()))
         self._view.support_panel.plot_style_box.errorbar_width_options.currentTextChanged.connect(
-            lambda: self._style_parameter_changed(PlotModel.Keys.ERRORBAR_WIDTH,
+            lambda: self._style_parameter_changed(self.__style_service.Keys.ERRORBAR_WIDTH,
                                                  self._view.support_panel.plot_style_box.errorbar_width_options.currentText()))
         self._view.support_panel.plot_style_box.fit_color_options.currentTextChanged.connect(
-            lambda: self._style_parameter_changed(PlotModel.Keys.FIT_COLOR,
+            lambda: self._style_parameter_changed(self.__style_service.Keys.FIT_COLOR,
                                                  self._view.support_panel.plot_style_box.fit_color_options.currentText()))
         self._view.support_panel.plot_style_box.fit_linestyle_options.currentTextChanged.connect(
-            lambda: self._style_parameter_changed(PlotModel.Keys.FIT_LINESTYLE,
+            lambda: self._style_parameter_changed(self.__style_service.Keys.FIT_LINESTYLE,
                                                  self._view.support_panel.plot_style_box.fit_linestyle_options.currentText()))
         self._view.support_panel.item_tree.itemSelectionChanged.connect(self._populate_settings)
 
@@ -1154,7 +1157,7 @@ class PlottingPanelPresenter(PanelPresenter):
     def _verify_asymmetries_are_calculated(self, runs):
         runs_without_asymmetries = []
         for run in runs:
-            if run.asymmetries[RunDataset.FULL_ASYMMETRY] is None:
+            if run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] is None:
                 runs_without_asymmetries.append(run)
 
         if len(runs_without_asymmetries) > 0:
@@ -1185,25 +1188,25 @@ class PlottingPanelPresenter(PanelPresenter):
 
         legend_values = {}
         for run in runs:
-            if run.asymmetries[RunDataset.FULL_ASYMMETRY] is None:
+            if run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] is None:
                 continue
 
             if side == 'left':
-                asymmetry = run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY]
+                asymmetry = run.asymmetries[domain.RunDataset.LEFT_BINNED_ASYMMETRY]
                 if asymmetry is None or asymmetry.bin_size != bin_size or True:
-                    asymmetry = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(bin_size)
-                    run.asymmetries[RunDataset.LEFT_BINNED_ASYMMETRY] = asymmetry
+                    asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(bin_size)
+                    run.asymmetries[domain.RunDataset.LEFT_BINNED_ASYMMETRY] = asymmetry
             else:
-                asymmetry = run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY]
+                asymmetry = run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY]
                 if asymmetry is None or asymmetry.bin_size != bin_size or True:
-                    asymmetry = run.asymmetries[RunDataset.FULL_ASYMMETRY].bin(bin_size)
-                    run.asymmetries[RunDataset.RIGHT_BINNED_ASYMMETRY] = asymmetry
+                    asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(bin_size)
+                    run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY] = asymmetry
 
             time = asymmetry.time
             uncertainty = asymmetry.uncertainty
             fit = None
-            style = self._plot_model.get_style_by_run_id(run.id)
-            legend_values[style[PlotModel.Keys.LABEL]] = PlotModel.color_options_extra[style[PlotModel.Keys.DEFAULT_COLOR] if style[PlotModel.Keys.MARKER_COLOR] == 'Default' else style[PlotModel.Keys.MARKER_COLOR]]
+            style = self.__style_service.get_style_by_run_id(run.id)
+            legend_values[style[self.__style_service.Keys.LABEL]] = self.__style_service.color_options_extra[style[self.__style_service.Keys.DEFAULT_COLOR] if style[self.__style_service.Keys.MARKER_COLOR] == 'Default' else style[self.__style_service.Keys.MARKER_COLOR]]
 
             # We have to do this logic because Matplotlib is not good at setting good default plot limits
             frac_start = float(min_time) / (time[len(time) - 1] - time[0])
@@ -1219,19 +1222,19 @@ class PlottingPanelPresenter(PanelPresenter):
                 pass
 
             display.plot_asymmetry(time, asymmetry, uncertainty, fit,
-                                   color=style[PlotModel.Keys.DEFAULT_COLOR],
-                                   marker=style[PlotModel.Keys.MARKER],
-                                   linestyle=style[PlotModel.Keys.LINESTYLE],
-                                   fillstyle=style[PlotModel.Keys.FILLSTYLE],
-                                   marker_color=style[PlotModel.Keys.MARKER_COLOR],
-                                   marker_size=style[PlotModel.Keys.MARKER_SIZE],
-                                   line_color=style[PlotModel.Keys.LINE_COLOR],
-                                   line_width=style[PlotModel.Keys.LINE_WIDTH],
-                                   errorbar_color=style[PlotModel.Keys.ERRORBAR_COLOR],
-                                   errorbar_style=style[PlotModel.Keys.ERRORBAR_STYLE],
-                                   errorbar_width=style[PlotModel.Keys.ERRORBAR_WIDTH],
-                                   fit_color=style[PlotModel.Keys.FIT_COLOR],
-                                   fit_linestyle=style[PlotModel.Keys.FIT_LINESTYLE])
+                                   color=style[self.__style_service.Keys.DEFAULT_COLOR],
+                                   marker=style[self.__style_service.Keys.MARKER],
+                                   linestyle=style[self.__style_service.Keys.LINESTYLE],
+                                   fillstyle=style[self.__style_service.Keys.FILLSTYLE],
+                                   marker_color=style[self.__style_service.Keys.MARKER_COLOR],
+                                   marker_size=style[self.__style_service.Keys.MARKER_SIZE],
+                                   line_color=style[self.__style_service.Keys.LINE_COLOR],
+                                   line_width=style[self.__style_service.Keys.LINE_WIDTH],
+                                   errorbar_color=style[self.__style_service.Keys.ERRORBAR_COLOR],
+                                   errorbar_style=style[self.__style_service.Keys.ERRORBAR_STYLE],
+                                   errorbar_width=style[self.__style_service.Keys.ERRORBAR_WIDTH],
+                                   fit_color=style[self.__style_service.Keys.FIT_COLOR],
+                                   fit_linestyle=style[self.__style_service.Keys.FIT_LINESTYLE])
 
             if not fast:
                 frequencies, fft = self.get_fft_data(time, asymmetry, min_time, max_time, bin_size)
@@ -1239,8 +1242,8 @@ class PlottingPanelPresenter(PanelPresenter):
                 max_fft = local_max if local_max > max_fft else max_fft
 
                 display.plot_fft(frequencies, fft,
-                                 style[PlotModel.Keys.DEFAULT_COLOR],
-                                 style[PlotModel.Keys.LABEL])
+                                 style[self.__style_service.Keys.DEFAULT_COLOR],
+                                 style[self.__style_service.Keys.LABEL])
 
         display.set_asymmetry_plot_limits(max_asymmetry, min_asymmetry)
         display.set_fft_plot_limits(max_fft)
@@ -1248,7 +1251,8 @@ class PlottingPanelPresenter(PanelPresenter):
 
         self._view.legend_display.set_legend(legend_values)
 
-    def update(self, signal):
+    def update(self, runs_changed=False):
+        self.__logger.debug("Accepted Signal")
         run_datasets = self.__run_service.get_runs()
         alphas = {'{:.5f}'.format(run.asymmetries[run.FULL_ASYMMETRY].alpha) for run in run_datasets if run.asymmetries[run.FULL_ASYMMETRY] is not None}
 
@@ -1260,13 +1264,16 @@ class PlottingPanelPresenter(PanelPresenter):
         self.__update_alpha = True
 
         for run in run_datasets:
-            self._plot_model.add_style_for_run(run, False, True)
+            self.__style_service.add_style_for_run(run, False, True)
 
-        if signal == NotificationService.Signals.RUNS_CHANGED:
+        if runs_changed:
             self._plot_parameter_changed(self._view.left_settings, self._view.left_display, 'left')
             self._plot_parameter_changed(self._view.right_settings, self._view.right_display, 'right')
 
         self._populate_settings()
+
+    def update_after_change(self):
+        self.update(True)
 
     def update_alpha(self):
         if not self.__update_alpha:
@@ -1284,7 +1291,7 @@ class PlottingPanelPresenter(PanelPresenter):
     def get_fft_data(self, time, asymmetry, xmin, xmax, bin_size):
         num_bins = self.get_num_bins(xmin, xmax, bin_size)
         start_bin = self.get_start_bin(xmin, bin_size)
-        fft = FFT(asymmetry[start_bin:start_bin + num_bins], time[start_bin:start_bin + num_bins])
+        fft = domain.FFT(asymmetry[start_bin:start_bin + num_bins], time[start_bin:start_bin + num_bins])
         return fft.z, fft.fft/max(fft.fft)
 
     def get_num_bins(self, xmin, xmax, bin_size):
@@ -1296,7 +1303,7 @@ class PlottingPanelPresenter(PanelPresenter):
     def _style_parameter_changed(self, key, value):
         if not self.__populating_settings:
             ids = self._view.support_panel.item_tree.get_selected()
-            self._plot_model.change_style_parameter(ids, key, value)
+            self.__style_service.change_style_parameter(ids, key, value)
 
             threading.Thread(
                 target=self._update_canvas(self._view.left_settings, self._view.left_display, 'left', fast=False),
@@ -1310,7 +1317,7 @@ class PlottingPanelPresenter(PanelPresenter):
 
         ids = self._view.support_panel.item_tree.get_selected()
         runs = self.__run_service.get_runs_by_ids(ids)
-        styles = [self._plot_model.get_style_by_run_id(rid) for rid in ids]
+        styles = [self.__style_service.get_style_by_run_id(rid) for rid in ids]
 
         alphas = {'{:.5f}'.format(run.asymmetries[run.FULL_ASYMMETRY].alpha) for run in runs if
                   run.asymmetries[run.FULL_ASYMMETRY] is not None}
@@ -1332,18 +1339,18 @@ class PlottingPanelPresenter(PanelPresenter):
         style = styles[0]
 
         # self._view.support_panel.set_alpha
-        self._view.support_panel.set_errorbar_color(PlotModel.color_options_extra[style[PlotModel.Keys.ERRORBAR_COLOR]])
-        self._view.support_panel.set_default_color(PlotModel.color_options[style[PlotModel.Keys.DEFAULT_COLOR]])
-        self._view.support_panel.set_fit_color(PlotModel.color_options_extra[style[PlotModel.Keys.FIT_COLOR]])
-        self._view.support_panel.set_errorbar_style(PlotModel.errorbar_styles[style[PlotModel.Keys.ERRORBAR_STYLE]])
-        self._view.support_panel.set_errorbar_width(PlotModel.errorbar_width[style[PlotModel.Keys.ERRORBAR_WIDTH]])
-        self._view.support_panel.set_fillstyle(PlotModel.fillstyle_options[style[PlotModel.Keys.FILLSTYLE]])
-        self._view.support_panel.set_line_color(PlotModel.color_options_extra[style[PlotModel.Keys.LINE_COLOR]])
-        self._view.support_panel.set_line_width(PlotModel.line_width_options[style[PlotModel.Keys.LINE_WIDTH]])
-        self._view.support_panel.set_linestyle(PlotModel.linestyle_options[style[PlotModel.Keys.LINESTYLE]])
-        self._view.support_panel.set_marker(PlotModel.marker_options[style[PlotModel.Keys.MARKER]])
-        self._view.support_panel.set_marker_color(PlotModel.color_options_extra[style[PlotModel.Keys.MARKER_COLOR]])
-        self._view.support_panel.set_marker_size(PlotModel.marker_size_options[style[PlotModel.Keys.MARKER_SIZE]])
+        self._view.support_panel.set_errorbar_color(self.__style_service.color_options_extra[style[self.__style_service.Keys.ERRORBAR_COLOR]])
+        self._view.support_panel.set_default_color(self.__style_service.color_options[style[self.__style_service.Keys.DEFAULT_COLOR]])
+        self._view.support_panel.set_fit_color(self.__style_service.color_options_extra[style[self.__style_service.Keys.FIT_COLOR]])
+        self._view.support_panel.set_errorbar_style(self.__style_service.errorbar_styles[style[self.__style_service.Keys.ERRORBAR_STYLE]])
+        self._view.support_panel.set_errorbar_width(self.__style_service.errorbar_width[style[self.__style_service.Keys.ERRORBAR_WIDTH]])
+        self._view.support_panel.set_fillstyle(self.__style_service.fillstyle_options[style[self.__style_service.Keys.FILLSTYLE]])
+        self._view.support_panel.set_line_color(self.__style_service.color_options_extra[style[self.__style_service.Keys.LINE_COLOR]])
+        self._view.support_panel.set_line_width(self.__style_service.line_width_options[style[self.__style_service.Keys.LINE_WIDTH]])
+        self._view.support_panel.set_linestyle(self.__style_service.linestyle_options[style[self.__style_service.Keys.LINESTYLE]])
+        self._view.support_panel.set_marker(self.__style_service.marker_options[style[self.__style_service.Keys.MARKER]])
+        self._view.support_panel.set_marker_color(self.__style_service.color_options_extra[style[self.__style_service.Keys.MARKER_COLOR]])
+        self._view.support_panel.set_marker_size(self.__style_service.marker_size_options[style[self.__style_service.Keys.MARKER_SIZE]])
 
     def _populate_with_multiple_selected(self, styles):
         # self._view.set_enabled_histograms(False)
@@ -1356,324 +1363,75 @@ class PlottingPanelPresenter(PanelPresenter):
         # else:
         #     self._view.set_alpha(values.pop())
 
-        values = {PlotModel.color_options[style[PlotModel.Keys.DEFAULT_COLOR]] for style in styles}
+        values = {self.__style_service.color_options[style[self.__style_service.Keys.DEFAULT_COLOR]] for style in styles}
         if len(values) > 1:
             self._view.support_panel.set_default_color("*")
         else:
             self._view.support_panel.set_default_color(values.pop())
 
-        values = {PlotModel.errorbar_width[style[PlotModel.Keys.ERRORBAR_WIDTH]] for style in styles}
+        values = {self.__style_service.errorbar_width[style[self.__style_service.Keys.ERRORBAR_WIDTH]] for style in styles}
         if len(values) > 1:
             self._view.support_panel.set_errorbar_width("*")
         else:
             self._view.support_panel.set_errorbar_width(values.pop())
 
-        values = {PlotModel.color_options_extra[style[PlotModel.Keys.ERRORBAR_COLOR]] for style in styles}
+        values = {self.__style_service.color_options_extra[style[self.__style_service.Keys.ERRORBAR_COLOR]] for style in styles}
         if len(values) > 1:
             self._view.support_panel.set_errorbar_color("*")
         else:
             self._view.support_panel.set_errorbar_color(values.pop())
 
-        values = {PlotModel.color_options_extra[style[PlotModel.Keys.FIT_COLOR]] for style in
+        values = {self.__style_service.color_options_extra[style[self.__style_service.Keys.FIT_COLOR]] for style in
                   styles}
         if len(values) > 1:
             self._view.support_panel.set_fit_color("*")
         else:
             self._view.support_panel.set_fit_color(values.pop())
 
-        values = {PlotModel.errorbar_styles[style[PlotModel.Keys.ERRORBAR_STYLE]] for style in styles}
+        values = {self.__style_service.errorbar_styles[style[self.__style_service.Keys.ERRORBAR_STYLE]] for style in styles}
         if len(values) > 1:
             self._view.support_panel.set_errorbar_style("*")
         else:
             self._view.support_panel.set_errorbar_style(values.pop())
 
-        values = {PlotModel.marker_size_options[style[PlotModel.Keys.MARKER_SIZE]] for style in styles}
+        values = {self.__style_service.marker_size_options[style[self.__style_service.Keys.MARKER_SIZE]] for style in styles}
         if len(values) > 1:
             self._view.support_panel.set_marker_size("*")
         else:
             self._view.support_panel.set_marker_size(values.pop())
 
-        values = {PlotModel.line_width_options[style[PlotModel.Keys.LINE_WIDTH]] for style in styles}
+        values = {self.__style_service.line_width_options[style[self.__style_service.Keys.LINE_WIDTH]] for style in styles}
         if len(values) > 1:
             self._view.support_panel.set_line_width("*")
         else:
             self._view.support_panel.set_line_width(values.pop())
 
-        values = {PlotModel.linestyle_options[style[PlotModel.Keys.LINESTYLE]] for style in styles}
+        values = {self.__style_service.linestyle_options[style[self.__style_service.Keys.LINESTYLE]] for style in styles}
         if len(values) > 1:
             self._view.support_panel.set_linestyle("*")
         else:
             self._view.support_panel.set_linestyle(values.pop())
 
-        values = {PlotModel.fillstyle_options[style[PlotModel.Keys.FILLSTYLE]] for style in styles}
+        values = {self.__style_service.fillstyle_options[style[self.__style_service.Keys.FILLSTYLE]] for style in styles}
         if len(values) > 1:
             self._view.support_panel.set_fillstyle("*")
         else:
             self._view.support_panel.set_fillstyle(values.pop())
 
-        values = {PlotModel.color_options_extra[style[PlotModel.Keys.MARKER_COLOR]] for style in styles}
+        values = {self.__style_service.color_options_extra[style[self.__style_service.Keys.MARKER_COLOR]] for style in styles}
         if len(values) > 1:
             self._view.support_panel.set_marker_color("*")
         else:
             self._view.support_panel.set_marker_color(values.pop())
 
-        values = {PlotModel.color_options_extra[style[PlotModel.Keys.LINE_COLOR]] for style in styles}
+        values = {self.__style_service.color_options_extra[style[self.__style_service.Keys.LINE_COLOR]] for style in styles}
         if len(values) > 1:
             self._view.support_panel.set_line_color("*")
         else:
             self._view.support_panel.set_line_color(values.pop())
 
-        values = {PlotModel.marker_options[style[PlotModel.Keys.MARKER]] for style in styles}
+        values = {self.__style_service.marker_options[style[self.__style_service.Keys.MARKER]] for style in styles}
         if len(values) > 1:
             self._view.support_panel.set_marker("*")
         else:
             self._view.support_panel.set_marker(values.pop())
-
-
-class PlotModel:
-    """
-    PlotModel holds all the data relative to styling the plots.
-    """
-
-    class Keys(Enum):
-        ID = 1
-        LABEL = 2
-        VISIBLE = 3
-        ERROR_BARS = 4
-        LINE = 5
-        MARKER = 6
-        LINE_COLOR = 7
-        MARKER_COLOR = 8
-        FILLSTYLE = 9
-        DEFAULT_COLOR = 10
-        LINESTYLE = 11
-        LINE_WIDTH = 12
-        MARKER_SIZE = 13
-        ERRORBAR_STYLE = 14
-        ERRORBAR_COLOR = 15
-        ERRORBAR_WIDTH = 16
-        FIT_COLOR = 17
-        FIT_LINESTYLE = 18
-
-    color_options_values = {'Blue': '#0000ff', 'Red': '#ff0000', 'Purple': '#9900ff', 'Green': '#009933',
-                            'Orange': '#ff9900', 'Maroon': '#800000', 'Pink': '#ff66ff', 'Dark Blue': '#000099',
-                            'Dark Green': '#006600', 'Light Blue': '#0099ff', 'Light Purple': '#cc80ff',
-                            'Dark Orange': '#ff6600', 'Yellow': '#ffcc00', 'Light Red': '#ff6666',
-                            'Light Green': '#00cc66', 'Black': '#000000'}
-    color_options = {v: k for k, v in color_options_values.items()}
-
-    color_options_extra_values = {'Default': 'Default', 'Blue': '#0000ff', 'Red': '#ff0000', 'Purple': '#9900ff',
-                                  'Orange': '#ff9900', 'Maroon': '#800000', 'Pink': '#ff66ff', 'Dark Blue': '#000099',
-                                  'Dark Green': '#006600', 'Light Blue': '#0099ff', 'Light Purple': '#cc80ff',
-                                  'Dark Orange': '#ff6600', 'Yellow': '#ffcc00', 'Light Red': '#ff6666',
-                                  'Light Green': '#00cc66', 'Green': '#009933', 'Black': '#000000'}
-
-    color_options_extra = {v: k for k, v in color_options_extra_values.items()}
-
-    marker_options_values = {'point': '.', 'triangle_down': 'v', 'triangle_up': '^', 'triangle_left': '<',
-                             'triangle_right': '>', 'octagon': '8', 'square': 's', 'pentagon': 'p',
-                             'plus': 'P',
-                             'star': '*', 'hexagon_1': 'h', 'hexagon_2': 'H', 'x': 'X', 'diamond': 'D',
-                             'thin_diamond': 'd'}
-
-    marker_options = {v: k for k, v in marker_options_values.items()}
-
-    linestyle_options_values = {'Solid': '-', 'Dashed': '--', 'Dash-Dot': '-.', 'Dotted': ':', 'None': ''}
-
-    linestyle_options = {v: k for k, v in linestyle_options_values.items()}
-
-    line_width_options_values = {'Very Thin': 1, 'Thin': 2, 'Medium': 3, 'Thick': 4, 'Very Thick': 5}
-
-    line_width_options = {v: k for k, v in line_width_options_values.items()}
-
-    marker_size_options_values = {'Very Thin': 1, 'Thin': 3, 'Medium': 5, 'Thick': 6, 'Very Thick': 9}
-
-    marker_size_options = {v: k for k, v in marker_size_options_values.items()}
-
-    fillstyle_options_values = {'Full': 'full', 'Left': 'left', 'Right': 'right', 'Bottom': 'bottom',
-                                'Top': 'top', 'None': 'none'}
-
-    fillstyle_options = {v: k for k, v in fillstyle_options_values.items()}
-
-    errorbar_styles_values = {'Caps': 4, 'No Caps': 0, 'No Bars': 'none'}
-
-    errorbar_styles = {v: k for k, v in errorbar_styles_values.items()}
-
-    errorbar_width_values = {'Very Thin': 1, 'Thin': 2, 'Medium': 3, 'Thick': 4, 'Very Thick': 5}
-
-    errorbar_width = {v: k for k, v in errorbar_width_values.items()}
-
-    _unused_colors = color_options.copy()
-    _used_colors = dict()
-
-    _marker_options = {v: k for k, v in marker_options_values.items()}
-    _unused_markers = _marker_options.copy()
-    _used_markers = dict()
-
-    def __init__(self):
-        self.__styles = dict()
-
-    def get_style_by_run_id(self, run_id):
-        try:
-            return self.__styles[run_id]
-        except KeyError:
-            return None
-
-    def get_visible_styles(self):
-        visible_styles = []
-        for key in self.__styles:
-            style = self.__styles[key]
-            if style[PlotModel.Keys.VISIBLE]:
-                visible_styles.append(style)
-        return visible_styles
-
-    def add_style_for_run(self, run, visible=True, error_bars=True):
-        if self.get_style_by_run_id(run.id):
-            return
-
-        if len(self._unused_markers.keys()) == 0:
-            self._unused_markers = self._used_markers.copy()
-        marker = list(self._unused_markers.keys())[0]
-        self._update_markers(marker, True)
-
-        if len(self._unused_colors.keys()) == 0:
-            self._unused_colors = self._used_colors.copy()
-        color = list(self._unused_colors.keys())[0]
-        self._update_colors(color, True)
-
-        style = dict()
-        style[PlotModel.Keys.ID] = run.id
-        style[PlotModel.Keys.LABEL] = run.meta[files.TITLE_KEY]
-        style[PlotModel.Keys.ERROR_BARS] = error_bars
-        style[PlotModel.Keys.VISIBLE] = visible
-        style[PlotModel.Keys.LINE] = 'none'
-        style[PlotModel.Keys.MARKER] = marker
-        style[PlotModel.Keys.LINE_COLOR] = 'Default'
-        style[PlotModel.Keys.MARKER_COLOR] = 'Default'
-        style[PlotModel.Keys.FILLSTYLE] = 'none'
-        style[PlotModel.Keys.DEFAULT_COLOR] = color
-        style[PlotModel.Keys.LINESTYLE] = ''
-        style[PlotModel.Keys.LINE_WIDTH] = 1
-        style[PlotModel.Keys.MARKER_SIZE] = 5
-        style[PlotModel.Keys.ERRORBAR_STYLE] = 0
-        style[PlotModel.Keys.ERRORBAR_COLOR] = 'Default'
-        style[PlotModel.Keys.ERRORBAR_WIDTH] = 1
-        style[PlotModel.Keys.FIT_COLOR] = 'Default'
-        style[PlotModel.Keys.FIT_LINESTYLE] = '-'
-
-        self.__styles[run.id] = style
-
-    def change_color_for_run(self, run_id, color, stop_signal=None):
-        style = self.get_style_by_run_id(run_id)
-        color = self.color_options_values[color]
-        if color in self._unused_colors.keys():
-            self._update_colors(color=color, used=True)
-        if style[PlotModel.Keys.DEFAULT_COLOR] in self._used_colors.keys():
-            self._update_colors(color=style[PlotModel.Keys.DEFAULT_COLOR], used=False)
-        if style[PlotModel.Keys.DEFAULT_COLOR] == color:
-            return
-
-        style[PlotModel.Keys.DEFAULT_COLOR] = color
-        style[PlotModel.Keys.LINE_COLOR] = 'Default'
-        style[PlotModel.Keys.ERRORBAR_COLOR] = 'Default'
-        style[PlotModel.Keys.MARKER_COLOR] = 'Default'
-        style[PlotModel.Keys.FIT_COLOR] = 'Default'
-
-    def change_marker_for_run(self, run_id, marker, stop_signal=None):
-        style = self.get_style_by_run_id(run_id)
-        marker = self.marker_options_values[marker]
-        if marker in self._unused_markers.keys():
-            self._update_markers(marker=marker, used=True)
-
-        if style[PlotModel.Keys.MARKER] in self._used_markers.keys():
-            self._update_markers(marker=style[PlotModel.Keys.MARKER], used=False)
-        if style[PlotModel.Keys.MARKER] == marker:
-            return
-
-        style = self.get_style_by_run_id(run_id)
-        style[PlotModel.Keys.MARKER] = marker
-
-    def change_visibilities(self, visible, run_id=None, stop_signal=None):
-        if run_id is not None:
-            for rid in run_id:
-                style = self.get_style_by_run_id(rid)
-                style[PlotModel.Keys.VISIBLE] = visible
-        else:
-            for style in self.__styles.values():
-                style[PlotModel.Keys.VISIBLE] = visible
-
-    def change_style_parameter(self, run_ids, key, option_key, stop_signal=None):
-        for run_id in run_ids:
-            style = self.get_style_by_run_id(run_id)
-
-            if style is None:
-                return
-
-            if key == PlotModel.Keys.LINESTYLE:
-                style[key] = self.linestyle_options_values[option_key]
-            elif key == PlotModel.Keys.FIT_LINESTYLE:
-                style[key] = self.linestyle_options_values[option_key]
-            elif key == PlotModel.Keys.ERRORBAR_COLOR or \
-                    key == PlotModel.Keys.MARKER_COLOR or \
-                    key == PlotModel.Keys.LINE_COLOR or \
-                    key == PlotModel.Keys.FIT_COLOR:
-                style[key] = self.color_options_extra_values[option_key]
-            elif key == PlotModel.Keys.ERRORBAR_WIDTH:
-                style[key] = self.errorbar_width_values[option_key]
-            elif key == PlotModel.Keys.LINE_WIDTH:
-                style[key] = self.line_width_options_values[option_key]
-            elif key == PlotModel.Keys.MARKER_SIZE:
-                style[key] = self.marker_size_options_values[option_key]
-            elif key == PlotModel.Keys.ERRORBAR_STYLE:
-                style[key] = self.errorbar_styles_values[option_key]
-            elif key == PlotModel.Keys.MARKER:
-                self.change_marker_for_run(run_id, option_key, True)
-            elif key == PlotModel.Keys.FILLSTYLE:
-                style[key] = self.fillstyle_options_values[option_key]
-            elif key == PlotModel.Keys.DEFAULT_COLOR:
-                self.change_color_for_run(run_id, option_key, True)
-
-    def change_label(self, label, run_id, stop_signal=None):
-        style = self.get_style_by_run_id(run_id)
-        style[PlotModel.Keys.LABEL] = label
-
-    def get_styles(self):
-        return self.__styles
-
-    def _update_markers(self, marker, used):
-        if used:
-            if marker not in self._used_markers.keys():
-                self._used_markers[marker] = self._marker_options[marker]
-            if marker in self._unused_markers.keys():
-                self._unused_markers.pop(marker)
-        else:
-            if marker not in self._unused_markers.keys():
-                self._unused_markers[marker] = self._marker_options[marker]
-            if marker in self._used_markers.keys():
-                self._used_markers.pop(marker)
-        return True
-
-    def _update_colors(self, color, used):
-        if used:
-            if color not in self._used_colors.keys():
-                self._used_colors[color] = self.color_options[color]
-            if color in self._unused_colors.keys():
-                self._unused_colors.pop(color)
-        else:
-            if color not in self._unused_colors.keys():
-                self._unused_colors[color] = self.color_options[color]
-            if color in self._used_colors.keys():
-                self._used_colors.pop(color)
-        return True
-
-    def clear_plot_parameters(self, run_id=None, stop_signal=None):
-        if run_id:
-            style = self.get_style_by_run_id(run_id)
-            self.__styles.pop(run_id)
-            self._update_markers(style[PlotModel.Keys.MARKER], False)
-            self._update_colors(style[PlotModel.Keys.DEFAULT_COLOR], False)
-        else:
-            for style in self.__styles:
-                self._update_markers(style[PlotModel.Keys.MARKER], False)
-                self._update_colors(style[PlotModel.Keys.DEFAULT_COLOR], False)
-            self.__styles = dict()

@@ -1,6 +1,11 @@
+"""
+This module stores the constants used from Qt to make it backwards compatible with older version of PyQt5, as they
+moved their constants relatively recently so it is best if both are supported.
+"""
 
 from PyQt5 import QtCore, QtWidgets
 
+# If we run in to an exception here we know they are using a new version of PyQt5
 try:
     Checked = QtCore.Qt.Checked
     Unchecked = QtCore.Qt.Unchecked

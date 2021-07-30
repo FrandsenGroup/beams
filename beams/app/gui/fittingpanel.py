@@ -1,14 +1,14 @@
 import logging
+from concurrent import futures
 
 from PyQt5 import QtWidgets, QtCore
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
 
-from app.gui.plottingpanel import PlotModel
-from app.gui.dialogs.dialog_misc import WarningMessageDialog
+from app.gui.dialogs.dialog_misc import WarningMessageDialog, LoadingDialog
 from app.util import qt_widgets, qt_constants
-from app.model import domain, fit, files
+from app.model import domain, fit, files, services
 from app.gui.gui import PanelPresenter, Panel
 
 
@@ -88,11 +88,14 @@ class FittingPanel(Panel):
         class TreeManager:
             def __init__(self, view):
                 self.__view = view
-                self.__run_service = domain.RunService()
-                self.__fit_service = domain.FitService()
-                self.__fit_service.register(domain.NotificationService.Signals.FITS_ADDED, self)
-                self.__file_service = domain.FileService()
-                self.__run_service.register(domain.NotificationService.Signals.RUNS_ADDED, self)
+                self.__logger = logging.getLogger("FittingPanelTreeManager")
+                self.__run_service = services.RunService()
+                self.__fit_service = services.FitService()
+                self.__file_service = services.FileService()
+                self.__run_service.signals.added.connect(self.update)
+                self.__fit_service.signals.added.connect(self.update)
+                self.__run_service.signals.changed.connect(self.update)
+                self.__fit_service.signals.changed.connect(self.update)
 
             def _create_tree_model(self, fit_datasets):
                 fit_dataset_nodes = []
@@ -100,7 +103,8 @@ class FittingPanel(Panel):
                     fit_dataset_nodes.append(FittingPanel.SupportPanel.FitDatasetNode(dataset))
                 return fit_dataset_nodes
 
-            def update(self, signal):
+            def update(self):
+                self.__logger.debug("Accepted Signal")
                 fit_datasets = self.__fit_service.get_fit_datasets()
                 tree = self._create_tree_model(fit_datasets)
                 self.__view.set_tree(tree)
@@ -1215,22 +1219,29 @@ class FittingPanel(Panel):
 class FitTabPresenter(PanelPresenter):
     def __init__(self, view: FittingPanel):
         super().__init__(view)
-        self._run_service = domain.RunService()
-        self._fit_service = domain.FitService()
+        self._run_service = services.RunService()
+        self._fit_service = services.FitService()
+        self._system_service = services.SystemService()
+        self._style_service = services.StyleService()
         self._set_callbacks()
 
-        self._run_service.register(domain.NotificationService.Signals.RUNS_ADDED, self)
-        self._run_service.register(domain.NotificationService.Signals.RUNS_LOADED, self)
-        self._fit_service.register(domain.NotificationService.Signals.FITS_ADDED, self)
+        fit.USER_EQUATION_DICTIONARY = self._system_service.get_user_defined_functions()
+        view.option_user_fit_equations.addItems(fit.USER_EQUATION_DICTIONARY.keys())
+
+        self._run_service.signals.added.connect(self.update)
+        self._run_service.signals.changed.connect(self.update)
+        self._run_service.signals.loaded.connect(self.update)
+        self._fit_service.signals.added.connect(self.update)
+        self._fit_service.signals.changed.connect(self.update)
 
         self._runs = []
         self._asymmetries = {}
-        self._plot_model = PlotModel()
+        self._threadpool = QtCore.QThreadPool()
 
         self.__update_if_table_changes = True
         self.__variable_groups = {}
         self.__expression = None
-        self.__logger = logging.getLogger('QtFittingPresenter')
+        self.__logger = logging.getLogger('FittingPanelPresenter')
 
     def _set_callbacks(self):
         self._view.support_panel.tree.itemSelectionChanged.connect(self._selection_changed)
@@ -1311,6 +1322,7 @@ class FitTabPresenter(PanelPresenter):
 
         if function_name not in fit.USER_EQUATION_DICTIONARY.keys():
             self._view.option_user_fit_equations.addItem(function_name)
+            self._system_service.add_user_defined_function(function_name, self._view.input_user_equation.text())
             fit.USER_EQUATION_DICTIONARY[function_name] = self._view.input_user_equation.text()
 
         self._view.option_user_fit_equations.setCurrentText(function_name)
@@ -1331,9 +1343,11 @@ class FitTabPresenter(PanelPresenter):
         bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
 
         colors = {}
-        available_colors = list(self._plot_model.color_options_values.values())
+        available_colors = list(self._style_service.color_options_values.values())
 
-        colors = {run.id: available_colors[i % len(available_colors)] for i, run in enumerate(runs)}
+        styles = self._style_service.get_styles()
+        colors = {run.id: styles[run.id][self._style_service.Keys.DEFAULT_COLOR] for run in runs}
+        # colors = {run.id: available_colors[i % len(available_colors)] for i, run in enumerate(runs)}
         colors[0] = '#000000'
 
         for i, run in enumerate(runs):
@@ -1516,14 +1530,16 @@ class FitTabPresenter(PanelPresenter):
                 if run.meta[files.TITLE_KEY] == title:
                     fit_titles[run.id] = title
                     if run.id in self._asymmetries.keys():
-                        config.data[run.id] = self._asymmetries[run.id]
+                        # We have to store references to all three instead of just the asymmetry because the
+                        #   new process won't pick up those references.
+                        config.data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id], self._asymmetries[run.id].uncertainty)
                     else:
                         min_time = self._view.fit_spectrum_settings.get_min_time()
                         max_time = self._view.fit_spectrum_settings.get_max_time()
                         bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
                         raw_asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time, max_time=max_time)
                         self._asymmetries[run.id] = raw_asymmetry
-                        config.data[run.id] = self._asymmetries[run.id]
+                        config.data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id], self._asymmetries[run.id].uncertainty)
 
                     run_parameters = {}
                     for symbol, value, value_min, value_max, value_output, value_uncertainty, is_fixed, \
@@ -1544,14 +1560,14 @@ class FitTabPresenter(PanelPresenter):
         self.__logger.debug(str(config))
 
         # Fit to spec
-        engine = fit.FitEngine()
-        dataset = engine.fit(config)
-        self._fit_service.add_dataset([dataset])
-        self._update_alphas(dataset)
-        self._update_fit_changes(dataset)
-        # self.__update_if_table_changes = True
+        worker = FitWorker(config)
+        worker.signals.result.connect(self._update_fit_changes)
+        self._threadpool.start(worker)
+
+        LoadingDialog.launch("Your fit is running!", worker)
 
     def _new_empty_fit(self):
+
         self.__expression = None
         self.__variable_groups = []
         self._view.clear()
@@ -1588,7 +1604,7 @@ class FitTabPresenter(PanelPresenter):
             except KeyError:
                 self._view.input_file_name.setText('{}_fit.txt'.format(run.meta[files.TITLE_KEY]))
 
-            self._view.input_folder_name.setText(files.load_last_used_directory())
+            self._view.input_folder_name.setText(self._system_service.get_last_used_directory())
             self.__expression = selected_data.expression
             self.__variable_groups = {selected_data.run_id: selected_data.parameters}
             self._view.input_fit_equation.setText(str(selected_data.expression))
@@ -1614,7 +1630,7 @@ class FitTabPresenter(PanelPresenter):
 
             fits = list(selected_data.fits.values())
             self._view.input_file_name.setText('{}_fit.txt'.format(selected_data.id))
-            self._view.input_folder_name.setText(files.load_last_used_directory())
+            self._view.input_folder_name.setText(self._system_service.get_last_used_directory())
             self._view.input_fit_equation.setText(str(fits[0].expression))
             self.__expression = fits[0].expression
             self.__variable_groups = {f.run_id: f.parameters for f in fits}
@@ -1627,6 +1643,8 @@ class FitTabPresenter(PanelPresenter):
         self.__update_if_table_changes = True
 
     def _update_fit_changes(self, dataset):
+        self._fit_service.add_dataset([dataset])
+        self._update_alphas(dataset)
         self.__update_if_table_changes = False
         self._view.select_first_fit_from_dataset(dataset.id)
         self.__update_if_table_changes = False
@@ -1644,10 +1662,51 @@ class FitTabPresenter(PanelPresenter):
         if len(ids) > 0:
             self._run_service.update_alphas(ids, alphas)
 
-    def update(self, signal):
+    def update(self):
+        self.__logger.debug("Accepted Signal")
         runs = []
         for run in self._run_service.get_loaded_runs():
             if run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] is not None:
                 runs.append(run)
         self._runs = runs
         self._view.update_run_table(runs)
+
+
+class FitWorker(QtCore.QRunnable):
+    def __init__(self, config: fit.FitConfig):
+        super(FitWorker, self).__init__()
+        self.config = config
+        self.signals = FitSignals()
+        self.__engine = fit.FitEngine()
+        self.__pool = futures.ProcessPoolExecutor()
+        self.__process = None
+
+    @QtCore.pyqtSlot()
+    def run(self):
+        try:
+            # Start a separate process to run fits
+            self.__process = self.__pool.submit(self.__engine.fit, self.config)
+
+            # Wait on process to finish
+            x = futures.wait([self.__process], return_when=futures.ALL_COMPLETED)
+
+            # TODO We also need to handle errors.
+            # TODO We should move all processing after fit is finished to this method. They aren't intensive.
+            #   Plus then we keep everything in one place and the process only deals in primitive data types..sort of.
+            dataset = x.done.pop().result()
+            for run_id, fit_data in dataset.fits.items():
+                fit_data.expression = fit.FitExpression(fit_data.string_expression)
+
+        except Exception:
+            self.signals.error.emit("Error running fit.")
+        else:
+            self.signals.result.emit(dataset)
+        finally:
+            self.signals.finished.emit()
+
+
+class FitSignals(QtCore.QObject):
+    finished = QtCore.pyqtSignal()
+    result = QtCore.pyqtSignal(fit.FitDataset)
+    error = QtCore.pyqtSignal(str)
+    progress = QtCore.pyqtSignal(int)
