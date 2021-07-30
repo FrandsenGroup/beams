@@ -1,5 +1,4 @@
 from pathlib import Path
-import json
 import os
 
 LOGO_IMAGE = str(Path('beams/app/resources/icons/logo_3.jpg'))

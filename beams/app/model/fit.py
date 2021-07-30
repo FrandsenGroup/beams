@@ -33,8 +33,6 @@ INTERNAL_COSINE = "a*cos(2*\u03C0*v*t + \u03C0*\u03A6/180)*exp(-\u03BB*t) + (1-\
 BESSEL = "j\u2080*(2*\u03C0*v*t + \u03C0*\u03A6/180)"
 INTERNAL_BESSEL = "\u03B1*j\u2080*(2*\u03C0*v*t + \u03C0*\u03A6/180)*exp(-\u03BB*t) + (1-\u03B1)*exp(-\u03BB*t)"
 
-ALPHA_CORRECTION = '((1-\u03B1)+((1+\u03B1)*({})))/((1+\u03B1)+((1-\u03B1)*({})))'
-
 EQUATION_DICTIONARY = {"Simple Exponential": SIMPLE_EXPONENTIAL,
                        "Stretched Exponential": STRETCHED_EXPONENTIAL,
                        "Simple Gaussian": SIMPLE_GAUSSIAN,
@@ -48,6 +46,8 @@ EQUATION_DICTIONARY = {"Simple Exponential": SIMPLE_EXPONENTIAL,
                        "Internal Bessel": INTERNAL_BESSEL}
 
 USER_EQUATION_DICTIONARY = {}
+
+ALPHA_CORRECTION = '((1-\u03B1)+((1+\u03B1)*({})))/((1+\u03B1)+((1-\u03B1)*({})))'
 
 
 class FitParameter:
@@ -424,17 +424,17 @@ class FitEngine:
         
         # Run a lease squares fit with the global lambda and concatenated datasets
         # import time
-        import cProfile, pstats, io
-        from pstats import SortKey
-        pr = cProfile.Profile()
-        pr.enable()
+        # import cProfile, pstats, io
+        # from pstats import SortKey
+        # pr = cProfile.Profile()
+        # pr.enable()
         opt = least_squares(residual, guesses, bounds=[lowers, uppers], args=(concatenated_time, concatenated_asymmetry, concatenated_uncertainty))
-        pr.disable()
-        s = io.StringIO()
-        sortby = SortKey.CUMULATIVE
-        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        ps.print_stats()
-        print(s.getvalue())
+        # pr.disable()
+        # s = io.StringIO()
+        # sortby = SortKey.CUMULATIVE
+        # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        # ps.print_stats()
+        # print(s.getvalue())
         self.__logger.debug(opt)
 
         # Assemble the Fit object, first by updating the parameters in the config with the outputs from
