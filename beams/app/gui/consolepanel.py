@@ -374,7 +374,6 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         self.setFloating(False)
 
         self._presenter = MainConsolePanelPresenter(self)
-        self._spinner = qt_widgets.QtWaitingSpinner(self)
 
     def get_checked_items(self):
         return self.tree_view.get_file_ids()

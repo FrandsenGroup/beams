@@ -1,31 +1,49 @@
-
-import abc
-import enum
-from pathlib import Path
-from app.resources import resources
-from app.util import qt_constants
+"""
+Ever gone to StackOverflow and found the solution to your problem there all in a convenient class? This module is
+full of custom widgets that either I made (some of the seemingly empty ones are so we can apply QSS to specific
+buttons) or found online. Feel free to expand our useful little library!
+"""
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
+from app.resources import resources
+from app.util import qt_constants
+
 
 class StyleOneButton(QtWidgets.QPushButton):
+    """ A custom class so we can apply QSS to specific buttons. See the QSS stylesheet. """
     def __init__(self, *args):
         super(StyleOneButton, self).__init__(*args)
 
 
 class StyleTwoButton(QtWidgets.QPushButton):
+    """ A custom class so we can apply QSS to specific buttons. See the QSS stylesheet. """
     def __init__(self, *args):
         super(StyleTwoButton, self).__init__(*args)
 
 
 class StyleThreeButton(QtWidgets.QPushButton):
+    """ A custom class so we can apply QSS to specific buttons. See the QSS stylesheet. """
     def __init__(self, *args):
         super(StyleThreeButton, self).__init__(*args)
 
 
 # noinspection PyArgumentList
 class CollapsibleBox(QtWidgets.QWidget):
+    """ A custom class that creates a box, like a QGroupBox, that can be collapsed. """
+
     def __init__(self, title="", parent=None, background='#ffffff'):
+        """
+        Parameters
+        ----------
+        title : string
+            Title of box, this will show when the box is collapsed and expanded.
+        parent : widget
+            Parent widget.
+        background : string
+            Background color of the collapsible box.
+        """
+
         super(CollapsibleBox, self).__init__(parent)
         self.__dumb_constant = False
 
@@ -81,9 +99,11 @@ class CollapsibleBox(QtWidgets.QWidget):
         )
 
     def is_open(self):
+        """ Returns a bool indicating whether or not the box is collapsed. """
         return self.__dumb_constant
 
     def on_pressed(self):
+        """ Collapses or opens the box, depending on it's current state. """
         checked = self.__dumb_constant
         self.toggle_button.setArrowType(
             qt_constants.DownArrow if not checked else qt_constants.RightArrow
@@ -97,6 +117,7 @@ class CollapsibleBox(QtWidgets.QWidget):
         self.__dumb_constant = not self.__dumb_constant
 
     def setContentLayout(self, layout):
+        """ Sets the layout of the CollapsibleBox (this is everything you want to put in the box). """
         lay = self.content_area.layout()
         del lay
         self.content_area.setLayout(layout)
@@ -119,11 +140,13 @@ class CollapsibleBox(QtWidgets.QWidget):
 
 
 class StyleOneToolButton(QtWidgets.QToolButton):
+    """ A custom class so we can apply QSS to specific buttons. See the QSS stylesheet. """
     def __init__(self):
         super(StyleOneToolButton, self).__init__()
 
 
 class StyleOneDockWidget(QtWidgets.QDockWidget):
+    """ A custom class so we can apply QSS to specific dock widgets. See the QSS stylesheet. """
     def __init__(self):
         super(StyleOneDockWidget, self).__init__()
         self.setAutoFillBackground(True)
@@ -134,12 +157,14 @@ class StyleOneDockWidget(QtWidgets.QDockWidget):
 
 
 class StyleOneListWidget(QtWidgets.QListWidget):
+    """ A custom class so we can apply QSS to specific list widgets. See the QSS stylesheet. """
     def __init__(self):
         super(StyleOneListWidget, self).__init__()
 
 
 # noinspection PyArgumentList
 class TitleBar(QtWidgets.QWidget):
+    """ A title bar with customized window icon and window control tool buttons. """
     def __init__(self, parent):
         super(TitleBar, self).__init__()
         self.parent = parent
@@ -248,6 +273,7 @@ class TitleBar(QtWidgets.QWidget):
 
 # noinspection PyArgumentList
 class Frame(QtWidgets.QFrame):
+    """ A custom frame for the main window so we can control the background color of the entire application. """
     def __init__(self):
         super(Frame, self).__init__()
 
@@ -340,6 +366,7 @@ class Frame(QtWidgets.QFrame):
 
 # noinspection PyArgumentList
 class Separator(QtWidgets.QFrame):
+    """ A custom widget thats acts as a visual separating line. """
     def __init__(self):
         super(Separator, self).__init__()
         self.setFrameShape(QtWidgets.QFrame.HLine)
@@ -354,6 +381,7 @@ class Separator(QtWidgets.QFrame):
 
 # noinspection PyArgumentList
 class Logo(QtWidgets.QLabel):
+    """ A custom widget for our logo. """
     def __init__(self):
         super(Logo, self).__init__()
         logo_icon_pixmap = QtGui.QPixmap(resources.LOGO_IMAGE)
@@ -362,211 +390,30 @@ class Logo(QtWidgets.QLabel):
 
 
 class StyleOneLabel(QtWidgets.QLabel):
+    """ A custom class so we can apply QSS to specific labels. See the QSS stylesheet. """
     def __init__(self, *args):
         super(StyleOneLabel, self).__init__(*args)
 
 
 class IdentifiableListWidgetItem(QtWidgets.QListWidgetItem):
+    """ A custom class so we can store an identifier in a list widget item.
+
+        This keeps us from having to use titles or other temporary strings to use in lookups in the database.
+        E.g. We used to use the run titles in the list on the plotting window to look up the runs that were selected,
+            this way we can use the actual identifier associated with the run and store it with the widget.
+    """
     def __init__(self, identifier, *pars, **kwargs):
         super().__init__(*pars, **kwargs)
         self.identifier = identifier
 
 
 class IdentifiableTableWidgetItem(QtWidgets.QTableWidgetItem):
+    """ A custom class so we can store an identifier in a list widget item.
+
+        This keeps us from having to use titles or other temporary strings to use in lookups in the database.
+        E.g. We used to use the run titles in the list on the plotting window to look up the runs that were selected,
+            this way we can use the actual identifier associated with the run and store it with the widget.
+    """
     def __init__(self, identifier, *pars, **kwargs):
         super().__init__(*pars, **kwargs)
         self.identifier = identifier
-
-"""
-The MIT License (MIT)
-Copyright (c) 2012-2014 Alexander Turkin
-Copyright (c) 2014 William Hallatt
-Copyright (c) 2015 Jacob Dawid
-Copyright (c) 2016 Luca Weiss
-"""
-
-import math
-
-class QtWaitingSpinner(QtWidgets.QWidget):
-    def __init__(self, parent, centerOnParent=True, disableParentWhenSpinning=False, modality=qt_constants.NonModal):
-        super().__init__(parent)
-
-        self._centerOnParent = centerOnParent
-        self._disableParentWhenSpinning = disableParentWhenSpinning
-
-        # WAS IN initialize()
-        self._color = QtGui.QColor(qt_constants.Black)
-        self._roundness = 100.0
-        self._minimumTrailOpacity = 3.14159265358979323846
-        self._trailFadePercentage = 80.0
-        self._revolutionsPerSecond = 1.57079632679489661923
-        self._numberOfLines = 20
-        self._lineLength = 10
-        self._lineWidth = 2
-        self._innerRadius = 10
-        self._currentCounter = 0
-        self._isSpinning = False
-
-        self._timer = QtCore.QTimer(self)
-        self._timer.timeout.connect(self.rotate)
-        self.updateSize()
-        self.updateTimer()
-        self.hide()
-        # END initialize()
-
-        self.setWindowModality(modality)
-        self.setAttribute(qt_constants.WA_TranslucentBackground)
-
-    def paintEvent(self, QPaintEvent):
-        self.updatePosition()
-        painter = QtGui.QPainter(self)
-        painter.fillRect(self.rect(), qt_constants.transparent)
-        painter.setRenderHint(QtGui.QPainter.Antialiasing, True)
-
-        if self._currentCounter >= self._numberOfLines:
-            self._currentCounter = 0
-
-        painter.setPen(qt_constants.NoPen)
-        for i in range(0, self._numberOfLines):
-            painter.save()
-            painter.translate(self._innerRadius + self._lineLength, self._innerRadius + self._lineLength)
-            rotateAngle = float(360 * i) / float(self._numberOfLines)
-            painter.rotate(rotateAngle)
-            painter.translate(self._innerRadius, 0)
-            distance = self.lineCountDistanceFromPrimary(i, self._currentCounter, self._numberOfLines)
-            color = self.currentLineColor(distance, self._numberOfLines, self._trailFadePercentage,
-                                          self._minimumTrailOpacity, self._color)
-            painter.setBrush(color)
-            painter.drawRoundedRect(QtCore.QRect(0, -self._lineWidth / 2, self._lineLength, self._lineWidth), self._roundness,
-                                    self._roundness, qt_constants.RelativeSize)
-            painter.restore()
-
-    def start(self):
-        self.updatePosition()
-        self._isSpinning = True
-        self.show()
-
-        if self.parentWidget and self._disableParentWhenSpinning:
-            self.parentWidget().setEnabled(False)
-
-        if not self._timer.isActive():
-            self._timer.start()
-            self._currentCounter = 0
-
-    def stop(self):
-        self._isSpinning = False
-        self.hide()
-
-        if self.parentWidget() and self._disableParentWhenSpinning:
-            self.parentWidget().setEnabled(True)
-
-        if self._timer.isActive():
-            self._timer.stop()
-            self._currentCounter = 0
-
-    def setNumberOfLines(self, lines):
-        self._numberOfLines = lines
-        self._currentCounter = 0
-        self.updateTimer()
-
-    def setLineLength(self, length):
-        self._lineLength = length
-        self.updateSize()
-
-    def setLineWidth(self, width):
-        self._lineWidth = width
-        self.updateSize()
-
-    def setInnerRadius(self, radius):
-        self._innerRadius = radius
-        self.updateSize()
-
-    def color(self):
-        return self._color
-
-    def roundness(self):
-        return self._roundness
-
-    def minimumTrailOpacity(self):
-        return self._minimumTrailOpacity
-
-    def trailFadePercentage(self):
-        return self._trailFadePercentage
-
-    def revolutionsPersSecond(self):
-        return self._revolutionsPerSecond
-
-    def numberOfLines(self):
-        return self._numberOfLines
-
-    def lineLength(self):
-        return self._lineLength
-
-    def lineWidth(self):
-        return self._lineWidth
-
-    def innerRadius(self):
-        return self._innerRadius
-
-    def isSpinning(self):
-        return self._isSpinning
-
-    def setRoundness(self, roundness):
-        self._roundness = max(0.0, min(100.0, roundness))
-
-    def setColor(self, color=qt_constants.Black):
-        self._color = QtGui.QColor(color)
-
-    def setRevolutionsPerSecond(self, revolutionsPerSecond):
-        self._revolutionsPerSecond = revolutionsPerSecond
-        self.updateTimer()
-
-    def setTrailFadePercentage(self, trail):
-        self._trailFadePercentage = trail
-
-    def setMinimumTrailOpacity(self, minimumTrailOpacity):
-        self._minimumTrailOpacity = minimumTrailOpacity
-
-    def rotate(self):
-        self._currentCounter += 1
-        if self._currentCounter >= self._numberOfLines:
-            self._currentCounter = 0
-        self.update()
-
-    def updateSize(self):
-        size = (self._innerRadius + self._lineLength) * 2
-        self.setFixedSize(size, size)
-
-    def updateTimer(self):
-        self._timer.setInterval(1000 / (self._numberOfLines * self._revolutionsPerSecond))
-
-    def updatePosition(self):
-        if self.parentWidget() and self._centerOnParent:
-            self.move(self.parentWidget().width() / 2 - self.width() / 2,
-                      self.parentWidget().height() / 2 - self.height() / 2)
-
-    def lineCountDistanceFromPrimary(self, current, primary, totalNrOfLines):
-        distance = primary - current
-        if distance < 0:
-            distance += totalNrOfLines
-        return distance
-
-    def currentLineColor(self, countDistance, totalNrOfLines, trailFadePerc, minOpacity, colorinput):
-        color = QtGui.QColor(colorinput)
-        if countDistance == 0:
-            return color
-        minAlphaF = minOpacity / 100.0
-        distanceThreshold = int(math.ceil((totalNrOfLines - 1) * trailFadePerc / 100.0))
-        if countDistance > distanceThreshold:
-            color.setAlphaF(minAlphaF)
-        else:
-            alphaDiff = color.alphaF() - minAlphaF
-            gradient = alphaDiff / float(distanceThreshold + 1)
-            resultAlpha = color.alphaF() - gradient * countDistance
-            # If alpha is out of bounds, clip it.
-            resultAlpha = min(1.0, max(0.0, resultAlpha))
-            color.setAlphaF(resultAlpha)
-        return color
-
-
-
