@@ -105,40 +105,40 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self.setContentLayout(box_layout)
 
             def set_legend(self, values: dict):
-                    if len(self.__values) == len(values):
-                        return
-                    
-                    self.__values = values
-                    self.legend_list.clear()
+                if len(self.__values) == len(values):
+                    return
 
-                    for label, color in values.items():
-                        qlabel = QtWidgets.QLineEdit()
-                        qlabel.setText(label)
+                self.__values = values
+                self.legend_list.clear()
 
-                        pixmap = QtGui.QPixmap(100, 100)
-                        pixmap.fill(QtGui.QColor(color))
-                        qicon = QtGui.QIcon(pixmap)
-                        qcolor = QtWidgets.QToolButton()
-                        qcolor.setIcon(qicon)
+                for label, color in values.items():
+                    qlabel = QtWidgets.QLineEdit()
+                    qlabel.setText(label)
 
-                        file_item = QtWidgets.QListWidgetItem(label, self.legend_list)
-                        file_item.setIcon(qicon)
+                    pixmap = QtGui.QPixmap(100, 100)
+                    pixmap.fill(QtGui.QColor(color))
+                    qicon = QtGui.QIcon(pixmap)
+                    qcolor = QtWidgets.QToolButton()
+                    qcolor.setIcon(qicon)
 
-                        #TODO Since we have to set the color as a toolbutton anyways, it would be pretty cool if the user could press it and have
-                        # a color picker pop up to change the color for that particular run.
+                    file_item = QtWidgets.QListWidgetItem(label, self.legend_list)
+                    file_item.setIcon(qicon)
 
-                        #TODO We need to make it so we can edit the title, this will involve changing the logic quite a bit though in a few places.
-                        # maybe we can go back to our old idea of attaching references to model objects to things like this... OR we just keep a dict
-                        # in this class that references the actual titles to the ones the user has selected. It would have to be persistent for when
-                        # they clear and plot again. I don't imagine we would want to save these values. OR we could have them choose what they want in
-                        # the legend (like select temp or field or material or title). I like that idea, maybe put the options up at the top of the 
-                        # collapsible box.
+                    # TODO Since we have to set the color as a toolbutton anyways, it would be pretty cool if the user could press it and have
+                    #   a color picker pop up to change the color for that particular run.
 
-                        # file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsEditable) 
+                    # TODO We need to make it so we can edit the title, this will involve changing the logic quite a bit though in a few places.
+                    #   maybe we can go back to our old idea of attaching references to model objects to things like this... OR we just keep a dict
+                    #   in this class that references the actual titles to the ones the user has selected. It would have to be persistent for when
+                    #   they clear and plot again. I don't imagine we would want to save these values. OR we could have them choose what they want in
+                    #   the legend (like select temp or field or material or title). I like that idea, maybe put the options up at the top of the
+                    #   collapsible box.
+
+                    # file_item.setFlags(file_item.flags() | QtCore.Qt.ItemIsEditable)
 
             def set_blank(self):
-                    self.__values = {}
-                    self.legend_list.clear()
+                self.__values = {}
+                self.legend_list.clear()
 
         class Tree(QtWidgets.QTreeWidget):
             def __init__(self):
