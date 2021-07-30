@@ -1,3 +1,7 @@
+"""
+Main entry point for the application.
+"""
+
 # Standard Library Packages
 import sys
 import logging
