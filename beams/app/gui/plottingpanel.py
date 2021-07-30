@@ -107,7 +107,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self.setContentLayout(box_layout)
 
             def set_legend(self, values: dict):
-                    if len(self.__values) == len(values):
+                    if self.__values == values:
                         return
                     
                     self.__values = values
