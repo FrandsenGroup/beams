@@ -377,7 +377,7 @@ class FitEngine:
         self.__logger = logging.getLogger('FitEngine')
 
     def fit(self, config: FitConfig) -> FitDataset:
-        self.__logger.debug(str(config))
+        self.__logger.debug("Config passed to FitEngine: {}".format(str(config)))
 
         if len(set([len(asymmetry) for asymmetry in config.data.values()])) != 1:
             raise ValueError("Must have one or more datasets all of equal length to fit")
@@ -401,10 +401,10 @@ class FitEngine:
         uppers = config.get_adjusted_global_uppers()
 
         # Don't mind me, just using your io to log for my personal needs.
-        self.__logger.debug(config.get_adjusted_global_symbols())
-        self.__logger.debug(guesses)
-        self.__logger.debug(lowers)
-        self.__logger.debug(uppers)
+        self.__logger.debug("Symbols : {}".format(config.get_adjusted_global_symbols()))
+        self.__logger.debug("Initials : {}".format(guesses))
+        self.__logger.debug("Lowers : {}".format(lowers))
+        self.__logger.debug("Uppers : {}".format(uppers))
 
         # We are essentially doing one big fit where you will have global and local (local to a specific section of the
         #   concatenated asymmetry) parameters being refined.
@@ -435,7 +435,8 @@ class FitEngine:
         # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
         # ps.print_stats()
         # print(s.getvalue())
-        self.__logger.debug(opt)
+
+        self.__logger.debug("Output from least_squares global : ".format(opt))
 
         # Assemble the Fit object, first by updating the parameters in the config with the outputs from
         #   the fit, as well as adding a FitExpression object that can be called.
@@ -472,15 +473,16 @@ class FitEngine:
             lowers = config.get_lower_values_for_run(run_id)
             uppers = config.get_upper_values_for_run(run_id)
 
-            self.__logger.debug(config.get_symbols_for_run(run_id))
-            self.__logger.debug(guesses)
-            self.__logger.debug(lowers)
-            self.__logger.debug(uppers)
+            self.__logger.debug("Symbols <{}> : {}".format(run_id, config.get_symbols_for_run(run_id)))
+            self.__logger.debug("Initials <{}> : {}".format(run_id, guesses))
+            self.__logger.debug("Lowers <{}> : {}".format(run_id, lowers))
+            self.__logger.debug("Uppers <{}> : {}".format(run_id, uppers))
 
             # 6) Perform a least squares fit
             opt = least_squares(residual, guesses, bounds=[lowers, uppers],
                                 args=(time, asymmetry, uncertainty))
-            self.__logger.debug(opt)
+            
+            self.__logger.debug("Output from least_squares batch : ".format(opt))
 
             try:
                 unc, chi_sq = get_std_unc(opt, asymmetry)

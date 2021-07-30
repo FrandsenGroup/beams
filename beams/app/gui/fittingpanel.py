@@ -240,7 +240,7 @@ class FittingPanel(Panel):
             fit_color = color if fit_color == 'Default' else fit_color
             self.__logger = logging.getLogger('qt_fitting_panel_plot_fit')
             self.__logger.debug(
-                "{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}".format(time, asymmetry, marker_face_color, marker_color,
+                "About to plot : time<{}>, asymmetry<{}>, marker_face_color<{}>, marker_color<{}>, color<{}>, linestyle<{}>, marker<{}>, fillstyle<{}>, line_width<{}>, marker_size<{}>, label<{}>".format(len(time), len(asymmetry), marker_face_color, marker_color,
                                                                     color, linestyle, marker, fillstyle, line_width,
                                                                     marker_size, label))
             if uncertainty is not None:
@@ -843,7 +843,7 @@ class FittingPanel(Panel):
                 item_value.setText(str(value))
                 self.parameter_table.batch_table.setItem(j, self.parameter_table.FIXED_VALUE_COLUMN, item_value)
 
-        self.__logger.debug(str(self.__batch_table_states))
+        self.__logger.debug("Batch table state after updating : <{}>".format(str(self.__batch_table_states)))
         self.__update_states = True
 
     def createSupportPanel(self) -> QtWidgets.QDockWidget:
@@ -1369,7 +1369,7 @@ class FitTabPresenter(PanelPresenter):
             max_asymmetry = local_max if local_max > max_asymmetry else max_asymmetry
             local_min = np.min(asymmetry[start_index:end_index])
             min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
-            self.__logger.debug("{}, {}, {}, {}".format(time, asymmetry, uncertainty, run.meta[files.TITLE_KEY]))
+            self.__logger.debug("About to plot : time<{}>, asymmetry<{}>, uncertainty<{}>, title<{}>".format(len(time), len(asymmetry), len(uncertainty), run.meta[files.TITLE_KEY]))
 
             self._view.fit_display.plot_asymmetry(time, asymmetry, uncertainty, None,
                                                   color=colors[run.id],
@@ -1417,7 +1417,7 @@ class FitTabPresenter(PanelPresenter):
                 local_min = np.min(fit_asymmetry[start_index:end_index])
                 min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
 
-            self.__logger.debug("{}, {}, {}, {}".format(self.__expression, run_id, parameters, len(time)))
+            self.__logger.debug("About to plot : expression<{}>, run_id<{}>, parameters<{}>, time<{}>".format(self.__expression, run_id, parameters, len(time)))
             self._view.fit_display.plot_asymmetry(time, fit_asymmetry, None, None,
                                                   color=colors[run_id],
                                                   marker='.',
