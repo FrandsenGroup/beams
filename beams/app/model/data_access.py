@@ -1,5 +1,13 @@
+"""
+Acts as the main data storage for the application and abstracts away data-access operations.
+"""
+
 
 class Database:
+    """
+    Our database as currently constituted is just a singleton with a bunch of dictionaries acting as tables. Any data
+    we want to persist when a session is saved and reloaded is stored here.
+    """
     _instance = None
 
     def __new__(cls):
@@ -14,6 +22,9 @@ class Database:
 
 
 class RunDAO:
+    """
+    Handles all data access operations related to RunDatasets.
+    """
     __database = Database()
 
     def get_runs(self):
@@ -39,6 +50,9 @@ class RunDAO:
 
 
 class FitDAO:
+    """
+    Handles all data access operations related to FitDatasets.
+    """
     __database = Database()
 
     def get_fits(self):
@@ -60,6 +74,9 @@ class FitDAO:
 
 
 class FileDAO:
+    """
+    Handles all data access operations related to File objects.
+    """
     __database = Database()
 
     def get_files(self):
@@ -89,6 +106,10 @@ class FileDAO:
 
 
 class StyleDAO:
+    """
+    Handles all data access operations related to Styles. Since we want common styles to be used between the panels
+    and persist if a session is saved and reloaded, it is easiest to store them here.
+    """
     __database = Database()
 
     def add_style(self, identifier, style):
@@ -105,6 +126,10 @@ class StyleDAO:
 
 
 class SystemDAO:
+    """
+    Handles all data access operations related to the application configuration. These are loaded in from
+    resources.CONFIG_FILE.
+    """
     __database = Database()
 
     def set_configuration(self, key, value):
