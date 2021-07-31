@@ -124,6 +124,7 @@ class FittingPanel(Panel):
                 menu = QtWidgets.QMenu()
                 menu.addAction("Rename", self._action_rename)
                 menu.addAction("Save", self._action_save)
+                menu.addAction("Remove", self._action_remove)
                 menu.addSeparator()
                 menu.addAction("Expand", self._action_expand)
                 return menu
@@ -133,6 +134,9 @@ class FittingPanel(Panel):
 
             def _action_save(self):
                 pass
+
+            def _action_remove(self):
+                services.FitService.remove_dataset([self.model.id])
 
             def _action_expand(self):
                 pass

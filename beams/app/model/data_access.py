@@ -65,7 +65,7 @@ class FitDAO:
         for fit in fits:
             self.__database.fit_table[fit.id] = fit
 
-    def remove_runs_by_ids(self, ids):
+    def remove_fits_by_ids(self, ids):
         for fid in ids:
             self.__database.fit_table.pop(fid)
 

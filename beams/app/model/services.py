@@ -32,6 +32,12 @@ class FitService:
             FitService.signals.added.emit()
 
     @staticmethod
+    def remove_dataset(ids):
+        FitService.__dao.remove_fits_by_ids(ids)
+        FitService.__logger.debug("Emitted: changed")
+        FitService.signals.changed.emit()
+
+    @staticmethod
     def changed():
         FitService.__logger.debug("Emitted: changed")
         FitService.signals.changed.emit()
