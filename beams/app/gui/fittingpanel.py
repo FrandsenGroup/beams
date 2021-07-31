@@ -139,7 +139,7 @@ class FittingPanel(Panel):
                 services.FitService.remove_dataset([self.model.id])
 
             def _action_expand(self):
-                pass
+                self.setExpanded(not self.isExpanded())
 
         class FitNode(QtWidgets.QTreeWidgetItem):
             def __init__(self, fit_data):
