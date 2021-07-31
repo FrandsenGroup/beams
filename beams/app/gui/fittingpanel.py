@@ -805,10 +805,10 @@ class FittingPanel(Panel):
         for j in range(self.parameter_table.config_table.rowCount()):  # Iterate over every symbol in table
             symbol = self.parameter_table.config_table.verticalHeaderItem(j).text()
 
-            if len(self.get_selected_run_titles()) > 0 \
+            if len(self.get_selected_run_ids()) > 0 \
                     and symbol in self.__batch_table_states.keys() \
-                    and self.get_selected_run_titles()[0] in self.__batch_table_states[symbol].keys():
-                value = self.__batch_table_states[symbol][self.get_selected_run_titles()[0]][2]
+                    and self.get_selected_run_ids()[0] in self.__batch_table_states[symbol].keys():
+                value = self.__batch_table_states[symbol][self.get_selected_run_ids()[0]][2]
                 item_value = QtWidgets.QTableWidgetItem()
                 item_value.setText(str(value))
                 self.parameter_table.batch_table.setItem(j, self.parameter_table.FIXED_VALUE_COLUMN, item_value)
@@ -840,19 +840,19 @@ class FittingPanel(Panel):
             if item_fixed_run is None:  # Sometimes this happens with QTableWidgets, just skip.
                 continue
 
-            selected_titles = self.get_selected_run_titles()
+            selected_titles = self.get_selected_run_ids()
             self.__batch_table_states[symbol] = {
-                title: (
+                run_id: (
                     symbol,
                     item_fixed_run.findChild(QtWidgets.QCheckBox).checkState() > 0,
-                    item_fixed_run_value.text() if (title in selected_titles and item_fixed_run_value.text() != '')
-                    else self.parameter_table.config_table.item(j, self.parameter_table.VALUE_COLUMN).text() if (symbol not in self.__batch_table_states.keys() or title not in self.__batch_table_states[symbol].keys())
-                    else self.__batch_table_states[symbol][title][2]
-                ) for title in self.get_all_run_titles()
+                    item_fixed_run_value.text() if (run_id in selected_titles and item_fixed_run_value.text() != '')
+                    else self.parameter_table.config_table.item(j, self.parameter_table.VALUE_COLUMN).text() if (symbol not in self.__batch_table_states.keys() or run_id not in self.__batch_table_states[symbol].keys())
+                    else self.__batch_table_states[symbol][run_id][2]
+                ) for run_id in self.get_all_run_ids()
             }
 
-            if len(self.get_selected_run_titles()) > 0:
-                value = self.__batch_table_states[symbol][self.get_selected_run_titles()[0]][2]
+            if len(self.get_selected_run_ids()) > 0:
+                value = self.__batch_table_states[symbol][self.get_selected_run_ids()[0]][2]
                 item_value = QtWidgets.QTableWidgetItem()
                 item_value.setText(str(value))
                 self.parameter_table.batch_table.setItem(j, self.parameter_table.FIXED_VALUE_COLUMN, item_value)
@@ -1204,12 +1204,12 @@ class FittingPanel(Panel):
     def select_top_child_run(self, dataset_id):
         index = 0
         for i in range(self.support_panel.tree.topLevelItemCount()):
-            if self.support_panel.tree.topLevelItem(i).text(0) == dataset_id:
+            if self.support_panel.tree.topLevelItem(i).model.id == dataset_id:
                 index = i
-        run_title = self.support_panel.tree.topLevelItem(index).child(0).text(0)
+        run_id = self.support_panel.tree.topLevelItem(index).child(0).model.run_id
         for i in range(self.run_list.count()):
             item = self.run_list.item(i)
-            if item.text() == run_title:
+            if item.identifier == run_id:
                 item.setCheckState(qt_constants.Checked)
             else:
                 item.setCheckState(qt_constants.Unchecked)
@@ -1344,7 +1344,7 @@ class FitTabPresenter(PanelPresenter):
         self._view.input_user_equation.clear()
 
     def _update_display(self):
-        titles = self._view.get_checked_run_titles()
+        run_ids = self._view.get_checked_run_ids()
 
         runs = self._runs
 
@@ -1365,12 +1365,12 @@ class FitTabPresenter(PanelPresenter):
         colors[0] = '#000000'
 
         for i, run in enumerate(runs):
-            if run.meta[files.TITLE_KEY] not in titles:
+            if run.id not in run_ids:
                 continue
 
             asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(bin_size).cut(min_time=min_time, max_time=max_time)
             raw_asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time, max_time=max_time)
-            self._asymmetries[run.meta[files.TITLE_KEY]] = raw_asymmetry
+            self._asymmetries[run.id] = raw_asymmetry
             time = asymmetry.time
             uncertainty = asymmetry.uncertainty
 
@@ -1383,7 +1383,7 @@ class FitTabPresenter(PanelPresenter):
             max_asymmetry = local_max if local_max > max_asymmetry else max_asymmetry
             local_min = np.min(asymmetry[start_index:end_index])
             min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
-            self.__logger.debug("About to plot : time<{}>, asymmetry<{}>, uncertainty<{}>, title<{}>".format(len(time), len(asymmetry), len(uncertainty), run.meta[files.TITLE_KEY]))
+            self.__logger.debug("About to plot : time<{}>, asymmetry<{}>, uncertainty<{}>, title<{}>".format(len(time), len(asymmetry), len(uncertainty), run.id))
 
             self._view.fit_display.plot_asymmetry(time, asymmetry, uncertainty, None,
                                                   color=colors[run.id],
@@ -1401,11 +1401,9 @@ class FitTabPresenter(PanelPresenter):
                                                   fit_linestyle='none',
                                                   label=run.meta[files.TITLE_KEY])
 
-        checked_titles = self._view.get_checked_run_titles()
         checked_run_ids = [0]
-        for run in runs:
-            if run.meta[files.TITLE_KEY] in checked_titles:
-                checked_run_ids.append(run.id)
+        checked_run_ids.extend(self._view.get_checked_run_ids())
+
         for i, (run_id, parameters) in enumerate(self.__variable_groups.items()):
             if run_id not in checked_run_ids:
                 continue
@@ -1421,7 +1419,7 @@ class FitTabPresenter(PanelPresenter):
             except TypeError:
                 fit_asymmetry = [fit_asymmetry for _ in time]
 
-            if len(titles) == 0 or len(runs) == 0:
+            if len(run_ids) == 0 or len(runs) == 0:
                 frac_start = float(min_time) / (time[len(time) - 1] - time[0])
                 frac_end = float(max_time) / (time[len(time) - 1] - time[0])
                 start_index = int(np.floor(len(fit_asymmetry) * frac_start))
@@ -1486,8 +1484,8 @@ class FitTabPresenter(PanelPresenter):
             for symbol, value, value_min, value_max, value_output, value_uncertainty, \
                     is_fixed, is_global, fixed_run_dict in parameters:
                 run_parameters[symbol] = fit.FitParameter(symbol=symbol, value=value, lower=value_min, upper=value_max,
-                                                          is_global=is_global, is_fixed=is_fixed, is_fixed_run=fixed_run_dict[run.meta[files.TITLE_KEY]][1],
-                                                          fixed_value=float(fixed_run_dict[run.meta[files.TITLE_KEY]][2]))
+                                                          is_global=is_global, is_fixed=is_fixed, is_fixed_run=fixed_run_dict[run.id][1],
+                                                          fixed_value=float(fixed_run_dict[run.id][2]))
                 run_dependent = run_dependent or run_parameters[symbol].is_fixed_run
             final_parameters[run.id] = run_parameters
 
@@ -1529,8 +1527,8 @@ class FitTabPresenter(PanelPresenter):
             return
 
         # Check user input on runs and update config
-        titles = self._view.get_checked_run_titles()
-        if len(titles) == 0:  # User needs to select a run to fit
+        run_ids = self._view.get_checked_run_ids()
+        if len(run_ids) == 0:  # User needs to select a run to fit
             self._view.highlight_input_red(self._view.run_list, True)
             self.__update_if_table_changes = True
             return
@@ -1539,10 +1537,10 @@ class FitTabPresenter(PanelPresenter):
 
         variables = {}
         fit_titles = {}
-        for title in titles:
+        for run_id in run_ids:
             for run in self._runs:
-                if run.meta[files.TITLE_KEY] == title:
-                    fit_titles[run.id] = title
+                if run.id == run_id:
+                    fit_titles[run.id] = run.meta[files.TITLE_KEY]
                     if run.id in self._asymmetries.keys():
                         # We have to store references to all three instead of just the asymmetry because the
                         #   new process won't pick up those references.
@@ -1559,8 +1557,8 @@ class FitTabPresenter(PanelPresenter):
                     for symbol, value, value_min, value_max, value_output, value_uncertainty, is_fixed, \
                             is_global, run_dependent_dict in parameters:
 
-                        is_fixed_run, fixed_value = (run_dependent_dict[run.meta[files.TITLE_KEY]][1],
-                                                     run_dependent_dict[run.meta[files.TITLE_KEY]][2])
+                        is_fixed_run, fixed_value = (run_dependent_dict[run.id][1],
+                                                     run_dependent_dict[run.id][2])
 
                         run_parameters[symbol] = fit.FitParameter(symbol=symbol, value=value, lower=value_min, upper=value_max,
                                                                   is_global=is_global, is_fixed=is_fixed, is_fixed_run=is_fixed_run,
@@ -1616,7 +1614,7 @@ class FitTabPresenter(PanelPresenter):
             try:
                 self._view.input_file_name.setText('{}_fit.txt'.format(run.meta[files.RUN_NUMBER_KEY]))
             except KeyError:
-                self._view.input_file_name.setText('{}_fit.txt'.format(run.meta[files.TITLE_KEY]))
+                self._view.input_file_name.setText('{}_fit.txt'.format(selected_data.title))
 
             self._view.input_folder_name.setText(self._system_service.get_last_used_directory())
             self.__expression = selected_data.expression
