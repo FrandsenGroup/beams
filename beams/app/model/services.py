@@ -38,6 +38,10 @@ class FitService:
         FitService.signals.changed.emit()
 
     @staticmethod
+    def remove_fits_from_datasets(id_mappings):
+        raise NotImplementedError()
+
+    @staticmethod
     def changed():
         FitService.__logger.debug("Emitted: changed")
         FitService.signals.changed.emit()

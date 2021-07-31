@@ -317,6 +317,7 @@ class FitDataset:
         current_time = ti.strftime("%d-%m-%YT%H:%M:%S", t)
 
         self.id = str(current_time)
+        self.title = self.id
         self.fits = {}
         self.flags = 0
         self.expression = None

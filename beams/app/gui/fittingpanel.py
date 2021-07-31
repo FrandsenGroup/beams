@@ -12,7 +12,6 @@ from app.model import domain, fit, files, services
 from app.gui.gui import PanelPresenter, Panel
 
 
-# noinspection PyArgumentList
 class FittingPanel(Panel):
     # __NAME_COLUMN = 0
     __VALUE_COLUMN = 0
@@ -41,7 +40,7 @@ class FittingPanel(Panel):
                     return
 
                 item = self.itemAt(point)
-                menu = item.menu(self.selectedItems())
+                menu = item.menu(self.selectedItems(), self)
                 menu.exec_(self.mapToGlobal(point))
 
             def set_tree(self, tree):
@@ -96,6 +95,10 @@ class FittingPanel(Panel):
                 self.__fit_service.signals.added.connect(self.update)
                 self.__run_service.signals.changed.connect(self.update)
                 self.__fit_service.signals.changed.connect(self.update)
+                self.__view.itemChanged.connect(self._item_renamed)
+
+            def _item_renamed(self, node, index):
+                node.model.title = node.text(index)
 
             def _create_tree_model(self, fit_datasets):
                 fit_dataset_nodes = []
@@ -114,13 +117,15 @@ class FittingPanel(Panel):
                 super().__init__([dataset.id])
                 self.model = dataset
                 self.__selected_items = None
-
+                self.__parent = None
+                self.setFlags(self.flags() | QtCore.Qt.ItemFlag.ItemIsEditable)
                 if isinstance(dataset, fit.FitDataset):
                     for fit_data in dataset.fits.values():
                         self.addChild(FittingPanel.SupportPanel.FitNode(fit_data))
 
-            def menu(self, items):
+            def menu(self, items, parent):
                 self.__selected_items = items
+                self.__parent = parent
                 menu = QtWidgets.QMenu()
                 menu.addAction("Rename", self._action_rename)
                 menu.addAction("Save", self._action_save)
@@ -130,32 +135,37 @@ class FittingPanel(Panel):
                 return menu
 
             def _action_rename(self):
-                pass
+                self.__parent.editItem(self)
 
             def _action_save(self):
                 pass
 
             def _action_remove(self):
-                services.FitService.remove_dataset([self.model.id])
+                services.FitService.remove_dataset([item.model.id for item in self.__selected_items])
 
             def _action_expand(self):
-                self.setExpanded(not self.isExpanded())
+                for item in self.__selected_items:
+                    item.setExpanded(not self.isExpanded())
 
         class FitNode(QtWidgets.QTreeWidgetItem):
             def __init__(self, fit_data):
                 super().__init__([fit_data.title])
                 self.model = fit_data
                 self.__selected_items = None
+                self.__parent = None
 
-            def menu(self, items):
+                self.setFlags(self.flags() | QtCore.Qt.ItemFlag.ItemIsEditable)
+
+            def menu(self, items, parent):
                 self.__selected_items = items
+                self.__parent = parent
                 menu = QtWidgets.QMenu()
                 menu.addAction("Rename", self._action_rename)
                 menu.addAction("Save", self._action_save)
                 return menu
 
             def _action_rename(self):
-                pass
+                self.__parent.editItem(self)
 
             def _action_save(self):
                 pass
