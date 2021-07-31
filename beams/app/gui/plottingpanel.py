@@ -111,7 +111,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self.__values = values
                 self.legend_list.clear()
 
-                for label, color in values.items():
+                for run_id, (label, color) in values.items():
                     qlabel = QtWidgets.QLineEdit()
                     qlabel.setText(label)
 
@@ -121,7 +121,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                     qcolor = QtWidgets.QToolButton()
                     qcolor.setIcon(qicon)
 
-                    file_item = QtWidgets.QListWidgetItem(label, self.legend_list)
+                    file_item = qt_widgets.IdentifiableListWidgetItem(run_id, label, self.legend_list)
                     file_item.setIcon(qicon)
 
                     # TODO Since we have to set the color as a toolbutton anyways, it would be pretty cool if the user could press it and have
@@ -1206,7 +1206,7 @@ class PlottingPanelPresenter(PanelPresenter):
             uncertainty = asymmetry.uncertainty
             fit = None
             style = self.__style_service.get_style_by_run_id(run.id)
-            legend_values[style[self.__style_service.Keys.LABEL]] = self.__style_service.color_options_extra[style[self.__style_service.Keys.DEFAULT_COLOR] if style[self.__style_service.Keys.MARKER_COLOR] == 'Default' else style[self.__style_service.Keys.MARKER_COLOR]]
+            legend_values[run.id] = (style[self.__style_service.Keys.LABEL], self.__style_service.color_options_extra[style[self.__style_service.Keys.DEFAULT_COLOR] if style[self.__style_service.Keys.MARKER_COLOR] == 'Default' else style[self.__style_service.Keys.MARKER_COLOR]])
 
             # We have to do this logic because Matplotlib is not good at setting good default plot limits
             frac_start = float(min_time) / (time[len(time) - 1] - time[0])
