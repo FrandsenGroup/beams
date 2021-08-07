@@ -1,3 +1,5 @@
+import uuid
+
 import numpy as np
 import sympy as sp
 from scipy.optimize import least_squares
@@ -301,6 +303,7 @@ class FitConfig:
 
 class Fit:
     def __init__(self, parameters, expression, title, run_id):
+        self.id = str(uuid.uuid4())
         self.parameters = parameters
         self.string_expression = expression
         self.expression = None
@@ -317,6 +320,7 @@ class FitDataset:
         current_time = ti.strftime("%d-%m-%YT%H:%M:%S", t)
 
         self.id = str(current_time)
+        self.title = self.id
         self.fits = {}
         self.flags = 0
         self.expression = None
