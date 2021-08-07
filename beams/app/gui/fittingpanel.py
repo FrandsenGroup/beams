@@ -174,22 +174,45 @@ class FittingPanel(Panel):
             super().__init__()
             self.tree = FittingPanel.SupportPanel.Tree()
             self.setTitleBarWidget(QtWidgets.QWidget())
-            # self.setFixedWidth(350)
-            # self.setMinimumHeight(500)
-            layout = QtWidgets.QVBoxLayout()
+            main_layout = QtWidgets.QVBoxLayout()
 
             self.new_button = qt_widgets.StyleTwoButton("New Empty Fit")
             self.reset_button = qt_widgets.StyleOneButton("Reset")
             self.save_button = qt_widgets.StyleTwoButton("Save")
+            self.button_save_results = qt_widgets.StyleTwoButton("Save Fit")
+            self.button_lookup_folder = qt_widgets.StyleTwoButton("Folder")
+
+            self.input_file_name = QtWidgets.QLineEdit()
+            self.input_folder_name = QtWidgets.QLineEdit()
+
+            self.group_save_results = QtWidgets.QGroupBox("Save")
+
+            self.button_lookup_folder.setFixedWidth(60)
+
+            layout = QtWidgets.QFormLayout()
+            grid = QtWidgets.QGridLayout()
+            grid.addWidget(QtWidgets.QLabel("File Name: "), 0, 0, 1, 1)
+            grid.addWidget(self.input_file_name, 0, 1, 1, 7)
+            grid.addWidget(QtWidgets.QLabel("Save to: "), 1, 0, 1, 1)
+            grid.addWidget(self.input_folder_name, 1, 1, 1, 6)
+            grid.addWidget(self.button_lookup_folder, 1, 7, 1, 1)
+            grid.addWidget(self.button_save_results, 2, 1, 1, 5)
+            row = QtWidgets.QHBoxLayout()
+            row.addLayout(grid)
+            layout.addRow(row)
+            self.group_save_results.setLayout(layout)
+            row_save = QtWidgets.QHBoxLayout()
+            row_save.addWidget(self.group_save_results)
 
             hbox = QtWidgets.QHBoxLayout()
             hbox.addWidget(self.new_button)
             hbox.addWidget(self.save_button)
-            layout.addLayout(hbox)
+            main_layout.addLayout(hbox)
 
-            layout.addWidget(self.tree)
+            main_layout.addWidget(self.tree)
+            main_layout.addLayout(row_save)
             temp = QtWidgets.QWidget()
-            temp.setLayout(layout)
+            temp.setLayout(main_layout)
             self.setWidget(temp)
 
     class FitCanvas(FigureCanvas):
@@ -529,9 +552,6 @@ class FittingPanel(Panel):
         self.input_spectrum_min = QtWidgets.QLineEdit()
         self.input_spectrum_max = QtWidgets.QLineEdit()
         self.input_packing = QtWidgets.QLineEdit()
-        self.input_file_name = QtWidgets.QLineEdit()
-        self.input_folder_name = QtWidgets.QLineEdit()
-
         self.option_preset_fit_equations = QtWidgets.QComboBox()
         self.option_user_fit_equations = QtWidgets.QComboBox()
         self.option_run_ordering = QtWidgets.QComboBox()
@@ -549,8 +569,6 @@ class FittingPanel(Panel):
         self.button_insert_preset_equation = qt_widgets.StyleTwoButton("Insert")
         self.button_insert_user_equation = qt_widgets.StyleTwoButton("Insert")
         self.button_save_user_equation = qt_widgets.StyleTwoButton("Save")
-        self.button_save_results = qt_widgets.StyleTwoButton("Save Fit")
-        self.button_lookup_folder = qt_widgets.StyleTwoButton("Folder")
         self.button_plot = qt_widgets.StyleTwoButton("Plot")
 
         self.label_global_plus = QtWidgets.QLabel("Global+")
@@ -575,7 +593,6 @@ class FittingPanel(Panel):
         self.group_special_characters = QtWidgets.QGroupBox("")
         self.group_batch_options = QtWidgets.QGroupBox("Options")
         self.group_spectrum_options = QtWidgets.QGroupBox("Spectrum")
-        self.group_save_results = QtWidgets.QGroupBox("Save")
         self.group_table_parameters = QtWidgets.QGroupBox("Parameters")
         self.group_table_runs = QtWidgets.QGroupBox("Runs")
         self.group_function = QtWidgets.QGroupBox("Function")
@@ -644,7 +661,6 @@ class FittingPanel(Panel):
         self.button_check_equation.setFixedWidth(60)
         self.button_insert_user_equation.setFixedWidth(60)
         self.button_insert_preset_equation.setFixedWidth(60)
-        self.button_lookup_folder.setFixedWidth(60)
         self.button_save_user_equation.setFixedWidth(60)
         self.button_plot.setFixedWidth(60)
 
@@ -655,7 +671,6 @@ class FittingPanel(Panel):
         self.group_table_runs.setMaximumWidth(380)
         self.group_batch_options.setMaximumWidth(380)
         self.group_batch_options.setMaximumHeight(110)
-        self.group_save_results.setMaximumHeight(110)
 
         self.insert_pi.setFixedWidth(30)
         self.insert_phi.setFixedWidth(30)
@@ -759,36 +774,16 @@ class FittingPanel(Panel):
         left_side.addWidget(self.group_table_runs)
         left_side.addWidget(self.group_batch_options)
 
-        # Create and add GroupBox for saving files
-        layout = QtWidgets.QFormLayout()
-        grid = QtWidgets.QGridLayout()
-        grid.addWidget(QtWidgets.QLabel("File Name: "), 0, 0, 1, 1)
-        grid.addWidget(self.input_file_name, 0, 1, 1, 7)
-        grid.addWidget(QtWidgets.QLabel("Save to: "), 1, 0, 1, 1)
-        grid.addWidget(self.input_folder_name, 1, 1, 1, 6)
-        grid.addWidget(self.button_lookup_folder, 1, 7, 1, 1)
-        grid.addWidget(self.button_save_results, 2, 6, 1, 2)
-        row = QtWidgets.QHBoxLayout()
-        row.addLayout(grid)
-        layout.addRow(row)
-        self.group_save_results.setLayout(layout)
-        row_save = QtWidgets.QHBoxLayout()
-        row_save.addWidget(self.group_save_results)
-        row_save.addSpacing(20)
-        column = QtWidgets.QVBoxLayout()
-        column.addWidget(self.button_fit)
-        column.addSpacing(4)
-        row_save.addLayout(column)
-        row_save.addSpacing(10)
-
         # Create and add layout for plot display and controls
         right_side = QtWidgets.QVBoxLayout()
         right_side.addWidget(self.fit_display, 2)
         hbox = QtWidgets.QHBoxLayout()
-        hbox.addWidget(self.button_plot)
+        vbox = QtWidgets.QVBoxLayout()
+        vbox.addWidget(self.button_plot)
+        vbox.addWidget(self.button_fit)
+        hbox.addLayout(vbox)
         hbox.addWidget(self.fit_spectrum_settings)
         right_side.addLayout(hbox)
-        right_side.addLayout(row_save)
 
         # And put it all together
         row = QtWidgets.QHBoxLayout()
@@ -1280,7 +1275,7 @@ class FitTabPresenter(PanelPresenter):
         self._view.parameter_table.batch_table.itemChanged.connect(self._plot_fit)
         self._view.parameter_table.output_table.itemChanged.connect(self._plot_fit)
         self._view.button_fit.released.connect(self._fit)
-        self._view.button_save_results.released.connect(self._save_fit_results)
+        self._view.support_panel.button_save_results.released.connect(self._save_fit_results)
         self._view.support_panel.new_button.released.connect(self._new_empty_fit)
 
     def _save_fit_results(self):
@@ -1612,11 +1607,11 @@ class FitTabPresenter(PanelPresenter):
             run = self._run_service.get_runs_by_ids([selected_data.run_id])[0]
 
             try:
-                self._view.input_file_name.setText('{}_fit.txt'.format(run.meta[files.RUN_NUMBER_KEY]))
+                self._view.support_panel.input_file_name.setText('{}_fit.txt'.format(run.meta[files.RUN_NUMBER_KEY]))
             except KeyError:
-                self._view.input_file_name.setText('{}_fit.txt'.format(selected_data.title))
+                self._view.support_panel.input_file_name.setText('{}_fit.txt'.format(selected_data.title))
 
-            self._view.input_folder_name.setText(self._system_service.get_last_used_directory())
+            self._view.support_panel.input_folder_name.setText(self._system_service.get_last_used_directory())
             self.__expression = selected_data.expression
             self.__variable_groups = {selected_data.run_id: selected_data.parameters}
             self._view.input_fit_equation.setText(str(selected_data.expression))
@@ -1641,8 +1636,8 @@ class FitTabPresenter(PanelPresenter):
                                              run_id=run_id)
 
             fits = list(selected_data.fits.values())
-            self._view.input_file_name.setText('{}_fit.txt'.format(selected_data.id))
-            self._view.input_folder_name.setText(self._system_service.get_last_used_directory())
+            self._view.support_panel.input_file_name.setText('{}_fit.txt'.format(selected_data.id))
+            self._view.support_panel.input_folder_name.setText(self._system_service.get_last_used_directory())
             self._view.input_fit_equation.setText(str(fits[0].expression))
             self.__expression = fits[0].expression
             self.__variable_groups = {f.run_id: f.parameters for f in fits}

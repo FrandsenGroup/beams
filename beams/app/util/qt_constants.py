@@ -37,6 +37,7 @@ try:
     RelativeSize = QtCore.Qt.RelativeSize
     NoEditTriggers = QtWidgets.QAbstractItemView.NoEditTriggers
 
+
 except AttributeError:
     Checked = QtCore.Qt.CheckState.Checked
     Unchecked = QtCore.Qt.CheckState.Unchecked
