@@ -9,7 +9,6 @@ import re
 import logging
 import time as ti
 
-from app.resources import resources
 from app.model import domain, services
 
 INDEPENDENT_VARIABLE = "t"
@@ -144,14 +143,14 @@ class FitExpression:
 
 
 class FitConfig:
-    LEAST_SQUARES = 1
-    GLOBAL_PLUS = 2
+    BATCH = 0
+    PLUS = 2
 
     def __init__(self):
         self.expression = ''
         self.parameters = {}
         self.titles = {}
-        self.data = {}
+        self.data = OrderedDict()
         self.flags = 0
 
     def __str__(self):
@@ -162,10 +161,13 @@ class FitConfig:
         for flag in flags:
             self.flags = self.flags | flag
 
-    def is_least_squares(self):
-        return bool(self.flags & FitConfig.LEAST_SQUARES)
+    def is_global(self):
+        return bool(self.flags & FitConfig.PLUS)
 
-    def is_global_plus(self):
+    def is_batch(self):
+        return bool(self.flags & FitConfig.BATCH)
+
+    def is_plus(self):
         is_global = False
         for par_dict in self.parameters.values():
             for par in par_dict.values():
@@ -389,12 +391,66 @@ class FitEngine:
         if config.expression == '':
             raise ValueError("Empty function attribute")
 
-        if config.is_global_plus():
-            if config.is_least_squares():
-                return self._least_squares_fit_global(config)
+        if config.is_global() and config.is_plus():
+            pass
+        elif config.is_global():
+            return self._least_squares_fit_global(config)
+        elif config.is_batch():
+            return self._least_squares_fit_batch(config)
         else:
-            if config.is_least_squares():
-                return self._least_squares_fit_non_global(config)
+            return self._least_squares_fit_non_global(config)
+
+    def _least_squares_fit_batch(self, config: FitConfig):
+        dataset = FitDataset()
+        for run_id, (time, asymmetry, uncertainty) in config.data.items():
+            # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
+            function = ALPHA_CORRECTION.format(config.expression, config.expression)
+            lambda_expression = FitExpression(function, variables=config.get_symbols_for_run(run_id))
+            residual = FitEngine._residual(lambda_expression)
+
+            guesses = config.get_values_for_run(run_id)
+            lowers = config.get_lower_values_for_run(run_id)
+            uppers = config.get_upper_values_for_run(run_id)
+
+            self.__logger.debug("Symbols <{}> : {}".format(run_id, config.get_symbols_for_run(run_id)))
+            self.__logger.debug("Initials <{}> : {}".format(run_id, guesses))
+            self.__logger.debug("Lowers <{}> : {}".format(run_id, lowers))
+            self.__logger.debug("Uppers <{}> : {}".format(run_id, uppers))
+
+            # 6) Perform a least squares fit
+            opt = least_squares(residual, guesses, bounds=[lowers, uppers],
+                                args=(time, asymmetry, uncertainty))
+
+            self.__logger.debug("Output from least_squares batch : ".format(opt))
+
+            try:
+                unc, chi_sq = get_std_unc(opt, asymmetry)
+
+                for i, symbol in enumerate(config.get_symbols_for_run(run_id)):
+                    if config.parameters[run_id][symbol].is_fixed or config.parameters[run_id][symbol].is_fixed_run:
+                        unc[i] = 0.0
+
+            except (np.linalg.LinAlgError, NameError):  # Fit did not converge
+                unc = [-1 for _ in opt.x]
+
+            self.__logger.debug("Uncertainty: ".format(str(unc)))
+
+            # 7) Replace initial values with fitted values for unfixed variables
+            for i, symbol in enumerate(config.get_symbols_for_run(run_id)):
+                for o_run_id in config.data.keys():
+                    config.set_outputs(o_run_id, symbol, opt.x[i], unc[i])
+
+            # 9) Fill in all values for our new fit object
+            new_fit = Fit(config.parameters[run_id].deepcopy(), config.expression, config.titles[run_id], run_id)
+
+            # 10) Add fit to our dataset
+            dataset.fits[run_id] = new_fit
+
+        # 11) Attach fit spec options and function to dataset (mostly for debugging purposes)
+        dataset.expression = config.expression
+        dataset.flags = config.flags
+
+        return dataset
 
     def _least_squares_fit_global(self, config: FitConfig):
         # The methods from config will get the adjusted symbols, values, etc. in the same order every time for a global
