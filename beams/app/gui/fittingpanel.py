@@ -1,5 +1,6 @@
 import logging
 import re
+from collections import OrderedDict
 from concurrent import futures
 
 from PyQt5 import QtWidgets, QtCore
@@ -1576,6 +1577,7 @@ class FitTabPresenter(PanelPresenter):
 
         variables = {}
         fit_titles = {}
+        data = OrderedDict()
         for run_id in run_ids:
             for run in self._runs:
                 if run.id == run_id:
@@ -1584,14 +1586,14 @@ class FitTabPresenter(PanelPresenter):
                     if run.id in self._asymmetries.keys():
                         # We have to store references to all three instead of just the asymmetry because the
                         #   new process won't pick up those references.
-                        config.data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id], self._asymmetries[run.id].uncertainty)
+                        data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id], self._asymmetries[run.id].uncertainty)
                     else:
                         min_time = self._view.fit_spectrum_settings.get_min_time()
                         max_time = self._view.fit_spectrum_settings.get_max_time()
                         bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
                         raw_asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time, max_time=max_time)
                         self._asymmetries[run.id] = raw_asymmetry
-                        config.data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id], self._asymmetries[run.id].uncertainty)
+                        data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id], self._asymmetries[run.id].uncertainty)
 
                     run_parameters = {}
                     for symbol, value, value_min, value_max, value_output, value_uncertainty, is_fixed, \
@@ -1603,9 +1605,9 @@ class FitTabPresenter(PanelPresenter):
                         run_parameters[symbol] = fit.FitParameter(symbol=symbol, value=value, lower=value_min, upper=value_max,
                                                                   is_global=is_global, is_fixed=is_fixed, is_fixed_run=is_fixed_run,
                                                                   fixed_value=fixed_value)
-
                     variables[run.id] = run_parameters
 
+        config.data = data
         config.parameters = variables
         config.titles = fit_titles
         config.set_flags(0)
