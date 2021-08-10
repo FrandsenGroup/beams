@@ -396,21 +396,25 @@ class FitEngine:
             raise ValueError("Empty function attribute")
 
         if config.is_plus():
-            dataset = self._least_squares_fit_batch(config)
-            mean_values = {symbol: np.mean([f.parameters[symbol].output for f in dataset.fits.values()]) for symbol in list(dataset.fits.values())[0].parameters.keys()}
-            for _, parameters in config.parameters.items():
-                for symbol, par in parameters.items():
-                    if par.is_global:
-                        par.value = mean_values[par.symbol]
-            return self._least_squares_fit_global(config)
+            return self._fit_global_plus(config)
         elif config.is_global():
-            return self._least_squares_fit_global(config)
+            return self._fit_global(config)
         elif config.is_batch():
-            return self._least_squares_fit_batch(config)
+            return self._fit_batch(config)
         else:
-            return self._least_squares_fit_non_global(config)
+            return self._fit_non_global(config)
 
-    def _least_squares_fit_batch(self, config: FitConfig):
+    def _fit_global_plus(self, config: FitConfig):
+        dataset = self._fit_batch(config)
+        mean_values = {symbol: np.mean([f.parameters[symbol].output for f in dataset.fits.values()]) for symbol in
+                       list(dataset.fits.values())[0].parameters.keys()}
+        for _, parameters in config.parameters.items():
+            for symbol, par in parameters.items():
+                if par.is_global:
+                    par.value = mean_values[par.symbol]
+        return self._fit_global(config)
+
+    def _fit_batch(self, config: FitConfig):
         dataset = FitDataset()
         for run_id, (time, asymmetry, uncertainty) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
@@ -460,7 +464,7 @@ class FitEngine:
         dataset.flags = config.flags
         return dataset
 
-    def _least_squares_fit_global(self, config: FitConfig):
+    def _fit_global(self, config: FitConfig):
         # The methods from config will get the adjusted symbols, values, etc. in the same order every time for a global
         #   fit (which is necessary because we can't specify which value belongs to which symbol in the scipy least
         #   squares function.
@@ -529,7 +533,7 @@ class FitEngine:
 
         return dataset
 
-    def _least_squares_fit_non_global(self, config) -> FitDataset:
+    def _fit_non_global(self, config) -> FitDataset:
         dataset = FitDataset()
         for run_id, (time, asymmetry,  uncertainty) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
