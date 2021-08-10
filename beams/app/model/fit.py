@@ -396,7 +396,13 @@ class FitEngine:
             raise ValueError("Empty function attribute")
 
         if config.is_plus():
-            pass
+            dataset = self._least_squares_fit_batch(config)
+            mean_values = {symbol: np.mean([f.parameters[symbol].output for f in dataset.fits.values()]) for symbol in list(dataset.fits.values())[0].parameters.keys()}
+            for _, parameters in config.parameters.items():
+                for symbol, par in parameters.items():
+                    if par.is_global:
+                        par.value = mean_values[par.symbol]
+            return self._least_squares_fit_global(config)
         elif config.is_global():
             return self._least_squares_fit_global(config)
         elif config.is_batch():
