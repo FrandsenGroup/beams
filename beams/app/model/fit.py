@@ -8,6 +8,7 @@ from collections import OrderedDict
 import re
 import logging
 import time as ti
+import copy
 
 from app.model import domain, services
 
@@ -63,6 +64,10 @@ class FitParameter:
         self.fixed_value = fixed_value
         self.is_fixed_run = is_fixed_run
         self.is_global = is_global
+
+    def __copy__(self):
+        print('Copying')
+        return FitParameter(self.symbol, self.value, self.lower, self.upper, self.is_global, self.is_fixed, self.is_fixed_run, self.fixed_value, self.output, self.uncertainty)
 
     def __eq__(self, other):
         return other.symbol == self.symbol \
@@ -143,14 +148,13 @@ class FitExpression:
 
 
 class FitConfig:
-    BATCH = 0
-    PLUS = 2
 
     def __init__(self):
         self.expression = ''
         self.parameters = {}
         self.titles = {}
-        self.data = OrderedDict()
+        self.data = OrderedDict()  # Important so we can specify order of runs to be fitted for batch fit.
+        self.batch = True
         self.flags = 0
 
     def __str__(self):
@@ -162,17 +166,17 @@ class FitConfig:
             self.flags = self.flags | flag
 
     def is_global(self):
-        return bool(self.flags & FitConfig.PLUS)
-
-    def is_batch(self):
-        return bool(self.flags & FitConfig.BATCH)
-
-    def is_plus(self):
         is_global = False
         for par_dict in self.parameters.values():
             for par in par_dict.values():
                 is_global = is_global or par.is_global
         return is_global
+
+    def is_batch(self):
+        return self.batch
+
+    def is_plus(self):
+        return self.is_batch() and self.is_global()
 
     def get_symbols_for_run(self, run_id, is_fixed=None, is_global=None):
         symbols = []
@@ -391,7 +395,7 @@ class FitEngine:
         if config.expression == '':
             raise ValueError("Empty function attribute")
 
-        if config.is_global() and config.is_plus():
+        if config.is_plus():
             pass
         elif config.is_global():
             return self._least_squares_fit_global(config)
@@ -441,15 +445,13 @@ class FitEngine:
                     config.set_outputs(o_run_id, symbol, opt.x[i], unc[i])
 
             # 9) Fill in all values for our new fit object
-            new_fit = Fit(config.parameters[run_id].deepcopy(), config.expression, config.titles[run_id], run_id)
-
+            new_fit = Fit(copy.deepcopy(config.parameters[run_id]), config.expression, config.titles[run_id], run_id)
             # 10) Add fit to our dataset
             dataset.fits[run_id] = new_fit
 
         # 11) Attach fit spec options and function to dataset (mostly for debugging purposes)
         dataset.expression = config.expression
         dataset.flags = config.flags
-
         return dataset
 
     def _least_squares_fit_global(self, config: FitConfig):

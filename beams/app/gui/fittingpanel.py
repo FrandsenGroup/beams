@@ -1581,7 +1581,6 @@ class FitTabPresenter(PanelPresenter):
         for run_id in run_ids:
             for run in self._runs:
                 if run.id == run_id:
-                    print(run.meta)
                     fit_titles[run.id] = run.meta[files.TITLE_KEY]
                     if run.id in self._asymmetries.keys():
                         # We have to store references to all three instead of just the asymmetry because the
@@ -1608,6 +1607,7 @@ class FitTabPresenter(PanelPresenter):
                     variables[run.id] = run_parameters
 
         config.data = data
+        config.batch = self._view.check_batch_fit.isChecked()
         config.parameters = variables
         config.titles = fit_titles
         config.set_flags(0)
