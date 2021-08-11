@@ -1,4 +1,6 @@
 import logging
+import re
+from collections import OrderedDict
 from concurrent import futures
 
 from PyQt5 import QtWidgets, QtCore
@@ -555,6 +557,7 @@ class FittingPanel(Panel):
         self.option_preset_fit_equations = QtWidgets.QComboBox()
         self.option_user_fit_equations = QtWidgets.QComboBox()
         self.option_run_ordering = QtWidgets.QComboBox()
+        self.option_ascending = QtWidgets.QComboBox()
 
         self.fit_spectrum_settings = FittingPanel.PlotControl()
         self.fit_display = FittingPanel.PlotDisplay(self.fit_spectrum_settings)
@@ -574,6 +577,7 @@ class FittingPanel(Panel):
         self.label_global_plus = QtWidgets.QLabel("Global+")
         self.label_ordering = QtWidgets.QLabel("Order by")
         self.label_use_previous = QtWidgets.QLabel("Use Previous Run")
+        self.label_batch = QtWidgets.QLabel("Batch")
 
         self.check_batch_fit = QtWidgets.QCheckBox()
         self.check_global_plus = QtWidgets.QCheckBox()
@@ -632,6 +636,8 @@ class FittingPanel(Panel):
         self.parameter_table.batch_table.itemChanged.connect(self._update_batch_table_states)
         self.run_list.itemChanged.connect(self._update_batch_table_states)
         self.run_list.itemSelectionChanged.connect(self._update_batch_table)
+        self.check_batch_fit.stateChanged.connect(self._update_batch_options)
+        self.check_global_plus.stateChanged.connect(self._update_batch_options)
 
         # TODO We could possibly handle multiple selection, but we would have to put a '*' in fixed value in the batch
         #   table (because you could be selecting some with different initial values that you want to set to the same)
@@ -641,19 +647,19 @@ class FittingPanel(Panel):
         self.option_preset_fit_equations.addItems(list(fit.EQUATION_DICTIONARY.keys()))
         self.option_user_fit_equations.addItems(list(fit.USER_EQUATION_DICTIONARY.keys()))
         self.option_user_fit_equations.addItem("None")
-        self.option_run_ordering.addItems(['Field', 'Temp', 'Run'])
+        self.option_run_ordering.addItems([files.FIELD_KEY, files.TEMPERATURE_KEY, files.RUN_NUMBER_KEY])
+        self.option_ascending.addItems(['Ascending', 'Descending'])
 
         self.input_user_equation_name.setPlaceholderText("Function Name")
         self.input_user_equation.setPlaceholderText("Function (e.g. \"\u03B2 * (t + \u03BB)\")")
         self.input_fit_equation.setPlaceholderText("Fit Equation")
 
-        self.check_use_previous.setEnabled(False)
+        self.option_ascending.setEnabled(False)
         self.check_global_plus.setEnabled(True)
         self.option_run_ordering.setEnabled(False)
         self.label_global_plus.setEnabled(True)
         self.label_ordering.setEnabled(False)
         self.label_use_previous.setEnabled(False)
-        self.check_batch_fit.setEnabled(False)
 
     def _set_widget_dimensions(self):
         self.button_fit.setFixedWidth(60)
@@ -737,24 +743,13 @@ class FittingPanel(Panel):
         layout = QtWidgets.QFormLayout()
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.check_batch_fit)
-        x = QtWidgets.QLabel("Batch Fit")
-        x.setEnabled(False)
-        row.addWidget(x)
+        row.addWidget(self.label_batch)
         row.addStretch()
         row2 = QtWidgets.QHBoxLayout()
         row2.addWidget(self.label_ordering)
         row2.addSpacing(2)
         row2.addWidget(self.option_run_ordering)
-        row2.addStretch()
-        row.addLayout(row2)
-        layout.addRow(row)
-        row = QtWidgets.QHBoxLayout()
-        row.addWidget(self.check_global_plus)
-        row.addWidget(self.label_global_plus)
-        row.addStretch()
-        row2 = QtWidgets.QHBoxLayout()
-        row2.addWidget(self.check_use_previous)
-        row2.addWidget(self.label_use_previous)
+        row2.addWidget(self.option_ascending)
         row2.addStretch()
         row.addLayout(row2)
         layout.addRow(row)
@@ -794,6 +789,11 @@ class FittingPanel(Panel):
         main_layout.addLayout(row)
 
         self.setLayout(main_layout)
+
+    def _update_batch_options(self):
+        self.label_ordering.setEnabled(self.check_batch_fit.isChecked() or self.check_global_plus.isChecked())
+        self.option_run_ordering.setEnabled(self.check_batch_fit.isChecked() or self.check_global_plus.isChecked())
+        self.option_ascending.setEnabled(self.check_batch_fit.isChecked() or self.check_global_plus.isChecked())
 
     def _update_batch_table(self):
         self.__update_states = False
@@ -1152,6 +1152,9 @@ class FittingPanel(Panel):
 
         return parameters
 
+    def get_batch_ordering(self):
+        return self.option_run_ordering.currentText(), self.option_ascending.currentText() == 'Ascending'
+
     def get_expression(self):
         return self.input_fit_equation.text()
 
@@ -1499,6 +1502,44 @@ class FitTabPresenter(PanelPresenter):
         else:
             return None, {}
 
+    def _get_ordered_run_ids(self):
+        numeric_const_pattern = r"[+-]? *(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?"
+
+        def field_key_func(run_id):
+            for run in self._runs:
+                if run.id == run_id:
+                    try:
+                        return float(re.findall(numeric_const_pattern, run.meta[files.FIELD_KEY])[0])
+                    except IndexError:
+                        return 0
+            return 0
+
+        def temp_key_func(run_id):
+            for run in self._runs:
+                if run.id == run_id:
+                    try:
+                        return float(re.findall(numeric_const_pattern, run.meta[files.TEMPERATURE_KEY])[0])
+                    except IndexError:
+                        return 0
+            return 0
+
+        def number_key_func(run_id):
+            for run in self._runs:
+                if run.id == run_id:
+                    return float(re.findall(numeric_const_pattern, run.meta[files.RUN_NUMBER_KEY])[0])
+            return 0
+
+        keys = {
+            files.FIELD_KEY: field_key_func,
+            files.TEMPERATURE_KEY: temp_key_func,
+            files.RUN_NUMBER_KEY: number_key_func
+        }
+
+        meta_key, ascending = self._view.get_batch_ordering()
+        run_ids = self._view.get_checked_run_ids()
+
+        return sorted(run_ids, key=keys[meta_key], reverse=not ascending)
+
     def _fit(self):
         self.__update_if_table_changes = False
         config = fit.FitConfig()
@@ -1522,7 +1563,11 @@ class FitTabPresenter(PanelPresenter):
             return
 
         # Check user input on runs and update config
-        run_ids = self._view.get_checked_run_ids()
+        if self._view.check_batch_fit.isChecked():
+            run_ids = self._get_ordered_run_ids()
+        else:
+            run_ids = self._view.get_checked_run_ids()
+
         if len(run_ids) == 0:  # User needs to select a run to fit
             self._view.highlight_input_red(self._view.run_list, True)
             self.__update_if_table_changes = True
@@ -1532,6 +1577,7 @@ class FitTabPresenter(PanelPresenter):
 
         variables = {}
         fit_titles = {}
+        data = OrderedDict()
         for run_id in run_ids:
             for run in self._runs:
                 if run.id == run_id:
@@ -1539,14 +1585,14 @@ class FitTabPresenter(PanelPresenter):
                     if run.id in self._asymmetries.keys():
                         # We have to store references to all three instead of just the asymmetry because the
                         #   new process won't pick up those references.
-                        config.data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id], self._asymmetries[run.id].uncertainty)
+                        data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id], self._asymmetries[run.id].uncertainty)
                     else:
                         min_time = self._view.fit_spectrum_settings.get_min_time()
                         max_time = self._view.fit_spectrum_settings.get_max_time()
                         bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
                         raw_asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time, max_time=max_time)
                         self._asymmetries[run.id] = raw_asymmetry
-                        config.data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id], self._asymmetries[run.id].uncertainty)
+                        data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id], self._asymmetries[run.id].uncertainty)
 
                     run_parameters = {}
                     for symbol, value, value_min, value_max, value_output, value_uncertainty, is_fixed, \
@@ -1558,12 +1604,13 @@ class FitTabPresenter(PanelPresenter):
                         run_parameters[symbol] = fit.FitParameter(symbol=symbol, value=value, lower=value_min, upper=value_max,
                                                                   is_global=is_global, is_fixed=is_fixed, is_fixed_run=is_fixed_run,
                                                                   fixed_value=fixed_value)
-
                     variables[run.id] = run_parameters
 
+        config.data = data
+        config.batch = self._view.check_batch_fit.isChecked()
         config.parameters = variables
         config.titles = fit_titles
-        config.set_flags(config.LEAST_SQUARES, config.GLOBAL_PLUS if self._view.check_global_plus.isChecked() else 0)
+        config.set_flags(0)
         self.__logger.debug(str(config))
 
         # Fit to spec
