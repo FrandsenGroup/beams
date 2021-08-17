@@ -88,6 +88,17 @@ class HistogramPanel(Panel):
                     iterator += 1
                 return histograms
 
+            def get_all_histograms(self):
+                # noinspection PyTypeChecker
+                iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.IteratorFlag.All)
+
+                histograms = []
+                while iterator.value():
+                    if isinstance(iterator.value().model, domain.Histogram):
+                        histograms.append(iterator.value().model)
+                    iterator += 1
+                return histograms
+
         class TreeManager:
             def __init__(self, view):
                 self.__view = view
@@ -650,12 +661,16 @@ class HistogramPanelPresenter(PanelPresenter):
                          self.__current_histogram.good_bin_end)
 
     def _save_clicked(self):
-        for histogram in self._view.support_panel.tree.get_selected_histograms():
-            histogram.background_start = self.__alterations[histogram.id][histogram.title][files.BACKGROUND_ONE_KEY]
-            histogram.background_end = self.__alterations[histogram.id][histogram.title][files.BACKGROUND_TWO_KEY]
-            histogram.time_zero = self.__alterations[histogram.id][histogram.title][files.T0_KEY]
-            histogram.good_bin_start = self.__alterations[histogram.id][histogram.title][files.GOOD_BIN_ONE_KEY]
-            histogram.good_bin_end = self.__alterations[histogram.id][histogram.title][files.GOOD_BIN_TWO_KEY]
+        print(self.__alterations)
+
+        for histogram in self._view.support_panel.tree.get_all_histograms():
+            if histogram.id in self.__alterations.keys() and histogram.title in self.__alterations[histogram.id].keys():
+                histogram.background_start = self.__alterations[histogram.id][histogram.title][files.BACKGROUND_ONE_KEY]
+                histogram.background_end = self.__alterations[histogram.id][histogram.title][files.BACKGROUND_TWO_KEY]
+                histogram.time_zero = self.__alterations[histogram.id][histogram.title][files.T0_KEY]
+                histogram.good_bin_start = self.__alterations[histogram.id][histogram.title][files.GOOD_BIN_ONE_KEY]
+                histogram.good_bin_end = self.__alterations[histogram.id][histogram.title][files.GOOD_BIN_TWO_KEY]
+                print(histogram.background_start, histogram.background_end, histogram.time_zero, histogram.good_bin_start, histogram.good_bin_end)
 
         self.__run_service.recalculate_asymmetries(self._view.support_panel.tree.get_selected_run_ids())
 
