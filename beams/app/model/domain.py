@@ -1,7 +1,4 @@
-import abc
-import enum, logging
 import os
-import sys, traceback
 
 import numpy as np
 import uuid
@@ -34,7 +31,7 @@ class Histogram(np.ndarray):
     bin_size : float
         Time (ns) per bin.
     title: string
-        Title of the histogram (e.g. Forw, Back etc).
+        Title of the histogram (e.g. 'Forw', 'Back' etc).
 
     Methods
     -------
@@ -70,7 +67,7 @@ class Histogram(np.ndarray):
         bin_size : float
             Time (ns) per bin.
         title: string
-            Title of the histogram (e.g. Forw, Back etc).
+            Title of the histogram (e.g. 'Forw', 'Back' etc).
 
         Returns
         -------
@@ -90,6 +87,29 @@ class Histogram(np.ndarray):
         self.title = title
 
         return self
+
+    def __reduce__(self):
+        pickled_state = super(Histogram, self).__reduce__()
+
+        # Parenthesis are not redundant, don't remove.
+        return (pickled_state[0], pickled_state[1], pickled_state[2] + (self.__dict__))
+
+    def __setstate__(self, state, **kwargs):
+        self.__dict__.update(state[-1])
+        super(Histogram, self).__setstate__(state[0:-1])
+
+    def __array_finalize__(self, obj):
+        if obj is None:
+            return
+
+        self.id = getattr(obj, 'id', None)
+        self.time_zero = getattr(obj, 'time_zero', None)
+        self.good_bin_start = getattr(obj, 'good_bin_start', None)
+        self.good_bin_end = getattr(obj, 'good_bin_end', None)
+        self.background_start = getattr(obj, 'background_start', None)
+        self.background_end = getattr(obj, 'background_end', None)
+        self.bin_size = getattr(obj, 'bin_size', None)
+        self.title = getattr(obj, 'title', None)
 
     def intersect(self, other):
         """ Finds useable intersection of two histograms.
@@ -270,6 +290,26 @@ class Asymmetry(np.ndarray):
 
         return self
 
+    def __reduce__(self):
+        pickled_state = super(Asymmetry, self).__reduce__()
+
+        # Parenthesis are not redundant, don't remove.
+        return (pickled_state[0], pickled_state[1], pickled_state[2] + (self.__dict__))
+
+    def __setstate__(self, state, **kwargs):
+        self.__dict__.update(state[-1])
+        super(Asymmetry, self).__setstate__(state[0:-1])
+
+    def __array_finalize__(self, obj):
+        if obj is None:
+            return
+
+        self.uncertainty = getattr(obj, 'uncertainty', None)
+        self.time = getattr(obj, 'time', None)
+        self.bin_size = getattr(obj, 'bin_size', None)
+        self.time_zero = getattr(obj, 'time_zero', None)
+        self.alpha = getattr(obj, 'alpha', None)
+
     def bin(self, packing):
         """ Returns new asymmetry binned to the provided packing value.
 
@@ -429,6 +469,22 @@ class Uncertainty(np.ndarray):
 
         return self
 
+    def __reduce__(self):
+        pickled_state = super(Uncertainty, self).__reduce__()
+
+        # Parenthesis are not redundant, don't remove.
+        return (pickled_state[0], pickled_state[1], pickled_state[2] + (self.__dict__))
+
+    def __setstate__(self, state, **kwargs):
+        self.__dict__.update(state[-1])
+        super(Uncertainty, self).__setstate__(state[0:-1])
+
+    def __array_finalize__(self, obj):
+        if obj is None:
+            return
+
+        self.bin_size = getattr(obj, 'bin_size', None)
+
     def bin(self, packing):
         bin_full = self.bin_size / 1000
         bin_binned = float(packing) / 1000
@@ -476,6 +532,25 @@ class Time(np.ndarray):
         self.id = run_id
 
         return self
+
+    def __reduce__(self):
+        pickled_state = super(Time, self).__reduce__()
+
+        # Parenthesis are not redundant, don't remove.
+        return (pickled_state[0], pickled_state[1], pickled_state[2] + (self.__dict__))
+
+    def __setstate__(self, state, **kwargs):
+        self.__dict__.update(state[-1])
+        super(Time, self).__setstate__(state[0:-1])
+
+    def __array_finalize__(self, obj):
+        if obj is None:
+            return
+
+        self.length = getattr(obj, 'length', None)
+        self.bin_size = getattr(obj, 'bin_size', None)
+        self.time_zero = getattr(obj, 'time_zero', None)
+        self.id = getattr(obj, 'id', None)
 
     def bin(self, packing):
         bin_full = float(self.bin_size) / 1000
