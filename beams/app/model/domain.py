@@ -252,11 +252,6 @@ class Asymmetry(np.ndarray):
             alpha : float
                 Alpha value to correct the asymmetry after it is calculated.
         """
-        print(input_array)
-        print(time_zero)
-        print(bin_size)
-        print(uncertainty)
-        print(time)
         if (input_array is None or time_zero is None or bin_size is None or uncertainty is None or time is None) \
                 and (histogram_one is None or histogram_two is None):
             raise ValueError("Not enough constructor parameters satisfied")
