@@ -144,3 +144,7 @@ class SystemDAO:
         else:
             return self.__database.system_table
 
+    def set_database(self, database: Database):
+        file_table = self.__database.file_table
+        self.__database._instance = database
+        self.__database.file_table = file_table

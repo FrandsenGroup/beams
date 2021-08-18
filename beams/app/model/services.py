@@ -154,94 +154,6 @@ class RunService:
         RunService.signals.changed.emit()
 
 
-class FileService:
-    class Signals(QtCore.QObject):
-        changed = QtCore.pyqtSignal()
-
-    __dao = dao.FileDAO()
-    __logger = logging.getLogger("FileService")
-    __run_service = RunService()
-    __fit_service = FitService()
-    signals = Signals()
-
-    @staticmethod
-    def get_files(ids=None):
-        if ids is not None:
-            return FileService.__dao.get_files_by_ids(ids)
-        else:
-            return FileService.__dao.get_files()
-
-    @staticmethod
-    def convert_files(ids):
-        new_paths = []
-        datasets = FileService.__dao.get_files_by_ids(ids)
-        for dataset in datasets:
-            if dataset.file.DATA_FORMAT == files.Format.BINARY:
-                temp = os.path.splitext(dataset.file.file_path)[0]
-                outfile = temp + ".dat"
-                outfile_reader = dataset.file.convert(outfile)
-                new_paths.append(outfile_reader.file_path)
-                FileService.__dao.remove_files_by_id(dataset.id)
-
-        FileService.add_files(new_paths)
-
-    @staticmethod
-    def add_files(paths):
-        if len(paths) == 0:
-            return
-
-        for path in paths:
-            if FileService.__dao.get_files_by_path(path) is not None:
-                continue
-
-            f = files.file(path)
-            data_set = domain.DataBuilder.build_minimal(f)
-            file_set = domain.FileDataset(f)
-
-            if data_set is not None:
-                file_set.dataset = data_set
-                file_set.title = data_set.meta[files.TITLE_KEY]
-
-                if isinstance(data_set, domain.RunDataset):
-                    FileService.__run_service.add_dataset([data_set], suppress_signal=True)
-                else:
-                    FileService.__fit_service.add_dataset([data_set], suppress_signal=True)
-
-            FileService.__dao.add_files([file_set])
-
-        FileService.__logger.debug("Emitted: changed")
-        FileService.signals.changed.emit()
-
-    @staticmethod
-    def load_files(ids):
-        is_changed = False
-
-        for file_dataset in FileService.__dao.get_files_by_ids(ids):
-            if not file_dataset.isLoaded:
-                is_changed = True
-                domain.DataBuilder.build_full(file_dataset.file, file_dataset.dataset)
-                file_dataset.isLoaded = True
-
-        if is_changed:
-            FileService.__logger.debug("Emitted: changed")
-            FileService.signals.changed.emit()
-            FileService.__run_service.changed()
-            FileService.__fit_service.changed()
-
-    @staticmethod
-    def remove_files(checked_items):
-        run_files = FileService.__dao.get_files_by_ids(checked_items)
-        run_ids = []
-        for rf in run_files:
-            if rf.isLoaded:
-                run_ids.append(rf.dataset.id)
-            FileService.__dao.remove_files_by_id(rf.id)
-
-        FileService.__run_service.remove_runs_by_ids(run_ids)
-        FileService.__logger.debug("Emitted: changed")
-        FileService.signals.changed.emit()
-
-
 class StyleService:
     class Signals(QtCore.QObject):
         changed = QtCore.pyqtSignal()
@@ -265,6 +177,8 @@ class StyleService:
         ERRORBAR_WIDTH = 16
         FIT_COLOR = 17
         FIT_LINESTYLE = 18
+
+    signals = Signals()
 
     color_options_values = {'Blue': '#0000ff', 'Red': '#ff0000', 'Purple': '#9900ff', 'Green': '#009933',
                             'Orange': '#ff9900', 'Maroon': '#800000', 'Pink': '#ff66ff', 'Dark Blue': '#000099',
@@ -497,6 +411,8 @@ class SystemService:
     __dao = dao.SystemDAO()
     __logger = logging.getLogger("SystemService")
 
+    signals = Signals()
+
     @staticmethod
     def load_configuration_file():
         if not os.path.exists(resources.CONFIGURATION_FILE):
@@ -563,3 +479,121 @@ class SystemService:
         for key, value in user_data.items():
             SystemService.__dao.set_configuration(key, value)
 
+
+class FileService:
+    class Signals(QtCore.QObject):
+        changed = QtCore.pyqtSignal()
+
+    __dao = dao.FileDAO()
+    __system_dao = dao.SystemDAO()
+    __logger = logging.getLogger("FileService")
+    __run_service = RunService()
+    __fit_service = FitService()
+    __style_service = StyleService()
+    __system_service = SystemService()
+
+    signals = Signals()
+
+    @staticmethod
+    def get_files(ids=None):
+        if ids is not None:
+            return FileService.__dao.get_files_by_ids(ids)
+        else:
+            return FileService.__dao.get_files()
+
+    @staticmethod
+    def convert_files(ids):
+        new_paths = []
+        datasets = FileService.__dao.get_files_by_ids(ids)
+        for dataset in datasets:
+            if dataset.file.DATA_FORMAT == files.Format.BINARY:
+                temp = os.path.splitext(dataset.file.file_path)[0]
+                outfile = temp + ".dat"
+                outfile_reader = dataset.file.convert(outfile)
+                new_paths.append(outfile_reader.file_path)
+                FileService.__dao.remove_files_by_id(dataset.id)
+
+        FileService.add_files(new_paths)
+
+    @staticmethod
+    def add_files(paths):
+        if len(paths) == 0:
+            return
+
+        for path in paths:
+            if FileService.__dao.get_files_by_path(path) is not None:
+                continue
+
+            f = files.file(path)
+            data_set = domain.DataBuilder.build_minimal(f)
+            file_set = domain.FileDataset(f)
+
+            if data_set is not None:
+                file_set.dataset = data_set
+                file_set.title = data_set.meta[files.TITLE_KEY]
+
+                if isinstance(data_set, domain.RunDataset):
+                    FileService.__run_service.add_dataset([data_set], suppress_signal=True)
+                else:
+                    FileService.__fit_service.add_dataset([data_set], suppress_signal=True)
+
+            FileService.__dao.add_files([file_set])
+
+        FileService.__logger.debug("Emitted: changed")
+        FileService.signals.changed.emit()
+
+    @staticmethod
+    def load_files(ids):
+        is_changed = False
+
+        for file_dataset in FileService.__dao.get_files_by_ids(ids):
+            if not file_dataset.isLoaded:
+                is_changed = True
+                domain.DataBuilder.build_full(file_dataset.file, file_dataset.dataset)
+                file_dataset.isLoaded = True
+
+        if is_changed:
+            FileService.__logger.debug("Emitted: changed")
+            FileService.signals.changed.emit()
+            FileService.__run_service.changed()
+            FileService.__fit_service.changed()
+
+    @staticmethod
+    def remove_files(checked_items):
+        run_files = FileService.__dao.get_files_by_ids(checked_items)
+        run_ids = []
+        for rf in run_files:
+            if rf.isLoaded:
+                run_ids.append(rf.dataset.id)
+            FileService.__dao.remove_files_by_id(rf.id)
+
+        FileService.__run_service.remove_runs_by_ids(run_ids)
+        FileService.__logger.debug("Emitted: changed")
+        FileService.signals.changed.emit()
+
+    @staticmethod
+    def load_session(file_id):
+        file_dataset = FileService.__dao.get_files_by_ids([file_id])
+
+        if len(file_dataset) == 0:
+            return False
+
+        file_dataset = file_dataset[0]
+
+        if file_dataset.file.DATA_FORMAT != files.Format.PICKLED:
+            return False
+
+        database = file_dataset.file.read_data()
+
+        if not isinstance(database, dao.Database):
+            return False
+
+        FileService.__system_dao.set_database(database)
+
+        FileService.__fit_service.signals.added.emit()
+        FileService.__run_service.signals.added.emit()
+        FileService.__run_service.signals.loaded.emit()
+        FileService.__system_service.signals.changed.emit()
+        FileService.__style_service.signals.changed.emit()
+
+        return True
