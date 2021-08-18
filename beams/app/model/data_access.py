@@ -145,6 +145,8 @@ class SystemDAO:
             return self.__database.system_table
 
     def set_database(self, database: Database):
-        file_table = self.__database.file_table
+        # TODO we are going to want to update the file table, not all file datasets will be loaded now...
+        #   maybe we do want to just replace the whole session actually.
+        # file_table = self.__database.file_table
         self.__database._instance = database
-        self.__database.file_table = file_table
+        # self.__database.file_table = file_table

@@ -590,6 +590,7 @@ class FileService:
 
         FileService.__system_dao.set_database(database)
 
+        FileService.signals.changed.emit()
         FileService.__fit_service.signals.added.emit()
         FileService.__run_service.signals.added.emit()
         FileService.__run_service.signals.loaded.emit()
