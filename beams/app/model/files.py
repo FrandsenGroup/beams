@@ -33,6 +33,7 @@ class Format(enum.Enum):
     HISTOGRAM = 0
     ASYMMETRY = 1
     BINARY = 2
+    PICKLED = 3
 
 
 # File Data
@@ -56,7 +57,9 @@ RUN_NUMBER_KEY = 'RunNumber'
 T0_KEY = 'T0'
 CALC_HISTS_KEY = 'CalcHists'
 
-#TODO Maybe we should have these files inherit from the actual File object
+
+# TODO Maybe we should have these files inherit from the actual File object
+#   this way we can use 'with'. Not super necessary, kinda fun though.
 class File(abc.ABC):
     """
     Abstract base class for file objects, establishes some static constants and a constructor.
@@ -131,6 +134,17 @@ class UnknownFile(File):
 
     def __str__(self):
         return '[UnknownFile: file_path={}]'.format(self.file_path)
+
+
+class BeamsSessionFile(ReadableFile):
+    HEADER_ROWS = 0
+    DATA_FORMAT = Format.PICKLED
+
+    def read_data(self):
+        pass
+
+    def read_meta(self):
+        pass
 
 
 class TRIUMFMuonFile(ConvertibleFile):
@@ -296,7 +310,7 @@ def file(file_path):
     :return File: a ReadableFile or ConvertibleFile object.
     """
     if not is_found(file_path):
-        raise FileNotFoundError
+        raise FileNotFoundError(file_path)
 
     if check_ext(file_path, '.dat') and is_beams(file_path):
         return MuonHistogramFile(file_path)
@@ -309,6 +323,9 @@ def file(file_path):
 
     elif check_ext(file_path, '.bin') or check_ext(file_path, '.mdu'):
         return PSIMuonFile(file_path)
+
+    elif check_ext(file_path, '.beams'):
+        return BeamsSessionFile(file_path)
 
     else:
         return UnknownFile(file_path)
