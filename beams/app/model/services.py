@@ -2,6 +2,7 @@ import enum
 import json
 import os
 import logging
+import pickle
 
 from PyQt5 import QtCore
 
@@ -571,22 +572,29 @@ class FileService:
         FileService.__logger.debug("Emitted: changed")
         FileService.signals.changed.emit()
 
+    def save_session(self, save_path):
+        if not os.path.splitext(save_path)[-1] == '.beams':
+            raise RuntimeError("Session file needs to have a .beams extension.")
+
+        with open(save_path, 'w+') as session_file_object:
+            pickle.dump(self.__system_dao.get_database(), session_file_object)
+
     @staticmethod
     def load_session(file_id):
         file_dataset = FileService.__dao.get_files_by_ids([file_id])
 
         if len(file_dataset) == 0:
-            return False
+            raise RuntimeError("No file dataset exists for id.")
 
         file_dataset = file_dataset[0]
 
         if file_dataset.file.DATA_FORMAT != files.Format.PICKLED:
-            return False
+            raise RuntimeError("File was not of correct format for session file (should be a pickle file).")
 
         database = file_dataset.file.read_data()
 
         if not isinstance(database, dao.Database):
-            return False
+            raise RuntimeError("Unpickling file did not result in a Database object.")
 
         FileService.__system_dao.set_database(database)
 
@@ -596,5 +604,3 @@ class FileService:
         FileService.__run_service.signals.loaded.emit()
         FileService.__system_service.signals.changed.emit()
         FileService.__style_service.signals.changed.emit()
-
-        return True

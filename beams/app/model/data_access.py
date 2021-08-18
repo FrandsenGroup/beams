@@ -150,3 +150,6 @@ class SystemDAO:
         # file_table = self.__database.file_table
         self.__database._instance = database
         # self.__database.file_table = file_table
+
+    def get_database(self):
+        return self.__database
