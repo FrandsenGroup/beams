@@ -2,6 +2,7 @@
 # Standard Library Packages
 import abc
 import os
+import pickle
 import sys
 import subprocess
 import traceback
@@ -141,7 +142,8 @@ class BeamsSessionFile(ReadableFile):
     DATA_FORMAT = Format.PICKLED
 
     def read_data(self):
-        pass
+        with open(self.file_path, 'r') as session_file_object:
+            return pickle.load(session_file_object)
 
     def read_meta(self):
         pass
