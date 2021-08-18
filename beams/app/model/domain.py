@@ -91,8 +91,10 @@ class Histogram(np.ndarray):
     def __reduce__(self):
         pickled_state = super(Histogram, self).__reduce__()
 
+        new_state = pickled_state[2] + (self.__dict__,)
+
         # Parenthesis are not redundant, don't remove.
-        return (pickled_state[0], pickled_state[1], pickled_state[2] + (self.__dict__))
+        return (pickled_state[0], pickled_state[1], new_state)
 
     def __setstate__(self, state, **kwargs):
         self.__dict__.update(state[-1])
@@ -250,6 +252,11 @@ class Asymmetry(np.ndarray):
             alpha : float
                 Alpha value to correct the asymmetry after it is calculated.
         """
+        print(input_array)
+        print(time_zero)
+        print(bin_size)
+        print(uncertainty)
+        print(time)
         if (input_array is None or time_zero is None or bin_size is None or uncertainty is None or time is None) \
                 and (histogram_one is None or histogram_two is None):
             raise ValueError("Not enough constructor parameters satisfied")
@@ -293,8 +300,10 @@ class Asymmetry(np.ndarray):
     def __reduce__(self):
         pickled_state = super(Asymmetry, self).__reduce__()
 
+        new_state = pickled_state[2] + (self.__dict__,)
+
         # Parenthesis are not redundant, don't remove.
-        return (pickled_state[0], pickled_state[1], pickled_state[2] + (self.__dict__))
+        return (pickled_state[0], pickled_state[1], new_state)
 
     def __setstate__(self, state, **kwargs):
         self.__dict__.update(state[-1])
@@ -472,8 +481,10 @@ class Uncertainty(np.ndarray):
     def __reduce__(self):
         pickled_state = super(Uncertainty, self).__reduce__()
 
+        new_state = pickled_state[2] + (self.__dict__,)
+
         # Parenthesis are not redundant, don't remove.
-        return (pickled_state[0], pickled_state[1], pickled_state[2] + (self.__dict__))
+        return (pickled_state[0], pickled_state[1], new_state)
 
     def __setstate__(self, state, **kwargs):
         self.__dict__.update(state[-1])
@@ -536,8 +547,10 @@ class Time(np.ndarray):
     def __reduce__(self):
         pickled_state = super(Time, self).__reduce__()
 
+        new_state = pickled_state[2] + (self.__dict__,)
+
         # Parenthesis are not redundant, don't remove.
-        return (pickled_state[0], pickled_state[1], pickled_state[2] + (self.__dict__))
+        return (pickled_state[0], pickled_state[1], new_state)
 
     def __setstate__(self, state, **kwargs):
         self.__dict__.update(state[-1])
@@ -667,7 +680,7 @@ class RunDataset:
 
 
 class FileDataset:
-    def __init__(self, file: File):
+    def __init__(self, file):
         self.id = str(uuid.uuid4())
 
         self.file = file
