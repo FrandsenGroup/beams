@@ -145,25 +145,14 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         def menu(self, items):
             self.__selected_items = items
             menu = QtWidgets.QMenu()
-            expanded = 'Expand' if not self.isExpanded() else 'Collapse'
-            menu.addAction(expanded, self._action_expand)
-            menu.addSeparator()
             menu.addAction("Load", self._action_load)
-            menu.addAction("Plot", self._action_plot)
-            menu.addAction("Save", self._action_save)
             return menu
 
-        def _action_expand(self):
-            self.setExpanded(not self.isExpanded())
-
         def _action_load(self):
-            pass
-
-        def _action_save(self):
-            pass
-
-        def _action_plot(self):
-            pass
+            if isinstance(self.model.file, files.BeamsSessionFile):
+                code = PermissionsMessageDialog.launch(["Loading a saved session will remove all current session data, do you wish to continue?"])
+                if code == PermissionsMessageDialog.Codes.OKAY:
+                    services.FileService.load_session(self.model.id)
 
     class HistogramNode(QtWidgets.QTreeWidgetItem):
         def __init__(self, histogram):
@@ -307,6 +296,23 @@ class MainConsolePanel(QtWidgets.QDockWidget):
             pass
 
         def _edit(self):
+            pass
+
+    class SessionNode(QtWidgets.QTreeWidgetItem):
+        def __init__(self, session_file_dataset):
+            title = os.path.split(session_file_dataset.file.file_path)[1]
+            super(MainConsolePanel.SessionNode, self).__init__([title])
+            self.model = session_file_dataset
+
+        def menu(self, items):
+            menu = QtWidgets.QMenu()
+            menu.addAction("Load")
+            return menu
+
+        def _set_callbacks(self):
+            pass
+
+        def _load(self):
             pass
 
     def __init__(self):
