@@ -7,13 +7,9 @@ import sys
 import subprocess
 import traceback
 import enum
-import json
 
 # Installed Packages
 import pandas as pd
-
-# Custom Packages
-from app.resources import resources
 
 
 # File Sources
@@ -142,11 +138,11 @@ class BeamsSessionFile(ReadableFile):
     DATA_FORMAT = Format.PICKLED
 
     def read_data(self):
-        with open(self.file_path, 'r') as session_file_object:
+        with open(self.file_path, 'rb') as session_file_object:
             return pickle.load(session_file_object)
 
     def read_meta(self):
-        pass
+        return self.file_path
 
 
 class TRIUMFMuonFile(ConvertibleFile):
@@ -172,19 +168,16 @@ class TRIUMFMuonFile(ConvertibleFile):
                 else:
                     shell = False
             else:
-                return None  # Unrecognized system
+                raise EnvironmentError("Not on a recognized system.")
 
             try:
-                # print(" ".join(args))
                 subprocess.check_call(args, shell=shell)
-            except subprocess.CalledProcessError:
-                track = traceback.format_exc()
-                print(track)
-                return None  # Error processing file
+            except subprocess.CalledProcessError as e:
+                raise e
             else:
                 return MuonHistogramFile(out_file)
 
-        return None  # Unrecognized file format
+        raise ValueError("Binary file is in an unknown format. May need to update executables.")
 
 
 class PSIMuonFile(ConvertibleFile):
