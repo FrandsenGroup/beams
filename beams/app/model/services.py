@@ -572,12 +572,16 @@ class FileService:
         FileService.__logger.debug("Emitted: changed")
         FileService.signals.changed.emit()
 
-    def save_session(self, save_path):
+    @staticmethod
+    def save_session(save_path):
         if not os.path.splitext(save_path)[-1] == '.beams':
             raise RuntimeError("Session file needs to have a .beams extension.")
 
-        with open(save_path, 'w+') as session_file_object:
-            pickle.dump(self.__system_dao.get_database(), session_file_object)
+        with open(save_path, 'wb') as session_file_object:
+            # pickled = pickle.dumps(FileService.__system_dao.get_database())
+            pickle.dump(FileService.__system_dao.get_database(), session_file_object)
+
+        FileService.add_files([save_path])
 
     @staticmethod
     def load_session(file_id):
