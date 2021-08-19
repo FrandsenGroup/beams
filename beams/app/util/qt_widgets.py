@@ -213,6 +213,9 @@ class TitleBar(QtWidgets.QWidget):
         self.maximize.setMinimumHeight(25)
         self.close.setMinimumHeight(25)
 
+        self.save_session_button = StyleTwoButton("Save Session")
+        self.save_session_button.setFixedWidth(100)
+
         row = QtWidgets.QHBoxLayout(self)
         row.setContentsMargins(0, 0, 0, 0)
         row.addSpacing(15)
@@ -221,6 +224,8 @@ class TitleBar(QtWidgets.QWidget):
         col.addSpacing(5)
         col.addWidget(Logo())
         row.addLayout(col)
+        row.addWidget(self.save_session_button)
+        row.addSpacing(60)
         row.addWidget(self.minimize)
         row.addWidget(self.maximize)
         row.addWidget(self.close)
@@ -282,13 +287,13 @@ class Frame(QtWidgets.QFrame):
         self.setWindowFlags(qt_constants.FramelessWindowHint)
         self.setMouseTracking(True)
 
-        self._m_title_bar = TitleBar(self)
-        self._m_title_bar.setParent(self)
+        self.title_bar = TitleBar(self)
+        self.title_bar.setParent(self)
 
         self._m_content = QtWidgets.QWidget()
 
         col = QtWidgets.QVBoxLayout(self)
-        col.addWidget(self._m_title_bar)
+        col.addWidget(self.title_bar)
         col.addWidget(Separator())
         col.setSpacing(0)
         col.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))
@@ -315,7 +320,7 @@ class Frame(QtWidgets.QFrame):
         return self._m_content
 
     def title_bar(self):
-        return self._m_title_bar
+        return self.title_bar
 
     def mousePressEvent(self, me: QtGui.QMouseEvent):
         self._m_old_pos = me.pos()
