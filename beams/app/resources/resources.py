@@ -44,7 +44,7 @@ TRIUMF_LINUX_CONVERSION = str(Path('/beams/app/resources/mud/TRIUMF_LINUX'))
 TRIUMF_MAC_CONVERSION = str(Path('/beams/app/resources/mud/TRIUMF_MAC'))
 TRIUMF_WINDOWS_CONVERSION = str(Path('/beams/app/resources/mud/TRIUMF_WINDOWS.exe'))
 
-CONFIGURATION_FILE = str(Path('beams/app/resources/config.txt'))
+CONFIGURATION_FILE = str(Path('beams/app/resources/app.config'))
 
 if not os.path.exists(CONFIGURATION_FILE):
     with open(CONFIGURATION_FILE, 'w+') as f:
