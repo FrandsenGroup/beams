@@ -9,7 +9,7 @@ import requests
 from PyQt5 import QtWidgets
 
 from app.util import qt_widgets, qt_constants
-from app.model import files,services
+from app.model import files, services
 
 
 # noinspection PyArgumentList

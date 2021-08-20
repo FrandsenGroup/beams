@@ -24,7 +24,9 @@ class BEAMS(QtWidgets.QApplication):
 
     def __init__(self):
         super(BEAMS, self).__init__(sys.argv)
-        services.SystemService.load_configuration_file()
+        self.__system_service = services.SystemService()
+        self.__file_service = services.FileService()
+        self.__system_service.load_configuration_file()
         logging.basicConfig(filename=resources.QT_LOG_FILE, level=logging.DEBUG)
         logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
@@ -68,16 +70,16 @@ class BEAMS(QtWidgets.QApplication):
 
     def save_session(self):
         save_file = QtWidgets.QFileDialog.getSaveFileName(self.main_program_window, 'Save Session',
-                                                          services.SystemService.get_last_used_directory(),
+                                                          self.__system_service.get_last_used_directory(),
                                                           "Beams Session (*.beams)")
 
         save_file = [path for path in save_file if path != '']
         if len(save_file) > 0:
             path = os.path.split(save_file[0])
-            services.FileService.save_session(save_file[0])
-            services.SystemService.set_last_used_directory(path[0])
+            self.__file_service.save_session(save_file[0])
+            self.__system_service.set_last_used_directory(path[0])
 
     def exec_(self) -> int:
         i = super(BEAMS, self).exec_()
-        services.SystemService.write_configuration_file()
+        self.__system_service.write_configuration_file()
         return i

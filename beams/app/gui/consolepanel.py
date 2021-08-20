@@ -1,6 +1,6 @@
 import os, logging
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 
 from app.gui.dialogs.dialog_isis_download import ISISDownloadDialog
 from app.gui.dialogs.dialog_misc import AddFileDialog, PermissionsMessageDialog
@@ -63,8 +63,9 @@ class MainConsolePanel(QtWidgets.QDockWidget):
             for i in range(self.topLevelItemCount()):
                 self.topLevelItem(i).setCheckState(0, checked)
 
-    class TreeManager:
+    class TreeManager(PanelPresenter):
         def __init__(self, view):
+            super().__init__(view)
             self.__view = view
             self.__logger = logging.getLogger("MainConsolePanelTreeManager")
             self.__run_service = services.RunService()
@@ -81,6 +82,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
                 file_nodes.append(MainConsolePanel.FileNode(dataset))
             return file_nodes
 
+        @QtCore.pyqtSlot()
         def update(self):
             self.__logger.debug("Accepted Signal")
             ids = self.__view.get_file_ids()
@@ -115,6 +117,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
             super(MainConsolePanel.FileNode, self).__init__([file_data.title])
             self.model = file_data
             self.__selected_items = None
+            self.__file_service = services.FileService()
             self.setFlags(self.flags()
                           | qt_constants.ItemIsUserCheckable)
             self.setCheckState(0, qt_constants.Unchecked)
@@ -152,7 +155,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
             if isinstance(self.model.file, files.BeamsSessionFile):
                 code = PermissionsMessageDialog.launch(["Loading a saved session will remove all current session data, do you wish to continue?"])
                 if code == PermissionsMessageDialog.Codes.OKAY:
-                    services.FileService.load_session(self.model.id)
+                    self.__file_service.load_session(self.model.id)
 
     class HistogramNode(QtWidgets.QTreeWidgetItem):
         def __init__(self, histogram):
@@ -390,6 +393,7 @@ class MainConsolePanelPresenter(PanelPresenter):
         super().__init__(view)
         
         self.__file_service = services.FileService()
+        print(self.__file_service.signals)
         self.__system_service = services.SystemService()
         self.__logger = logging.getLogger("MainConsolePanelPresenter")
         
@@ -403,6 +407,7 @@ class MainConsolePanelPresenter(PanelPresenter):
         self._view.remove_button.released.connect(lambda: self._remove_file_clicked())
         self._view.select_all.stateChanged.connect(lambda: self._select_all_checked())
 
+    @QtCore.pyqtSlot()
     def update(self, signal):
         pass
 
