@@ -101,9 +101,21 @@ class FitExpression:
             variables = parse(self.__expression_string)
             variables.discard(INDEPENDENT_VARIABLE)
 
+        self.__variables = variables
         self.__expression = lambdify(self.__expression_string, variables, INDEPENDENT_VARIABLE)
         self.__fixed = {}
         self.safe = True
+
+    def __getstate__(self):
+        return (self.__expression_string, self.__variables, self.__fixed, self.safe)
+
+    def __setstate__(self, state):
+        print(state)
+        self.__expression_string = state[0]
+        self.__variables = state[1]
+        self.__expression = lambdify(self.__expression_string, self.__variables, INDEPENDENT_VARIABLE)
+        self.__fixed = state[2]
+        self.safe = state[3]
 
     def __eq__(self, other):
         return str(other) == self.__expression_string
