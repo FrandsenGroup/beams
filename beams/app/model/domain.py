@@ -1,9 +1,10 @@
 import os
+import time
 
 import numpy as np
 import uuid
 
-from app.model import files, fit
+from app.model import files
 from app.model.files import File
 
 
@@ -632,6 +633,31 @@ class FFT:
         self.fft = fft
 
 
+class Fit:
+    def __init__(self, parameters, expression, title, run_id):
+        self.id = str(uuid.uuid4())
+        self.parameters = parameters
+        self.string_expression = expression
+        self.expression = None
+        self.title = title
+        self.run_id = run_id
+
+    def __call__(self, *args, **kwargs):
+        pass
+
+
+class FitDataset:
+    def __init__(self):
+        t = time.localtime()
+        current_time = time.strftime("%d-%m-%YT%H:%M:%S", t)
+
+        self.id = str(current_time)
+        self.title = self.id
+        self.fits = {}
+        self.flags = 0
+        self.expression = None
+
+
 class RunDataset:
     FULL_ASYMMETRY = 1
     LEFT_BINNED_ASYMMETRY = 2
@@ -710,7 +736,7 @@ class DataBuilder:
             f = files.file(f)
 
         # fixme add conditional for fits
-        if d is None or (not isinstance(d, RunDataset) and not isinstance(d, fit.FitDataset)):
+        if d is None or (not isinstance(d, RunDataset) and not isinstance(d, FitDataset)):
             if f.DATA_FORMAT == files.Format.HISTOGRAM or \
                     f.DATA_FORMAT == files.Format.ASYMMETRY:
                 d = RunDataset()
