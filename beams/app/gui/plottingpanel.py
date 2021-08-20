@@ -1,6 +1,5 @@
 import threading
 import warnings
-from enum import Enum
 import logging
 
 from PyQt5 import QtGui, QtWidgets, QtCore
@@ -147,6 +146,10 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self.setHeaderHidden(True)
                 self.setContextMenuPolicy(qt_constants.CustomContextMenu)
                 self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+                self.setHorizontalScrollBarPolicy(qt_constants.ScrollBarAsNeeded)
+                self.header().setMinimumSectionSize(600)
+                self.header().setDefaultSectionSize(900)
+                self.header().setStretchLastSection(False)
                 self._set_callbacks()
 
             def _set_callbacks(self):
