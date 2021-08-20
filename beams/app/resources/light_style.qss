@@ -63,6 +63,12 @@ StyleThreeButton:hover:pressed {
     background-color: @highest_contrast;
 }
 
+StyleOneMenuBar {
+    background-color: #FFFFFF;
+    color: #FFFFFF;
+    border-style: None;
+}
+
 StyleOneToolButton {
     background-color: #FFFFFF;
     color: #FFFFFF;

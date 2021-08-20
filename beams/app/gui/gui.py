@@ -1,6 +1,6 @@
 
 import abc
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 
 
 class Panel(QtWidgets.QWidget):
@@ -13,8 +13,9 @@ class Panel(QtWidgets.QWidget):
         pass
 
 
-class PanelPresenter(abc.ABC):
+class PanelPresenter(QtCore.QObject):
     def __init__(self, view: Panel):
+        super().__init__()
         self._view = view
 
     def update(self, signal):

@@ -3,6 +3,7 @@ Main entry point for the application.
 """
 
 # Standard Library Packages
+import os
 import sys
 import logging
 
@@ -23,7 +24,9 @@ class BEAMS(QtWidgets.QApplication):
 
     def __init__(self):
         super(BEAMS, self).__init__(sys.argv)
-        services.SystemService.load_configuration_file()
+        self.__system_service = services.SystemService()
+        self.__file_service = services.FileService()
+        self.__system_service.load_configuration_file()
         logging.basicConfig(filename=resources.QT_LOG_FILE, level=logging.DEBUG)
         logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
@@ -66,5 +69,5 @@ class BEAMS(QtWidgets.QApplication):
 
     def exec_(self) -> int:
         i = super(BEAMS, self).exec_()
-        services.SystemService.write_configuration_file()
+        self.__system_service.write_configuration_file()
         return i

@@ -10,8 +10,6 @@ import logging
 import time as ti
 import copy
 
-from app.model import domain, services
-
 INDEPENDENT_VARIABLE = "t"
 
 DELTA = "\u0394"
@@ -66,7 +64,6 @@ class FitParameter:
         self.is_global = is_global
 
     def __copy__(self):
-        print('Copying')
         return FitParameter(self.symbol, self.value, self.lower, self.upper, self.is_global, self.is_fixed, self.is_fixed_run, self.fixed_value, self.output, self.uncertainty)
 
     def __eq__(self, other):
@@ -101,9 +98,20 @@ class FitExpression:
             variables = parse(self.__expression_string)
             variables.discard(INDEPENDENT_VARIABLE)
 
+        self.__variables = variables
         self.__expression = lambdify(self.__expression_string, variables, INDEPENDENT_VARIABLE)
         self.__fixed = {}
         self.safe = True
+
+    def __getstate__(self):
+        return (self.__expression_string, self.__variables, self.__fixed, self.safe)
+
+    def __setstate__(self, state):
+        self.__expression_string = state[0]
+        self.__variables = state[1]
+        self.__expression = lambdify(self.__expression_string, self.__variables, INDEPENDENT_VARIABLE)
+        self.__fixed = state[2]
+        self.safe = state[3]
 
     def __eq__(self, other):
         return str(other) == self.__expression_string
@@ -331,59 +339,9 @@ class FitDataset:
         self.flags = 0
         self.expression = None
 
-    def write(self, out_file, save_format=None):
-        if save_format is None or save_format == FitOptions.SAVE_1:
-            fit_parameters_string = "# Fit Parameters\n\n# \tName\tValue\tLower\tUpper\n\n"
-            if self.options[FitOptions.GLOBAL]:
-                fit_parameters_string += "# Common parameters for all runs\n\n"
-
-                f = list(self.fits.values())[0]
-                for name, v in f.variables.items():
-                    if v.is_global:
-                        fit_parameters_string += "\t" + str(v) + "\n"
-
-                fit_parameters_string += "\n"
-
-            for f in self.fits.values():
-                run = domain.RunService.get_runs_by_ids([f.run_id])[0]
-                fit_parameters_string += "# Specific parameters for run {}\n\n".format(run.meta["RunNumber"])
-
-                for name, v in f.variables.items():
-                    if not v.is_global:
-                        fit_parameters_string += "\t" + str(v) + "\n"
-
-                fit_parameters_string += "\n"
-
-            with open(out_file, 'w', encoding="utf-8") as f:
-                f.write("#BEAMS\n"
-                        + fit_parameters_string
-                        + "# Expression\n\n\t"
-                        + "A(t) = " + self.function)
-
-        elif save_format == FitOptions.SAVE_2:
-            full_string = ""
-
-            f = list(self.fits.values())[0]
-
-            for name, v in f.variables.items():
-                full_string += "{}\t".format(name)
-
-            full_string += "RUN\n"
-
-            for f in self.fits.values():
-                for name, v in f.variables.items():
-                    full_string += "{:.4f}\t".format(v.value)
-                run = run_service.RunService.get_runs_by_ids([f.run_id])[0]
-                full_string += run.meta["RunNumber"] + "\n"
-
-            with open(out_file, 'w', encoding="utf-8") as f:
-                f.write("#BEAMS\n"
-                        + full_string)
-
 
 class FitEngine:
     def __init__(self):
-        self.__run_service = services.RunService()
         self.__logger = logging.getLogger('FitEngine')
 
     def fit(self, config: FitConfig) -> FitDataset:
@@ -581,7 +539,6 @@ class FitEngine:
         # 11) Attach fit spec options and function to dataset (mostly for debugging purposes)
         dataset.expression = config.expression
         dataset.flags = config.flags
-
         return dataset
 
     def _lambdify_global(self, config: FitConfig, concatenated_time):

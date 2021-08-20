@@ -2,6 +2,7 @@ import enum
 import json
 import os
 import logging
+import pickle
 
 from PyQt5 import QtCore
 
@@ -10,41 +11,53 @@ from app.model import domain, files
 from app.resources import resources
 
 
+class Service:
+    def __init__(self):
+        self.__observers = {}
+
+    def register(self, observer, signal):
+        self.__observers[signal] = [observer] if signal not in self.__observers.keys() else self.__observers[signal].append(observer)
+
+    def notify(self, signal):
+        pass
+
+
 class FitService:
     class Signals(QtCore.QObject):
         added = QtCore.pyqtSignal()
         changed = QtCore.pyqtSignal()
 
-    __dao = dao.FitDAO()
-    __logger = logging.getLogger('FitService')
-    signals = Signals()
+    _instance = None
 
-    @staticmethod
-    def get_fit_datasets():
-        return FitService.__dao.get_fits()
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.__dao = dao.FitDAO()
+            cls._instance.__logger = logging.getLogger("FitService")
+            cls._instance.signals = FitService.Signals()
+        return cls._instance
 
-    @staticmethod
-    def add_dataset(datasets, suppress_signal=False):
-        FitService.__dao.add_fits(datasets)
+    def get_fit_datasets(self):
+        return self.__dao.get_fits()
+
+    def add_dataset(self, datasets, suppress_signal=False):
+        self.__dao.add_fits(datasets)
 
         if not suppress_signal:
-            FitService.__logger.debug("Emitted: added")
-            FitService.signals.added.emit()
+            self.__logger.debug("Emitted: added")
+            self.signals.added.emit()
 
-    @staticmethod
-    def remove_dataset(ids):
-        FitService.__dao.remove_fits_by_ids(ids)
-        FitService.__logger.debug("Emitted: changed")
-        FitService.signals.changed.emit()
+    def remove_dataset(self, ids):
+        self.__dao.remove_fits_by_ids(ids)
+        self.__logger.debug("Emitted: changed")
+        self.signals.changed.emit()
 
-    @staticmethod
-    def remove_fits_from_datasets(id_mappings):
+    def remove_fits_from_datasets(self, id_mappings):
         raise NotImplementedError()
 
-    @staticmethod
-    def changed():
-        FitService.__logger.debug("Emitted: changed")
-        FitService.signals.changed.emit()
+    def changed(self):
+        self.__logger.debug("Emitted: changed")
+        self.signals.changed.emit()
 
 
 class RunService:
@@ -53,22 +66,25 @@ class RunService:
         changed = QtCore.pyqtSignal()
         loaded = QtCore.pyqtSignal()
 
-    signals = Signals()
-    __dao = dao.RunDAO()
-    __logger = logging.getLogger("RunService")
+    _instance = None
 
-    @staticmethod
-    def get_runs():
-        return RunService.__dao.get_runs()
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.__dao = dao.RunDAO()
+            cls._instance.__logger = logging.getLogger("RunService")
+            cls._instance.signals = RunService.Signals()
+        return cls._instance
 
-    @staticmethod
-    def get_runs_by_ids(ids):
-        return RunService.__dao.get_runs_by_ids(ids)
+    def get_runs(self):
+        return self.__dao.get_runs()
 
-    @staticmethod
-    def get_loaded_runs():
+    def get_runs_by_ids(self, ids):
+        return self.__dao.get_runs_by_ids(ids)
+
+    def get_loaded_runs(self):
         loaded_runs = []
-        for run in RunService.__dao.get_runs():
+        for run in self.__dao.get_runs():
             if run.isLoaded:
                 loaded_runs.append(run)
         return loaded_runs
@@ -79,9 +95,8 @@ class RunService:
     def combine_histograms(self, ids, titles):
         pass
 
-    @staticmethod
-    def recalculate_asymmetries(ids):
-        for run in RunService.__dao.get_runs_by_ids(ids):
+    def recalculate_asymmetries(self, ids):
+        for run in self.__dao.get_runs_by_ids(ids):
             if len(run.histograms_used) == 2:
                 run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] = domain.Asymmetry(
                     histogram_one=run.histograms[run.histograms_used[0]],
@@ -94,48 +109,43 @@ class RunService:
                     run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(
                         run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
 
-        RunService.__logger.debug("Emitted: changed")
-        RunService.signals.changed.emit()
+        self.__logger.debug("Emitted: changed")
+        self.signals.changed.emit()
 
-    @staticmethod
-    def add_runs(paths):
+    def add_runs(self, paths):
         builder = domain.DataBuilder()
         for path in paths:
             run = builder.build_minimal(path)
-            RunService.__dao.add_runs([run])
+            self.__dao.add_runs([run])
 
-        RunService.__logger.debug("Emitted: added")
-        RunService.signals.added.emit()
+        self.__logger.debug("Emitted: added")
+        self.signals.added.emit()
 
-    @staticmethod
-    def remove_runs_by_ids(ids):
-        RunService.__dao.remove_runs_by_ids(ids)
+    def remove_runs_by_ids(self, ids):
+        self.__dao.remove_runs_by_ids(ids)
 
-        RunService.__logger.debug("Emitted: loaded")
-        RunService.signals.loaded.emit()
+        self.__logger.debug("Emitted: loaded")
+        self.signals.loaded.emit()
 
-    @staticmethod
-    def add_dataset(datasets, suppress_signal):
-        RunService.__dao.add_runs(datasets)
+    def add_dataset(self, datasets, suppress_signal):
+        self.__dao.add_runs(datasets)
 
         if not suppress_signal:
-            RunService.__logger.debug("Emitted: added")
-            RunService.signals.added.emit()
+            self.__logger.debug("Emitted: added")
+            self.signals.added.emit()
 
-    @staticmethod
-    def update_runs_by_ids(ids, asymmetries):
-        RunService.__dao.update_runs_by_id(ids, asymmetries)
-        RunService.__logger.debug("Emitted: changed")
-        RunService.signals.changed.emit()
+    def update_runs_by_ids(self, ids, asymmetries):
+        self.__dao.update_runs_by_id(ids, asymmetries)
+        self.__logger.debug("Emitted: changed")
+        self.signals.changed.emit()
 
-    @staticmethod
-    def update_alphas(ids, alphas):
+    def update_alphas(self, ids, alphas):
         if len(alphas) == 1:  # When we update alpha from plotting panel we send one alpha for multiple runs
             alpha = alphas[0]
             alphas = [alpha for _ in ids]
 
         for rid, alpha in zip(ids, alphas):
-            run = RunService.__dao.get_runs_by_ids([rid])[0]
+            run = self.__dao.get_runs_by_ids([rid])[0]
 
             run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].correct(alpha)
 
@@ -145,101 +155,12 @@ class RunService:
                 run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(
                     run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
 
-        RunService.__logger.debug("Emitted: changed")
-        RunService.signals.changed.emit()
+        self.__logger.debug("Emitted: changed")
+        self.signals.changed.emit()
 
-    @staticmethod
-    def changed():
-        RunService.__logger.debug("Emitted: changed")
-        RunService.signals.changed.emit()
-
-
-class FileService:
-    class Signals(QtCore.QObject):
-        changed = QtCore.pyqtSignal()
-
-    __dao = dao.FileDAO()
-    __logger = logging.getLogger("FileService")
-    __run_service = RunService()
-    __fit_service = FitService()
-    signals = Signals()
-
-    @staticmethod
-    def get_files(ids=None):
-        if ids is not None:
-            return FileService.__dao.get_files_by_ids(ids)
-        else:
-            return FileService.__dao.get_files()
-
-    @staticmethod
-    def convert_files(ids):
-        new_paths = []
-        datasets = FileService.__dao.get_files_by_ids(ids)
-        for dataset in datasets:
-            if dataset.file.DATA_FORMAT == files.Format.BINARY:
-                temp = os.path.splitext(dataset.file.file_path)[0]
-                outfile = temp + ".dat"
-                outfile_reader = dataset.file.convert(outfile)
-                new_paths.append(outfile_reader.file_path)
-                FileService.__dao.remove_files_by_id(dataset.id)
-
-        FileService.add_files(new_paths)
-
-    @staticmethod
-    def add_files(paths):
-        if len(paths) == 0:
-            return
-
-        for path in paths:
-            if FileService.__dao.get_files_by_path(path) is not None:
-                continue
-
-            f = files.file(path)
-            data_set = domain.DataBuilder.build_minimal(f)
-            file_set = domain.FileDataset(f)
-
-            if data_set is not None:
-                file_set.dataset = data_set
-                file_set.title = data_set.meta[files.TITLE_KEY]
-
-                if isinstance(data_set, domain.RunDataset):
-                    FileService.__run_service.add_dataset([data_set], suppress_signal=True)
-                else:
-                    FileService.__fit_service.add_dataset([data_set], suppress_signal=True)
-
-            FileService.__dao.add_files([file_set])
-
-        FileService.__logger.debug("Emitted: changed")
-        FileService.signals.changed.emit()
-
-    @staticmethod
-    def load_files(ids):
-        is_changed = False
-
-        for file_dataset in FileService.__dao.get_files_by_ids(ids):
-            if not file_dataset.isLoaded:
-                is_changed = True
-                domain.DataBuilder.build_full(file_dataset.file, file_dataset.dataset)
-                file_dataset.isLoaded = True
-
-        if is_changed:
-            FileService.__logger.debug("Emitted: changed")
-            FileService.signals.changed.emit()
-            FileService.__run_service.changed()
-            FileService.__fit_service.changed()
-
-    @staticmethod
-    def remove_files(checked_items):
-        run_files = FileService.__dao.get_files_by_ids(checked_items)
-        run_ids = []
-        for rf in run_files:
-            if rf.isLoaded:
-                run_ids.append(rf.dataset.id)
-            FileService.__dao.remove_files_by_id(rf.id)
-
-        FileService.__run_service.remove_runs_by_ids(run_ids)
-        FileService.__logger.debug("Emitted: changed")
-        FileService.signals.changed.emit()
+    def changed(self):
+        self.__logger.debug("Emitted: changed")
+        self.signals.changed.emit()
 
 
 class StyleService:
@@ -321,39 +242,43 @@ class StyleService:
     _unused_markers = _marker_options.copy()
     _used_markers = dict()
 
-    __dao = dao.StyleDAO()
-    __logger = logging.getLogger("StyleService")
+    _instance = None
 
-    @staticmethod
-    def get_style_by_run_id(run_id):
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.__dao = dao.StyleDAO()
+            cls._instance.__logger = logging.getLogger("StyleService")
+            cls._instance.signals = StyleService.Signals()
+        return cls._instance
+
+    def get_style_by_run_id(self, run_id):
         try:
-            return StyleService.__dao.get_styles([run_id])[0]
+            return self.__dao.get_styles([run_id])[0]
         except KeyError:
-            StyleService.__logger.warning("Style for {} not found. Key Error.".format(run_id))
+            self.__logger.warning("Style for {} not found. Key Error.".format(run_id))
             return None
 
-    @staticmethod
-    def get_visible_styles():
+    def get_visible_styles(self):
         visible_styles = []
-        for key, style in StyleService.__dao.get_styles().items():
-            if style[StyleService.Keys.VISIBLE]:
+        for key, style in self.__dao.get_styles().items():
+            if style[self.Keys.VISIBLE]:
                 visible_styles.append(style)
         return visible_styles
 
-    @staticmethod
-    def add_style_for_run(run, visible=True, error_bars=True):
-        if StyleService.get_style_by_run_id(run.id):
+    def add_style_for_run(self, run, visible=True, error_bars=True):
+        if self.get_style_by_run_id(run.id):
             return
 
-        if len(StyleService._unused_markers.keys()) == 0:
-            StyleService._unused_markers = StyleService._used_markers.copy()
-        marker = list(StyleService._unused_markers.keys())[0]
-        StyleService._update_markers(marker, True)
+        if len(self._unused_markers.keys()) == 0:
+            self._unused_markers = self._used_markers.copy()
+        marker = list(self._unused_markers.keys())[0]
+        self._update_markers(marker, True)
 
-        if len(StyleService._unused_colors.keys()) == 0:
-            StyleService._unused_colors = StyleService._used_colors.copy()
-        color = list(StyleService._unused_colors.keys())[0]
-        StyleService._update_colors(color, True)
+        if len(self._unused_colors.keys()) == 0:
+            self._unused_colors = self._used_colors.copy()
+        color = list(self._unused_colors.keys())[0]
+        self._update_colors(color, True)
 
         style = dict()
         style[StyleService.Keys.ID] = run.id
@@ -375,90 +300,83 @@ class StyleService:
         style[StyleService.Keys.FIT_COLOR] = 'Default'
         style[StyleService.Keys.FIT_LINESTYLE] = '-'
 
-        StyleService.__dao.add_style(run.id, style)
+        self.__dao.add_style(run.id, style)
 
-    @staticmethod
-    def change_color_for_run(run_id, color, stop_signal=None):
-        style = StyleService.get_style_by_run_id(run_id)
+    def change_color_for_run(self, run_id, color, stop_signal=None):
+        style = self.get_style_by_run_id(run_id)
         color = StyleService.color_options_values[color]
         if color in StyleService._unused_colors.keys():
-            StyleService._update_colors(color, used=True)
+            self._update_colors(color, used=True)
         if style[StyleService.Keys.DEFAULT_COLOR] in StyleService._used_colors.keys():
-            StyleService._update_colors(style[StyleService.Keys.DEFAULT_COLOR], used=False)
+            self._update_colors(style[StyleService.Keys.DEFAULT_COLOR], used=False)
         if style[StyleService.Keys.DEFAULT_COLOR] == color:
             return
 
-        StyleService.__dao.update_style(run_id, StyleService.Keys.DEFAULT_COLOR, color)
-        StyleService.__dao.update_style(run_id, StyleService.Keys.LINE_COLOR, 'Default')
-        StyleService.__dao.update_style(run_id, StyleService.Keys.ERRORBAR_COLOR, 'Default')
-        StyleService.__dao.update_style(run_id, StyleService.Keys.MARKER_COLOR, 'Default')
-        StyleService.__dao.update_style(run_id, StyleService.Keys.FIT_COLOR, 'Default')
+        self.__dao.update_style(run_id, StyleService.Keys.DEFAULT_COLOR, color)
+        self.__dao.update_style(run_id, StyleService.Keys.LINE_COLOR, 'Default')
+        self.__dao.update_style(run_id, StyleService.Keys.ERRORBAR_COLOR, 'Default')
+        self.__dao.update_style(run_id, StyleService.Keys.MARKER_COLOR, 'Default')
+        self.__dao.update_style(run_id, StyleService.Keys.FIT_COLOR, 'Default')
 
-    @staticmethod
-    def change_marker_for_run(run_id, marker, stop_signal=None):
-        style = StyleService.get_style_by_run_id(run_id)
+    def change_marker_for_run(self, run_id, marker, stop_signal=None):
+        style = self.get_style_by_run_id(run_id)
         marker = StyleService.marker_options_values[marker]
         if marker in StyleService._unused_markers.keys():
-            StyleService._update_markers(marker=marker, used=True)
+            self._update_markers(marker=marker, used=True)
 
         if style[StyleService.Keys.MARKER] in StyleService._used_markers.keys():
-            StyleService._update_markers(marker=style[StyleService.Keys.MARKER], used=False)
+            self._update_markers(marker=style[StyleService.Keys.MARKER], used=False)
         if style[StyleService.Keys.MARKER] == marker:
             return
 
-        StyleService.__dao.update_style(run_id, StyleService.Keys.MARKER, marker)
+        self.__dao.update_style(run_id, StyleService.Keys.MARKER, marker)
 
-    @staticmethod
-    def change_visibilities(visible, run_id=None, stop_signal=None):
+    def change_visibilities(self, visible, run_id=None, stop_signal=None):
         if run_id is not None:
             for rid in run_id:
-                StyleService.__dao.update_style(rid, StyleService.Keys.VISIBLE, visible)
+                self.__dao.update_style(rid, StyleService.Keys.VISIBLE, visible)
         else:
-            StyleService.__dao.update_style(run_id, StyleService.Keys.VISIBLE, visible)
+            self.__dao.update_style(run_id, StyleService.Keys.VISIBLE, visible)
 
-    @staticmethod
-    def change_style_parameter(run_ids, key, option_key, stop_signal=None):
+    def change_style_parameter(self, run_ids, key, option_key, stop_signal=None):
         for run_id in run_ids:
-            style = StyleService.get_style_by_run_id(run_id)
+            style = self.get_style_by_run_id(run_id)
 
             if style is None:
                 return
 
             if key == StyleService.Keys.LINESTYLE:
-                StyleService.__dao.update_style(run_id, key, StyleService.linestyle_options_values[option_key])
+                self.__dao.update_style(run_id, key, StyleService.linestyle_options_values[option_key])
             elif key == StyleService.Keys.FIT_LINESTYLE:
-                StyleService.__dao.update_style(run_id, key, StyleService.linestyle_options_values[option_key])
+                self.__dao.update_style(run_id, key, StyleService.linestyle_options_values[option_key])
             elif key == StyleService.Keys.ERRORBAR_COLOR or \
                     key == StyleService.Keys.MARKER_COLOR or \
                     key == StyleService.Keys.LINE_COLOR or \
                     key == StyleService.Keys.FIT_COLOR:
-                StyleService.__dao.update_style(run_id, key, StyleService.color_options_extra_values[option_key])
+                self.__dao.update_style(run_id, key, StyleService.color_options_extra_values[option_key])
             elif key == StyleService.Keys.ERRORBAR_WIDTH:
-                StyleService.__dao.update_style(run_id, key, StyleService.errorbar_width_values[option_key])
+                self.__dao.update_style(run_id, key, StyleService.errorbar_width_values[option_key])
             elif key == StyleService.Keys.LINE_WIDTH:
-                StyleService.__dao.update_style(run_id, key, StyleService.line_width_options_values[option_key])
+                self.__dao.update_style(run_id, key, StyleService.line_width_options_values[option_key])
             elif key == StyleService.Keys.MARKER_SIZE:
-                StyleService.__dao.update_style(run_id, key, StyleService.marker_size_options_values[option_key])
+                self.__dao.update_style(run_id, key, StyleService.marker_size_options_values[option_key])
             elif key == StyleService.Keys.ERRORBAR_STYLE:
-                StyleService.__dao.update_style(run_id, key, StyleService.errorbar_styles_values[option_key])
+                self.__dao.update_style(run_id, key, StyleService.errorbar_styles_values[option_key])
             elif key == StyleService.Keys.MARKER:
-                StyleService.change_marker_for_run(run_id, option_key, True)
+                self.change_marker_for_run(run_id, option_key, True)
             elif key == StyleService.Keys.FILLSTYLE:
-                StyleService.__dao.update_style(run_id, key, StyleService.fillstyle_options_values[option_key])
+                self.__dao.update_style(run_id, key, StyleService.fillstyle_options_values[option_key])
             elif key == StyleService.Keys.DEFAULT_COLOR:
-                StyleService.change_color_for_run(run_id, option_key, True)
+                self.change_color_for_run(run_id, option_key, True)
 
-    @staticmethod
-    def change_label(label, run_id, stop_signal=None):
-        style = StyleService.get_style_by_run_id(run_id)
+    def change_label(self, label, run_id, stop_signal=None):
+        style = self.get_style_by_run_id(run_id)
         style[StyleService.Keys.LABEL] = label
 
-    @staticmethod
-    def get_styles():
-        return StyleService.__dao.get_styles()
+    def get_styles(self):
+        return self.__dao.get_styles()
 
-    @staticmethod
-    def _update_markers(marker, used):
+    def _update_markers(self, marker, used):
         if used:
             if marker not in StyleService._used_markers.keys():
                 StyleService._used_markers[marker] = StyleService._marker_options[marker]
@@ -471,8 +389,7 @@ class StyleService:
                 StyleService._used_markers.pop(marker)
         return True
 
-    @staticmethod
-    def _update_colors(color, used):
+    def _update_colors(self, color, used):
         if used:
             if color not in StyleService._used_colors.keys():
                 StyleService._used_colors[color] = StyleService.color_options[color]
@@ -494,72 +411,203 @@ class SystemService:
     class Signals(QtCore.QObject):
         changed = QtCore.pyqtSignal()
 
-    __dao = dao.SystemDAO()
-    __logger = logging.getLogger("SystemService")
+    _instance = None
 
-    @staticmethod
-    def load_configuration_file():
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.__dao = dao.SystemDAO()
+            cls._instance.__logger = logging.getLogger("SystemService")
+            cls._instance.signals = SystemService.Signals()
+        return cls._instance
+
+    def load_configuration_file(self):
         if not os.path.exists(resources.CONFIGURATION_FILE):
-            SystemService._set_default_configuration()
+            self._set_default_configuration()
 
         with open(resources.CONFIGURATION_FILE, 'r') as fp:
             try:
                 user_data = json.load(fp)
-                SystemService._set_configuration(user_data)
+                self._set_configuration(user_data)
             except json.JSONDecodeError:
-                SystemService.__logger.error("Unable to load the configuration file.")
-                SystemService._set_default_configuration()
+                self.__logger.error("Unable to load the configuration file.")
+                self._set_default_configuration()
 
-    @staticmethod
-    def write_configuration_file():
+    def write_configuration_file(self):
         with open(resources.CONFIGURATION_FILE, 'w+') as f:
-            json.dump(SystemService.__dao.get_configuration(), f)
+            json.dump(self.__dao.get_configuration(), f)
 
-    @staticmethod
-    def get_user_defined_functions():
-        functions = SystemService.__dao.get_configuration(SystemService.ConfigKeys.USER_FUNCTIONS)
+    def get_user_defined_functions(self):
+        functions = self.__dao.get_configuration(self.ConfigKeys.USER_FUNCTIONS)
         if functions is not None:
             return functions
         else:
             return {}
 
-    @staticmethod
-    def add_user_defined_function(name, function):
-        functions = SystemService.get_user_defined_functions()
+    def add_user_defined_function(self, name, function):
+        functions = self.get_user_defined_functions()
         functions[name] = function
 
-        SystemService.__dao.set_configuration(SystemService.ConfigKeys.USER_FUNCTIONS, functions)
+        self.__dao.set_configuration(self.ConfigKeys.USER_FUNCTIONS, functions)
 
-    @staticmethod
-    def get_last_used_directory():
-        last_directory = SystemService.__dao.get_configuration(SystemService.ConfigKeys.LAST_DIRECTORY)
+    def get_last_used_directory(self):
+        last_directory = self.__dao.get_configuration(self.ConfigKeys.LAST_DIRECTORY)
 
         if last_directory is not None:
             return last_directory
         else:
             return os.getcwd()
 
-    @staticmethod
-    def set_last_used_directory(directory):
+    def set_last_used_directory(self, directory):
         if os.path.exists(directory):
-            SystemService.__dao.set_configuration(SystemService.ConfigKeys.LAST_DIRECTORY, directory)
+            self.__dao.set_configuration(self.ConfigKeys.LAST_DIRECTORY, directory)
         else:
-            SystemService.__logger.warning("Tried to set last used directory to invalid path: {}".format(directory))
+            self.__logger.warning("Tried to set last used directory to invalid path: {}".format(directory))
 
-    @staticmethod
-    def _set_default_configuration():
+    def _set_default_configuration(self):
         user_data = {
-            SystemService.ConfigKeys.LAST_DIRECTORY: os.getcwd(),
-            SystemService.ConfigKeys.USER_FUNCTIONS: {}
+            self.ConfigKeys.LAST_DIRECTORY: os.getcwd(),
+            self.ConfigKeys.USER_FUNCTIONS: {}
         }
         with open(resources.CONFIGURATION_FILE, 'w+') as f:
             json.dump(user_data, f)
 
         for key, value in user_data.items():
-            SystemService.__dao.set_configuration(key, value)
+            self.__dao.set_configuration(key, value)
 
-    @staticmethod
-    def _set_configuration(user_data):
+    def _set_configuration(self, user_data):
         for key, value in user_data.items():
-            SystemService.__dao.set_configuration(key, value)
+            self.__dao.set_configuration(key, value)
 
+
+class FileService:
+    class Signals(QtCore.QObject):
+        changed = QtCore.pyqtSignal()
+
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance.__dao = dao.FileDAO()
+            cls._instance.__system_dao = dao.SystemDAO()
+            cls._instance.__logger = logging.getLogger("FileService")
+            cls._instance.__run_service = RunService()
+            cls._instance.__fit_service = FitService()
+            cls._instance.__style_service = StyleService()
+            cls._instance.__system_service = SystemService()
+            cls._instance.signals = FileService.Signals()
+        return cls._instance
+
+    def get_files(self, ids=None):
+        if ids is not None:
+            return self.__dao.get_files_by_ids(ids)
+        else:
+            return self.__dao.get_files()
+
+    def get_file_by_path(self, path):
+        return self.__dao.get_files_by_path(path)
+
+    def convert_files(self, ids):
+        new_paths = []
+        datasets = self.__dao.get_files_by_ids(ids)
+        for dataset in datasets:
+            if dataset.file.DATA_FORMAT == files.Format.BINARY:
+                temp = os.path.splitext(dataset.file.file_path)[0]
+                outfile = temp + ".dat"
+                outfile_reader = dataset.file.convert(outfile)
+                new_paths.append(outfile_reader.file_path)
+                self.__dao.remove_files_by_id(dataset.id)
+
+        self.add_files(new_paths)
+
+    def add_files(self, paths):
+        if len(paths) == 0:
+            return
+
+        for path in paths:
+            if self.__dao.get_files_by_path(path) is not None:
+                continue
+
+            f = files.file(path)
+            data_set = domain.DataBuilder.build_minimal(f)
+            file_set = domain.FileDataset(f)
+
+            if data_set is not None:
+                file_set.dataset = data_set
+                file_set.title = data_set.meta[files.TITLE_KEY]
+
+                if isinstance(data_set, domain.RunDataset):
+                    self.__run_service.add_dataset([data_set], suppress_signal=True)
+                else:
+                    self.__fit_service.add_dataset([data_set], suppress_signal=True)
+
+            self.__dao.add_files([file_set])
+
+        self.__logger.debug("Emitted: changed")
+        self.signals.changed.emit()
+
+    def load_files(self, ids):
+        is_changed = False
+
+        for file_dataset in self.__dao.get_files_by_ids(ids):
+            if not file_dataset.isLoaded:
+                is_changed = True
+                domain.DataBuilder.build_full(file_dataset.file, file_dataset.dataset)
+                file_dataset.isLoaded = True
+
+        if is_changed:
+            self.__logger.debug("Emitted: changed")
+            self.signals.changed.emit()
+            self.__run_service.changed()
+            self.__fit_service.changed()
+
+    def remove_files(self, checked_items):
+        run_files = self.__dao.get_files_by_ids(checked_items)
+        run_ids = []
+        for rf in run_files:
+            if rf.isLoaded:
+                run_ids.append(rf.dataset.id)
+            self.__dao.remove_files_by_id(rf.id)
+
+        self.__run_service.remove_runs_by_ids(run_ids)
+        self.__logger.debug("Emitted: changed")
+        self.signals.changed.emit()
+
+    def save_session(self, save_path):
+        if not os.path.splitext(save_path)[-1] == '.beams':
+            raise RuntimeError("Session file needs to have a .beams extension.")
+
+        with open(save_path, 'wb') as session_file_object:
+            # pickled = pickle.dumps(FileService.__system_dao.get_database())
+            pickle.dump(self.__system_dao.get_database(), session_file_object)
+
+        self.add_files([save_path])
+
+    def load_session(self, file_id):
+        file_dataset = self.__dao.get_files_by_ids([file_id])
+
+        if len(file_dataset) == 0:
+            raise RuntimeError("No file dataset exists for id.")
+
+        file_dataset = file_dataset[0]
+
+        if file_dataset.file.DATA_FORMAT != files.Format.PICKLED:
+            raise RuntimeError("File was not of correct format for session file (should be a pickle file).")
+
+        database = file_dataset.file.read_data()
+
+        if not isinstance(database, dao.Database):
+            raise RuntimeError("Unpickling file did not result in a Database object.")
+
+        self.__system_dao.set_database(database)
+
+        self.__logger.debug("Emitted: Database Changed")
+        print(self.signals.receivers(self.signals.changed), 'receivers')
+        self.signals.changed.emit()
+        self.__fit_service.signals.added.emit()
+        self.__run_service.signals.added.emit()
+        self.__run_service.signals.loaded.emit()
+        self.__run_service.signals.changed.emit()
+        self.__system_service.signals.changed.emit()
+        self.__style_service.signals.changed.emit()

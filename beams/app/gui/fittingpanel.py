@@ -90,8 +90,9 @@ class FittingPanel(Panel):
                         return iterator.value().model
                     iterator += 1
 
-        class TreeManager:
+        class TreeManager(PanelPresenter):
             def __init__(self, view):
+                super().__init__(view)
                 self.__view = view
                 self.__logger = logging.getLogger("FittingPanelTreeManager")
                 self.__run_service = services.RunService()
@@ -112,6 +113,7 @@ class FittingPanel(Panel):
                     fit_dataset_nodes.append(FittingPanel.SupportPanel.FitDatasetNode(dataset))
                 return fit_dataset_nodes
 
+            @QtCore.pyqtSlot()
             def update(self):
                 self.__logger.debug("Accepted Signal")
                 fit_datasets = self.__fit_service.get_fit_datasets()
@@ -123,6 +125,7 @@ class FittingPanel(Panel):
                 super().__init__([dataset.id])
                 self.model = dataset
                 self.__selected_items = None
+                self.__fit_service = services.FitService()
                 self.__parent = None
                 self.setFlags(self.flags() | QtCore.Qt.ItemFlag.ItemIsEditable)
                 if isinstance(dataset, fit.FitDataset):
@@ -147,7 +150,7 @@ class FittingPanel(Panel):
                 pass
 
             def _action_remove(self):
-                services.FitService.remove_dataset([item.model.id for item in self.__selected_items])
+                self.__fit_service.remove_dataset([item.model.id for item in self.__selected_items])
 
             def _action_expand(self):
                 for item in self.__selected_items:
@@ -1232,9 +1235,9 @@ class FittingPanel(Panel):
         return dialog.exec()
 
 
-class FitTabPresenter(PanelPresenter):
+class FitTabPresenter:
     def __init__(self, view: FittingPanel):
-        super().__init__(view)
+        self._view = view
         self._run_service = services.RunService()
         self._fit_service = services.FitService()
         self._system_service = services.SystemService()
@@ -1752,6 +1755,7 @@ class FitWorker(QtCore.QRunnable):
             # TODO We should move all processing after fit is finished to this method. They aren't intensive.
             #   Plus then we keep everything in one place and the process only deals in primitive data types..sort of.
             dataset = x.done.pop().result()
+
             for run_id, fit_data in dataset.fits.items():
                 fit_data.expression = fit.FitExpression(fit_data.string_expression)
 

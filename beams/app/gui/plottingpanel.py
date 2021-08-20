@@ -2,7 +2,7 @@ import threading
 import warnings
 import logging
 
-from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtGui, QtWidgets, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
 import numpy as np
@@ -244,8 +244,9 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                     if self.topLevelItem(i).model.id in ids:
                         self.topLevelItem(i).setCheckState(0, qt_constants.Checked)
 
-        class TreeManager:
+        class TreeManager(PanelPresenter):
             def __init__(self, view):
+                super().__init__(view)
                 self.__view = view
                 self.__logger = logging.getLogger("PlottingPanelTreeManager")
                 self.__run_service = services.RunService()
@@ -261,6 +262,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                     run_nodes.append(PlottingPanel.SupportPanel.RunNode(dataset))
                 return run_nodes
 
+            @QtCore.pyqtSlot()
             def update(self):
                 self.__logger.debug("Accepted Signal")
                 ids = self.__view.get_run_ids()
@@ -1254,6 +1256,7 @@ class PlottingPanelPresenter(PanelPresenter):
 
         self._view.legend_display.set_legend(legend_values)
 
+    @QtCore.pyqtSlot()
     def update(self, runs_changed=False):
         self.__logger.debug("Accepted Signal")
         run_datasets = self.__run_service.get_runs()
