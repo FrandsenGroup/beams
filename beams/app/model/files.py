@@ -2,17 +2,14 @@
 # Standard Library Packages
 import abc
 import os
+import pickle
 import sys
 import subprocess
 import traceback
 import enum
-import json
 
 # Installed Packages
 import pandas as pd
-
-# Custom Packages
-from app.resources import resources
 
 
 # File Sources
@@ -33,6 +30,7 @@ class Format(enum.Enum):
     HISTOGRAM = 0
     ASYMMETRY = 1
     BINARY = 2
+    PICKLED = 3
 
 
 # File Data
@@ -56,7 +54,9 @@ RUN_NUMBER_KEY = 'RunNumber'
 T0_KEY = 'T0'
 CALC_HISTS_KEY = 'CalcHists'
 
-#TODO Maybe we should have these files inherit from the actual File object
+
+# TODO Maybe we should have these files inherit from the actual File object
+#   this way we can use 'with'. Not super necessary, kinda fun though.
 class File(abc.ABC):
     """
     Abstract base class for file objects, establishes some static constants and a constructor.
@@ -133,6 +133,18 @@ class UnknownFile(File):
         return '[UnknownFile: file_path={}]'.format(self.file_path)
 
 
+class BeamsSessionFile(ReadableFile):
+    HEADER_ROWS = 0
+    DATA_FORMAT = Format.PICKLED
+
+    def read_data(self):
+        with open(self.file_path, 'rb') as session_file_object:
+            return pickle.load(session_file_object)
+
+    def read_meta(self):
+        return self.file_path
+
+
 class TRIUMFMuonFile(ConvertibleFile):
     SOURCE = Source.TRIUMF
     DATA_FORMAT = Format.BINARY
@@ -156,19 +168,16 @@ class TRIUMFMuonFile(ConvertibleFile):
                 else:
                     shell = False
             else:
-                return None  # Unrecognized system
+                raise EnvironmentError("Not on a recognized system.")
 
             try:
-                # print(" ".join(args))
                 subprocess.check_call(args, shell=shell)
-            except subprocess.CalledProcessError:
-                track = traceback.format_exc()
-                print(track)
-                return None  # Error processing file
+            except subprocess.CalledProcessError as e:
+                raise e
             else:
                 return MuonHistogramFile(out_file)
 
-        return None  # Unrecognized file format
+        raise ValueError("Binary file is in an unknown format. May need to update executables.")
 
 
 class PSIMuonFile(ConvertibleFile):
@@ -199,7 +208,6 @@ class PSIMuonFile(ConvertibleFile):
                 subprocess.check_call(args, shell=shell)
             except subprocess.CalledProcessError:
                 track = traceback.format_exc()
-                print(track)
                 return None  # Error processing file
             else:
                 return MuonHistogramFile(out_file)
@@ -296,7 +304,7 @@ def file(file_path):
     :return File: a ReadableFile or ConvertibleFile object.
     """
     if not is_found(file_path):
-        raise FileNotFoundError
+        raise FileNotFoundError(file_path)
 
     if check_ext(file_path, '.dat') and is_beams(file_path):
         return MuonHistogramFile(file_path)
@@ -309,6 +317,9 @@ def file(file_path):
 
     elif check_ext(file_path, '.bin') or check_ext(file_path, '.mdu'):
         return PSIMuonFile(file_path)
+
+    elif check_ext(file_path, '.beams'):
+        return BeamsSessionFile(file_path)
 
     else:
         return UnknownFile(file_path)

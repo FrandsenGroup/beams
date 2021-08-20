@@ -22,6 +22,7 @@ HISTOGRAM_CLICKED_IMAGE = str(Path('beams/app/resources/icons/histo_icon_clicked
 FITTING_CLICKED_IMAGE = str(Path('beams/app/resources/icons/fitting_icon_clicked.png'))
 DOWNLOAD_CLICKED_IMAGE = str(Path('beams/app/resources/icons/download_icon_clicked.png'))
 QUESTION_CLICKED_IMAGE = str(Path('beams/app/resources/icons/question_icon_clicked.png'))
+MENU_IMAGE = str(Path('beams/app/resources/icons/menu_icon.png'))
 LOADING_GIF = str(Path('beams/app/resources/icons/loading.gif'))
 
 LATO_BLACK_FONT = str(Path('beams/app/resources/Lato/Lato-Black.ttf'))
@@ -44,7 +45,7 @@ TRIUMF_LINUX_CONVERSION = str(Path('/beams/app/resources/mud/TRIUMF_LINUX'))
 TRIUMF_MAC_CONVERSION = str(Path('/beams/app/resources/mud/TRIUMF_MAC'))
 TRIUMF_WINDOWS_CONVERSION = str(Path('/beams/app/resources/mud/TRIUMF_WINDOWS.exe'))
 
-CONFIGURATION_FILE = str(Path('beams/app/resources/config.txt'))
+CONFIGURATION_FILE = str(Path('beams/app/resources/app.config'))
 
 if not os.path.exists(CONFIGURATION_FILE):
     with open(CONFIGURATION_FILE, 'w+') as f:

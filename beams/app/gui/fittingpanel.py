@@ -30,6 +30,10 @@ class FittingPanel(Panel):
                 self.setHeaderHidden(True)
                 self.setContextMenuPolicy(qt_constants.CustomContextMenu)
                 self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+                self.setHorizontalScrollBarPolicy(qt_constants.ScrollBarAsNeeded)
+                self.header().setMinimumSectionSize(600)
+                self.header().setDefaultSectionSize(900)
+                self.header().setStretchLastSection(False)
                 self._set_callbacks()
 
             def _set_callbacks(self):
@@ -56,7 +60,7 @@ class FittingPanel(Panel):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, fit.FitDataset):
+                    if isinstance(iterator.value().model, domain.FitDataset):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -70,7 +74,7 @@ class FittingPanel(Panel):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, fit.FitDataset):
+                    if isinstance(iterator.value().model, domain.FitDataset):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -82,12 +86,13 @@ class FittingPanel(Panel):
                 iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Selected)
 
                 while iterator.value():
-                    if isinstance(iterator.value().model, fit.Fit) or isinstance(iterator.value().model, fit.FitDataset):
+                    if isinstance(iterator.value().model, domain.Fit) or isinstance(iterator.value().model, domain.FitDataset):
                         return iterator.value().model
                     iterator += 1
 
-        class TreeManager:
+        class TreeManager(PanelPresenter):
             def __init__(self, view):
+                super().__init__(view)
                 self.__view = view
                 self.__logger = logging.getLogger("FittingPanelTreeManager")
                 self.__run_service = services.RunService()
@@ -108,6 +113,7 @@ class FittingPanel(Panel):
                     fit_dataset_nodes.append(FittingPanel.SupportPanel.FitDatasetNode(dataset))
                 return fit_dataset_nodes
 
+            @QtCore.pyqtSlot()
             def update(self):
                 self.__logger.debug("Accepted Signal")
                 fit_datasets = self.__fit_service.get_fit_datasets()
@@ -119,9 +125,10 @@ class FittingPanel(Panel):
                 super().__init__([dataset.id])
                 self.model = dataset
                 self.__selected_items = None
+                self.__fit_service = services.FitService()
                 self.__parent = None
                 self.setFlags(self.flags() | QtCore.Qt.ItemFlag.ItemIsEditable)
-                if isinstance(dataset, fit.FitDataset):
+                if isinstance(dataset, domain.FitDataset):
                     for fit_data in dataset.fits.values():
                         self.addChild(FittingPanel.SupportPanel.FitNode(fit_data))
 
@@ -143,7 +150,7 @@ class FittingPanel(Panel):
                 pass
 
             def _action_remove(self):
-                services.FitService.remove_dataset([item.model.id for item in self.__selected_items])
+                self.__fit_service.remove_dataset([item.model.id for item in self.__selected_items])
 
             def _action_expand(self):
                 for item in self.__selected_items:
@@ -1228,9 +1235,9 @@ class FittingPanel(Panel):
         return dialog.exec()
 
 
-class FitTabPresenter(PanelPresenter):
+class FitTabPresenter:
     def __init__(self, view: FittingPanel):
-        super().__init__(view)
+        self._view = view
         self._run_service = services.RunService()
         self._fit_service = services.FitService()
         self._system_service = services.SystemService()
@@ -1286,7 +1293,7 @@ class FitTabPresenter(PanelPresenter):
         if selected_data is None:
             return
 
-        if isinstance(selected_data, fit.FitDataset):
+        if isinstance(selected_data, domain.FitDataset):
             selected_data.write("out_file_x.txt", fit.FitOptions.SAVE_2)
         else:
             selected_data.write("out_file_x.txt")
@@ -1634,7 +1641,7 @@ class FitTabPresenter(PanelPresenter):
             self.__update_if_table_changes = True
             return
 
-        if type(selected_data) == fit.Fit:
+        if type(selected_data) == domain.Fit:
             for i in range(self._view.run_list.count()):
                 item = self._view.run_list.item(i)
                 if item.identifier == selected_data.run_id:
@@ -1664,7 +1671,7 @@ class FitTabPresenter(PanelPresenter):
             self._view.input_fit_equation.setText(str(selected_data.expression))
             self._update_display()
 
-        elif type(selected_data) == fit.FitDataset:
+        elif type(selected_data) == domain.FitDataset:
             for i in range(self._view.run_list.count()):
                 item = self._view.run_list.item(i)
                 if item.identifier in selected_data.fits.keys():
@@ -1748,6 +1755,7 @@ class FitWorker(QtCore.QRunnable):
             # TODO We should move all processing after fit is finished to this method. They aren't intensive.
             #   Plus then we keep everything in one place and the process only deals in primitive data types..sort of.
             dataset = x.done.pop().result()
+
             for run_id, fit_data in dataset.fits.items():
                 fit_data.expression = fit.FitExpression(fit_data.string_expression)
 
@@ -1761,6 +1769,6 @@ class FitWorker(QtCore.QRunnable):
 
 class FitSignals(QtCore.QObject):
     finished = QtCore.pyqtSignal()
-    result = QtCore.pyqtSignal(fit.FitDataset)
+    result = QtCore.pyqtSignal(domain.FitDataset)
     error = QtCore.pyqtSignal(str)
     progress = QtCore.pyqtSignal(int)

@@ -1,6 +1,6 @@
 import os, logging
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 
 from app.gui.dialogs.dialog_isis_download import ISISDownloadDialog
 from app.gui.dialogs.dialog_misc import AddFileDialog, PermissionsMessageDialog
@@ -63,8 +63,9 @@ class MainConsolePanel(QtWidgets.QDockWidget):
             for i in range(self.topLevelItemCount()):
                 self.topLevelItem(i).setCheckState(0, checked)
 
-    class TreeManager:
+    class TreeManager(PanelPresenter):
         def __init__(self, view):
+            super().__init__(view)
             self.__view = view
             self.__logger = logging.getLogger("MainConsolePanelTreeManager")
             self.__run_service = services.RunService()
@@ -81,6 +82,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
                 file_nodes.append(MainConsolePanel.FileNode(dataset))
             return file_nodes
 
+        @QtCore.pyqtSlot()
         def update(self):
             self.__logger.debug("Accepted Signal")
             ids = self.__view.get_file_ids()
@@ -115,6 +117,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
             super(MainConsolePanel.FileNode, self).__init__([file_data.title])
             self.model = file_data
             self.__selected_items = None
+            self.__file_service = services.FileService()
             self.setFlags(self.flags()
                           | qt_constants.ItemIsUserCheckable)
             self.setCheckState(0, qt_constants.Unchecked)
@@ -145,25 +148,14 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         def menu(self, items):
             self.__selected_items = items
             menu = QtWidgets.QMenu()
-            expanded = 'Expand' if not self.isExpanded() else 'Collapse'
-            menu.addAction(expanded, self._action_expand)
-            menu.addSeparator()
             menu.addAction("Load", self._action_load)
-            menu.addAction("Plot", self._action_plot)
-            menu.addAction("Save", self._action_save)
             return menu
 
-        def _action_expand(self):
-            self.setExpanded(not self.isExpanded())
-
         def _action_load(self):
-            pass
-
-        def _action_save(self):
-            pass
-
-        def _action_plot(self):
-            pass
+            if isinstance(self.model.file, files.BeamsSessionFile):
+                code = PermissionsMessageDialog.launch(["Loading a saved session will remove all current session data, do you wish to continue?"])
+                if code == PermissionsMessageDialog.Codes.OKAY:
+                    self.__file_service.load_session(self.model.id)
 
     class HistogramNode(QtWidgets.QTreeWidgetItem):
         def __init__(self, histogram):
@@ -309,6 +301,23 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         def _edit(self):
             pass
 
+    class SessionNode(QtWidgets.QTreeWidgetItem):
+        def __init__(self, session_file_dataset):
+            title = os.path.split(session_file_dataset.file.file_path)[1]
+            super(MainConsolePanel.SessionNode, self).__init__([title])
+            self.model = session_file_dataset
+
+        def menu(self, items):
+            menu = QtWidgets.QMenu()
+            menu.addAction("Load")
+            return menu
+
+        def _set_callbacks(self):
+            pass
+
+        def _load(self):
+            pass
+
     def __init__(self):
         super(MainConsolePanel, self).__init__()
         self.setTitleBarWidget(QtWidgets.QWidget())
@@ -397,6 +406,7 @@ class MainConsolePanelPresenter(PanelPresenter):
         self._view.remove_button.released.connect(lambda: self._remove_file_clicked())
         self._view.select_all.stateChanged.connect(lambda: self._select_all_checked())
 
+    @QtCore.pyqtSlot()
     def update(self, signal):
         pass
 

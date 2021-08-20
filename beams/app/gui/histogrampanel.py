@@ -1,7 +1,7 @@
 
 import logging
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
 
@@ -45,6 +45,10 @@ class HistogramPanel(Panel):
                 self.setHeaderHidden(True)
                 self.setContextMenuPolicy(qt_constants.CustomContextMenu)
                 self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+                self.setHorizontalScrollBarPolicy(qt_constants.ScrollBarAsNeeded)
+                self.header().setMinimumSectionSize(600)
+                self.header().setDefaultSectionSize(900)
+                self.header().setStretchLastSection(False)
                 self._set_callbacks()
 
             def _set_callbacks(self):
@@ -99,8 +103,9 @@ class HistogramPanel(Panel):
                     iterator += 1
                 return histograms
 
-        class TreeManager:
+        class TreeManager(PanelPresenter):
             def __init__(self, view):
+                super().__init__(view)
                 self.__view = view
                 self.__logger = logging.getLogger("HistogramPanelTreeManager")
                 self.__run_service = services.RunService()
@@ -116,6 +121,7 @@ class HistogramPanel(Panel):
                     run_nodes.append(HistogramPanel.SupportPanel.RunNode(dataset))
                 return run_nodes
 
+            @QtCore.pyqtSlot()
             def update(self):
                 self.__logger.debug("Accepted Signal")
                 run_datasets = self.__run_service.get_loaded_runs()
