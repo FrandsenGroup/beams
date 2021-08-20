@@ -64,7 +64,6 @@ class FitParameter:
         self.is_global = is_global
 
     def __copy__(self):
-        print('Copying')
         return FitParameter(self.symbol, self.value, self.lower, self.upper, self.is_global, self.is_fixed, self.is_fixed_run, self.fixed_value, self.output, self.uncertainty)
 
     def __eq__(self, other):
@@ -108,7 +107,6 @@ class FitExpression:
         return (self.__expression_string, self.__variables, self.__fixed, self.safe)
 
     def __setstate__(self, state):
-        print(state)
         self.__expression_string = state[0]
         self.__variables = state[1]
         self.__expression = lambdify(self.__expression_string, self.__variables, INDEPENDENT_VARIABLE)

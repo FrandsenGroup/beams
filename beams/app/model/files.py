@@ -208,7 +208,6 @@ class PSIMuonFile(ConvertibleFile):
                 subprocess.check_call(args, shell=shell)
             except subprocess.CalledProcessError:
                 track = traceback.format_exc()
-                print(track)
                 return None  # Error processing file
             else:
                 return MuonHistogramFile(out_file)

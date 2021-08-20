@@ -393,7 +393,6 @@ class MainConsolePanelPresenter(PanelPresenter):
         super().__init__(view)
         
         self.__file_service = services.FileService()
-        print(self.__file_service.signals)
         self.__system_service = services.SystemService()
         self.__logger = logging.getLogger("MainConsolePanelPresenter")
         

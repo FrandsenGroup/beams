@@ -56,7 +56,6 @@ class BEAMS(QtWidgets.QApplication):
 
         self.main_program_window = mainwindow.MainWindow()
         frame = qt_widgets.Frame()
-        frame.title_bar.save_session_button.released.connect(self.save_session)
         vbox = QtWidgets.QVBoxLayout(frame.content_widget())
         vbox.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))
         vbox.addWidget(self.main_program_window)
@@ -67,17 +66,6 @@ class BEAMS(QtWidgets.QApplication):
         self.splash.finish(frame)
 
         sys.exit(self.exec_())
-
-    def save_session(self):
-        save_file = QtWidgets.QFileDialog.getSaveFileName(self.main_program_window, 'Save Session',
-                                                          self.__system_service.get_last_used_directory(),
-                                                          "Beams Session (*.beams)")
-
-        save_file = [path for path in save_file if path != '']
-        if len(save_file) > 0:
-            path = os.path.split(save_file[0])
-            self.__file_service.save_session(save_file[0])
-            self.__system_service.set_last_used_directory(path[0])
 
     def exec_(self) -> int:
         i = super(BEAMS, self).exec_()

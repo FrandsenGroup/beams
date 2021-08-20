@@ -224,9 +224,6 @@ class TitleBar(QtWidgets.QWidget):
         self.maximize.setMinimumHeight(25)
         self.close.setMinimumHeight(25)
 
-        self.save_session_button = StyleTwoButton("Save Session")
-        self.save_session_button.setFixedWidth(100)
-
         self.menu_bar = StyleOneMenuBar()
         self.menu_bar.setFixedWidth(40)
 
@@ -250,8 +247,6 @@ class TitleBar(QtWidgets.QWidget):
         col.addSpacing(5)
         col.addWidget(Logo())
         row.addLayout(col)
-        row.addWidget(self.save_session_button)
-        row.addSpacing(60)
         row.addWidget(self.minimize)
         row.addWidget(self.maximize)
         row.addWidget(self.close)

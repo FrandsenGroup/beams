@@ -1700,7 +1700,6 @@ class FitTabPresenter:
         self.__update_if_table_changes = True
 
     def _update_fit_changes(self, dataset):
-        print(dataset)
         self._fit_service.add_dataset([dataset])
         self._update_alphas(dataset)
         self.__update_if_table_changes = False
@@ -1756,7 +1755,7 @@ class FitWorker(QtCore.QRunnable):
             for run_id, fit_data in dataset.fits.items():
                 fit_data.expression = fit.FitExpression(fit_data.string_expression)
 
-        except Exception as e:
+        except Exception:
             self.signals.error.emit("Error running fit.")
         else:
             self.signals.result.emit(dataset)
