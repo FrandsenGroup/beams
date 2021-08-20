@@ -606,5 +606,6 @@ class FileService:
         FileService.__fit_service.signals.added.emit()
         FileService.__run_service.signals.added.emit()
         FileService.__run_service.signals.loaded.emit()
+        FileService.__run_service.signals.changed.emit()
         FileService.__system_service.signals.changed.emit()
         FileService.__style_service.signals.changed.emit()
