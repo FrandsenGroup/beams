@@ -3,6 +3,7 @@ Ever gone to StackOverflow and found the solution to your problem there all in a
 full of custom widgets that either I made (some of the seemingly empty ones are so we can apply QSS to specific
 buttons) or found online. Feel free to expand our useful little library!
 """
+import os
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
@@ -164,6 +165,11 @@ class StyleOneListWidget(QtWidgets.QListWidget):
         super(StyleOneListWidget, self).__init__()
 
 
+class StyleOneMenuBar(QtWidgets.QMenuBar):
+    def __init__(self):
+        super(StyleOneMenuBar, self).__init__()
+
+
 # noinspection PyArgumentList
 class TitleBar(QtWidgets.QWidget):
     """ A title bar with customized window icon and window control tool buttons. """
@@ -171,6 +177,9 @@ class TitleBar(QtWidgets.QWidget):
         super(TitleBar, self).__init__()
         self.parent = parent
         self.setParent(parent)
+
+        self.__system_service = services.SystemService()
+        self.__file_service = services.FileService()
 
         self.setContentsMargins(0, 0, 0, 0)
 
@@ -218,9 +227,24 @@ class TitleBar(QtWidgets.QWidget):
         self.save_session_button = StyleTwoButton("Save Session")
         self.save_session_button.setFixedWidth(100)
 
+        self.menu_bar = StyleOneMenuBar()
+        self.menu_bar.setFixedWidth(40)
+
+        self.menu = QtWidgets.QMenu("File", self.menu_bar)
+        self.menu.setIcon(QtGui.QIcon(resources.MENU_IMAGE))
+        self.menu.addAction("Save Session", self._action_save)
+        self.menu.addAction("Open Session", self._action_open)
+
+        self.menu_bar.addMenu(self.menu)
+
         row = QtWidgets.QHBoxLayout(self)
         row.setContentsMargins(0, 0, 0, 0)
         row.addSpacing(15)
+        col = QtWidgets.QVBoxLayout()
+        col.setContentsMargins(0, 0, 0, 0)
+        col.addSpacing(8)
+        col.addWidget(self.menu_bar)
+        row.addLayout(col)
         col = QtWidgets.QVBoxLayout()
         col.setContentsMargins(0, 0, 0, 0)
         col.addSpacing(5)
@@ -240,6 +264,31 @@ class TitleBar(QtWidgets.QWidget):
         self.setMaximumHeight(40)
 
         self._set_callbacks()
+
+    def _action_open(self):
+        open_file = QtWidgets.QFileDialog.getOpenFileName(self, 'Open Session',
+                                                          self.__system_service.get_last_used_directory(),
+                                                          "Beams Session (*.beams)")
+
+        open_file = [path for path in open_file if path != '']
+        if len(open_file) > 0:
+            code = PermissionsMessageDialog.launch(
+                ["Opening a saved session will remove all current session data, do you wish to continue?"])
+            if code == PermissionsMessageDialog.Codes.OKAY:
+                print(self.__file_service.signals)
+                self.__file_service.add_files([open_file[0]])
+                self.__file_service.load_session(self.__file_service.get_file_by_path(open_file[0]).id)
+
+    def _action_save(self):
+        save_file = QtWidgets.QFileDialog.getSaveFileName(self, 'Save Session',
+                                                          self.__system_service.get_last_used_directory(),
+                                                          "Beams Session (*.beams)")
+
+        save_file = [path for path in save_file if path != '']
+        if len(save_file) > 0:
+            path = os.path.split(save_file[0])
+            self.__file_service.save_session(save_file[0])
+            self.__system_service.set_last_used_directory(path[0])
 
     def _set_callbacks(self):
         self.close.clicked.connect(self._close)
