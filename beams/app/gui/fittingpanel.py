@@ -60,7 +60,7 @@ class FittingPanel(Panel):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, fit.FitDataset):
+                    if isinstance(iterator.value().model, domain.FitDataset):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -74,7 +74,7 @@ class FittingPanel(Panel):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, fit.FitDataset):
+                    if isinstance(iterator.value().model, domain.FitDataset):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -86,7 +86,7 @@ class FittingPanel(Panel):
                 iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Selected)
 
                 while iterator.value():
-                    if isinstance(iterator.value().model, fit.Fit) or isinstance(iterator.value().model, fit.FitDataset):
+                    if isinstance(iterator.value().model, domain.Fit) or isinstance(iterator.value().model, domain.FitDataset):
                         return iterator.value().model
                     iterator += 1
 
@@ -128,7 +128,7 @@ class FittingPanel(Panel):
                 self.__fit_service = services.FitService()
                 self.__parent = None
                 self.setFlags(self.flags() | QtCore.Qt.ItemFlag.ItemIsEditable)
-                if isinstance(dataset, fit.FitDataset):
+                if isinstance(dataset, domain.FitDataset):
                     for fit_data in dataset.fits.values():
                         self.addChild(FittingPanel.SupportPanel.FitNode(fit_data))
 
@@ -1293,7 +1293,7 @@ class FitTabPresenter:
         if selected_data is None:
             return
 
-        if isinstance(selected_data, fit.FitDataset):
+        if isinstance(selected_data, domain.FitDataset):
             selected_data.write("out_file_x.txt", fit.FitOptions.SAVE_2)
         else:
             selected_data.write("out_file_x.txt")
@@ -1641,7 +1641,7 @@ class FitTabPresenter:
             self.__update_if_table_changes = True
             return
 
-        if type(selected_data) == fit.Fit:
+        if type(selected_data) == domain.Fit:
             for i in range(self._view.run_list.count()):
                 item = self._view.run_list.item(i)
                 if item.identifier == selected_data.run_id:
@@ -1671,7 +1671,7 @@ class FitTabPresenter:
             self._view.input_fit_equation.setText(str(selected_data.expression))
             self._update_display()
 
-        elif type(selected_data) == fit.FitDataset:
+        elif type(selected_data) == domain.FitDataset:
             for i in range(self._view.run_list.count()):
                 item = self._view.run_list.item(i)
                 if item.identifier in selected_data.fits.keys():
@@ -1769,6 +1769,6 @@ class FitWorker(QtCore.QRunnable):
 
 class FitSignals(QtCore.QObject):
     finished = QtCore.pyqtSignal()
-    result = QtCore.pyqtSignal(fit.FitDataset)
+    result = QtCore.pyqtSignal(domain.FitDataset)
     error = QtCore.pyqtSignal(str)
     progress = QtCore.pyqtSignal(int)

@@ -4,7 +4,7 @@ import time
 import numpy as np
 import uuid
 
-from app.model import files, fit
+from app.model import files
 from app.model.files import File
 
 
@@ -736,7 +736,7 @@ class DataBuilder:
             f = files.file(f)
 
         # fixme add conditional for fits
-        if d is None or (not isinstance(d, RunDataset) and not isinstance(d, fit.FitDataset)):
+        if d is None or (not isinstance(d, RunDataset) and not isinstance(d, FitDataset)):
             if f.DATA_FORMAT == files.Format.HISTOGRAM or \
                     f.DATA_FORMAT == files.Format.ASYMMETRY:
                 d = RunDataset()
