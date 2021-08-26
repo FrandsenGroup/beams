@@ -187,7 +187,6 @@ class FittingPanel(Panel):
 
             self.new_button = qt_widgets.StyleTwoButton("New Empty Fit")
             self.reset_button = qt_widgets.StyleOneButton("Reset")
-            self.save_button = qt_widgets.StyleTwoButton("Save")
             self.button_save_results = qt_widgets.StyleTwoButton("Save Fit")
             self.button_lookup_folder = qt_widgets.StyleTwoButton("Folder")
 
@@ -215,7 +214,6 @@ class FittingPanel(Panel):
 
             hbox = QtWidgets.QHBoxLayout()
             hbox.addWidget(self.new_button)
-            hbox.addWidget(self.save_button)
             main_layout.addLayout(hbox)
 
             main_layout.addWidget(self.tree)

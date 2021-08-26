@@ -660,9 +660,6 @@ class Fit:
         self.meta = meta
         self.asymmetry = asymmetry
 
-    def __call__(self, *args, **kwargs):
-        pass
-
     def write(self, out_file, bin_size=None, x_min=None, x_max=None):
         meta_string = files.TITLE_KEY + ":" + str(self.title) + "," \
                       + files.BIN_SIZE_KEY + ":" + str(self.asymmetry.bin_size) + "," \
