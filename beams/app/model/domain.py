@@ -1,3 +1,4 @@
+import enum
 import os
 import time
 
@@ -265,7 +266,7 @@ class Asymmetry(np.ndarray):
             histogram_two_good = histogram_two[start_bin_two - 1: end_bin_two + 1]
             input_array = ((histogram_one_good - background_one) - (histogram_two_good - background_two)) / \
                           ((histogram_two_good - background_two) + (histogram_one_good - background_one))
-            
+
             if alpha is not None:
                 input_array = ((alpha - 1) + ((alpha + 1) * input_array)) / \
                               ((alpha + 1) + ((alpha - 1) * input_array))
@@ -468,8 +469,10 @@ class Uncertainty(np.ndarray):
             np.nan_to_num(histogram_one_good)
             np.nan_to_num(histogram_two_good)
             np.seterr(divide='ignore', invalid='ignore')
-            input_array = np.array(np.sqrt(np.power((2 * histogram_one_good * d_histogram_two / np.power(histogram_two_good + histogram_one_good, 2)), 2) +
-                                           np.power((2 * histogram_two_good * d_histogram_one / np.power(histogram_two_good + histogram_one_good, 2)), 2)))
+            input_array = np.array(np.sqrt(np.power(
+                (2 * histogram_one_good * d_histogram_two / np.power(histogram_two_good + histogram_one_good, 2)), 2) +
+                                           np.power((2 * histogram_two_good * d_histogram_one / np.power(
+                                               histogram_two_good + histogram_one_good, 2)), 2)))
             np.seterr(divide='warn', invalid='warn')
             np.nan_to_num(input_array, copy=False)
 
@@ -522,7 +525,7 @@ class Uncertainty(np.ndarray):
 
         if leftover_bins:
             reshaped_uncertainty = np.reshape(self[:-leftover_bins],
-                                            (binned_indices_total, binned_indices_per_bin))
+                                              (binned_indices_total, binned_indices_per_bin))
         else:
             reshaped_uncertainty = np.reshape(self, (binned_indices_total, binned_indices_per_bin))
 
@@ -539,8 +542,10 @@ class Time(np.ndarray):
         numpy array.
         """
 
-    def __new__(cls, input_array=None, bin_size=None, length=None, time_zero=None, run_id=None, time_zero_exact=None, **kwargs):
-        if (input_array is None) and (bin_size is None or length is None or (time_zero is None and time_zero_exact is None)):
+    def __new__(cls, input_array=None, bin_size=None, length=None, time_zero=None, run_id=None, time_zero_exact=None,
+                **kwargs):
+        if (input_array is None) and (
+                bin_size is None or length is None or (time_zero is None and time_zero_exact is None)):
             raise ValueError("No parameters for time constructor may be None")
         if input_array is None and time_zero_exact is not None:
             input_array = (np.arange(length) * float(bin_size) / 1000) + time_zero_exact
@@ -691,10 +696,16 @@ class Fit:
             raise Exception("Expression has not been created for fit '{}'".format(self.title))
 
         np.savetxt(out_file, np.c_[asymmetry.time, asymmetry, calculated_asymmetry, asymmetry.uncertainty],
-                   fmt='%2.9f, %2.4f, %2.4f, %2.4f', header="BEAMS\n" + meta_string + "\nTime, Asymmetry, Calculated, Uncertainty")
+                   fmt='%2.9f, %2.4f, %2.4f, %2.4f',
+                   header="BEAMS\n" + meta_string + "\nTime, Asymmetry, Calculated, Uncertainty")
 
 
 class FitDataset:
+    class Flags:
+        GLOBAL = 1
+        GLOBAL_PLUS = 2
+        BATCH = 3
+
     def __init__(self):
         t = time.localtime()
         current_time = time.strftime("%d-%m-%YT%H:%M:%S", t)
@@ -707,52 +718,52 @@ class FitDataset:
 
     def write(self, out_file, second=False):
         if not second:
-            fit_parameters_string = "# Fit Parameters\n\n# \tName\tValue\tLower\tUpper\n\n"
-            if self.options[FitOptions.GLOBAL]:
+            fit_parameters_string = "# Fit Parameters\n\n# {:<8}{:<10}{:<8}{:<8}".format("Name", "Value", "Lower", "Upper") + "\n\n"
+            if self.flags & FitDataset.Flags.GLOBAL or self.flags & FitDataset.Flags.GLOBAL_PLUS:
                 fit_parameters_string += "# Common parameters for all runs\n\n"
 
                 f = list(self.fits.values())[0]
-                for name, v in f.variables.items():
+                for name, v in f.parameters.items():
                     if v.is_global:
-                        fit_parameters_string += "\t" + str(v) + "\n"
+                        fit_parameters_string += "\t" + "{:<8}{:<10.5f}{:<8.5f}{:<8.5f}".format(v.symbol, v.value, v.lower, v.upper) + "\n"
 
                 fit_parameters_string += "\n"
 
             for f in self.fits.values():
-                run = domain.RunService.get_runs_by_ids([f.run_id])[0]
+                run = services.RunService().get_runs_by_ids([f.run_id])[0]
                 fit_parameters_string += "# Specific parameters for run {}\n\n".format(run.meta["RunNumber"])
 
-                for name, v in f.variables.items():
+                for name, v in f.parameters.items():
                     if not v.is_global:
-                        fit_parameters_string += "\t" + str(v) + "\n"
+                        fit_parameters_string += "\t" + "{:<8}{:<10.5f}{:<8.5f}{:<8.5f}".format(v.symbol, v.value, v.lower, v.upper) + "\n"
 
                 fit_parameters_string += "\n"
 
-            with open(out_file, 'w', encoding="utf-8") as f:
-                f.write("#BEAMS\n"
-                        + fit_parameters_string
-                        + "# Expression\n\n\t"
-                        + "A(t) = " + self.function)
+            with open(out_file, 'w', encoding="utf-8") as out_file_object:
+                out_file_object.write("#BEAMS\n"
+                                      + fit_parameters_string
+                                      + "# Expression\n\n\t"
+                                      + "A(t) = " + self.expression)
 
         else:
             full_string = ""
 
             f = list(self.fits.values())[0]
 
-            for name, v in f.variables.items():
-                full_string += "{}\t".format(name)
+            for name, v in f.parameters.items():
+                full_string += "{:<8}\t".format(name)
 
-            full_string += "RUN\n"
+            full_string += "{:<8}".format("RUN") + "\n"
 
             for f in self.fits.values():
-                for name, v in f.variables.items():
-                    full_string += "{:.4f}\t".format(v.value)
-                run = servi.RunService.get_runs_by_ids([f.run_id])[0]
-                full_string += run.meta["RunNumber"] + "\n"
+                for name, v in f.parameters.items():
+                    full_string += "{:<8}\t".format("{:.5f}".format(v.value))
+                run = services.RunService().get_runs_by_ids([f.run_id])[0]
+                full_string += "{:<8}".format(run.meta["RunNumber"]) + "\n"
 
-            with open(out_file, 'w', encoding="utf-8") as f:
-                f.write("#BEAMS\n"
-                        + full_string)
+            with open(out_file, 'w', encoding="utf-8") as out_file_object:
+                out_file_object.write("#BEAMS\n"
+                                      + full_string)
 
 
 class RunDataset:

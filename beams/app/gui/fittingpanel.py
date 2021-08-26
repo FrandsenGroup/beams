@@ -1292,7 +1292,7 @@ class FitTabPresenter:
             return
 
         if isinstance(selected_data, domain.FitDataset):
-            selected_data.write("out_file_x.txt", fit.FitOptions.SAVE_2)
+            selected_data.write("out_file_x.txt", False)
         else:
             selected_data.write("out_file_x.txt")
 

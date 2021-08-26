@@ -80,7 +80,7 @@ class FitParameter:
             and other.uncertainty == self.uncertainty
 
     def __str__(self):
-        return '{}={}'.format(self.symbol, self.value)
+        return '{}={:.5f}'.format(self.symbol, self.value)
 
     def __repr__(self):
         return 'FitParameter ({})=({},{},{},{},{},{},{})'.format(self.symbol, self.value, self.lower, self.upper,
@@ -346,10 +346,16 @@ class FitEngine:
             for symbol, par in parameters.items():
                 if par.is_global:
                     par.value = mean_values[par.symbol]
-        return self._fit_global(config)
+
+        dataset = self._fit_global(config)
+        dataset.flags |= domain.FitDataset.Flags.GLOBAL_PLUS
+
+        return dataset
 
     def _fit_batch(self, config: FitConfig):
         dataset = domain.FitDataset()
+        dataset.flags |= domain.FitDataset.Flags.BATCH
+
         for run_id, (time, asymmetry, uncertainty, meta) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
             function = ALPHA_CORRECTION.format(config.expression, config.expression)
@@ -395,7 +401,6 @@ class FitEngine:
 
         # 11) Attach fit spec options and function to dataset (mostly for debugging purposes)
         dataset.expression = config.expression
-        dataset.flags = config.flags
         return dataset
 
     def _fit_global(self, config: FitConfig):
@@ -447,6 +452,8 @@ class FitEngine:
         # Assemble the Fit object, first by updating the parameters in the config with the outputs from
         #   the fit, as well as adding a FitExpression object that can be called.
         dataset = domain.FitDataset()
+        dataset.flags |= domain.FitDataset.Flags.GLOBAL
+
         values = {}
         for i, symbol in enumerate(config.get_adjusted_global_symbols()):
             values[symbol] = opt.x[i]
@@ -463,12 +470,12 @@ class FitEngine:
             dataset.fits[run_id] = new_fit
 
         dataset.expression = config.expression
-        dataset.flags = config.flags
 
         return dataset
 
     def _fit_non_global(self, config) -> domain.FitDataset:
         dataset = domain.FitDataset()
+
         for run_id, (time, asymmetry,  uncertainty, meta) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
             function = ALPHA_CORRECTION.format(config.expression, config.expression)
@@ -514,7 +521,6 @@ class FitEngine:
 
         # 11) Attach fit spec options and function to dataset (mostly for debugging purposes)
         dataset.expression = config.expression
-        dataset.flags = config.flags
         return dataset
 
     def _lambdify_global(self, config: FitConfig, concatenated_time):
