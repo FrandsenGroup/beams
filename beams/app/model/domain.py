@@ -4,7 +4,7 @@ import time
 import numpy as np
 import uuid
 
-from app.model import files
+from app.model import files, services
 from app.model.files import File
 
 
@@ -315,6 +315,14 @@ class Asymmetry(np.ndarray):
         self.time_zero = getattr(obj, 'time_zero', None)
         self.alpha = getattr(obj, 'alpha', None)
 
+    @classmethod
+    def from_array(cls):
+        pass
+
+    @classmethod
+    def from_histogram(cls):
+        pass
+
     def bin(self, packing):
         """ Returns new asymmetry binned to the provided packing value.
 
@@ -492,6 +500,14 @@ class Uncertainty(np.ndarray):
 
         self.bin_size = getattr(obj, 'bin_size', None)
 
+    @classmethod
+    def from_array(cls):
+        pass
+
+    @classmethod
+    def from_histogram(cls):
+        pass
+
     def bin(self, packing):
         bin_full = self.bin_size / 1000
         bin_binned = float(packing) / 1000
@@ -634,16 +650,51 @@ class FFT:
 
 
 class Fit:
-    def __init__(self, parameters, expression, title, run_id):
+    def __init__(self, parameters, expression, title, run_id, meta, asymmetry: Asymmetry):
         self.id = str(uuid.uuid4())
         self.parameters = parameters
         self.string_expression = expression
         self.expression = None
         self.title = title
         self.run_id = run_id
+        self.meta = meta
+        self.asymmetry = asymmetry
 
     def __call__(self, *args, **kwargs):
         pass
+
+    def write(self, out_file, bin_size=None, x_min=None, x_max=None):
+        meta_string = files.TITLE_KEY + ":" + str(self.title) + "," \
+                      + files.BIN_SIZE_KEY + ":" + str(self.asymmetry.bin_size) + "," \
+                      + files.TEMPERATURE_KEY + ":" + str(self.meta[files.TEMPERATURE_KEY]) + "," \
+                      + files.FIELD_KEY + ":" + str(self.meta[files.FIELD_KEY]) + "," \
+                      + files.T0_KEY + ":" + str(self.meta[files.T0_KEY])  # TODO not correct t0, need to fix that.
+
+        runs = services.RunService().get_runs_by_ids(self.run_id)
+
+        if len(runs) == 0:
+            raise Exception("Run ID in fit '{}' did not match any in database.".format(self.title))
+
+        run = runs[0]
+
+        asymmetry = run.asymmetries[RunDataset.FULL_ASYMMETRY]
+        for v in self.parameters.values():
+            if v.symbol == "\u03B1":
+                asymmetry = asymmetry.correct(v.value)
+
+        if bin_size:
+            asymmetry = asymmetry.bin(bin_size)
+
+        if x_min and x_max:
+            asymmetry = asymmetry.cut(x_min, x_max)
+
+        if self.expression:
+            calculated_asymmetry = self.expression(asymmetry.time)
+        else:
+            raise Exception("Expression has not been created for fit '{}'".format(self.title))
+
+        np.savetxt(out_file, np.c_[asymmetry.time, asymmetry, calculated_asymmetry, asymmetry.uncertainty],
+                   fmt='%2.9f, %2.4f, %2.4f, %2.4f', header="BEAMS\n" + meta_string + "\nTime, Asymmetry, Calculated, Uncertainty")
 
 
 class FitDataset:
@@ -656,6 +707,55 @@ class FitDataset:
         self.fits = {}
         self.flags = 0
         self.expression = None
+
+    def write(self, out_file, second=False):
+        if not second:
+            fit_parameters_string = "# Fit Parameters\n\n# \tName\tValue\tLower\tUpper\n\n"
+            if self.options[FitOptions.GLOBAL]:
+                fit_parameters_string += "# Common parameters for all runs\n\n"
+
+                f = list(self.fits.values())[0]
+                for name, v in f.variables.items():
+                    if v.is_global:
+                        fit_parameters_string += "\t" + str(v) + "\n"
+
+                fit_parameters_string += "\n"
+
+            for f in self.fits.values():
+                run = domain.RunService.get_runs_by_ids([f.run_id])[0]
+                fit_parameters_string += "# Specific parameters for run {}\n\n".format(run.meta["RunNumber"])
+
+                for name, v in f.variables.items():
+                    if not v.is_global:
+                        fit_parameters_string += "\t" + str(v) + "\n"
+
+                fit_parameters_string += "\n"
+
+            with open(out_file, 'w', encoding="utf-8") as f:
+                f.write("#BEAMS\n"
+                        + fit_parameters_string
+                        + "# Expression\n\n\t"
+                        + "A(t) = " + self.function)
+
+        else:
+            full_string = ""
+
+            f = list(self.fits.values())[0]
+
+            for name, v in f.variables.items():
+                full_string += "{}\t".format(name)
+
+            full_string += "RUN\n"
+
+            for f in self.fits.values():
+                for name, v in f.variables.items():
+                    full_string += "{:.4f}\t".format(v.value)
+                run = servi.RunService.get_runs_by_ids([f.run_id])[0]
+                full_string += run.meta["RunNumber"] + "\n"
+
+            with open(out_file, 'w', encoding="utf-8") as f:
+                f.write("#BEAMS\n"
+                        + full_string)
 
 
 class RunDataset:
