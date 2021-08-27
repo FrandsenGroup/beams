@@ -667,12 +667,12 @@ class Fit:
 
     def write(self, out_file, bin_size=None, x_min=None, x_max=None):
         meta_string = files.TITLE_KEY + ":" + str(self.title) + "," \
-                      + files.BIN_SIZE_KEY + ":" + str(self.asymmetry.bin_size) + "," \
+                      + files.BIN_SIZE_KEY + ":" + str(bin_size if bin_size else self.meta[files.BIN_SIZE_KEY]) + "," \
                       + files.TEMPERATURE_KEY + ":" + str(self.meta[files.TEMPERATURE_KEY]) + "," \
                       + files.FIELD_KEY + ":" + str(self.meta[files.FIELD_KEY]) + "," \
                       + files.T0_KEY + ":" + str(self.meta[files.T0_KEY])  # TODO not correct t0, need to fix that.
 
-        runs = services.RunService().get_runs_by_ids(self.run_id)
+        runs = services.RunService().get_runs_by_ids([self.run_id])
 
         if len(runs) == 0:
             raise Exception("Run ID in fit '{}' did not match any in database.".format(self.title))
@@ -691,7 +691,7 @@ class Fit:
             asymmetry = asymmetry.cut(x_min, x_max)
 
         if self.expression:
-            calculated_asymmetry = self.expression(asymmetry.time)
+            calculated_asymmetry = self.expression(asymmetry.time, **{v.symbol: v.value for v in self.parameters.values()})
         else:
             raise Exception("Expression has not been created for fit '{}'".format(self.title))
 

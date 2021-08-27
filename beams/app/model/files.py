@@ -31,6 +31,8 @@ class Format(enum.Enum):
     ASYMMETRY = 1
     BINARY = 2
     PICKLED = 3
+    FIT = 4
+    FIT_SET = 5
 
 
 # File Data
@@ -296,9 +298,48 @@ class MuonAsymmetryFile(ReadableFile):
         return metadata
 
 
-def file(file_path):
+class FitDatasetFile(ReadableFile):
+    SOURCE = Source.BEAMS
+    DATA_FORMAT = Format.FIT_SET
+    DATA_TYPE = DataType.MUON
+    HEADER_ROWS = 1
+
+    def read_data(self):
+        pass
+
+    def read_meta(self):
+        pass
+
+
+class FitDatasetExpressionFile(ReadableFile):
+    SOURCE = Source.BEAMS
+    DATA_FORMAT = Format.FIT_SET
+    DATA_TYPE = DataType.MUON
+    HEADER_ROWS = 1
+
+    def read_data(self):
+        pass
+
+    def read_meta(self):
+        pass
+
+
+class FitFile(ReadableFile):
+    SOURCE = Source.BEAMS
+    DATA_FORMAT = Format.FIT
+    DATA_TYPE = DataType.MUON
+    HEADER_ROWS = 2
+
+    def read_data(self):
+        pass
+
+    def read_meta(self):
+        pass
+
+
+def file(file_path: str) -> File:
     """
-    Returns a File object (ReadableFile or ConvertibleFile) for a specified file path.
+    Returns a File object for a specified file path.
 
     :param file_path:
     :return File: a ReadableFile or ConvertibleFile object.
@@ -318,8 +359,17 @@ def file(file_path):
     elif check_ext(file_path, '.bin') or check_ext(file_path, '.mdu'):
         return PSIMuonFile(file_path)
 
-    elif check_ext(file_path, '.beams'):
+    elif check_ext(file_path, '.beams') and is_beams(file_path):
         return BeamsSessionFile(file_path)
+
+    elif check_ext(file_path, '.ft1') and is_beams(file_path):
+        return FitFile(file_path)
+
+    elif check_ext(file_path, '.ft2') and is_beams(file_path):
+        return FitDatasetExpressionFile(file_path)
+
+    elif check_ext(file_path, '.ft3') and is_beams(file_path):
+        return FitDatasetFile(file_path)
 
     else:
         return UnknownFile(file_path)
@@ -356,6 +406,9 @@ def check_ext(filename, expected_ext):
 def is_beams(filename):
     """
     Checks if file is a BEAMS data file
+
+    This check is purely based on the fact that BEAMS is in the first line, not really worth doing anything more
+    specific.
 
     :param filename:
     :return boolean:
