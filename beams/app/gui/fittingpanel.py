@@ -1582,7 +1582,7 @@ class FitTabPresenter:
 
         variables = {}
         fit_titles = {}
-        data = OrderedDict()
+        data = OrderedDict()  # Ordered dict is important.
         for run_id in run_ids:
             for run in self._runs:
                 if run.id == run_id:

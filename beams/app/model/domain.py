@@ -289,7 +289,7 @@ class Asymmetry(np.ndarray):
         self.uncertainty = uncertainty
         self.time = time
         self.bin_size = float(bin_size)
-        self.time_zero = float(time_zero)
+        self.time_zero = int(time_zero)
         self.alpha = alpha if alpha is not None else 1
 
         return self
