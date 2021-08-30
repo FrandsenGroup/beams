@@ -380,7 +380,8 @@ class Asymmetry(np.ndarray):
             A new asymmetry object corrected to the provided value.
         """
         if self.alpha == alpha:
-            return self
+            return Asymmetry(input_array=self, time_zero=self.time_zero, bin_size=self.bin_size,
+                             time=self.time, uncertainty=self.uncertainty, alpha=1)
 
         current_asymmetry = self
 
@@ -405,7 +406,8 @@ class Asymmetry(np.ndarray):
             A new asymmetry object corrected to a value of 1.
         """
         if self.alpha == 1:
-            return self
+            return Asymmetry(input_array=self, time_zero=self.time_zero, bin_size=self.bin_size,
+                         time=self.time, uncertainty=self.uncertainty, alpha=1)
 
         input_array = ((1 - self.alpha) + (1 + self.alpha) * self) / \
                       ((1 + self.alpha) + (1 - self.alpha) * self)
