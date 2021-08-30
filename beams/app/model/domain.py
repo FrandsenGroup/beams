@@ -434,6 +434,12 @@ class Asymmetry(np.ndarray):
         """
         start_index = 0
 
+        if min_time is None:
+            min_time = self.time[0] - 1
+
+        if max_time is None:
+            max_time = self.time[-1] + 1
+
         for i, n in enumerate(self.time):
             if n >= min_time:
                 start_index = i
@@ -689,7 +695,7 @@ class Fit:
         if bin_size:
             asymmetry = asymmetry.bin(bin_size)
 
-        if x_min and x_max:
+        if x_min or x_max:
             asymmetry = asymmetry.cut(x_min, x_max)
 
         if self.expression:
@@ -718,8 +724,8 @@ class FitDataset:
         self.flags = 0
         self.expression = None
 
-    def write(self, out_file, second=False):
-        if not second:
+    def write(self, out_file, verbose_format=True):
+        if verbose_format:
             fit_parameters_string = "# Fit Parameters\n\n# {:<8}{:<10}{:<8}{:<8}".format("Name", "Value", "Lower", "Upper") + "\n\n"
             if self.flags & FitDataset.Flags.GLOBAL or self.flags & FitDataset.Flags.GLOBAL_PLUS:
                 fit_parameters_string += "# Common parameters for all runs\n\n"
