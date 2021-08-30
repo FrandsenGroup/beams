@@ -359,7 +359,7 @@ def file(file_path: str) -> File:
     elif check_ext(file_path, '.bin') or check_ext(file_path, '.mdu'):
         return PSIMuonFile(file_path)
 
-    elif check_ext(file_path, '.beams') and is_beams(file_path):
+    elif check_ext(file_path, '.beams'):
         return BeamsSessionFile(file_path)
 
     elif check_ext(file_path, '.ft1') and is_beams(file_path):
