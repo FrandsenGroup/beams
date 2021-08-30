@@ -415,7 +415,7 @@ class Asymmetry(np.ndarray):
         return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
                          time=self.time, uncertainty=self.uncertainty, alpha=1)
 
-    def cut(self, min_time, max_time):
+    def cut(self, min_time=None, max_time=None):
         """ Returns a new asymmetry cut between the specified times.
 
         Does not alter the current asymmetry object. Based on the Time attribute of the asymmetry.
