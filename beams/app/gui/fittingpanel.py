@@ -1554,6 +1554,7 @@ class FitTabPresenter:
         # Check user input on fit equation and update config
         expression = self._view.get_expression()
         if not fit.is_valid_expression("A(t) = " + expression):
+            WarningMessageDialog.launch(["Fit equation is invalid."])
             self._view.highlight_input_red(self._view.input_fit_equation, True)
             self.__update_if_table_changes = True
             return
@@ -1565,9 +1566,15 @@ class FitTabPresenter:
         try:
             parameters = self._view.get_parameters()
         except ValueError:
-            self._view.highlight_input_red(self._view.table_parameters, True)
+            WarningMessageDialog.launch(["Parameter input is invalid."])
             self.__update_if_table_changes = True
             return
+
+        for symbol, value, value_min, value_max, _, _, _, _, _ in parameters:
+            if value < value_min or value > value_max:
+                WarningMessageDialog.launch(["Bounds for {} and its initial value are incompatible.".format(symbol)])
+                self.__update_if_table_changes = True
+                return
 
         # Check user input on runs and update config
         if self._view.check_batch_fit.isChecked():
@@ -1576,6 +1583,7 @@ class FitTabPresenter:
             run_ids = self._view.get_checked_run_ids()
 
         if len(run_ids) == 0:  # User needs to select a run to fit
+            WarningMessageDialog.launch(["Must select at least one run to fit to."])
             self._view.highlight_input_red(self._view.run_list, True)
             self.__update_if_table_changes = True
             return
