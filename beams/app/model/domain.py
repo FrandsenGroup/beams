@@ -725,7 +725,7 @@ class FitDataset:
                 f = list(self.fits.values())[0]
                 for name, v in f.parameters.items():
                     if v.is_global:
-                        fit_parameters_string += "\t" + "{:<8}{:<10.5f}{:<8.5f}{:<8.5f}".format(v.symbol, v.value, v.lower, v.upper) + "\n"
+                        fit_parameters_string += "\t" + "{:<8}{:<10.5f}{:<10.5f}{:<8.5f}{:<8.5f}".format(v.symbol, v.value, v.uncertainty, v.lower, v.upper) + "\n"
 
                 fit_parameters_string += "\n"
 
@@ -735,7 +735,7 @@ class FitDataset:
 
                 for name, v in f.parameters.items():
                     if not v.is_global:
-                        fit_parameters_string += "\t" + "{:<8}{:<10.5f}{:<8.5f}{:<8.5f}".format(v.symbol, v.value, v.lower, v.upper) + "\n"
+                        fit_parameters_string += "\t" + "{:<8}{:<10.5f}{:<10.5f}{:<8.5f}{:<8.5f}".format(v.symbol, v.value, v.uncertainty, v.lower, v.upper) + "\n"
 
                 fit_parameters_string += "\n"
 
