@@ -1623,12 +1623,12 @@ class FitTabPresenter:
         # Fit to spec
         worker = FitWorker(config)
         worker.signals.result.connect(self._update_fit_changes)
+        worker.signals.error.connect(lambda error_message: WarningMessageDialog.launch([error_message]))
         self._threadpool.start(worker)
 
         LoadingDialog.launch("Your fit is running!", worker)
 
     def _new_empty_fit(self):
-
         self.__expression = None
         self.__variable_groups = []
         self._view.clear()
@@ -1759,8 +1759,8 @@ class FitWorker(QtCore.QRunnable):
             for run_id, fit_data in dataset.fits.items():
                 fit_data.expression = fit.FitExpression(fit_data.string_expression)
 
-        except Exception:
-            self.signals.error.emit("Error running fit.")
+        except Exception as e:
+            self.signals.error.emit(str(e))
         else:
             self.signals.result.emit(dataset)
         finally:
