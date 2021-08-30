@@ -1571,7 +1571,11 @@ class FitTabPresenter:
             return
 
         for symbol, value, value_min, value_max, _, _, _, _, _ in parameters:
-            if value < value_min:
+            if value_min > value_max:
+                WarningMessageDialog.launch(["Lower bound is greater then upper bound for {}. ({:.5f} > {:.5f})".format(symbol, value_min, value_max)])
+                self.__update_if_table_changes = True
+                return
+            elif value < value_min:
                 WarningMessageDialog.launch(["Bounds for {} and its initial value are incompatible. ({:.5f} < {:.5f})".format(symbol, value, value_min)])
                 self.__update_if_table_changes = True
                 return
