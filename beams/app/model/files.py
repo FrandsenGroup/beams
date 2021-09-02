@@ -12,6 +12,17 @@ import enum
 import pandas as pd
 
 
+# File Extensions
+@enum.unique
+class Extensions(enum.Enum):
+    BEAMS = ".beams"
+    FIT_SUMMARY = ".ft3"
+    FIT_SUMMARY_VERBOSE = ".ft2"
+    FIT = ".ft1"
+    ASYMMETRY = ".asy"
+    HISTOGRAM = ".dat"
+
+
 # File Sources
 @enum.unique
 class Source(enum.Enum):
