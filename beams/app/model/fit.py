@@ -123,7 +123,7 @@ class FitExpression:
     def __call__(self, *args, **kwargs):
         # The length of this function is due to the fact I have trust issues.
         if not self.safe:
-            return self.__expression(*args, **kwargs)
+            return self.__expression(*args, **{replace_symbols(k): v for k, v in kwargs.items()})
 
         time_array = args[0]
 
@@ -139,10 +139,10 @@ class FitExpression:
                     except ValueError:
                         raise ValueError("Every parameter after the array should be of type FitParameter.")
         for k, v in kwargs.items():
-            pars[k] = v
+            pars[replace_symbols(k)] = v
 
         for symbol, value in self.__fixed.items():
-            pars[symbol] = value
+            pars[replace_symbols(symbol)] = value
 
         try:
             return self.__expression(time_array, *unnamed_pars, **pars)
@@ -153,7 +153,7 @@ class FitExpression:
             raise
 
     def set_fixed(self, parameters):
-        self.__fixed = {symbol: parameter.value for symbol, parameter in parameters}
+        self.__fixed = {replace_symbols(symbol): parameter.value for symbol, parameter in parameters}
 
 
 class FitConfig:
