@@ -5,7 +5,7 @@ from PyQt5 import QtCore, QtWidgets
 
 from app.util import qt_widgets
 from app.gui.dialogs import dialog_misc
-from app.model import domain, services
+from app.model import domain, services, files
 
 
 class WriteFitDialog(QtWidgets.QDialog):
@@ -97,7 +97,7 @@ class WriteFitDialogPresenter(QtCore.QObject):
         prefix_key = self._view.option_prefix.currentText()
 
         if self._view.radio_short.isChecked():
-            save_path = self._get_save_path("Fit (*.ft3)")
+            save_path = self._get_save_path("Fit (*{})".format(files.Extensions.FIT_SUMMARY))
 
             if not save_path:
                 return
@@ -105,7 +105,7 @@ class WriteFitDialogPresenter(QtCore.QObject):
             self._dataset.write(save_path)
 
         elif self._view.radio_verbose.isChecked():
-            save_path = self._get_save_path("Fit (*.ft2)")
+            save_path = self._get_save_path("Fit (*{})".format(files.Extensions.FIT_SUMMARY_VERBOSE))
 
             if not save_path:
                 return
@@ -119,7 +119,7 @@ class WriteFitDialogPresenter(QtCore.QObject):
                 return
 
             for fit in self._dataset.fits.values():
-                full_file_path = os.path.join(save_directory, str(fit.meta[prefix_key]) + ".ft1")
+                full_file_path = os.path.join(save_directory, str(fit.meta[prefix_key]) + files.Extensions.FIT)
                 fit.write(full_file_path)
 
         else:  # Zip
@@ -128,12 +128,10 @@ class WriteFitDialogPresenter(QtCore.QObject):
             if not save_path:
                 return
 
-            # TODO Make our file extensions constants in the files module.
-
             for data in self._dataset.fits.values():
-                data.write(str(data.meta[prefix_key]) + ".ft1")
+                data.write(str(data.meta[prefix_key]) + files.Extensions.FIT)
 
-            fit_files = [str(d.meta[prefix_key]) + ".ft1" for d in self._dataset.fits.values()]
+            fit_files = [str(d.meta[prefix_key]) + files.Extensions.FIT for d in self._dataset.fits.values()]
 
             try:
                 with zipfile.ZipFile(save_path) as z:

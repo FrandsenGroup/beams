@@ -14,13 +14,16 @@ import pandas as pd
 
 # File Extensions
 @enum.unique
-class Extensions(enum.Enum):
-    BEAMS = ".beams"
+class Extensions:
+    SESSION = ".beams"
     FIT_SUMMARY = ".ft3"
     FIT_SUMMARY_VERBOSE = ".ft2"
     FIT = ".ft1"
     ASYMMETRY = ".asy"
     HISTOGRAM = ".dat"
+    TRIUMF = '.msr'
+    PSI_BIN = '.bin'
+    PSI_MDU = '.mdu'
 
 
 # File Sources
@@ -165,7 +168,7 @@ class TRIUMFMuonFile(ConvertibleFile):
 
     def convert(self, out_file):
         flags = ['-all']
-        if is_found(self.file_path) and check_ext(self.file_path, '.msr') and check_ext(out_file, '.dat'):
+        if is_found(self.file_path) and check_ext(self.file_path, Extensions.TRIUMF) and check_ext(out_file, Extensions.HISTOGRAM):
             system_args = {'win32': ['beams\\app\\resources\\mud\\TRIUMF_WINDOWS', self.file_path, out_file],  # Windows Syntax
                            'linux': ['./beams/app/resources/mud/TRIUMF_LINUX', self.file_path, out_file],  # Linux Syntax
                            'darwin': ['./beams/app/resources/mud/TRIUMF_MAC', self.file_path, out_file]}  # Mac Syntax
@@ -199,8 +202,8 @@ class PSIMuonFile(ConvertibleFile):
     DATA_TYPE = DataType.MUON
 
     def convert(self, out_file):
-        if is_found(self.file_path) and (check_ext(self.file_path, '.bin') or check_ext(self.file_path, '.mdu')) \
-                and check_ext(out_file, '.dat'):
+        if is_found(self.file_path) and (check_ext(self.file_path, Extensions.PSI_BIN) or check_ext(self.file_path, Extensions.PSI_MDU)) \
+                and check_ext(out_file, Extensions.HISTOGRAM):
 
             system_args = {'win32': ['beams\\app\\resources\\mud\\PSI_WINDOWS', self.file_path, out_file],  # Windows Syntax
                            'linux': ['./beams/app/resources/mud/PSI_LINUX', self.file_path, out_file],  # Linux Syntax
@@ -358,28 +361,28 @@ def file(file_path: str) -> File:
     if not is_found(file_path):
         raise FileNotFoundError(file_path)
 
-    if check_ext(file_path, '.dat') and is_beams(file_path):
+    elif check_ext(file_path, Extensions.HISTOGRAM) and is_beams(file_path):
         return MuonHistogramFile(file_path)
 
-    elif check_ext(file_path, '.asy') and is_beams(file_path):
+    elif check_ext(file_path, Extensions.ASYMMETRY) and is_beams(file_path):
         return MuonAsymmetryFile(file_path)
 
-    elif check_ext(file_path, '.msr'):
+    elif check_ext(file_path, Extensions.TRIUMF):
         return TRIUMFMuonFile(file_path)
 
-    elif check_ext(file_path, '.bin') or check_ext(file_path, '.mdu'):
+    elif check_ext(file_path, Extensions.PSI_BIN) or check_ext(file_path, Extensions.PSI_MDU):
         return PSIMuonFile(file_path)
 
-    elif check_ext(file_path, '.beams'):
+    elif check_ext(file_path, Extensions.SESSION):
         return BeamsSessionFile(file_path)
 
-    elif check_ext(file_path, '.ft1') and is_beams(file_path):
+    elif check_ext(file_path, Extensions.FIT) and is_beams(file_path):
         return FitFile(file_path)
 
-    elif check_ext(file_path, '.ft2') and is_beams(file_path):
+    elif check_ext(file_path, Extensions.FIT_SUMMARY_VERBOSE) and is_beams(file_path):
         return FitDatasetExpressionFile(file_path)
 
-    elif check_ext(file_path, '.ft3') and is_beams(file_path):
+    elif check_ext(file_path, Extensions.FIT_SUMMARY) and is_beams(file_path):
         return FitDatasetFile(file_path)
 
     else:
