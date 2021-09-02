@@ -181,6 +181,16 @@ class FittingPanel(Panel):
 
         def __init__(self):
             super().__init__()
+            # TODO How to set it up?
+            #   we want to be able to save a set of fits using some meta attribute as a prefix.
+            #   just have two dialogs that come up when it is a single fit vs a set of fits.
+            #   When saving fit dataset they should have an option of four formats to save the set as
+            #   short, verbose, all to a directory with prefix, same but in a zip. Maybe we could have a
+            #   window which gives a preview.
+            # TODO We need to do a similar thing with everything else because the current write button doesn't
+            #   contextually make much sense so lets just have right-click save options for all items in the
+            #   support panels.
+
             self.tree = FittingPanel.SupportPanel.Tree()
             self.setTitleBarWidget(QtWidgets.QWidget())
             main_layout = QtWidgets.QVBoxLayout()
@@ -1290,6 +1300,8 @@ class FitTabPresenter:
         selected_data = self._view.support_panel.tree.get_selected_data()
         if selected_data is None:
             return
+
+        out_file = None
 
         if isinstance(selected_data, domain.FitDataset):
             selected_data.write("out_file_x.txt", False)
