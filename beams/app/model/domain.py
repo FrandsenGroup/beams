@@ -724,7 +724,7 @@ class FitDataset:
         self.flags = 0
         self.expression = None
 
-    def write(self, out_file, verbose_format=True):
+    def write(self, out_file, verbose_format=None):
         if verbose_format:
             fit_parameters_string = "# Fit Parameters\n\n# {:<8}{:<10}{:<8}{:<8}".format("Name", "Value", "Lower", "Upper") + "\n\n"
             if self.flags & FitDataset.Flags.GLOBAL or self.flags & FitDataset.Flags.GLOBAL_PLUS:
