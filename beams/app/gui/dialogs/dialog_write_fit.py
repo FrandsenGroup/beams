@@ -186,7 +186,7 @@ class WriteFitDialogPresenter(QtCore.QObject):
             fit_files = [str(d.meta[prefix_key]) + files.Extensions.FIT for d in self._dataset.fits.values()]
 
             try:
-                with zipfile.ZipFile(save_path) as z:
+                with zipfile.ZipFile(save_path, 'w') as z:
                     for f in fit_files:
                         z.write(f)
             except Exception as e:
@@ -207,7 +207,7 @@ class WriteFitDialogPresenter(QtCore.QObject):
 
     def _get_save_directory(self):
         path = QtWidgets.QFileDialog.getExistingDirectory(self._view, caption="Save",
-                                                          directory=self._system_service.get_last_used_directory())[0]
-        if path:
+                                                          directory=self._system_service.get_last_used_directory())
+        if path and path != '':
             self._system_service.set_last_used_directory(path)
             return path
