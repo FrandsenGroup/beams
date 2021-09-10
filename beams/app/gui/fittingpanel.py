@@ -2,6 +2,7 @@ import logging
 import re
 from collections import OrderedDict
 from concurrent import futures
+from functools import partial
 
 from PyQt5 import QtWidgets, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -9,6 +10,7 @@ from matplotlib.figure import Figure
 import numpy as np
 
 from app.gui.dialogs.dialog_misc import WarningMessageDialog, LoadingDialog
+from app.gui.dialogs.dialog_write_fit import WriteFitDialog
 from app.util import qt_widgets, qt_constants
 from app.model import domain, fit, files, services
 from app.gui.gui import PanelPresenter, Panel
@@ -46,7 +48,13 @@ class FittingPanel(Panel):
                     return
 
                 item = self.itemAt(point)
-                menu = item.menu(self.selectedItems(), self)
+
+                actions = item.get_actions(self.selectedItems())
+                menu = QtWidgets.QMenu()
+
+                for action in actions:
+                    menu.addAction(action[0], partial(action[1], self.selectedItems(), self))
+
                 menu.exec_(self.mapToGlobal(point))
 
             def set_tree(self, tree):
@@ -132,51 +140,52 @@ class FittingPanel(Panel):
                     for fit_data in dataset.fits.values():
                         self.addChild(FittingPanel.SupportPanel.FitNode(fit_data))
 
-            def menu(self, items, parent):
-                self.__selected_items = items
-                self.__parent = parent
-                menu = QtWidgets.QMenu()
-                menu.addAction("Rename", self._action_rename)
-                menu.addAction("Save", self._action_save)
-                menu.addAction("Remove", self._action_remove)
-                menu.addSeparator()
-                menu.addAction("Expand", self._action_expand)
-                return menu
+            def get_actions(self, items):
+                actions = [
+                    ("Rename", self._action_rename),
+                    ("Remove", self._action_remove),
+                    ("Expand", self._action_expand)
+                ]
 
-            def _action_rename(self):
-                self.__parent.editItem(self)
+                if len(items) == 1:
+                    actions.append(("Save", self._action_save))
 
-            def _action_save(self):
-                pass
+                return actions
 
-            def _action_remove(self):
-                self.__fit_service.remove_dataset([item.model.id for item in self.__selected_items])
+            def _action_rename(self, _, parent):
+                parent.editItem(self)
 
-            def _action_expand(self):
-                for item in self.__selected_items:
+            def _action_save(self, items, parent):
+                WriteFitDialog.launch(dataset=items[0].model)
+
+            def _action_remove(self, items, _):
+                self.__fit_service.remove_dataset([item.model.id for item in items])
+
+            def _action_expand(self, items, _):
+                for item in items:
                     item.setExpanded(not self.isExpanded())
 
         class FitNode(QtWidgets.QTreeWidgetItem):
             def __init__(self, fit_data):
                 super().__init__([fit_data.title])
                 self.model = fit_data
-                self.__selected_items = None
-                self.__parent = None
 
                 self.setFlags(self.flags() | QtCore.Qt.ItemFlag.ItemIsEditable)
 
-            def menu(self, items, parent):
-                self.__selected_items = items
-                self.__parent = parent
-                menu = QtWidgets.QMenu()
-                menu.addAction("Rename", self._action_rename)
-                menu.addAction("Save", self._action_save)
-                return menu
+            def get_actions(self, items):
+                actions = [
+                    ("Rename", self._action_rename)
+                ]
 
-            def _action_rename(self):
-                self.__parent.editItem(self)
+                if len({id(item.parent()) for item in items}) == 1:
+                    actions.append(("Save", self._action_save))
 
-            def _action_save(self):
+                return actions
+
+            def _action_rename(self, items, parent):
+                parent.editItem(self)
+
+            def _action_save(self, items, parent):
                 pass
 
         def __init__(self):
