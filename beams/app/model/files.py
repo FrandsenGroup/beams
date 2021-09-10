@@ -13,7 +13,6 @@ import pandas as pd
 
 
 # File Extensions
-@enum.unique
 class Extensions:
     SESSION = ".beams"
     FIT_SUMMARY = ".ft3"
