@@ -144,7 +144,7 @@ class FittingPanel(Panel):
                 actions = [
                     ("Rename", self._action_rename),
                     ("Remove", self._action_remove),
-                    ("Expand", self._action_expand)
+                    # ("Expand", self._action_expand)
                 ]
 
                 if len(items) == 1:
@@ -186,7 +186,12 @@ class FittingPanel(Panel):
                 parent.editItem(self)
 
             def _action_save(self, items, parent):
-                pass
+
+                dataset = domain.FitDataset()
+                dataset.fits = {i.model.id: i.model for i in items}
+                dataset.flags = items[0].parent().model.flags
+
+                WriteFitDialog.launch(dataset=dataset)
 
         def __init__(self):
             super().__init__()
@@ -236,7 +241,7 @@ class FittingPanel(Panel):
             main_layout.addLayout(hbox)
 
             main_layout.addWidget(self.tree)
-            main_layout.addLayout(row_save)
+            # main_layout.addLayout(row_save)
             temp = QtWidgets.QWidget()
             temp.setLayout(main_layout)
             self.setWidget(temp)
