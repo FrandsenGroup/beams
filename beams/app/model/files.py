@@ -318,10 +318,15 @@ class FitDatasetFile(ReadableFile):
     HEADER_ROWS = 1
 
     def read_data(self):
-        pass
+        data = pd.read_csv(self.file_path, skiprows=1, delimiter='\t')
+        data.columns = [col.strip() for col in data.columns]
+        return data
 
     def read_meta(self):
-        pass
+        return {
+            'Runs': None,
+            'Symbols': None
+        }
 
 
 class FitDatasetExpressionFile(ReadableFile):
@@ -331,23 +336,50 @@ class FitDatasetExpressionFile(ReadableFile):
     HEADER_ROWS = 1
 
     def read_data(self):
-        pass
+        with open(self.file_path, 'r') as f:
+            lines = f.readlines()
+            ref_lines = []
+            for i, l in enumerate(lines):
+                if 'Specific' in l or 'Common' in l or 'Expression':
+                    ref_lines.append(i)
+
+
+
+
+
+
 
     def read_meta(self):
-        pass
+        return {
+            'Runs': None,
+            'Symbols': None,
+            'Expression': None
+        }
 
 
 class FitFile(ReadableFile):
     SOURCE = Source.BEAMS
     DATA_FORMAT = Format.FIT
     DATA_TYPE = DataType.MUON
-    HEADER_ROWS = 2
+    HEADER_ROWS = 3
 
     def read_data(self):
-        pass
+        data = pd.read_csv(self.file_path, skiprows=self.HEADER_ROWS - 1)
+        data.columns = ['Time', 'Asymmetry', 'Calculated', 'Uncertainty']
+        return data
 
     def read_meta(self):
-        pass
+        with open(self.file_path) as f:
+            f.readline()
+            metadata_line = f.readline().rstrip('\n').rsplit('# ')[1].rsplit(',')
+
+        metadata = [pair.rsplit(':') for pair in metadata_line]
+        for pair in metadata:
+            if len(pair) < 2:
+                pair.append('n/a')
+        metadata = {pair[0]: pair[1] for pair in metadata}
+        metadata[T0_KEY] = 0
+        return metadata
 
 
 def file(file_path: str) -> File:
