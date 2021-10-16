@@ -451,7 +451,7 @@ class FitEngine:
         for i, symbol in enumerate(config.get_adjusted_global_symbols()):
             values[symbol] = opt.x[i]
 
-        for run_id, (time, asymmetry, uncertainty) in config.data.items():
+        for run_id, _ in config.data.items():
             for symbol, parameter in config.parameters[run_id].items():
                 if not parameter.is_global:
                     config.set_outputs(run_id, symbol, values[symbol + _shortened_run_id(run_id)], 0)
@@ -517,37 +517,71 @@ class FitEngine:
         dataset.flags = config.flags
         return dataset
 
-    def _lambdify_global(self, config: FitConfig, concatenated_time):
+    def _lambdify_global(self, config: FitConfig):
+        """ Creates a single lambda expression for a global fit.
+
+            In a global fit we will have some parameters that are fit locally, for a single run, and some that are fit
+            across all runs. To get this to work with a single residual function for scipy least_squares we essentially
+            create a piecewise function where we apply different lambdas to different sections of the concatenated
+            arrays.
+
+            Example:
+                Fitting three asymmetries.
+
+                a * t + b / c
+                a, b are local parameters
+                c is a global parameter
+
+                arr = a1 | a2 | a3
+
+                The lambda that is created would essentially look like this.
+
+                f(arr, pars) = {
+                    a1 => a1 * t + b1 / c
+                    a2 => a2 * t + b2 / c
+                    a3 => a3 * t + b3 / c
+
+                So you can see we append some unique value (a piece of the run id) to end of the local parameters so
+                they are only fit to that specific section while we use the global parameter throughout.
+        """
+
         function = ALPHA_CORRECTION.format(config.expression, config.expression)
         self.__logger.debug('_lambdify_global: {}'.format(function))
 
-        lambdas = OrderedDict()
-        run_id_order = []
+        lambdas = []
+        lengths = []
+        ends = []
+        starts = []
+        number_runs = len(config.data.items())
+
         for i, (run_id, asymmetry) in enumerate(config.data.items()):
             new_function = function
+
             for symbol in config.get_symbols_for_run(run_id, is_global=False):
                 new_function = FitEngine._replace_var_with(new_function, symbol, symbol + _shortened_run_id(run_id))
 
             self.__logger.debug("_lambdify_global: f({})={}".format(run_id, new_function))
+
             new_lambda_expression = FitExpression(new_function, variables=config.get_adjusted_global_symbols())
-            new_lambda_expression.safe = False
-            lambdas[run_id] = new_lambda_expression
-            run_id_order.append(run_id)
+            new_lambda_expression.safe = False  # No type checks, speeds up the fit dramatically.
+            lambdas.append(new_lambda_expression)
+
+            starts.append(sum(lengths))
+            lengths.append(int(len(asymmetry[0])))
+            ends.append(starts[-1] + lengths[-1])
 
         def _lambda_expression(arr, *pars, **kwargs):
-            section_length = int(len(arr) / len(lambdas))
-            values = np.array(
-                [lambdas[rid](arr[j * section_length: (j + 1) * section_length], *pars, **kwargs) for j, rid in
-                 enumerate(run_id_order)])
-            return values.flatten()
+            values = [lambdas[j](arr[starts[j]: ends[j]], *pars, **kwargs) for j in range(number_runs)]
+            return np.hstack(values)
 
         return _lambda_expression
 
     @staticmethod
     def _residual(lambda_expression):
         def residual(pars, x, y_data, dy_data):
-            y_calc = lambda_expression(x, *pars)
+            y_calc = lambda_expression(x, *pars)  # y_calc is coming out as shorter sometimes then y_data.
             return np.divide(np.subtract(y_data, y_calc), dy_data)
+
         return residual
 
     @staticmethod
