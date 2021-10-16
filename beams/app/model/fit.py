@@ -425,22 +425,15 @@ class FitEngine:
         # Create a single global lambda function for all the datasets. Essentially, it acts like a
         #    stepwise function, once you pass into the asymmetry of another dataset, a separate function
         #    in the lambda will start being used. See its definition for more on why.
-        global_lambda_expression = self._lambdify_global(config, concatenated_time)
+        global_lambda_expression = self._lambdify_global(config)
         residual = FitEngine._residual(global_lambda_expression)
         
         # Run a lease squares fit with the global lambda and concatenated datasets
-        # import time
-        # import cProfile, pstats, io
-        # from pstats import SortKey
-        # pr = cProfile.Profile()
-        # pr.enable()
-        opt = least_squares(residual, guesses, bounds=[lowers, uppers], args=(concatenated_time, concatenated_asymmetry, concatenated_uncertainty))
-        # pr.disable()
-        # s = io.StringIO()
-        # sortby = SortKey.CUMULATIVE
-        # ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        # ps.print_stats()
-        # print(s.getvalue())
+        try:
+            opt = least_squares(residual, guesses, bounds=[lowers, uppers], args=(concatenated_time, concatenated_asymmetry, concatenated_uncertainty))
+        except Exception:
+            import traceback
+            raise Exception(traceback.format_exc())
 
         self.__logger.debug("Output from least_squares global : ".format(opt))
 
