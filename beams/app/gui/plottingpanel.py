@@ -1035,43 +1035,30 @@ class PlottingPanelPresenter(PanelPresenter):
         self._view.left_settings.input_time_xmax.returnPressed.connect(lambda: self._start_update('left'))
         self._view.left_settings.input_time_ymin.returnPressed.connect(lambda: self._start_update('left'))
         self._view.left_settings.input_time_ymax.returnPressed.connect(lambda: self._start_update('left'))
-        self._view.left_settings.check_time_yauto.stateChanged.connect(
-            lambda: self._check_parameter_changed(self._view.left_settings))
+        self._view.left_settings.check_time_yauto.stateChanged.connect(lambda: self._check_parameter_changed('left'))
         self._view.left_settings.input_freq_xmin.returnPressed.connect(lambda: self._start_update('left'))
         self._view.left_settings.input_freq_xmax.returnPressed.connect(lambda: self._start_update('left'))
         self._view.left_settings.input_freq_ymin.returnPressed.connect(lambda: self._start_update('left'))
         self._view.left_settings.input_freq_ymax.returnPressed.connect(lambda: self._start_update('left'))
-        self._view.left_settings.check_freq_yauto.stateChanged.connect(
-            lambda: self._check_parameter_changed(self._view.left_settings))
-        self._view.left_settings.check_freq_xauto.stateChanged.connect(
-            lambda: self._check_parameter_changed(self._view.left_settings))
-        self._view.left_settings.slider_bin.sliderMoved.connect(
-            lambda: self._bin_parameter_changed(self._view.left_settings, 'left', True))
-        self._view.left_settings.slider_bin.sliderReleased.connect(
-            lambda: self._bin_parameter_changed(self._view.left_settings, 'left', False))
-        self._view.left_settings.input_bin.returnPressed.connect(
-            lambda: self._bin_parameter_changed(self._view.left_settings, 'left', False))
+        self._view.left_settings.check_freq_yauto.stateChanged.connect(lambda: self._check_parameter_changed('left'))
+        self._view.left_settings.check_freq_xauto.stateChanged.connect(lambda: self._check_parameter_changed('left'))
+        self._view.left_settings.slider_bin.sliderMoved.connect(lambda: self._bin_parameter_changed('left', True))
+        self._view.left_settings.slider_bin.sliderReleased.connect(lambda: self._bin_parameter_changed('left', False))
+        self._view.left_settings.input_bin.returnPressed.connect(lambda: self._bin_parameter_changed('left', False))
         self._view.right_settings.input_time_xmin.returnPressed.connect(lambda: self._start_update('right'))
         self._view.right_settings.input_time_xmax.returnPressed.connect(lambda: self._start_update('right'))
         self._view.right_settings.input_time_ymin.returnPressed.connect(lambda: self._start_update('right'))
         self._view.right_settings.input_time_ymax.returnPressed.connect(lambda: self._start_update('right'))
-        self._view.right_settings.check_time_yauto.stateChanged.connect(
-            lambda: self._check_parameter_changed(self._view.right_settings))
+        self._view.right_settings.check_time_yauto.stateChanged.connect(lambda: self._check_parameter_changed('right'))
         self._view.right_settings.input_freq_xmin.returnPressed.connect(lambda: self._start_update('right'))
         self._view.right_settings.input_freq_xmax.returnPressed.connect(lambda: self._start_update('right'))
         self._view.right_settings.input_freq_ymin.returnPressed.connect(lambda: self._start_update('right'))
         self._view.right_settings.input_freq_ymax.returnPressed.connect(lambda: self._start_update('right'))
-        self._view.right_settings.check_freq_yauto.stateChanged.connect(
-            lambda: self._check_parameter_changed(self._view.right_settings))
-        self._view.right_settings.check_freq_xauto.stateChanged.connect(
-            lambda: self._check_parameter_changed(self._view.right_settings))
-        self._view.right_settings.slider_bin.sliderMoved.connect(
-            lambda: self._bin_parameter_changed(self._view.right_settings, 'right', True))
-        self._view.right_settings.slider_bin.sliderReleased.connect(
-            lambda: self._bin_parameter_changed(self._view.right_settings, 'right', False))
-        self._view.right_settings.input_bin.returnPressed.connect(
-            lambda: self._bin_parameter_changed(self._view.right_settings, 'right', False))
-
+        self._view.right_settings.check_freq_yauto.stateChanged.connect(lambda: self._check_parameter_changed('right'))
+        self._view.right_settings.check_freq_xauto.stateChanged.connect(lambda: self._check_parameter_changed('left'))
+        self._view.right_settings.slider_bin.sliderMoved.connect(lambda: self._bin_parameter_changed('right', True))
+        self._view.right_settings.slider_bin.sliderReleased.connect(lambda: self._bin_parameter_changed('right', False))
+        self._view.right_settings.input_bin.returnPressed.connect(lambda: self._bin_parameter_changed('right', False))
         self._view.support_panel.plot_button.pressed.connect(self._plot)
         self._view.support_panel.plot_all_button.pressed.connect(self._plot_all)
         self._view.support_panel.clear_all_button.pressed.connect(self._clear_all)
@@ -1118,17 +1105,6 @@ class PlottingPanelPresenter(PanelPresenter):
                                                   self._view.support_panel.plot_style_box.fit_linestyle_options.currentText()))
         self._view.support_panel.item_tree.itemSelectionChanged.connect(self._populate_settings)
 
-    def _start_update(self, side):
-        if side == 'left' or side == 'both':
-            threading.Thread(
-                target=self._update_canvas(self._view.left_settings, self._view.left_display, 'left', fast=False),
-                daemon=True).start()
-
-        if side == 'right' or side == 'both':
-            threading.Thread(
-                target=self._update_canvas(self._view.right_settings, self._view.right_display, 'right', fast=False),
-                daemon=True).start()
-
     def _plot_all(self):
         self._view.support_panel.item_tree.set_all_checked(True)
         self._plot()
@@ -1161,7 +1137,12 @@ class PlottingPanelPresenter(PanelPresenter):
 
         self._start_update(side='both')
 
-    def _bin_parameter_changed(self, settings, side, moving):
+    def _bin_parameter_changed(self, side, moving):
+        if side == 'left':
+            settings = self._view.left_settings
+        else:
+            settings = self._view.right_settings
+
         if moving:
             value = settings.get_bin_from_slider()
             settings.set_bin_input(value)
@@ -1173,7 +1154,12 @@ class PlottingPanelPresenter(PanelPresenter):
 
         self._start_update(side)
 
-    def _check_parameter_changed(self, settings):
+    def _check_parameter_changed(self, side):
+        if side == 'left':
+            settings = self._view.left_settings
+        else:
+            settings = self._view.right_settings
+
         settings.set_enabled_asymmetry_auto(not settings.is_asymmetry_auto())
         settings.set_enabled_frequency_auto(not settings.is_freq_auto())
         settings.set_enabled_fft_auto(not settings.is_fft_auto())
