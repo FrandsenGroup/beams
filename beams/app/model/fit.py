@@ -417,19 +417,28 @@ class FitEngine:
         except Exception:
             raise Exception(traceback.format_exc())
 
+        try:
+            unc, chi_sq = get_std_unc(opt, concatenated_asymmetry)
+        except (np.linalg.LinAlgError, NameError):  # Fit did not converge
+            unc = [-1 for _ in opt.x]
+
         # Assemble the Fit object, first by updating the parameters in the config with the outputs from
         #   the fit, as well as adding a FitExpression object that can be called.
         dataset = domain.FitDataset()
         values = {}
+        uncertainties = {}
         for i, symbol in enumerate(config.get_adjusted_global_symbols()):
             values[symbol] = opt.x[i]
+            uncertainties[symbol] = unc[i]
 
         for run_id, _ in config.data.items():
             for symbol, parameter in config.parameters[run_id].items():
                 if not parameter.is_global:
-                    config.set_outputs(run_id, symbol, values[symbol + _shortened_run_id(run_id)], 0)
+                    config.set_outputs(run_id, symbol,
+                                       values[symbol + _shortened_run_id(run_id)],
+                                       uncertainties[symbol + _shortened_run_id(run_id)])
                 else:
-                    config.set_outputs(run_id, symbol, values[symbol], 0)
+                    config.set_outputs(run_id, symbol, values[symbol], uncertainties[symbol])
 
             fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
             fixed_values = config.get_values_for_run(run_id, is_fixed=True)
