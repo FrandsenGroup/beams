@@ -197,11 +197,8 @@ class FitConfig:
     def get_symbols_for_run(self, run_id, is_fixed=None, is_global=None):
         symbols = []
         for symbol, parameter in self.parameters[run_id].items():
-            if (is_fixed is None and is_global is None) \
-                    or (is_fixed and (parameter.is_fixed or parameter.is_fixed_run)) \
-                    or (is_fixed is not None and (is_fixed == parameter.is_fixed and is_fixed == parameter.is_fixed_run)) \
-                    or (is_global and parameter.is_global) \
-                    or (is_global is not None and (is_global == parameter.is_global)):
+            if (is_fixed is None or (is_fixed == (parameter.is_fixed or parameter.is_fixed_run))) and \
+                    (is_global is None or (is_global == parameter.is_global)):
                 symbols.append(symbol)
 
         return symbols
@@ -210,53 +207,46 @@ class FitConfig:
         values = []
 
         for _, parameter in self.parameters[run_id].items():
-            if (is_fixed is None and is_global is None) \
-                    or (is_fixed and (parameter.is_fixed or parameter.is_fixed_run)) \
-                    or (is_fixed is not None and (is_fixed == parameter.is_fixed and is_fixed == parameter.is_fixed_run)) \
-                    or (is_global and parameter.is_global) \
-                    or (is_global is not None and (is_global == parameter.is_global)):
+            if (is_fixed is None or (is_fixed == (parameter.is_fixed or parameter.is_fixed_run))) and \
+                    (is_global is None or (is_global == parameter.is_global)):
                 values.append(parameter.get_value())
 
-        return values
+        return np.array(values, dtype=float)
 
     def get_lower_values_for_run(self, run_id, is_fixed=None, is_global=None):
         values = []
 
         for _, parameter in self.parameters[run_id].items():
-            if (is_fixed is None and is_global is None) \
-                    or (is_fixed and (parameter.is_fixed or parameter.is_fixed_run)) \
-                    or (is_fixed is not None and (is_fixed == parameter.is_fixed and is_fixed == parameter.is_fixed_run)) \
-                    or (is_global and parameter.is_global) \
-                    or (is_global is not None and (is_global == parameter.is_global)):
+            if (is_fixed is None or (is_fixed == (parameter.is_fixed or parameter.is_fixed_run))) and \
+                    (is_global is None or (is_global == parameter.is_global)):
 
                 if parameter.is_fixed or parameter.is_fixed_run:
                     values.append(parameter.get_value() - 0.0000001)
                 else:
                     values.append(parameter.lower)
 
-        return values
+        return np.array(values, dtype=float)
 
     def get_upper_values_for_run(self, run_id, is_fixed=None, is_global=None):
         values = []
 
         for _, parameter in self.parameters[run_id].items():
-            if (is_fixed is None and is_global is None) \
-                    or (is_fixed and (parameter.is_fixed or parameter.is_fixed_run)) \
-                    or (is_fixed is not None and (is_fixed == parameter.is_fixed and is_fixed == parameter.is_fixed_run)) \
-                    or (is_global and parameter.is_global) \
-                    or (is_global is not None and (is_global == parameter.is_global)):
+            if (is_fixed is None or (is_fixed == (parameter.is_fixed or parameter.is_fixed_run))) and \
+                    (is_global is None or (is_global == parameter.is_global)):
 
                 if parameter.is_fixed or parameter.is_fixed_run:
                     values.append(parameter.get_value() + 0.0000001)
                 else:
                     values.append(parameter.upper)
 
-        return values
+        return np.array(values, dtype=float)
 
     def get_adjusted_global_symbols(self):
         symbols = []
         for i, run_id in enumerate(self.parameters.keys()):
             for symbol, parameter in self.parameters[run_id].items():
+                if parameter.is_fixed_run or parameter.is_fixed:
+                    continue
                 if parameter.is_global and i == 0:
                     symbols.append(symbol)
                 elif not parameter.is_global:
@@ -268,46 +258,34 @@ class FitConfig:
         values = []
         for i, run_id in enumerate(self.parameters.keys()):
             for _, parameter in self.parameters[run_id].items():
-                if parameter.is_global and i == 0:
-                    values.append(parameter.get_value())
-                elif not parameter.is_global:
-                    values.append(parameter.get_value())
+                if parameter.is_fixed_run or parameter.is_fixed:
+                    continue
+                if (parameter.is_global and i == 0) or (not parameter.is_global):
+                    values.append(float(parameter.get_value()))
 
-        return values
+        return np.array(values, dtype=float)
 
     def get_adjusted_global_lowers(self):
         lowers = []
         for i, run_id in enumerate(self.parameters.keys()):
             for _, parameter in self.parameters[run_id].items():
-                if parameter.is_global and i == 0:
-                    if parameter.is_fixed or parameter.is_fixed_run:
-                        lowers.append(parameter.get_value() - 0.0000001)
-                    else:
-                        lowers.append(parameter.lower)
-                elif not parameter.is_global:
-                    if parameter.is_fixed or parameter.is_fixed_run:
-                        lowers.append(parameter.get_value() - 0.0000001)
-                    else:
-                        lowers.append(parameter.lower)
+                if parameter.is_fixed_run or parameter.is_fixed:
+                    continue
+                if (parameter.is_global and i == 0) or (not parameter.is_global):
+                    lowers.append(float(parameter.lower))
 
-        return lowers
+        return np.array(lowers, dtype=float)
 
     def get_adjusted_global_uppers(self):
         uppers = []
         for i, run_id in enumerate(self.parameters.keys()):
             for _, parameter in self.parameters[run_id].items():
-                if parameter.is_global and i == 0:
-                    if parameter.is_fixed or parameter.is_fixed_run:
-                        uppers.append(parameter.get_value() + 0.0000001)
-                    else:
-                        uppers.append(parameter.upper)
-                elif not parameter.is_global:
-                    if parameter.is_fixed or parameter.is_fixed_run:
-                        uppers.append(parameter.get_value() + 0.0000001)
-                    else:
-                        uppers.append(parameter.upper)
+                if parameter.is_fixed_run or parameter.is_fixed:
+                    continue
+                if (parameter.is_global and i == 0) or (not parameter.is_global):
+                    uppers.append(float(parameter.upper))
 
-        return uppers
+        return np.array(uppers, dtype=float)
 
     def get_kwargs(self, run_id):
         kwargs = {}
