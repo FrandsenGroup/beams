@@ -1393,16 +1393,55 @@ class FitTabPresenter:
         # colors = {run.id: available_colors[i % len(available_colors)] for i, run in enumerate(runs)}
         colors[0] = '#000000'
 
+        for i, run in enumerate(runs):
+            if run.id not in run_ids:
+                continue
+
+            asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(bin_size).cut(min_time=min_time, max_time=max_time)
+
+            if len(asymmetry) == 0:
+                return
+
+            raw_asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time, max_time=max_time)
+            self._asymmetries[run.id] = raw_asymmetry
+            time = asymmetry.time
+            uncertainty = asymmetry.uncertainty
+
+            # We have to do this logic because Matplotlib is not good at setting good default plot limits
+            frac_start = float(min_time) / (time[len(time) - 1] - time[0])
+            frac_end = float(max_time) / (time[len(time) - 1] - time[0])
+            start_index = int(np.floor(len(asymmetry) * frac_start))
+            end_index = int(np.floor(len(asymmetry) * frac_end))
+            local_max = np.max(asymmetry[start_index:end_index])
+            max_asymmetry = local_max if local_max > max_asymmetry else max_asymmetry
+            local_min = np.min(asymmetry[start_index:end_index])
+            min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
+            self.__logger.debug("About to plot : time<{}>, asymmetry<{}>, uncertainty<{}>, title<{}>".format(len(time), len(asymmetry), len(uncertainty), run.id))
+
+            self._view.fit_display.plot_asymmetry(time, asymmetry, uncertainty, None,
+                                                  color=colors[run.id],
+                                                  marker='.',
+                                                  linestyle='none',
+                                                  fillstyle='none',
+                                                  marker_color=colors[run.id],
+                                                  marker_size=5,
+                                                  line_color=colors[run.id],
+                                                  line_width=1,
+                                                  errorbar_color=colors[run.id],
+                                                  errorbar_style='none',
+                                                  errorbar_width=1,
+                                                  fit_color=colors[run.id],
+                                                  fit_linestyle='none',
+                                                  label=run.meta[files.TITLE_KEY])
+
         checked_run_ids = [0]
         checked_run_ids.extend(self._view.get_checked_run_ids())
-        alphas = dict()
 
         for i, (run_id, parameters) in enumerate(self.__variable_groups.items()):
             if (run_id == 0 or 'UNLINKED' not in run_id) and run_id not in checked_run_ids:
                 continue
 
             parameters = self.__variable_groups[run_id]
-            alphas[run_id] = parameters[fit.ALPHA].value
             time = domain.Time(input_array=None, bin_size=(max_time - min_time) * 1000 / 200, length=200,
                                time_zero=min_time)
             fit_asymmetry = self.__expression(time, **{symbol: par.get_value() for symbol, par in parameters.items()})
@@ -1444,52 +1483,6 @@ class FitTabPresenter:
                                                   fit_color=color,
                                                   fit_linestyle='none',
                                                   label=None)
-        for i, run in enumerate(runs):
-            if run.id not in run_ids:
-                continue
-
-            asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(bin_size).cut(min_time=min_time,
-                                                                                            max_time=max_time)
-            if len(asymmetry) == 0:
-                return
-
-            if run.id in alphas:
-                asymmetry = asymmetry.correct(alphas[run.id])
-
-            raw_asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time,
-                                                                                                      max_time=max_time)
-            self._asymmetries[run.id] = raw_asymmetry
-            time = asymmetry.time
-            uncertainty = asymmetry.uncertainty
-
-            # We have to do this logic because Matplotlib is not good at setting good default plot limits
-            frac_start = float(min_time) / (time[len(time) - 1] - time[0])
-            frac_end = float(max_time) / (time[len(time) - 1] - time[0])
-            start_index = int(np.floor(len(asymmetry) * frac_start))
-            end_index = int(np.floor(len(asymmetry) * frac_end))
-            local_max = np.max(asymmetry[start_index:end_index])
-            max_asymmetry = local_max if local_max > max_asymmetry else max_asymmetry
-            local_min = np.min(asymmetry[start_index:end_index])
-            min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
-            self.__logger.debug(
-                "About to plot : time<{}>, asymmetry<{}>, uncertainty<{}>, title<{}>".format(len(time), len(asymmetry),
-                                                                                             len(uncertainty), run.id))
-
-            self._view.fit_display.plot_asymmetry(time, asymmetry, uncertainty, None,
-                                                  color=colors[run.id],
-                                                  marker='.',
-                                                  linestyle='none',
-                                                  fillstyle='none',
-                                                  marker_color=colors[run.id],
-                                                  marker_size=5,
-                                                  line_color=colors[run.id],
-                                                  line_width=1,
-                                                  errorbar_color=colors[run.id],
-                                                  errorbar_style='none',
-                                                  errorbar_width=1,
-                                                  fit_color=colors[run.id],
-                                                  fit_linestyle='none',
-                                                  label=run.meta[files.TITLE_KEY])
 
         self._view.fit_display.set_asymmetry_plot_limits(max_asymmetry, min_asymmetry)
 
@@ -1761,10 +1754,6 @@ class FitTabPresenter:
         self.__update_if_table_changes = True
 
     def _update_fit_changes(self, dataset):
-        runs = self._run_service.get_runs_by_ids(dataset.fits.keys())
-        for run, f in zip(runs, dataset.fits.values()):
-            f.run = run
-
         self._fit_service.add_dataset([dataset])
         self._update_alphas(dataset)
         self.__update_if_table_changes = False
@@ -1821,7 +1810,6 @@ class FitWorker(QtCore.QRunnable):
                 fit_data.expression = fit.FitExpression(fit_data.string_expression)
 
         except Exception as e:
-            print(str(e))
             self.signals.error.emit(str(e))
         else:
             self.signals.result.emit(dataset)
