@@ -48,7 +48,7 @@ EQUATION_DICTIONARY = {"Simple Exponential": SIMPLE_EXPONENTIAL,
 
 USER_EQUATION_DICTIONARY = {}
 
-ALPHA_CORRECTION = '((1-\u03B1)+((1+\u03B1)*({})))/((1+\u03B1)+((1-\u03B1)*({})))'
+ALPHA_CORRECTION = '((1-\u03B1)+((1+\u03B1)*({0})))/((1+\u03B1)+((1-\u03B1)*({0})))'
 
 
 class FitParameter:
@@ -310,7 +310,7 @@ class FitConfig:
         return kwargs
 
     def set_outputs(self, run_id, symbol, output, uncertainty):
-        self.parameters[run_id][symbol].value = output  # You may be tempted to keep this value... Go for it.
+        self.parameters[run_id][symbol].value = output
         self.parameters[run_id][symbol].output = output
         self.parameters[run_id][symbol].fixed_value = output
         self.parameters[run_id][symbol].uncertainty = uncertainty
@@ -406,12 +406,6 @@ class FitEngine:
         lowers = config.get_adjusted_global_lowers()
         uppers = config.get_adjusted_global_uppers()
 
-        # Don't mind me, just using your io to log for my personal needs.
-        self.__logger.debug("Symbols : {}".format(config.get_adjusted_global_symbols()))
-        self.__logger.debug("Initials : {}".format(guesses))
-        self.__logger.debug("Lowers : {}".format(lowers))
-        self.__logger.debug("Uppers : {}".format(uppers))
-
         # We are essentially doing one big fit where you will have global and local (local to a specific section of the
         #   concatenated asymmetry) parameters being refined.
         concatenated_asymmetry = np.array([])
@@ -427,15 +421,13 @@ class FitEngine:
         #    in the lambda will start being used. See its definition for more on why.
         global_lambda_expression = self._lambdify_global(config)
         residual = FitEngine._residual(global_lambda_expression)
-        
+
         # Run a lease squares fit with the global lambda and concatenated datasets
         try:
             opt = least_squares(residual, guesses, bounds=[lowers, uppers], args=(concatenated_time, concatenated_asymmetry, concatenated_uncertainty))
         except Exception:
             import traceback
             raise Exception(traceback.format_exc())
-
-        self.__logger.debug("Output from least_squares global : ".format(opt))
 
         # Assemble the Fit object, first by updating the parameters in the config with the outputs from
         #   the fit, as well as adding a FitExpression object that can be called.
@@ -464,40 +456,36 @@ class FitEngine:
         dataset = domain.FitDataset()
         for run_id, (time, asymmetry,  uncertainty) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
-            function = ALPHA_CORRECTION.format(config.expression, config.expression)
-            lambda_expression = FitExpression(function, variables=config.get_symbols_for_run(run_id))
+            function = ALPHA_CORRECTION.format(config.expression)
+
+            # Replace the symbols with fixed values with their actual values. This way they don't throw off uncertainty.
+            fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
+            fixed_values = config.get_values_for_run(run_id, is_fixed=True)
+            function = FitEngine._replace_fixed(function, fixed_symbols, fixed_values)
+
+            # Create a residual expression for the least squares fit
+            lambda_expression = FitExpression(function, variables=config.get_symbols_for_run(run_id, is_fixed=False))
             residual = FitEngine._residual(lambda_expression)
 
-            guesses = config.get_values_for_run(run_id)
-            lowers = config.get_lower_values_for_run(run_id)
-            uppers = config.get_upper_values_for_run(run_id)
-
-            self.__logger.debug("Symbols <{}> : {}".format(run_id, config.get_symbols_for_run(run_id)))
-            self.__logger.debug("Initials <{}> : {}".format(run_id, guesses))
-            self.__logger.debug("Lowers <{}> : {}".format(run_id, lowers))
-            self.__logger.debug("Uppers <{}> : {}".format(run_id, uppers))
+            guesses = config.get_values_for_run(run_id, is_fixed=False)
+            lowers = config.get_lower_values_for_run(run_id, is_fixed=False)
+            uppers = config.get_upper_values_for_run(run_id, is_fixed=False)
 
             # 6) Perform a least squares fit
             opt = least_squares(residual, guesses, bounds=[lowers, uppers],
                                 args=(time, asymmetry, uncertainty))
-            
-            self.__logger.debug("Output from least_squares batch : ".format(opt))
 
             try:
                 unc, chi_sq = get_std_unc(opt, asymmetry)
-
-                for i, symbol in enumerate(config.get_symbols_for_run(run_id)):
-                    if config.parameters[run_id][symbol].is_fixed or config.parameters[run_id][symbol].is_fixed_run:
-                        unc[i] = 0.0
-
             except (np.linalg.LinAlgError, NameError):  # Fit did not converge
                 unc = [-1 for _ in opt.x]
 
-            self.__logger.debug("Uncertainty: ".format(str(unc)))
-
             # 7) Replace initial values with fitted values for unfixed variables
-            for i, symbol in enumerate(config.get_symbols_for_run(run_id)):
+            for i, symbol in enumerate(config.get_symbols_for_run(run_id, is_fixed=False)):
                 config.set_outputs(run_id, symbol, opt.x[i], unc[i])
+
+            for symbol, value in zip(fixed_symbols, fixed_values):
+                config.set_outputs(run_id, symbol, value, 0)
 
             # 9) Fill in all values for our new fit object
             new_fit = domain.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id)
@@ -617,6 +605,21 @@ def get_std_unc(result, data, error=None, num_constraints=0):
     chi_sq = rw ** 2 / r_exp ** 2
 
     return p_unc, chi_sq
+
+    # if dataErr is None:
+    #     dataErr = np.ones_like(data)
+
+    # weights = 1.0 / dataErr ** 2
+    # Rw = np.sqrt((fitResult.fun ** 2).sum() / (data ** 2 * weights).sum())
+    # numParams = len(fitResult.x)
+    # Rexp = np.sqrt((data.shape[0] - numParams + numConstraints) / (data ** 2 * weights).sum())
+    # j = fitResult.jac
+    # jac = np.dot(j.transpose(), j)
+    # cov = np.linalg.inv(jac) * Rw ** 2 / Rexp ** 2
+    # pUnc = np.sqrt(cov.diagonal())
+    # chisq = Rw ** 2 / Rexp ** 2
+
+    # return pUnc, chisq
 
 
 def parse(s):

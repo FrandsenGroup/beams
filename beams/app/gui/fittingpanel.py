@@ -1374,6 +1374,10 @@ class FitTabPresenter:
                 continue
 
             asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(bin_size).cut(min_time=min_time, max_time=max_time)
+
+            if len(asymmetry) == 0:
+                return
+
             raw_asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time, max_time=max_time)
             self._asymmetries[run.id] = raw_asymmetry
             time = asymmetry.time
