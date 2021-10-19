@@ -8,6 +8,7 @@ from collections import OrderedDict
 import re
 import logging
 import copy
+import traceback
 
 from app.model import domain
 
@@ -325,6 +326,7 @@ class FitEngine:
 
     def _fit_global_plus(self, config: FitConfig):
         dataset = self._fit_batch(config)
+        # FIXME how will truly run dependent fixed values affect this line below?
         mean_values = {symbol: np.mean([f.parameters[symbol].output for f in dataset.fits.values()]) for symbol in
                        list(dataset.fits.values())[0].parameters.keys()}
         for _, parameters in config.parameters.items():
@@ -353,8 +355,11 @@ class FitEngine:
             uppers = config.get_upper_values_for_run(run_id, is_fixed=False)
 
             # 6) Perform a least squares fit
-            opt = least_squares(residual, guesses, bounds=[lowers, uppers],
-                                args=(time, asymmetry, uncertainty))
+            try:
+                opt = least_squares(residual, guesses, bounds=[lowers, uppers],
+                                    args=(time, asymmetry, uncertainty))
+            except Exception:
+                raise Exception(traceback.format_exc())
 
             try:
                 unc, chi_sq = get_std_unc(opt, asymmetry)
@@ -407,9 +412,9 @@ class FitEngine:
 
         # Run a lease squares fit with the global lambda and concatenated datasets
         try:
-            opt = least_squares(residual, guesses, bounds=[lowers, uppers], args=(concatenated_time, concatenated_asymmetry, concatenated_uncertainty))
+            opt = least_squares(residual, guesses, bounds=[lowers, uppers],
+                                args=(concatenated_time, concatenated_asymmetry, concatenated_uncertainty))
         except Exception:
-            import traceback
             raise Exception(traceback.format_exc())
 
         # Assemble the Fit object, first by updating the parameters in the config with the outputs from
@@ -425,6 +430,11 @@ class FitEngine:
                     config.set_outputs(run_id, symbol, values[symbol + _shortened_run_id(run_id)], 0)
                 else:
                     config.set_outputs(run_id, symbol, values[symbol], 0)
+
+            fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
+            fixed_values = config.get_values_for_run(run_id, is_fixed=True)
+            for symbol, value in zip(fixed_symbols, fixed_values):
+                config.set_outputs(run_id, symbol, value, 0)
 
             new_fit = domain.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id)
 
@@ -455,8 +465,11 @@ class FitEngine:
             uppers = config.get_upper_values_for_run(run_id, is_fixed=False)
 
             # 6) Perform a least squares fit
-            opt = least_squares(residual, guesses, bounds=[lowers, uppers],
-                                args=(time, asymmetry, uncertainty))
+            try:
+                opt = least_squares(residual, guesses, bounds=[lowers, uppers],
+                                    args=(time, asymmetry, uncertainty))
+            except Exception:
+                raise Exception(traceback.format_exc())
 
             try:
                 unc, chi_sq = get_std_unc(opt, asymmetry)
@@ -510,7 +523,6 @@ class FitEngine:
         """
 
         function = ALPHA_CORRECTION.format(config.expression, config.expression)
-        self.__logger.debug('_lambdify_global: {}'.format(function))
 
         lambdas = []
         lengths = []
@@ -519,12 +531,12 @@ class FitEngine:
         number_runs = len(config.data.items())
 
         for i, (run_id, asymmetry) in enumerate(config.data.items()):
-            new_function = function
+            fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
+            fixed_values = config.get_values_for_run(run_id, is_fixed=True)
+            new_function = FitEngine._replace_fixed(function, fixed_symbols, fixed_values)
 
-            for symbol in config.get_symbols_for_run(run_id, is_global=False):
+            for symbol in config.get_symbols_for_run(run_id, is_fixed=False, is_global=False):
                 new_function = FitEngine._replace_var_with(new_function, symbol, symbol + _shortened_run_id(run_id))
-
-            self.__logger.debug("_lambdify_global: f({})={}".format(run_id, new_function))
 
             new_lambda_expression = FitExpression(new_function, variables=config.get_adjusted_global_symbols())
             new_lambda_expression.safe = False  # No type checks, speeds up the fit dramatically.
