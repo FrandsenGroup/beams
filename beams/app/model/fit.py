@@ -624,12 +624,13 @@ def parse(s):
 
     # Add to these sets any keywords you want to be recognized as not variables.
     # Keep keywords lowercase, user input will be cast to lowercase for comparison.
-    operator_set = ('+', '-', '/', '*', '(', ')', '[', ']', '{', '}', '^', '!')
-    operating_set = ('+', '-', '/', '*', '^')
-    key_1_char_set = ('i', PI)
-    key_2_char_set = ('pi')
-    key_3_char_set = ('sin', 'cos', 'tan', 'exp')
-    key_4_char_set = ('sinh', 'cosh', 'tanh')
+    operator_set = {'+', '-', '/', '*', '(', ')', '[', ']', '{', '}', '^', '!'}
+    operating_set = {'+', '-', '/', '*', '^'}
+    bad_char_set = {'i'}
+    key_1_char_set = {PI}
+    key_2_char_set = {'pi'}
+    key_3_char_set = {'sin', 'cos', 'tan', 'exp'}
+    key_4_char_set = {'sinh', 'cosh', 'tanh'}
 
     free_set = set()
     free_variable = []
@@ -686,6 +687,9 @@ def parse(s):
         free_set.remove('')
     except KeyError:
         pass
+
+    if len(free_set.intersection(bad_char_set)) > 0:
+        raise ValueError('Bad expression')
 
     return free_set
 
