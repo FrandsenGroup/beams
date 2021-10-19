@@ -1,3 +1,4 @@
+import sys
 import uuid
 
 import numpy as np
@@ -359,7 +360,7 @@ class FitEngine:
                 opt = least_squares(residual, guesses, bounds=[lowers, uppers],
                                     args=(time, asymmetry, uncertainty))
             except Exception:
-                raise Exception(traceback.format_exc())
+                raise Exception(str(sys.exc_info()))
 
             try:
                 unc, chi_sq = get_std_unc(opt, asymmetry)
@@ -415,7 +416,7 @@ class FitEngine:
             opt = least_squares(residual, guesses, bounds=[lowers, uppers],
                                 args=(concatenated_time, concatenated_asymmetry, concatenated_uncertainty))
         except Exception:
-            raise Exception(traceback.format_exc())
+            raise Exception(str(sys.exc_info()))
 
         try:
             unc, chi_sq = get_std_unc(opt, concatenated_asymmetry)
@@ -433,17 +434,14 @@ class FitEngine:
 
         for run_id, _ in config.data.items():
             for symbol, parameter in config.parameters[run_id].items():
-                if not parameter.is_global:
+                if parameter.is_fixed_run or parameter.is_fixed:
+                    config.set_outputs(run_id, symbol, parameter.value, 0)
+                elif not parameter.is_global:
                     config.set_outputs(run_id, symbol,
                                        values[symbol + _shortened_run_id(run_id)],
                                        uncertainties[symbol + _shortened_run_id(run_id)])
                 else:
                     config.set_outputs(run_id, symbol, values[symbol], uncertainties[symbol])
-
-            fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
-            fixed_values = config.get_values_for_run(run_id, is_fixed=True)
-            for symbol, value in zip(fixed_symbols, fixed_values):
-                config.set_outputs(run_id, symbol, value, 0)
 
             new_fit = domain.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id)
 
@@ -478,7 +476,7 @@ class FitEngine:
                 opt = least_squares(residual, guesses, bounds=[lowers, uppers],
                                     args=(time, asymmetry, uncertainty))
             except Exception:
-                raise Exception(traceback.format_exc())
+                raise Exception(str(sys.exc_info()))
 
             try:
                 unc, chi_sq = get_std_unc(opt, asymmetry)
@@ -609,21 +607,6 @@ def get_std_unc(result, data, error=None, num_constraints=0):
     chi_sq = rw ** 2 / r_exp ** 2
 
     return p_unc, chi_sq
-
-    # if dataErr is None:
-    #     dataErr = np.ones_like(data)
-
-    # weights = 1.0 / dataErr ** 2
-    # Rw = np.sqrt((fitResult.fun ** 2).sum() / (data ** 2 * weights).sum())
-    # numParams = len(fitResult.x)
-    # Rexp = np.sqrt((data.shape[0] - numParams + numConstraints) / (data ** 2 * weights).sum())
-    # j = fitResult.jac
-    # jac = np.dot(j.transpose(), j)
-    # cov = np.linalg.inv(jac) * Rw ** 2 / Rexp ** 2
-    # pUnc = np.sqrt(cov.diagonal())
-    # chisq = Rw ** 2 / Rexp ** 2
-
-    # return pUnc, chisq
 
 
 def parse(s):
