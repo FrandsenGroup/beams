@@ -191,6 +191,11 @@ class FittingPanel(Panel):
             self.button_save_results = qt_widgets.StyleTwoButton("Save Fit")
             self.button_lookup_folder = qt_widgets.StyleTwoButton("Folder")
 
+            self.new_button.setToolTip('Create a new empty fit')
+            self.save_button.setToolTip('Save fit')
+            self.button_save_results.setToolTip('Save fit to selected folder')
+            self.button_lookup_folder.setToolTip('Select folder')
+
             self.input_file_name = QtWidgets.QLineEdit()
             self.input_folder_name = QtWidgets.QLineEdit()
 
@@ -350,6 +355,8 @@ class FittingPanel(Panel):
 
             self.slider_bin = QtWidgets.QSlider(qt_constants.Horizontal)
             self.input_bin = QtWidgets.QLineEdit()
+
+            self.slider_bin.setToolTip('Time bins (ns)')
 
             self._label_time = QtWidgets.QLabel('Time')
             self._label_time_xmin = QtWidgets.QLabel('XMin')
@@ -580,6 +587,12 @@ class FittingPanel(Panel):
         self.button_insert_user_equation = qt_widgets.StyleTwoButton("Insert")
         self.button_save_user_equation = qt_widgets.StyleTwoButton("Save")
         self.button_plot = qt_widgets.StyleTwoButton("Plot")
+
+        self.button_fit.setToolTip('Run fit')
+        self.button_insert_preset_equation.setToolTip('Insert predefined function')
+        self.button_insert_user_equation.setToolTip('Insert user defined function')
+        self.button_save_user_equation.setToolTip('Save user defined function')
+        self.button_plot.setToolTip('Plot data')
 
         self.label_global_plus = QtWidgets.QLabel("Global+")
         self.label_ordering = QtWidgets.QLabel("Order by")
@@ -1776,7 +1789,6 @@ class FitWorker(QtCore.QRunnable):
                 fit_data.expression = fit.FitExpression(fit_data.string_expression)
 
         except Exception as e:
-            print(str(e))
             self.signals.error.emit(str(e))
         else:
             self.signals.result.emit(dataset)

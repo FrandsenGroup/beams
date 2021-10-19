@@ -189,6 +189,10 @@ class HistogramPanel(Panel):
             self.reset_button = qt_widgets.StyleOneButton("Reset")
             self.save_button = qt_widgets.StyleTwoButton("Save")
 
+            self.see_file_button.setToolTip('View file details')
+            self.reset_button.setToolTip('Reset bins')
+            self.save_button.setToolTip('Save edits')
+
             hbox = QtWidgets.QHBoxLayout()
             hbox.addWidget(self.see_file_button)
             hbox.addWidget(self.reset_button)

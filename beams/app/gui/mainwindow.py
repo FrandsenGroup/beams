@@ -25,16 +25,19 @@ class MainWindow(QtWidgets.QMainWindow):
             i = self.addTab(self.plotting_panel, '')
             self.setTabIcon(i, QtGui.QIcon(resources.PLOTTING_CLICKED_IMAGE))
             self.setIconSize(QtCore.QSize(35, 35))
+            self.setTabToolTip(i, 'Plotting Panel')
 
             self.histogram_panel = HistogramPanel()
             i = self.addTab(self.histogram_panel, '')
             self.setTabIcon(i, QtGui.QIcon(resources.HISTOGRAM_IMAGE))
             self.setIconSize(QtCore.QSize(36, 36))
+            self.setTabToolTip(i, 'Histogram Panel')
 
             self.fit_panel = FittingPanel()
             i = self.addTab(self.fit_panel, '')
             self.setTabIcon(i, QtGui.QIcon(resources.FITTING_IMAGE))
             self.setIconSize(QtCore.QSize(35, 35))
+            self.setTabToolTip(i, 'Fitting Panel')
 
             self.currentChanged.connect(self._selection_changed)
 
