@@ -1789,6 +1789,7 @@ class FitWorker(QtCore.QRunnable):
                 fit_data.expression = fit.FitExpression(fit_data.string_expression)
 
         except Exception as e:
+            print(str(e))
             self.signals.error.emit(str(e))
         else:
             self.signals.result.emit(dataset)
