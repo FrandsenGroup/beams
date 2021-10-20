@@ -434,7 +434,6 @@ class MainConsolePanelPresenter(PanelPresenter):
             self.__file_service.load_files(file_ids)
 
     def _convert_file_clicked(self):
-
         self.__file_service.convert_files(self._view.tree_view.get_file_ids())
 
     def _remove_file_clicked(self):

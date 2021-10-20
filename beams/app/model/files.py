@@ -338,23 +338,49 @@ class FitDatasetExpressionFile(ReadableFile):
     def read_data(self):
         with open(self.file_path, 'r') as f:
             lines = f.readlines()
-            ref_lines = []
+            c_line = None
+            s_lines = []
+            e_line = None
             for i, l in enumerate(lines):
-                if 'Specific' in l or 'Common' in l or 'Expression':
-                    ref_lines.append(i)
+                if 'Specific' in l:
+                    s_lines.append(i)
+                elif 'Common' in l:
+                    c_line = i
+                elif 'Expression' in l:
+                    e_line = i
 
+            common_parameters = []
+            if c_line:
+                first_i = c_line + 2
+                last_i = e_line - 1 if len(s_lines) == 0 else s_lines[0] - 1
+                for i in range(first_i, last_i):
+                    common_parameters.append(lines[i].split())
 
+            specific_parameters = {}
+            if s_lines:
+                for s in s_lines:
+                    first_i = s + 2
+                    last_i = e_line - 1 if len(s_lines) > s - 1 else s_lines[s-1] - 1
+                    parameters = []
+                    for i in range(first_i, last_i):
+                        parameters.append(lines[i].split())
+                    specific_parameters[lines[s].split()[-1]] = parameters
 
+            if e_line:
+                e_line_split = lines[e_line + 2].split()
+                for i, e in enumerate(e_line_split):
+                    if '=' in e:
+                        expression = ''.join(e_line_split[i+1:])
+                        break
+                else:
+                    raise ValueError('Expression not formatted correctly.')
+            else:
+                raise ValueError("Expression not found in file.")
 
-
-
+            return common_parameters, specific_parameters, expression
 
     def read_meta(self):
-        return {
-            'Runs': None,
-            'Symbols': None,
-            'Expression': None
-        }
+        return self.read_data()
 
 
 class FitFile(ReadableFile):
