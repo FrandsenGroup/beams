@@ -1105,6 +1105,17 @@ class PlottingPanelPresenter(PanelPresenter):
                                                   self._view.support_panel.plot_style_box.fit_linestyle_options.currentText()))
         self._view.support_panel.item_tree.itemSelectionChanged.connect(self._populate_settings)
 
+    def _start_update(self, side):
+        if side == 'left' or side == 'both':
+            threading.Thread(
+                target=self._update_canvas(self._view.left_settings, self._view.left_display, 'left', fast=False),
+                daemon=True).start()
+
+        if side == 'right' or side == 'both':
+            threading.Thread(
+                target=self._update_canvas(self._view.right_settings, self._view.right_display, 'right', fast=False),
+                daemon=True).start()
+
     def _plot_all(self):
         self._view.support_panel.item_tree.set_all_checked(True)
         self._plot()
