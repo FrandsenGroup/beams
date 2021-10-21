@@ -41,7 +41,6 @@ class MainConsolePanel(QtWidgets.QDockWidget):
             self.addTopLevelItems(tree)
 
         def get_file_ids(self):
-            # Suppressing inspection because it doesn't recognize 'self' as a QTreeWidget
             # noinspection PyTypeChecker
             iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Checked)
 
@@ -94,7 +93,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
     class HeadingNode(QtWidgets.QTreeWidgetItem):
         def __init__(self, title):
-            super(MainConsolePanel.HeadingNode, self).__init__([title])
+            super(MainConsolePanel.HeadingNode, self).__init__([str(title)])
             self.__selected_items = None
 
         def menu(self, items):
@@ -146,6 +145,20 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
                 self.addChild(MainConsolePanel.MetaNode(data_object.meta))
 
+            elif isinstance(data_object, dict):
+                for run_number, parameters in data_object.items():
+                    run_node = MainConsolePanel.HeadingNode(run_number)
+                    for symbol, value in parameters.items():
+                        run_node.addChild(MainConsolePanel.KeyValueNode(symbol, value))
+                    self.addChild(run_node)
+
+            elif isinstance(data_object, domain.FitDataset):
+                self.addChild(MainConsolePanel.HeadingNode("Expression: {}".format(data_object.expression)))
+                fits_node = MainConsolePanel.HeadingNode("Fits")
+                for f in data_object.fits.values():
+                    fits_node.addChild(MainConsolePanel.FitNode(f))
+                self.addChild(fits_node)
+
         def menu(self, items):
             self.__selected_items = items
             menu = QtWidgets.QMenu()
@@ -157,6 +170,19 @@ class MainConsolePanel(QtWidgets.QDockWidget):
                 code = PermissionsMessageDialog.launch(["Loading a saved session will remove all current session data, do you wish to continue?"])
                 if code == PermissionsMessageDialog.Codes.OKAY:
                     self.__file_service.load_session(self.model.id)
+
+    class FitNode(QtWidgets.QTreeWidgetItem):
+        def __init__(self, fit):
+            super(MainConsolePanel.FitNode, self).__init__([fit.title])
+            self.__model = fit
+            self.__selected_items = None
+            for symbol, par in fit.parameters.items():
+                self.addChild(MainConsolePanel.KeyValueNode(symbol, '{}({})'.format(par.value, par.uncertainty)))
+
+        def menu(self, items):
+            self.__selected_items = items
+            menu = QtWidgets.QMenu()
+            return menu
 
     class HistogramNode(QtWidgets.QTreeWidgetItem):
         def __init__(self, histogram):
@@ -257,7 +283,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
     class KeyValueNode(QtWidgets.QTreeWidgetItem):
         def __init__(self, key, value):
-            super(MainConsolePanel.KeyValueNode, self).__init__(["{} : {}".format(key, value)])
+            super(MainConsolePanel.KeyValueNode, self).__init__(["{}: {}".format(key, value)])
             self.__model = (key, value)
             self.__selected_items = None
 
@@ -268,38 +294,6 @@ class MainConsolePanel(QtWidgets.QDockWidget):
             return menu
 
         def _action_edit(self):
-            pass
-
-    class FitNode(QtWidgets.QTreeWidgetItem):
-        def __init__(self):
-            super(MainConsolePanel.FitNode, self).__init__()
-            self.__selected_items = None
-
-        def menu(self, items):
-            self.__selected_items = items
-            menu = QtWidgets.QMenu()
-            menu.addAction("Expand")
-            menu.addSeparator()
-            menu.addAction("Load")
-            menu.addAction("Save")
-            return menu
-
-        def _set_callbacks(self):
-            pass
-
-        def _expand(self):
-            pass
-
-        def _load(self):
-            pass
-
-        def _plot(self):
-            pass
-
-        def _save(self):
-            pass
-
-        def _edit(self):
             pass
 
     class SessionNode(QtWidgets.QTreeWidgetItem):
