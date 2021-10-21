@@ -229,7 +229,7 @@ class Asymmetry(np.ndarray):
     """
 
     def __new__(cls, input_array=None, time_zero=None, bin_size=None, histogram_one=None, histogram_two=None,
-                uncertainty=None, time=None, alpha=None, **kwargs):
+                uncertainty=None, time=None, alpha=None, calculated=None, **kwargs):
         """ Initializes a new Asymmetry.
 
         Parameters
@@ -286,6 +286,7 @@ class Asymmetry(np.ndarray):
             time = Time(input_array=time, bin_size=bin_size, length=len(input_array), time_zero=time_zero)
 
         self = np.asarray(input_array).view(cls)
+        self.calculated = calculated
         self.uncertainty = uncertainty
         self.time = time
         self.bin_size = float(bin_size)
@@ -310,6 +311,7 @@ class Asymmetry(np.ndarray):
         if obj is None:
             return
 
+        self.calculated = getattr(obj, 'calculated', None)
         self.uncertainty = getattr(obj, 'uncertainty', None)
         self.time = getattr(obj, 'time', None)
         self.bin_size = getattr(obj, 'bin_size', None)
@@ -360,7 +362,8 @@ class Asymmetry(np.ndarray):
         binned_asymmetry = np.apply_along_axis(np.mean, 1, reshaped_asymmetry)
 
         return Asymmetry(input_array=binned_asymmetry, time_zero=self.time_zero, bin_size=packing,
-                         time=self.time.bin(packing), uncertainty=self.uncertainty.bin(packing), alpha=self.alpha)
+                         time=self.time.bin(packing), uncertainty=self.uncertainty.bin(packing), alpha=self.alpha,
+                         calculated=self.calculated)
 
     def correct(self, alpha):
         """ Returns a new asymmetry corrected to the provided value.
@@ -381,7 +384,7 @@ class Asymmetry(np.ndarray):
         """
         if self.alpha == alpha:
             return Asymmetry(input_array=self, time_zero=self.time_zero, bin_size=self.bin_size,
-                             time=self.time, uncertainty=self.uncertainty, alpha=1)
+                             time=self.time, uncertainty=self.uncertainty, alpha=1, calculated=self.calculated)
 
         current_asymmetry = self
 
@@ -392,7 +395,7 @@ class Asymmetry(np.ndarray):
                       ((alpha + 1) + ((alpha - 1) * current_asymmetry))
 
         return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
-                         time=self.time, uncertainty=self.uncertainty, alpha=alpha)
+                         time=self.time, uncertainty=self.uncertainty, alpha=alpha, calculated=self.calculated)
 
     def raw(self):
         """ Returns a new asymmetry corrected (or uncorrected) to a value of 1.
@@ -407,13 +410,13 @@ class Asymmetry(np.ndarray):
         """
         if self.alpha == 1:
             return Asymmetry(input_array=self, time_zero=self.time_zero, bin_size=self.bin_size,
-                         time=self.time, uncertainty=self.uncertainty, alpha=1)
+                             time=self.time, uncertainty=self.uncertainty, alpha=1, calculated=self.calculated)
 
         input_array = ((1 - self.alpha) + (1 + self.alpha) * self) / \
                       ((1 + self.alpha) + (1 - self.alpha) * self)
 
         return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
-                         time=self.time, uncertainty=self.uncertainty, alpha=1)
+                         time=self.time, uncertainty=self.uncertainty, alpha=1, calculated=self.calculated)
 
     def cut(self, min_time=None, max_time=None):
         """ Returns a new asymmetry cut between the specified times.
@@ -454,7 +457,7 @@ class Asymmetry(np.ndarray):
 
         return Asymmetry(input_array=self[start_index: end_index], time_zero=self.time_zero, bin_size=self.bin_size,
                          time=self.time[start_index: end_index], uncertainty=self.uncertainty[start_index: end_index],
-                         alpha=self.alpha)
+                         alpha=self.alpha, calculated=self.calculated)
 
 
 class Uncertainty(np.ndarray):
@@ -563,7 +566,7 @@ class Time(np.ndarray):
 
         self = np.asarray(input_array).view(cls)
         self.bin_size = float(bin_size)
-        self.length = float(length)
+        self.length = len(input_array) if length is None else float(length)
         self.time_zero = 0 if time_zero is None else float(time_zero)
         self.id = run_id
 
@@ -701,7 +704,8 @@ class Fit:
             asymmetry = asymmetry.cut(x_min, x_max)
 
         if self.expression:
-            calculated_asymmetry = self.expression(asymmetry.time, **{v.symbol: v.value for v in self.parameters.values()})
+            calculated_asymmetry = self.expression(asymmetry.time,
+                                                   **{v.symbol: v.value for v in self.parameters.values()})
         else:
             raise Exception("Expression has not been created for fit '{}'".format(self.title))
 
