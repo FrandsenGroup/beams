@@ -1209,7 +1209,7 @@ class PlottingPanelPresenter(PanelPresenter):
 
             time = asymmetry.time
             uncertainty = asymmetry.uncertainty
-            fit = None
+            fit = asymmetry.calculated
             style = self.__style_service.get_style_by_run_id(run.id)
             legend_values[run.id] = (style[self.__style_service.Keys.LABEL], self.__style_service.color_options_extra[style[self.__style_service.Keys.DEFAULT_COLOR] if style[self.__style_service.Keys.MARKER_COLOR] == 'Default' else style[self.__style_service.Keys.MARKER_COLOR]])
 
