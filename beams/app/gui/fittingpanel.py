@@ -1434,7 +1434,7 @@ class FitTabPresenter:
         checked_run_ids.extend(self._view.get_checked_run_ids())
 
         for i, (run_id, parameters) in enumerate(self.__variable_groups.items()):
-            if 'UNLINKED' not in run_id and run_id not in checked_run_ids:
+            if (run_id == 0 or 'UNLINKED' not in run_id) and run_id not in checked_run_ids:
                 continue
 
             parameters = self.__variable_groups[run_id]
@@ -1458,7 +1458,7 @@ class FitTabPresenter:
                 local_min = np.min(fit_asymmetry[start_index:end_index])
                 min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
 
-            if 'UNLINKED' in run_id:
+            if run_id != 0 and 'UNLINKED' in run_id:
                 color = list(self._style_service.color_options_values.values())[-i]
             else:
                 color = colors[run_id]
