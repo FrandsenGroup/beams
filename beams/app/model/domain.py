@@ -667,11 +667,13 @@ class Fit:
         self.id = str(uuid.uuid4())
         self.parameters = parameters
         self.string_expression = expression
-        self.expression = None
         self.title = title
         self.run_id = run_id
         self.meta = meta
         self.asymmetry = asymmetry
+
+        from app.model import fit
+        self.expression = fit.FitExpression(expression)
 
     def write(self, out_file, bin_size=None, x_min=None, x_max=None):
         meta_string = files.TITLE_KEY + ":" + str(self.title) + "," \
