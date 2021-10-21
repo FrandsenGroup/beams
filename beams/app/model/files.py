@@ -1,4 +1,3 @@
-
 # Standard Library Packages
 import abc
 import os
@@ -46,6 +45,7 @@ class Format(enum.Enum):
     PICKLED = 3
     FIT = 4
     FIT_SET = 5
+    FIT_SET_VERBOSE = 6
 
 
 # File Data
@@ -167,9 +167,12 @@ class TRIUMFMuonFile(ConvertibleFile):
 
     def convert(self, out_file):
         flags = ['-all']
-        if is_found(self.file_path) and check_ext(self.file_path, Extensions.TRIUMF) and check_ext(out_file, Extensions.HISTOGRAM):
-            system_args = {'win32': ['beams\\app\\resources\\mud\\TRIUMF_WINDOWS', self.file_path, out_file],  # Windows Syntax
-                           'linux': ['./beams/app/resources/mud/TRIUMF_LINUX', self.file_path, out_file],  # Linux Syntax
+        if is_found(self.file_path) and check_ext(self.file_path, Extensions.TRIUMF) and check_ext(out_file,
+                                                                                                   Extensions.HISTOGRAM):
+            system_args = {'win32': ['beams\\app\\resources\\mud\\TRIUMF_WINDOWS', self.file_path, out_file],
+                           # Windows Syntax
+                           'linux': ['./beams/app/resources/mud/TRIUMF_LINUX', self.file_path, out_file],
+                           # Linux Syntax
                            'darwin': ['./beams/app/resources/mud/TRIUMF_MAC', self.file_path, out_file]}  # Mac Syntax
 
             if sys.platform in system_args.keys():
@@ -201,10 +204,12 @@ class PSIMuonFile(ConvertibleFile):
     DATA_TYPE = DataType.MUON
 
     def convert(self, out_file):
-        if is_found(self.file_path) and (check_ext(self.file_path, Extensions.PSI_BIN) or check_ext(self.file_path, Extensions.PSI_MDU)) \
+        if is_found(self.file_path) and (
+                check_ext(self.file_path, Extensions.PSI_BIN) or check_ext(self.file_path, Extensions.PSI_MDU)) \
                 and check_ext(out_file, Extensions.HISTOGRAM):
 
-            system_args = {'win32': ['beams\\app\\resources\\mud\\PSI_WINDOWS', self.file_path, out_file],  # Windows Syntax
+            system_args = {'win32': ['beams\\app\\resources\\mud\\PSI_WINDOWS', self.file_path, out_file],
+                           # Windows Syntax
                            'linux': ['./beams/app/resources/mud/PSI_LINUX', self.file_path, out_file],  # Linux Syntax
                            'darwin': ['./beams/app/resources/mud/PSI_MAC', self.file_path, out_file]}  # Mac Syntax
 
@@ -323,15 +328,12 @@ class FitDatasetFile(ReadableFile):
         return data
 
     def read_meta(self):
-        return {
-            'Runs': None,
-            'Symbols': None
-        }
+        return self.read_data()
 
 
 class FitDatasetExpressionFile(ReadableFile):
     SOURCE = Source.BEAMS
-    DATA_FORMAT = Format.FIT_SET
+    DATA_FORMAT = Format.FIT_SET_VERBOSE
     DATA_TYPE = DataType.MUON
     HEADER_ROWS = 1
 
@@ -358,19 +360,21 @@ class FitDatasetExpressionFile(ReadableFile):
 
             specific_parameters = {}
             if s_lines:
-                for s in s_lines:
+                for n, s in enumerate(s_lines):
                     first_i = s + 2
-                    last_i = e_line - 1 if len(s_lines) > s - 1 else s_lines[s-1] - 1
+                    last_i = e_line - 1 if not len(s_lines) > n + 1 else s_lines[n + 1] - 1
                     parameters = []
                     for i in range(first_i, last_i):
                         parameters.append(lines[i].split())
-                    specific_parameters[lines[s].split()[-1]] = parameters
+                    line = lines[s]
+                    title = line[line.find("(") + 1:-2]
+                    specific_parameters[line.split()[5]] = (title, parameters)
 
             if e_line:
                 e_line_split = lines[e_line + 2].split()
                 for i, e in enumerate(e_line_split):
                     if '=' in e:
-                        expression = ''.join(e_line_split[i+1:])
+                        expression = ''.join(e_line_split[i + 1:])
                         break
                 else:
                     raise ValueError('Expression not formatted correctly.')
@@ -494,6 +498,7 @@ class UnknownFileSource(Exception):
     Raised when a user once a File object for an unknown file type, or type that the program is not
     currently equipped to handle.
     """
+
     def __init__(self):
         super(UnknownFileSource, self).__init__()
 
@@ -502,5 +507,6 @@ class ConversionError(Exception):
     """
     Raised when there is an error converting a convertible file (usually caused by a subprocess error)
     """
+
     def __init__(self):
         super(ConversionError, self).__init__()
