@@ -852,13 +852,41 @@ class DataBuilder:
         if not isinstance(f, File):
             f = files.file(f)
 
-        # fixme add conditional for fits and sessions
         if f.DATA_FORMAT == files.Format.HISTOGRAM or \
-                f.DATA_FORMAT == files.Format.ASYMMETRY:
+                f.DATA_FORMAT == files.Format.ASYMMETRY or \
+                f.DATA_FORMAT == files.Format.FIT:
             run = RunDataset()
             run.meta = f.read_meta()
             run.file = f
             return run
+
+        elif f.DATA_FORMAT == files.Format.FIT_SET_VERBOSE:
+            from app.model import fit
+
+            common, specific, expression = f.read_data()
+            fit_dataset = FitDataset()
+            fit_dataset.expression = expression
+            for run_number, (title, specific_parameters) in specific.items():
+                parameters = {symbol: fit.FitParameter(symbol, value, lower, upper, False, False,
+                                                       output=value, uncertainty=uncertainty) for
+                              symbol, value, uncertainty, lower, upper in specific_parameters}
+                parameters.update({symbol: fit.FitParameter(symbol, value, lower, upper, False, False,
+                                                            output=value, uncertainty=uncertainty) for
+                                   symbol, value, uncertainty, lower, upper in common})
+
+                fi = Fit(parameters, expression, title, 'UNLINKED' + str(uuid.uuid4()), {files.RUN_NUMBER_KEY: run_number,
+                                                                                         files.TITLE_KEY: title}, None)
+                fit_dataset.title += " (unlinked)"
+                fit_dataset.fits[run_number] = fi
+            return fit_dataset
+
+        elif f.DATA_FORMAT == files.Format.FIT_SET:
+            data = f.read_data().to_dict()
+            run_numbers = data.pop('RUN')
+            run_parameters = {}
+            for i, _ in enumerate(run_numbers):
+                run_parameters[run_numbers[i]] = {symbol: values[i] for symbol, values in data.items()}
+            return run_parameters
         else:
             return None
 
@@ -898,14 +926,66 @@ class DataBuilder:
             uncertainty_values = np.array(data['Uncertainty'].values)
             time_values = np.array(data['Time'].values)
 
+            uncertainty = Uncertainty(uncertainty_values, bin_size=d.meta[files.BIN_SIZE_KEY])
+            times = Time(time_values, time_zero=d.meta[files.T0_KEY], bin_size=d.meta[files.BIN_SIZE_KEY])
+
             asymmetry = Asymmetry(input_array=asymmetry_values,
                                   time_zero=d.meta[files.T0_KEY],
                                   bin_size=d.meta[files.BIN_SIZE_KEY],
-                                  uncertainty=uncertainty_values,
-                                  time=time_values)
+                                  uncertainty=uncertainty,
+                                  time=times)
 
             d.asymmetries[d.FULL_ASYMMETRY] = asymmetry
             d.histograms = None
             d.isLoaded = True
+
+        elif f.DATA_FORMAT == files.Format.FIT:
+            data = f.read_data()
+            asymmetry_values = np.array(data['Asymmetry'].values)
+            uncertainty_values = np.array(data['Uncertainty'].values)
+            time_values = np.array(data['Time'].values)
+            calculated_values = np.array(data['Calculated'].values)
+
+            uncertainty = Uncertainty(uncertainty_values, bin_size=d.meta[files.BIN_SIZE_KEY])
+            times = Time(time_values, time_zero=d.meta[files.T0_KEY], bin_size=d.meta[files.BIN_SIZE_KEY])
+
+            asymmetry = Asymmetry(input_array=asymmetry_values,
+                                  time_zero=d.meta[files.T0_KEY],
+                                  bin_size=d.meta[files.BIN_SIZE_KEY],
+                                  uncertainty=uncertainty,
+                                  time=times,
+                                  calculated=calculated_values)
+
+            d.asymmetries[d.FULL_ASYMMETRY] = asymmetry
+            d.histograms = None
+            d.isLoaded = True
+
+        elif f.DATA_FORMAT == files.Format.FIT_SET:
+            data = f.read_data().to_dict()
+
+            run_parameters = {}
+            for i, run_number in enumerate(data.pop('RUN')):
+                run_parameters[run_number] = {symbol: values[i] for symbol, values in data.items()}
+            return run_parameters
+
+        elif f.DATA_FORMAT == files.Format.FIT_SET_VERBOSE:
+            from app.model import fit
+
+            common, specific, expression = f.read_data()
+
+            d = FitDataset()
+            d.expression = expression
+            for run_number, (title, specific_parameters) in specific.items():
+                parameters = {symbol: fit.FitParameter(symbol, value, lower, upper, False, False,
+                                                       output=value, uncertainty=uncertainty) for
+                              symbol, value, uncertainty, lower, upper in specific_parameters}
+                parameters.update({symbol: fit.FitParameter(symbol, value, lower, upper, False, False,
+                                                            output=value, uncertainty=uncertainty) for
+                                   symbol, value, uncertainty, lower, upper in common})
+
+                f = Fit(parameters, expression, title, None, {files.RUN_NUMBER_KEY: run_number,
+                                                              files.TITLE_KEY: title}, None)
+                d.title += " (unlinked)"
+                d.fits[run_number] = f
 
         return d
