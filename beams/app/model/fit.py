@@ -679,7 +679,7 @@ def parse(s):
         pass
 
     if len(free_set.intersection(bad_char_set)) > 0:
-        raise ValueError('Bad expression')
+        raise ValueError('Bad expression') # Bad because these chars will cause sympify issues
 
     return free_set
 
