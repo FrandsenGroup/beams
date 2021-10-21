@@ -361,9 +361,22 @@ class Asymmetry(np.ndarray):
 
         binned_asymmetry = np.apply_along_axis(np.mean, 1, reshaped_asymmetry)
 
-        return Asymmetry(input_array=binned_asymmetry, time_zero=self.time_zero, bin_size=packing,
-                         time=self.time.bin(packing), uncertainty=self.uncertainty.bin(packing), alpha=self.alpha,
-                         calculated=self.calculated)
+        if self.calculated is not None:
+            if leftover_bins:
+                reshaped_calculated = np.reshape(self.calculated[:-leftover_bins],
+                                                 (binned_indices_total, binned_indices_per_bin))
+            else:
+                reshaped_calculated = np.reshape(self.calculated, (binned_indices_total, binned_indices_per_bin))
+
+            binned_calculated = np.apply_along_axis(np.mean, 1, reshaped_calculated)
+
+            return Asymmetry(input_array=binned_asymmetry, time_zero=self.time_zero, bin_size=packing,
+                             time=self.time.bin(packing), uncertainty=self.uncertainty.bin(packing), alpha=self.alpha,
+                             calculated=binned_calculated)
+        else:
+            return Asymmetry(input_array=binned_asymmetry, time_zero=self.time_zero, bin_size=packing,
+                             time=self.time.bin(packing), uncertainty=self.uncertainty.bin(packing), alpha=self.alpha,
+                             calculated=self.calculated)
 
     def correct(self, alpha):
         """ Returns a new asymmetry corrected to the provided value.
@@ -394,8 +407,15 @@ class Asymmetry(np.ndarray):
         input_array = ((alpha - 1) + ((alpha + 1) * current_asymmetry)) / \
                       ((alpha + 1) + ((alpha - 1) * current_asymmetry))
 
-        return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
-                         time=self.time, uncertainty=self.uncertainty, alpha=alpha, calculated=self.calculated)
+        if self.calculated is not None:
+            calculated = ((alpha - 1) + ((alpha + 1) * self.calculated)) / \
+                         ((alpha + 1) + ((alpha - 1) * self.calculated))
+
+            return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
+                             time=self.time, uncertainty=self.uncertainty, alpha=1, calculated=calculated)
+        else:
+            return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
+                             time=self.time, uncertainty=self.uncertainty, alpha=1, calculated=self.calculated)
 
     def raw(self):
         """ Returns a new asymmetry corrected (or uncorrected) to a value of 1.
@@ -415,8 +435,15 @@ class Asymmetry(np.ndarray):
         input_array = ((1 - self.alpha) + (1 + self.alpha) * self) / \
                       ((1 + self.alpha) + (1 - self.alpha) * self)
 
-        return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
-                         time=self.time, uncertainty=self.uncertainty, alpha=1, calculated=self.calculated)
+        if self.calculated is not None:
+            calculated = ((1 - self.calculated) + (1 + self.calculated) * self) / \
+                         ((1 + self.calculated) + (1 - self.calculated) * self)
+
+            return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
+                             time=self.time, uncertainty=self.uncertainty, alpha=1, calculated=calculated)
+        else:
+            return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
+                             time=self.time, uncertainty=self.uncertainty, alpha=1, calculated=self.calculated)
 
     def cut(self, min_time=None, max_time=None):
         """ Returns a new asymmetry cut between the specified times.
@@ -457,7 +484,8 @@ class Asymmetry(np.ndarray):
 
         return Asymmetry(input_array=self[start_index: end_index], time_zero=self.time_zero, bin_size=self.bin_size,
                          time=self.time[start_index: end_index], uncertainty=self.uncertainty[start_index: end_index],
-                         alpha=self.alpha, calculated=self.calculated)
+                         alpha=self.alpha,
+                         calculated=None if self.calculated is None else self.calculated[start_index: end_index])
 
 
 class Uncertainty(np.ndarray):
@@ -874,8 +902,9 @@ class DataBuilder:
                                                             output=value, uncertainty=uncertainty) for
                                    symbol, value, uncertainty, lower, upper in common})
 
-                fi = Fit(parameters, expression, title, 'UNLINKED' + str(uuid.uuid4()), {files.RUN_NUMBER_KEY: run_number,
-                                                                                         files.TITLE_KEY: title}, None)
+                fi = Fit(parameters, expression, title, 'UNLINKED' + str(uuid.uuid4()),
+                         {files.RUN_NUMBER_KEY: run_number,
+                          files.TITLE_KEY: title}, None)
                 fit_dataset.title += " (unlinked)"
                 fit_dataset.fits[run_number] = fi
             return fit_dataset
