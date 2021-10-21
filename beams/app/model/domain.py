@@ -732,24 +732,34 @@ class FitDataset:
 
     def write(self, out_file, verbose_format=None):
         if verbose_format:
-            fit_parameters_string = "# Fit Parameters\n\n# {:<8}{:<10}{:<8}{:<8}".format("Name", "Value", "Lower", "Upper") + "\n\n"
+            fit_parameters_string = "# Fit Parameters\n\n# {:<8}{:<10}{:<8}{:<8}".format("Name", "Value", "Lower",
+                                                                                         "Upper") + "\n\n"
             if self.flags & FitDataset.Flags.GLOBAL or self.flags & FitDataset.Flags.GLOBAL_PLUS:
                 fit_parameters_string += "# Common parameters for all runs\n\n"
 
                 f = list(self.fits.values())[0]
                 for name, v in f.parameters.items():
                     if v.is_global:
-                        fit_parameters_string += "\t" + "{:<8}{:<10.5f}{:<10.5f}{:<8.5f}{:<8.5f}".format(v.symbol, v.value, v.uncertainty, v.lower, v.upper) + "\n"
+                        fit_parameters_string += "\t" + "{:<8}{:<10.5f}{:<10.5f}{:<8.5f}{:<8.5f}".format(v.symbol,
+                                                                                                         v.value,
+                                                                                                         v.uncertainty,
+                                                                                                         v.lower,
+                                                                                                         v.upper) + "\n"
 
                 fit_parameters_string += "\n"
 
             for f in self.fits.values():
                 run = services.RunService().get_runs_by_ids([f.run_id])[0]
-                fit_parameters_string += "# Specific parameters for run {}\n\n".format(run.meta["RunNumber"])
+                fit_parameters_string += "# Specific parameters for run {} ({})\n\n".format(run.meta["RunNumber"],
+                                                                                            f.title)
 
                 for name, v in f.parameters.items():
                     if not v.is_global:
-                        fit_parameters_string += "\t" + "{:<8}{:<10.5f}{:<10.5f}{:<8.5f}{:<8.5f}".format(v.symbol, v.value, v.uncertainty, v.lower, v.upper) + "\n"
+                        fit_parameters_string += "\t" + "{:<8}{:<10.5f}{:<10.5f}{:<8.5f}{:<8.5f}".format(v.symbol,
+                                                                                                         v.value,
+                                                                                                         v.uncertainty,
+                                                                                                         v.lower,
+                                                                                                         v.upper) + "\n"
 
                 fit_parameters_string += "\n"
 
