@@ -1434,7 +1434,7 @@ class FitTabPresenter:
         checked_run_ids.extend(self._view.get_checked_run_ids())
 
         for i, (run_id, parameters) in enumerate(self.__variable_groups.items()):
-            if run_id not in checked_run_ids:
+            if 'UNLINKED' not in run_id and run_id not in checked_run_ids:
                 continue
 
             parameters = self.__variable_groups[run_id]
@@ -1458,20 +1458,25 @@ class FitTabPresenter:
                 local_min = np.min(fit_asymmetry[start_index:end_index])
                 min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
 
+                if 'UNLINKED' in run_id:
+                    color = list(self._style_service.color_options_values.values())[-i]
+                else:
+                    color = colors[run_id]
+
             self.__logger.debug("About to plot : expression<{}>, run_id<{}>, parameters<{}>, time<{}>".format(self.__expression, run_id, parameters, len(time)))
             self._view.fit_display.plot_asymmetry(time, fit_asymmetry, None, None,
-                                                  color=colors[run_id],
+                                                  color=color,
                                                   marker='.',
                                                   linestyle='-',
                                                   fillstyle='none',
-                                                  marker_color=colors[run_id],
+                                                  marker_color=color,
                                                   marker_size=1,
-                                                  line_color=colors[run_id],
+                                                  line_color=color,
                                                   line_width=1,
-                                                  errorbar_color=colors[run_id],
+                                                  errorbar_color=color,
                                                   errorbar_style='none',
                                                   errorbar_width=1,
-                                                  fit_color=colors[run_id],
+                                                  fit_color=color,
                                                   fit_linestyle='none',
                                                   label=None)
 
@@ -1682,17 +1687,18 @@ class FitTabPresenter:
                                          output_value=parameter.output, output_uncertainty=parameter.uncertainty,
                                          run_id=selected_data.run_id)
 
-            run = self._run_service.get_runs_by_ids([selected_data.run_id])[0]
+            # Fits loaded from a file may not have a run associated with them yet.
+            run = None if 'UNLINKED' in selected_data.run_id else self._run_service.get_runs_by_ids([selected_data.run_id])[0]
 
             try:
                 self._view.support_panel.input_file_name.setText('{}_fit.txt'.format(run.meta[files.RUN_NUMBER_KEY]))
-            except KeyError:
+            except (KeyError, AttributeError):
                 self._view.support_panel.input_file_name.setText('{}_fit.txt'.format(selected_data.title))
 
             self._view.support_panel.input_folder_name.setText(self._system_service.get_last_used_directory())
             self.__expression = selected_data.expression
             self.__variable_groups = {selected_data.run_id: selected_data.parameters}
-            self._view.input_fit_equation.setText(str(selected_data.expression))
+            self._view.input_fit_equation.setText(str(selected_data.string_expression))
             self._update_display()
 
         elif type(selected_data) == domain.FitDataset:
@@ -1716,7 +1722,7 @@ class FitTabPresenter:
             fits = list(selected_data.fits.values())
             self._view.support_panel.input_file_name.setText('{}_fit.txt'.format(selected_data.id))
             self._view.support_panel.input_folder_name.setText(self._system_service.get_last_used_directory())
-            self._view.input_fit_equation.setText(str(fits[0].expression))
+            self._view.input_fit_equation.setText(str(fits[0].string_expression))
             self.__expression = fits[0].expression
             self.__variable_groups = {f.run_id: f.parameters for f in fits}
             self._update_display()
