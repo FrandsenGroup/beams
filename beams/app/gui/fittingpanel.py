@@ -1458,10 +1458,10 @@ class FitTabPresenter:
                 local_min = np.min(fit_asymmetry[start_index:end_index])
                 min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
 
-                if 'UNLINKED' in run_id:
-                    color = list(self._style_service.color_options_values.values())[-i]
-                else:
-                    color = colors[run_id]
+            if 'UNLINKED' in run_id:
+                color = list(self._style_service.color_options_values.values())[-i]
+            else:
+                color = colors[run_id]
 
             self.__logger.debug("About to plot : expression<{}>, run_id<{}>, parameters<{}>, time<{}>".format(self.__expression, run_id, parameters, len(time)))
             self._view.fit_display.plot_asymmetry(time, fit_asymmetry, None, None,
