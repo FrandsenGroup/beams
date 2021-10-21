@@ -82,6 +82,9 @@ class RunService:
     def get_runs_by_ids(self, ids):
         return self.__dao.get_runs_by_ids(ids)
 
+    def get_runs_by_numbers(self, numbers):
+        return self.__dao.get_runs_by_numbers(numbers)
+
     def get_loaded_runs(self):
         loaded_runs = []
         for run in self.__dao.get_runs():
@@ -535,12 +538,16 @@ class FileService:
 
             if data_set is not None:
                 file_set.dataset = data_set
-                file_set.title = data_set.meta[files.TITLE_KEY]
+
+                try:
+                    file_set.title = data_set.meta[files.TITLE_KEY]
+                except AttributeError:
+                    file_set.title = os.path.split(path)[-1]
 
                 if isinstance(data_set, domain.RunDataset):
                     self.__run_service.add_dataset([data_set], suppress_signal=True)
-                else:
-                    self.__fit_service.add_dataset([data_set], suppress_signal=True)
+                elif isinstance(data_set, domain.FitDataset):
+                    self.__fit_service.add_dataset([data_set])
 
             self.__dao.add_files([file_set])
 
