@@ -1325,9 +1325,12 @@ class PlottingPanelPresenter(PanelPresenter):
         self.__populating_settings = False
 
     def _populate_with_single_selected(self, styles):
+        """
+        This method populates the combo boxes in the Plot Style group with the style of the run selected.
+        """
+
         style = styles[0]
 
-        # self._view.support_panel.set_alpha
         self._view.support_panel.set_errorbar_color(
             self.__style_service.color_options_extra[style[self.__style_service.Keys.ERRORBAR_COLOR]])
         self._view.support_panel.set_default_color(
@@ -1354,6 +1357,10 @@ class PlottingPanelPresenter(PanelPresenter):
             self.__style_service.marker_size_options[style[self.__style_service.Keys.MARKER_SIZE]])
 
     def _populate_with_multiple_selected(self, styles):
+        """
+        This method populates the combo boxes in the Plot Style group with the style of the runs selected.
+        """
+
         values = {self.__style_service.color_options[style[self.__style_service.Keys.DEFAULT_COLOR]] for style in
                   styles}
         if len(values) > 1:
