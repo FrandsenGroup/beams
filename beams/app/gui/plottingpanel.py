@@ -1289,16 +1289,10 @@ class PlottingPanelPresenter(PanelPresenter):
             self.__run_service.update_alphas(ids, [alpha])
 
     def get_fft_data(self, time, asymmetry, xmin, xmax, bin_size):
-        num_bins = self.get_num_bins(xmin, xmax, bin_size)
-        start_bin = self.get_start_bin(xmin, bin_size)
+        num_bins = int((float(xmax) - float(xmin)) / (float(bin_size) / 1000))
+        start_bin = int(float(xmin) / (float(bin_size) / 1000))
         fft = domain.FFT(asymmetry[start_bin:start_bin + num_bins], time[start_bin:start_bin + num_bins])
         return fft.z, fft.fft / max(fft.fft)
-
-    def get_num_bins(self, xmin, xmax, bin_size):
-        return int((float(xmax) - float(xmin)) / (float(bin_size) / 1000))
-
-    def get_start_bin(self, xmin, bin_size):
-        return int(float(xmin) / (float(bin_size) / 1000))
 
     def _style_parameter_changed(self, key, value):
         if not self.__populating_settings:
