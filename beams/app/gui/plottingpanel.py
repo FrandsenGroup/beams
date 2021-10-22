@@ -472,23 +472,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
             self.plot_style_box.errorbar_width_options.setCurrentText(width)
 
-    class PlotToolbar(NavigationToolbar2QT):
-        def _init_toolbar(self):
-            # fixme, if there are no errors then this is fine
-            pass
-
-        NavigationToolbar2QT.toolitems = (
-            ('Home', 'Reset original view', 'home', 'home'),
-            ('Back', 'Back to previous view', 'back', 'back'),
-            ('Forward', 'Forward to next view', 'forward', 'forward'),
-            # (None, None, None, None),
-            ('Pan', 'Pan axes with left mouse, zoom with right', 'move', 'pan'),
-            ('Zoom', 'Zoom to rectangle', 'zoom_to_rect', 'zoom'),
-            # ('Subplots', 'Configure subplots', 'subplots', 'configure_subplots'),
-            # (None, None, None, None),
-            ('Save', 'Save the figure', 'filesave', 'save_figure'),
-        )
-
     class PlotDisplay(FigureCanvas):
         def __init__(self, settings):
             self._draw_pending = True
