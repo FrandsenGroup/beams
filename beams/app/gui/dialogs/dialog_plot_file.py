@@ -3,7 +3,7 @@ import enum
 from PyQt5 import QtWidgets
 
 from app.util import qt_widgets
-from app.model import files, services, domain
+from app.model import files, services, objects
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
 
 
@@ -210,8 +210,8 @@ class PlotFileDialogPresenter:
 
         for run in self._runs:
             format = self._formats[run.file.file_path]
-            run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] = domain.Asymmetry(histogram_one=run.histograms[format[0]],
-                                                                                 histogram_two=run.histograms[format[1]])
+            run.asymmetries[objects.RunDataset.FULL_ASYMMETRY] = objects.Asymmetry(histogram_one=run.histograms[format[0]],
+                                                                                   histogram_two=run.histograms[format[1]])
             run.histograms_used = format  # We need this for when we have to recalculate the asymmetry from hist panel
 
         self.__run_service.changed()

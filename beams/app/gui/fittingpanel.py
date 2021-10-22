@@ -10,7 +10,7 @@ import numpy as np
 
 from app.gui.dialogs.dialog_misc import WarningMessageDialog, LoadingDialog
 from app.util import qt_widgets, qt_constants
-from app.model import domain, fit, files, services
+from app.model import objects, fit, files, services
 from app.gui.gui import PanelPresenter, Panel
 
 
@@ -60,7 +60,7 @@ class FittingPanel(Panel):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.FitDataset):
+                    if isinstance(iterator.value().model, objects.FitDataset):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -74,7 +74,7 @@ class FittingPanel(Panel):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.FitDataset):
+                    if isinstance(iterator.value().model, objects.FitDataset):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -86,7 +86,7 @@ class FittingPanel(Panel):
                 iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Selected)
 
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.Fit) or isinstance(iterator.value().model, domain.FitDataset):
+                    if isinstance(iterator.value().model, objects.Fit) or isinstance(iterator.value().model, objects.FitDataset):
                         return iterator.value().model
                     iterator += 1
 
@@ -128,7 +128,7 @@ class FittingPanel(Panel):
                 self.__fit_service = services.FitService()
                 self.__parent = None
                 self.setFlags(self.flags() | QtCore.Qt.ItemFlag.ItemIsEditable)
-                if isinstance(dataset, domain.FitDataset):
+                if isinstance(dataset, objects.FitDataset):
                     for fit_data in dataset.fits.values():
                         self.addChild(FittingPanel.SupportPanel.FitNode(fit_data))
 
@@ -1306,7 +1306,7 @@ class FitTabPresenter:
         if selected_data is None:
             return
 
-        if isinstance(selected_data, domain.FitDataset):
+        if isinstance(selected_data, objects.FitDataset):
             selected_data.write("out_file_x.txt", fit.FitOptions.SAVE_2)
         else:
             selected_data.write("out_file_x.txt")
@@ -1392,8 +1392,8 @@ class FitTabPresenter:
 
             parameters = self.__variable_groups[run_id]
             alphas[run_id] = parameters[fit.ALPHA].value
-            time = domain.Time(input_array=None, bin_size=(max_time - min_time) * 1000 / 200, length=200,
-                               time_zero=min_time)
+            time = objects.Time(input_array=None, bin_size=(max_time - min_time) * 1000 / 200, length=200,
+                                time_zero=min_time)
             fit_asymmetry = self.__expression(time, **{symbol: par.get_value() for symbol, par in parameters.items()})
 
             try:
@@ -1432,16 +1432,16 @@ class FitTabPresenter:
             if run.id not in run_ids:
                 continue
 
-            asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(bin_size).cut(min_time=min_time,
-                                                                                            max_time=max_time)
+            asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(bin_size).cut(min_time=min_time,
+                                                                                             max_time=max_time)
             if len(asymmetry) == 0:
                 return
 
             if run.id in alphas:
                 asymmetry = asymmetry.correct(alphas[run.id])
 
-            raw_asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time,
-                                                                                                      max_time=max_time)
+            raw_asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time,
+                                                                                                       max_time=max_time)
             self._asymmetries[run.id] = raw_asymmetry
             time = asymmetry.time
             uncertainty = asymmetry.uncertainty
@@ -1637,7 +1637,7 @@ class FitTabPresenter:
                         min_time = self._view.fit_spectrum_settings.get_min_time()
                         max_time = self._view.fit_spectrum_settings.get_max_time()
                         bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
-                        raw_asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time, max_time=max_time)
+                        raw_asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time, max_time=max_time)
                         self._asymmetries[run.id] = raw_asymmetry
                         data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id], self._asymmetries[run.id].uncertainty)
 
@@ -1681,7 +1681,7 @@ class FitTabPresenter:
             self.__update_if_table_changes = True
             return
 
-        if type(selected_data) == domain.Fit:
+        if type(selected_data) == objects.Fit:
             for i in range(self._view.run_list.count()):
                 item = self._view.run_list.item(i)
                 if item.identifier == selected_data.run_id:
@@ -1711,7 +1711,7 @@ class FitTabPresenter:
             self._view.input_fit_equation.setText(str(selected_data.expression))
             self._update_display()
 
-        elif type(selected_data) == domain.FitDataset:
+        elif type(selected_data) == objects.FitDataset:
             for i in range(self._view.run_list.count()):
                 item = self._view.run_list.item(i)
                 if item.identifier in selected_data.fits.keys():
@@ -1767,7 +1767,7 @@ class FitTabPresenter:
         self.__logger.debug("Accepted Signal")
         runs = []
         for run in self._run_service.get_loaded_runs():
-            if run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] is not None:
+            if run.asymmetries[objects.RunDataset.FULL_ASYMMETRY] is not None:
                 runs.append(run)
         self._runs = runs
         self._view.update_run_table(runs)
@@ -1810,6 +1810,6 @@ class FitWorker(QtCore.QRunnable):
 
 class FitSignals(QtCore.QObject):
     finished = QtCore.pyqtSignal()
-    result = QtCore.pyqtSignal(domain.FitDataset)
+    result = QtCore.pyqtSignal(objects.FitDataset)
     error = QtCore.pyqtSignal(str)
     progress = QtCore.pyqtSignal(int)

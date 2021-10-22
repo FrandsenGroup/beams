@@ -7,7 +7,7 @@ from matplotlib.figure import Figure
 
 from app.gui.dialogs.dialog_misc import FileDisplayDialog, WarningMessageDialog
 from app.gui.gui import Panel, PanelPresenter
-from app.model import files, services, domain
+from app.model import files, services, objects
 from app.util import qt_widgets, qt_constants
 
 
@@ -76,7 +76,7 @@ class HistogramPanel(Panel):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.Histogram):
+                    if isinstance(iterator.value().model, objects.Histogram):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -89,7 +89,7 @@ class HistogramPanel(Panel):
 
                 histograms = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.Histogram):
+                    if isinstance(iterator.value().model, objects.Histogram):
                         histograms.append(iterator.value().model)
                     iterator += 1
                 return histograms
@@ -100,7 +100,7 @@ class HistogramPanel(Panel):
 
                 histograms = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.Histogram):
+                    if isinstance(iterator.value().model, objects.Histogram):
                         histograms.append(iterator.value().model)
                     iterator += 1
                 return histograms
@@ -136,7 +136,7 @@ class HistogramPanel(Panel):
                 self.model = run_data
                 self.__selected_items = None
 
-                if isinstance(run_data, domain.RunDataset):
+                if isinstance(run_data, objects.RunDataset):
                     if run_data.isLoaded and run_data.histograms:
                         for histogram in run_data.histograms.values():
                             self.addChild(HistogramPanel.SupportPanel.HistogramNode(histogram))

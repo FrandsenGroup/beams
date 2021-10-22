@@ -5,7 +5,7 @@ from PyQt5 import QtWidgets, QtCore
 import numpy as np
 
 from app.util import qt_widgets, qt_constants
-from app.model import files, domain, services
+from app.model import files, objects, services
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
 
 
@@ -177,11 +177,11 @@ class WriteDataDialogPresenter:
         unloaded = 0
         files_with_run_datasets = []
         for file in self.__files:
-            if file.dataset is None or (isinstance(file.dataset, domain.RunDataset) and file.dataset.asymmetries[domain.RunDataset.FULL_ASYMMETRY] is None):
+            if file.dataset is None or (isinstance(file.dataset, objects.RunDataset) and file.dataset.asymmetries[objects.RunDataset.FULL_ASYMMETRY] is None):
                 WarningMessageDialog.launch(["Some selected runs have not been loaded, or asymmetries have not been plotted."])
                 unloaded += 1
 
-            elif isinstance(file.dataset, domain.RunDataset) and file.dataset.asymmetries[domain.RunDataset.FULL_ASYMMETRY] is not None:
+            elif isinstance(file.dataset, objects.RunDataset) and file.dataset.asymmetries[objects.RunDataset.FULL_ASYMMETRY] is not None:
                 files_with_run_datasets.append(file)
 
         if len(files_with_run_datasets) + unloaded < len(self.__files):
