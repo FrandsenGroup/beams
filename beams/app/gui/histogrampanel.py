@@ -21,21 +21,23 @@ class HistogramPanel(Panel):
             self.canvas_axes = self.figure.add_subplot(111, label='Canvas')
 
     class HistogramToolbar(NavigationToolbar2QT):
-            def _init_toolbar(self):
-                pass
+        def _init_toolbar(self):
+            pass
 
-            # only display the buttons we need
-            NavigationToolbar2QT.toolitems = (
-                ('Home', 'Reset original view', 'home', 'home'),
-                ('Back', 'Back to previous view', 'back', 'back'),
-                ('Forward', 'Forward to next view', 'forward', 'forward'),
-                # (None, None, None, None),
-                ('Pan', 'Pan axes with left mouse, zoom with right', 'move', 'pan'),
-                ('Zoom', 'Zoom to rectangle', 'zoom_to_rect', 'zoom'),
-                # ('Subplots', 'Configure subplots', 'subplots', 'configure_subplots'),
-                # (None, None, None, None),
-                ('Save', 'Save the figure', 'filesave', 'save_figure'),
-            )
+        def __init__(self, canvas, parent):
+            super().__init__(canvas, parent)
+            if 'locLabel' not in self.__dict__:
+                self.locLabel = None
+
+        # only display the buttons we need
+        NavigationToolbar2QT.toolitems = (
+            ('Home', 'Reset original view', 'home', 'home'),
+            ('Back', 'Back to previous view', 'back', 'back'),
+            ('Forward', 'Forward to next view', 'forward', 'forward'),
+            ('Pan', 'Pan axes with left mouse, zoom with right', 'move', 'pan'),
+            ('Zoom', 'Zoom to rectangle', 'zoom_to_rect', 'zoom'),
+            ('Save', 'Save the figure', 'filesave', 'save_figure'),
+        )
 
     class SupportPanel(QtWidgets.QDockWidget):
         class Tree(QtWidgets.QTreeWidget):
