@@ -7,7 +7,7 @@ import pickle
 from PyQt5 import QtCore
 
 import app.model.data_access as dao
-from app.model import domain, files
+from app.model import objects, files
 from app.resources import resources
 
 
@@ -98,22 +98,22 @@ class RunService:
     def recalculate_asymmetries(self, ids):
         for run in self.__dao.get_runs_by_ids(ids):
             if len(run.histograms_used) == 2:
-                run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] = domain.Asymmetry(
+                run.asymmetries[objects.RunDataset.FULL_ASYMMETRY] = objects.Asymmetry(
                     histogram_one=run.histograms[run.histograms_used[0]],
                     histogram_two=run.histograms[run.histograms_used[1]],
-                    alpha=run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].alpha)
+                    alpha=run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].alpha)
 
-                if run.asymmetries[domain.RunDataset.LEFT_BINNED_ASYMMETRY] is not None:
-                    run.asymmetries[domain.RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(
-                        run.asymmetries[domain.RunDataset.LEFT_BINNED_ASYMMETRY].bin_size)
-                    run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(
-                        run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
+                if run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY] is not None:
+                    run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(
+                        run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY].bin_size)
+                    run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(
+                        run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
 
         self.__logger.debug("Emitted: changed")
         self.signals.changed.emit()
 
     def add_runs(self, paths):
-        builder = domain.DataBuilder()
+        builder = objects.DataBuilder()
         for path in paths:
             run = builder.build_minimal(path)
             self.__dao.add_runs([run])
@@ -147,13 +147,13 @@ class RunService:
         for rid, alpha in zip(ids, alphas):
             run = self.__dao.get_runs_by_ids([rid])[0]
 
-            run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].correct(alpha)
+            run.asymmetries[objects.RunDataset.FULL_ASYMMETRY] = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].correct(alpha)
 
-            if run.asymmetries[domain.RunDataset.LEFT_BINNED_ASYMMETRY] is not None:
-                run.asymmetries[domain.RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(
-                    run.asymmetries[domain.RunDataset.LEFT_BINNED_ASYMMETRY].bin_size)
-                run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(
-                    run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
+            if run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY] is not None:
+                run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(
+                    run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY].bin_size)
+                run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(
+                    run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
 
         self.__logger.debug("Emitted: changed")
         self.signals.changed.emit()
@@ -530,14 +530,14 @@ class FileService:
                 continue
 
             f = files.file(path)
-            data_set = domain.DataBuilder.build_minimal(f)
-            file_set = domain.FileDataset(f)
+            data_set = objects.DataBuilder.build_minimal(f)
+            file_set = objects.FileDataset(f)
 
             if data_set is not None:
                 file_set.dataset = data_set
                 file_set.title = data_set.meta[files.TITLE_KEY]
 
-                if isinstance(data_set, domain.RunDataset):
+                if isinstance(data_set, objects.RunDataset):
                     self.__run_service.add_dataset([data_set], suppress_signal=True)
                 else:
                     self.__fit_service.add_dataset([data_set], suppress_signal=True)
@@ -553,7 +553,7 @@ class FileService:
         for file_dataset in self.__dao.get_files_by_ids(ids):
             if not file_dataset.isLoaded:
                 is_changed = True
-                domain.DataBuilder.build_full(file_dataset.file, file_dataset.dataset)
+                objects.DataBuilder.build_full(file_dataset.file, file_dataset.dataset)
                 file_dataset.isLoaded = True
 
         if is_changed:

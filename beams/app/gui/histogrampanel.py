@@ -7,7 +7,7 @@ from matplotlib.figure import Figure
 
 from app.gui.dialogs.dialog_misc import FileDisplayDialog, WarningMessageDialog
 from app.gui.gui import Panel, PanelPresenter
-from app.model import files, services, domain
+from app.model import files, services, objects
 from app.util import qt_widgets, qt_constants
 
 
@@ -21,21 +21,23 @@ class HistogramPanel(Panel):
             self.canvas_axes = self.figure.add_subplot(111, label='Canvas')
 
     class HistogramToolbar(NavigationToolbar2QT):
-            def _init_toolbar(self):
-                pass
+        def _init_toolbar(self):
+            pass
 
-            # only display the buttons we need
-            NavigationToolbar2QT.toolitems = (
-                ('Home', 'Reset original view', 'home', 'home'),
-                ('Back', 'Back to previous view', 'back', 'back'),
-                ('Forward', 'Forward to next view', 'forward', 'forward'),
-                # (None, None, None, None),
-                ('Pan', 'Pan axes with left mouse, zoom with right', 'move', 'pan'),
-                ('Zoom', 'Zoom to rectangle', 'zoom_to_rect', 'zoom'),
-                # ('Subplots', 'Configure subplots', 'subplots', 'configure_subplots'),
-                # (None, None, None, None),
-                ('Save', 'Save the figure', 'filesave', 'save_figure'),
-            )
+        def __init__(self, canvas, parent):
+            super().__init__(canvas, parent)
+            if 'locLabel' not in self.__dict__:
+                self.locLabel = None
+
+        # only display the buttons we need
+        NavigationToolbar2QT.toolitems = (
+            ('Home', 'Reset original view', 'home', 'home'),
+            ('Back', 'Back to previous view', 'back', 'back'),
+            ('Forward', 'Forward to next view', 'forward', 'forward'),
+            ('Pan', 'Pan axes with left mouse, zoom with right', 'move', 'pan'),
+            ('Zoom', 'Zoom to rectangle', 'zoom_to_rect', 'zoom'),
+            ('Save', 'Save the figure', 'filesave', 'save_figure'),
+        )
 
     class SupportPanel(QtWidgets.QDockWidget):
         class Tree(QtWidgets.QTreeWidget):
@@ -74,7 +76,7 @@ class HistogramPanel(Panel):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.Histogram):
+                    if isinstance(iterator.value().model, objects.Histogram):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -87,7 +89,7 @@ class HistogramPanel(Panel):
 
                 histograms = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.Histogram):
+                    if isinstance(iterator.value().model, objects.Histogram):
                         histograms.append(iterator.value().model)
                     iterator += 1
                 return histograms
@@ -98,7 +100,7 @@ class HistogramPanel(Panel):
 
                 histograms = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.Histogram):
+                    if isinstance(iterator.value().model, objects.Histogram):
                         histograms.append(iterator.value().model)
                     iterator += 1
                 return histograms
@@ -134,7 +136,7 @@ class HistogramPanel(Panel):
                 self.model = run_data
                 self.__selected_items = None
 
-                if isinstance(run_data, domain.RunDataset):
+                if isinstance(run_data, objects.RunDataset):
                     if run_data.isLoaded and run_data.histograms:
                         for histogram in run_data.histograms.values():
                             self.addChild(HistogramPanel.SupportPanel.HistogramNode(histogram))
@@ -188,6 +190,10 @@ class HistogramPanel(Panel):
             self.see_file_button = qt_widgets.StyleOneButton("See File")
             self.reset_button = qt_widgets.StyleOneButton("Reset")
             self.save_button = qt_widgets.StyleTwoButton("Save")
+
+            self.see_file_button.setToolTip('View file details')
+            self.reset_button.setToolTip('Reset bins')
+            self.save_button.setToolTip('Save edits')
 
             hbox = QtWidgets.QHBoxLayout()
             hbox.addWidget(self.see_file_button)

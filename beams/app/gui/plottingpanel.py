@@ -10,7 +10,7 @@ import numpy as np
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
 from app.gui.dialogs.dialog_plot_file import PlotFileDialog
 from app.gui.gui import Panel, PanelPresenter
-from app.model import files, domain, services
+from app.model import files, objects, services
 from app.util import qt_widgets, qt_constants
 
 
@@ -175,7 +175,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.RunDataset):
+                    if isinstance(iterator.value().model, objects.RunDataset):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -188,7 +188,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.RunDataset):
+                    if isinstance(iterator.value().model, objects.RunDataset):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -201,7 +201,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.RunDataset):
+                    if isinstance(iterator.value().model, objects.RunDataset):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -214,7 +214,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.RunDataset):
+                    if isinstance(iterator.value().model, objects.RunDataset):
                         ids.append(iterator.value().model.meta[files.TITLE_KEY])
 
                     iterator += 1
@@ -227,7 +227,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.RunDataset):
+                    if isinstance(iterator.value().model, objects.RunDataset):
                         ids.append(iterator.value().model.meta[files.TITLE_KEY])
 
                     iterator += 1
@@ -301,6 +301,10 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.plot_button = qt_widgets.StyleOneButton("Plot")
             self.plot_all_button = qt_widgets.StyleOneButton("Plot All")
             self.clear_all_button = qt_widgets.StyleTwoButton("Clear All")
+
+            self.plot_button.setToolTip('Plot selected files')
+            self.plot_all_button.setToolTip('Plot all files')
+            self.clear_all_button.setToolTip('Clear all files')
 
             self.item_tree = self.Tree()
             self.legend_box = self.LegendBox()
@@ -467,23 +471,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self._check_add_star(self.plot_style_box.errorbar_width_options, True)
 
             self.plot_style_box.errorbar_width_options.setCurrentText(width)
-
-    class PlotToolbar(NavigationToolbar2QT):
-        def _init_toolbar(self):
-            # fixme, if there are no errors then this is fine
-            pass
-
-        NavigationToolbar2QT.toolitems = (
-            ('Home', 'Reset original view', 'home', 'home'),
-            ('Back', 'Back to previous view', 'back', 'back'),
-            ('Forward', 'Forward to next view', 'forward', 'forward'),
-            # (None, None, None, None),
-            ('Pan', 'Pan axes with left mouse, zoom with right', 'move', 'pan'),
-            ('Zoom', 'Zoom to rectangle', 'zoom_to_rect', 'zoom'),
-            # ('Subplots', 'Configure subplots', 'subplots', 'configure_subplots'),
-            # (None, None, None, None),
-            ('Save', 'Save the figure', 'filesave', 'save_figure'),
-        )
 
     class PlotDisplay(FigureCanvas):
         def __init__(self, settings):
@@ -653,6 +640,8 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
             self.slider_bin = QtWidgets.QSlider(qt_constants.Horizontal)
             self.input_bin = QtWidgets.QLineEdit()
+
+            self.slider_bin.setToolTip('Time bins (ns)')
 
             self._label_time = QtWidgets.QLabel('Time')
             self._label_time_xmin = QtWidgets.QLabel('XMin')
@@ -1124,7 +1113,7 @@ class PlottingPanelPresenter(PanelPresenter):
         def _verify_asymmetries_are_calculated():
             runs_without_asymmetries = []
             for run in runs:
-                if run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] is None:
+                if run.asymmetries[objects.RunDataset.FULL_ASYMMETRY] is None:
                     runs_without_asymmetries.append(run)
 
             if len(runs_without_asymmetries) > 0:
@@ -1196,19 +1185,19 @@ class PlottingPanelPresenter(PanelPresenter):
 
         legend_values = {}
         for run in runs:
-            if run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] is None:
+            if run.asymmetries[objects.RunDataset.FULL_ASYMMETRY] is None:
                 continue
 
             if side == 'left':
-                asymmetry = run.asymmetries[domain.RunDataset.LEFT_BINNED_ASYMMETRY]
+                asymmetry = run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY]
                 if asymmetry is None or asymmetry.bin_size != bin_size or True:
-                    asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(bin_size)
-                    run.asymmetries[domain.RunDataset.LEFT_BINNED_ASYMMETRY] = asymmetry
+                    asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(bin_size)
+                    run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY] = asymmetry
             else:
-                asymmetry = run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY]
+                asymmetry = run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY]
                 if asymmetry is None or asymmetry.bin_size != bin_size or True:
-                    asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(bin_size)
-                    run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY] = asymmetry
+                    asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(bin_size)
+                    run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY] = asymmetry
 
             time = asymmetry.time
             uncertainty = asymmetry.uncertainty
@@ -1300,16 +1289,10 @@ class PlottingPanelPresenter(PanelPresenter):
             self.__run_service.update_alphas(ids, [alpha])
 
     def get_fft_data(self, time, asymmetry, xmin, xmax, bin_size):
-        num_bins = self.get_num_bins(xmin, xmax, bin_size)
-        start_bin = self.get_start_bin(xmin, bin_size)
-        fft = domain.FFT(asymmetry[start_bin:start_bin + num_bins], time[start_bin:start_bin + num_bins])
+        num_bins = int((float(xmax) - float(xmin)) / (float(bin_size) / 1000))
+        start_bin = int(float(xmin) / (float(bin_size) / 1000))
+        fft = objects.FFT(asymmetry[start_bin:start_bin + num_bins], time[start_bin:start_bin + num_bins])
         return fft.z, fft.fft / max(fft.fft)
-
-    def get_num_bins(self, xmin, xmax, bin_size):
-        return int((float(xmax) - float(xmin)) / (float(bin_size) / 1000))
-
-    def get_start_bin(self, xmin, bin_size):
-        return int(float(xmin) / (float(bin_size) / 1000))
 
     def _style_parameter_changed(self, key, value):
         if not self.__populating_settings:
@@ -1342,9 +1325,12 @@ class PlottingPanelPresenter(PanelPresenter):
         self.__populating_settings = False
 
     def _populate_with_single_selected(self, styles):
+        """
+        This method populates the combo boxes in the Plot Style group with the style of the run selected.
+        """
+
         style = styles[0]
 
-        # self._view.support_panel.set_alpha
         self._view.support_panel.set_errorbar_color(
             self.__style_service.color_options_extra[style[self.__style_service.Keys.ERRORBAR_COLOR]])
         self._view.support_panel.set_default_color(
@@ -1371,6 +1357,10 @@ class PlottingPanelPresenter(PanelPresenter):
             self.__style_service.marker_size_options[style[self.__style_service.Keys.MARKER_SIZE]])
 
     def _populate_with_multiple_selected(self, styles):
+        """
+        This method populates the combo boxes in the Plot Style group with the style of the runs selected.
+        """
+
         values = {self.__style_service.color_options[style[self.__style_service.Keys.DEFAULT_COLOR]] for style in
                   styles}
         if len(values) > 1:

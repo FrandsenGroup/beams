@@ -27,6 +27,12 @@ class AddFileDialog(QtWidgets.QDialog):
         self.neg_button = qt_widgets.StyleOneButton('From TRIUMF')
         self.psi_button = qt_widgets.StyleOneButton('From PSI')
         self.isis_button = qt_widgets.StyleOneButton('From ISIS')
+
+        self.pos_button.setToolTip("Select files from your computer.")
+        self.neg_button.setToolTip("Download files from TRIUMF.")
+        self.psi_button.setToolTip("Download files from PSI.")
+        self.isis_button.setToolTip("Download files from ISIS.")
+
         self.setMinimumWidth(300)
         self.setMinimumWidth(80)
         self.pos_button.setFixedWidth(100)

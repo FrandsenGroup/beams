@@ -35,3 +35,6 @@ Start BEAMS for either, once you have navigated to the directory with the follow
 ```shell
 $ python beams
 ```
+
+
+For trouble installing on Apple Silicon see this https://github.com/scipy/scipy/issues/13409

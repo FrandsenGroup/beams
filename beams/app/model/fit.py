@@ -11,7 +11,7 @@ import logging
 import copy
 import traceback
 
-from app.model import domain
+from app.model import objects
 
 INDEPENDENT_VARIABLE = "t"
 
@@ -307,7 +307,7 @@ class FitEngine:
     def __init__(self):
         self.__logger = logging.getLogger('FitEngine')
 
-    def fit(self, config: FitConfig) -> domain.FitDataset:
+    def fit(self, config: FitConfig) -> objects.FitDataset:
         self.__logger.debug("Config passed to FitEngine: {}".format(str(config)))
 
         if len(set([len(asymmetry) for asymmetry in config.data.values()])) != 1:
@@ -337,7 +337,7 @@ class FitEngine:
         return self._fit_global(config)
 
     def _fit_batch(self, config: FitConfig):
-        dataset = domain.FitDataset()
+        dataset = objects.FitDataset()
         for run_id, (time, asymmetry, uncertainty) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
             function = ALPHA_CORRECTION.format(config.expression, config.expression)
@@ -377,7 +377,7 @@ class FitEngine:
                     config.set_outputs(o_run_id, symbol, value, 0)
 
             # 9) Fill in all values for our new fit object
-            new_fit = domain.Fit(copy.deepcopy(config.parameters[run_id]), config.expression, config.titles[run_id], run_id)
+            new_fit = objects.Fit(copy.deepcopy(config.parameters[run_id]), config.expression, config.titles[run_id], run_id)
 
             # 10) Add fit to our dataset
             dataset.fits[run_id] = new_fit
@@ -425,7 +425,7 @@ class FitEngine:
 
         # Assemble the Fit object, first by updating the parameters in the config with the outputs from
         #   the fit, as well as adding a FitExpression object that can be called.
-        dataset = domain.FitDataset()
+        dataset = objects.FitDataset()
         values = {}
         uncertainties = {}
         for i, symbol in enumerate(config.get_adjusted_global_symbols()):
@@ -443,7 +443,7 @@ class FitEngine:
                 else:
                     config.set_outputs(run_id, symbol, values[symbol], uncertainties[symbol])
 
-            new_fit = domain.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id)
+            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id)
 
             dataset.fits[run_id] = new_fit
 
@@ -452,8 +452,8 @@ class FitEngine:
 
         return dataset
 
-    def _fit_non_global(self, config) -> domain.FitDataset:
-        dataset = domain.FitDataset()
+    def _fit_non_global(self, config) -> objects.FitDataset:
+        dataset = objects.FitDataset()
         for run_id, (time, asymmetry,  uncertainty) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
             function = ALPHA_CORRECTION.format(config.expression)
@@ -491,7 +491,7 @@ class FitEngine:
                 config.set_outputs(run_id, symbol, value, 0)
 
             # 9) Fill in all values for our new fit object
-            new_fit = domain.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id)
+            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id)
 
             # 10) Add fit to our dataset
             dataset.fits[run_id] = new_fit

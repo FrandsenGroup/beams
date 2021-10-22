@@ -5,7 +5,7 @@ from PyQt5 import QtWidgets, QtCore
 import numpy as np
 
 from app.util import qt_widgets, qt_constants
-from app.model import files, domain, services
+from app.model import files, objects, services
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
 
 
@@ -88,6 +88,18 @@ class WriteDataDialog(QtWidgets.QDialog):
         return self.radio_fft.isChecked()
 
     def _set_widget_attributes(self):
+        self.file_list.setToolTip("List of selected datasets to write.")
+        self.select_folder.setToolTip("Select folders to place files in.")
+        self.skip_file.setToolTip("Remove this dataset from selection.")
+        self.write_file.setToolTip("Write this dataset.")
+        self.write_all.setToolTip("Write all datasets.")
+        self.done_button.setToolTip("Close prompt.")
+        self.input_filename.setToolTip("File name dataset should be saved as.")
+        self.radio_binned.setToolTip("Write the dataset binned.")
+        self.radio_binned_size.setToolTip("Bin size.")
+        self.radio_full.setToolTip("Write the full dataset.")
+        self.radio_fft.setToolTip("Write the dataset with the FFT.")
+
         self.radio_full.setChecked(True)
         self.radio_binned_size.setEnabled(False)
 
@@ -165,11 +177,11 @@ class WriteDataDialogPresenter:
         unloaded = 0
         files_with_run_datasets = []
         for file in self.__files:
-            if file.dataset is None or (isinstance(file.dataset, domain.RunDataset) and file.dataset.asymmetries[domain.RunDataset.FULL_ASYMMETRY] is None):
+            if file.dataset is None or (isinstance(file.dataset, objects.RunDataset) and file.dataset.asymmetries[objects.RunDataset.FULL_ASYMMETRY] is None):
                 WarningMessageDialog.launch(["Some selected runs have not been loaded, or asymmetries have not been plotted."])
                 unloaded += 1
 
-            elif isinstance(file.dataset, domain.RunDataset) and file.dataset.asymmetries[domain.RunDataset.FULL_ASYMMETRY] is not None:
+            elif isinstance(file.dataset, objects.RunDataset) and file.dataset.asymmetries[objects.RunDataset.FULL_ASYMMETRY] is not None:
                 files_with_run_datasets.append(file)
 
         if len(files_with_run_datasets) + unloaded < len(self.__files):
