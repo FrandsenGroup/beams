@@ -27,6 +27,15 @@ class PlotFileDialog(QtWidgets.QDialog):
         self.b_cancel = qt_widgets.StyleTwoButton('Cancel')
         self.status_bar = QtWidgets.QStatusBar()
 
+        self.c_file_list.setToolTip("List of runs selected to plot.")
+        self.c_hist_one.setToolTip("The first histogram to be included in asymmetry.")
+        self.c_hist_two.setToolTip("The second histogram to be included in asymmetry.")
+        self.b_apply.setToolTip("Apply this format to only the current run.")
+        self.b_apply_all.setToolTip("Apply this format to all selected runs.")
+        self.b_plot.setToolTip("Plot the asymmetries (must choose histograms before plotting).")
+        self.b_skip.setToolTip("Remove current histogram from selection.")
+        self.b_cancel.setToolTip("Close prompt.")
+
         self.b_plot.setEnabled(False)
 
         col = QtWidgets.QVBoxLayout()
