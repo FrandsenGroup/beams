@@ -302,6 +302,10 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.plot_all_button = qt_widgets.StyleOneButton("Plot All")
             self.clear_all_button = qt_widgets.StyleTwoButton("Clear All")
 
+            self.plot_button.setToolTip('Plot selected files')
+            self.plot_all_button.setToolTip('Plot all files')
+            self.clear_all_button.setToolTip('Clear all files')
+
             self.item_tree = self.Tree()
             self.legend_box = self.LegendBox()
             self.plot_style_box = self.PlotStyleBox()
@@ -653,6 +657,8 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
             self.slider_bin = QtWidgets.QSlider(qt_constants.Horizontal)
             self.input_bin = QtWidgets.QLineEdit()
+
+            self.slider_bin.setToolTip('Time bins (ns)')
 
             self._label_time = QtWidgets.QLabel('Time')
             self._label_time_xmin = QtWidgets.QLabel('XMin')
