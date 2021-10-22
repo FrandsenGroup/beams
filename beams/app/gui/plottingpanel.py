@@ -626,7 +626,9 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                     return
                 self.axes_freq.set_xlim(x_min, x_max)
             else:
-                x_min, x_max = self.axes_freq.get_xlim()
+                # Here is where we will want to do the magic.
+                x_min = self._settings.get_min_freq()
+                x_max = self._settings.get_max_freq()
                 self._settings.set_min_freq(x_min)
                 self._settings.set_max_freq(x_max)
 
@@ -699,6 +701,8 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.input_time_xmax.setText("8")
             self.input_time_ymin.setText("-0.3")
             self.input_time_ymax.setText("-0.5")
+            self.input_freq_xmin.setText("0.0")
+            self.input_freq_xmax.setText("1.0")
 
             self.input_time_ymin.setEnabled(False)
             self.input_time_ymax.setEnabled(False)
@@ -1247,7 +1251,9 @@ class PlottingPanelPresenter(PanelPresenter):
                                    fit_linestyle=style[self.__style_service.Keys.FIT_LINESTYLE])
 
             if not fast:
-                frequencies, fft = self.get_fft_data(time, asymmetry, min_time, max_time, bin_size)
+                f_min = settings.get_min_freq()
+                f_max = settings.get_max_freq()
+                frequencies, fft = self.get_fft_data(time, asymmetry, min_time, max_time, bin_size, f_min, f_max)
                 local_max = np.max(fft)
                 max_fft = local_max if local_max > max_fft else max_fft
 
@@ -1299,10 +1305,10 @@ class PlottingPanelPresenter(PanelPresenter):
         if len(ids) > 0:
             self.__run_service.update_alphas(ids, [alpha])
 
-    def get_fft_data(self, time, asymmetry, xmin, xmax, bin_size):
-        num_bins = self.get_num_bins(xmin, xmax, bin_size)
-        start_bin = self.get_start_bin(xmin, bin_size)
-        fft = domain.FFT(asymmetry[start_bin:start_bin + num_bins], time[start_bin:start_bin + num_bins])
+    def get_fft_data(self, time, asymmetry, x_min, x_max, bin_size, f_min, f_max):
+        num_bins = self.get_num_bins(x_min, x_max, bin_size)
+        start_bin = self.get_start_bin(x_min, bin_size)
+        fft = domain.FFT(asymmetry[start_bin:start_bin + num_bins], time[start_bin:start_bin + num_bins], f_min, f_max)
         return fft.z, fft.fft / max(fft.fft)
 
     def get_num_bins(self, xmin, xmax, bin_size):
