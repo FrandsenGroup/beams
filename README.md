@@ -41,7 +41,7 @@ $ python beams
 For trouble installing requirements on Apple Silicon see the answer to this issue: https://github.com/scipy/scipy/issues/13409
 
 #### Text in file trees is truncated
-If the text is truncated you most likely don't have PyQt5 installed (you can confirm this by running 'pip freeze' in the terminal and you will probably see QtPy). Simply fix by using pip to install PyQt5.
+If the text is truncated or the items on the screen are misaligned slightly you most likely don't have PyQt5 installed (you can confirm this by running 'pip freeze' in the terminal and you will probably see QtPy). Simply fix by using pip to install PyQt5.
  
 ```shell
 $ pip install PyQt5
