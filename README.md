@@ -36,5 +36,13 @@ Start BEAMS for either, once you have navigated to the directory with the follow
 $ python beams
 ```
 
+### Troubleshooting
+#### Can't install requirements on Mac (Apple Silicon)
+For trouble installing requirements on Apple Silicon see the answer to this issue: https://github.com/scipy/scipy/issues/13409
 
-For trouble installing on Apple Silicon see this https://github.com/scipy/scipy/issues/13409
+#### Text in file trees is truncated
+If the text is truncated you most likely don't have PyQt5 installed (you can confirm this by running 'pip freeze' in the terminal and you will probably see QtPy). Simply fix by using pip to install PyQt5.
+ 
+```shell
+$ pip install PyQt5
+```
