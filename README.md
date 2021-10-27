@@ -1,4 +1,5 @@
 
+
 ### Features
 
 - Convert binary data files from multiple µSR facilities.
@@ -76,6 +77,17 @@ the alpha parameter for the asymmetry.
 
 ### Fitting Asymmetries
 #### Choosing your Fit Expression
+Near the top of the fitting tab you see a long input area where you can type in the expression you want to use for your fit. As you type, you will see the parameters of the expression appearing the table below. Aside from typing the expression in each time, you can also choose a pre-defined expression from the box above and insert, or create/use your own that you can create, save and insert using the group of widgets in the top right of the tab.
+#### Fit Parameters
+Once you have your expression you should be able to see all of your free parameters in the table below. The table is split into three sections; config, batch and output.
+In the config section you can set the starting value for that parameter. As you adjust these values you will see the expression displayed to the right of the table (along with any runs you have selected--see the next section). Additionally you can set the lower and upper bounds and indicate whether or not that parameter should be fixed at the starting value.
+In the batch section you have two options you can check for each parameter. The first is a "Global" option. Global will indicate that this parameter should be fitted across all runs (not locally for each individual run) so when the fit is done, this parameter will have a single result. The second option is "Run Specific." This indicates you want to specify the options in the config section for each individual run for that parameter. 
+In the output section, you will see the final value for that parameter as well as the calculated uncertainty. If the fit failed to converge, the uncertainty will be -1. For fixed parameters, the uncertainty will be 0.
+#### Selecting Runs
+In the list below the parameter table you will be able to select the runs you want to include in the fit. If you click the 'Plot' button, you will see the asymmetries from these runs displayed with the fit expression (whose parameters are shown using the current values of the table). If there are run-specific values specified, you will see separate lines with a matching color for each run. Clicking between the runs you will be able to specify run-specific parameters in the table. 
+You can manipulate the displayed asymmetries with the controls below the display.
+#### Fit Options
+Below the list of runs you will see a group of options you can specify for each run. 
 
 
 ## File Formats
