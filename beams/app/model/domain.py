@@ -754,15 +754,33 @@ class FitDataset:
 
         self.id = str(current_time)
         self.title = self.id
-        self.fits = {}
+        self.fits = {}  # run_id : fit object
         self.flags = 0
         self.expression = None
 
-    def write(self, out_file, verbose_format=None):
+    def write(self, out_file, order_by, verbose_format=None):
         if verbose_format:
-            fit_parameters_string = "# Fit Parameters\n\n# {:<8}{:<10}{:<8}{:<8}".format("Name", "Value", "Lower",
+            # Writing the Summary Block
+            fit_parameters_string = "\n# Summary\n"
+
+            f = list(self.fits.values())[0]
+
+            for name, v in f.parameters.items():  # getting the column headers
+                fit_parameters_string += "{:<8}\t".format(name)
+
+            fit_parameters_string += "{:<8}".format("RUN") + "\n"
+
+            for f in self.fits.values():  # adding values for each run
+                for name, v in f.parameters.items():
+                    fit_parameters_string += "{:<8}\t".format("{:.5f}".format(v.value))
+                run = services.RunService().get_runs_by_ids([f.run_id])[0]
+                fit_parameters_string += "{:<8}".format(run.meta["RunNumber"]) + "\n"
+
+            # Writing the Verbose Section
+            fit_parameters_string += "\n# Fit Parameters\n\n# {:<8}{:<10}{:<8}{:<8}".format("Name", "Value", "Lower",
                                                                                          "Upper") + "\n\n"
-            if self.flags & FitDataset.Flags.GLOBAL or self.flags & FitDataset.Flags.GLOBAL_PLUS:
+
+            if self.flags & FitDataset.Flags.GLOBAL or self.flags & FitDataset.Flags.GLOBAL_PLUS:  # Add common parameters
                 fit_parameters_string += "# Common parameters for all runs\n\n"
 
                 f = list(self.fits.values())[0]
@@ -776,7 +794,7 @@ class FitDataset:
 
                 fit_parameters_string += "\n"
 
-            for f in self.fits.values():
+            for f in self.fits.values():  # Add run specific parameters
                 run = services.RunService().get_runs_by_ids([f.run_id])[0]
                 fit_parameters_string += "# Specific parameters for run {} ({})\n\n".format(run.meta["RunNumber"],
                                                                                             f.title)
@@ -791,13 +809,14 @@ class FitDataset:
 
                 fit_parameters_string += "\n"
 
+            # Write out our string
             with open(out_file, 'w', encoding="utf-8") as out_file_object:
                 out_file_object.write("#BEAMS\n"
                                       + fit_parameters_string
                                       + "# Expression\n\n\t"
                                       + "A(t) = " + self.expression)
 
-        else:
+        else:  # FIXME needs to be deleted.
             full_string = ""
 
             f = list(self.fits.values())[0]
