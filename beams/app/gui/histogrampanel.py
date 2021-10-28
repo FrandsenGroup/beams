@@ -25,9 +25,8 @@ class HistogramPanel(Panel):
             pass
 
         def __init__(self, canvas, parent):
+            self.locLabel = QtWidgets.QLabel("")
             super().__init__(canvas, parent)
-            if 'locLabel' not in self.__dict__:
-                self.locLabel = None
 
         # only display the buttons we need
         NavigationToolbar2QT.toolitems = (
@@ -125,7 +124,6 @@ class HistogramPanel(Panel):
 
             @QtCore.pyqtSlot()
             def update(self):
-                self.__logger.debug("Accepted Signal")
                 run_datasets = self.__run_service.get_loaded_runs()
                 tree = self._create_tree_model(run_datasets)
                 self.__view.set_tree(tree)
