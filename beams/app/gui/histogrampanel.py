@@ -25,9 +25,8 @@ class HistogramPanel(Panel):
             pass
 
         def __init__(self, canvas, parent):
+            self.locLabel = QtWidgets.QLabel("")
             super().__init__(canvas, parent)
-            if 'locLabel' not in self.__dict__:
-                self.locLabel = None
 
         # only display the buttons we need
         NavigationToolbar2QT.toolitems = (
