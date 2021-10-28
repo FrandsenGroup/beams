@@ -1355,6 +1355,7 @@ class FitTabPresenter:
         checked_run_ids.extend(self._view.get_checked_run_ids())
         alphas = dict()
 
+        # Plot the fit lines
         for i, (run_id, parameters) in enumerate(self.__variable_groups.items()):
             if run_id not in checked_run_ids:
                 continue
@@ -1396,6 +1397,8 @@ class FitTabPresenter:
                                                   fit_color=colors[run_id],
                                                   fit_linestyle='none',
                                                   label=None)
+
+        # Plot the asymmetries
         for i, run in enumerate(runs):
             if run.id not in run_ids:
                 continue
