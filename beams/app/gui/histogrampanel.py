@@ -125,7 +125,6 @@ class HistogramPanel(Panel):
 
             @QtCore.pyqtSlot()
             def update(self):
-                self.__logger.debug("Accepted Signal")
                 run_datasets = self.__run_service.get_loaded_runs()
                 tree = self._create_tree_model(run_datasets)
                 self.__view.set_tree(tree)

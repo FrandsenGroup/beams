@@ -84,7 +84,6 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
         @QtCore.pyqtSlot()
         def update(self):
-            self.__logger.debug("Accepted Signal")
             ids = self.__view.get_file_ids()
             file_datasets = self.__file_service.get_files()
             tree = self._create_tree_model(file_datasets)
