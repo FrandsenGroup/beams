@@ -562,7 +562,7 @@ class FitEngine:
     @staticmethod
     def _residual(lambda_expression):
         def residual(pars, x, y_data, dy_data):
-            y_calc = lambda_expression(x, *pars)  # y_calc is coming out as shorter sometimes then y_data.
+            y_calc = lambda_expression(x, *pars)
             return np.divide(np.subtract(y_data, y_calc), dy_data)
 
         return residual
