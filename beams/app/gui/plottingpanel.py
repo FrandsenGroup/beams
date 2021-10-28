@@ -709,7 +709,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             pass
 
         def _set_widget_dimensions(self):
-            box_size = 40
+            box_size = 20
             self.input_time_xmin.setMinimumWidth(box_size)
             self.input_time_xmax.setMinimumWidth(box_size)
             self.input_time_ymin.setMinimumWidth(box_size)
@@ -891,12 +891,12 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         hbox = QtWidgets.QHBoxLayout()
 
         vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self.left_display, 2)
+        vbox.addWidget(self.left_display, 5)
         vbox.addWidget(self.left_settings)
         hbox.addLayout(vbox)
 
         vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self.right_display, 2)
+        vbox.addWidget(self.right_display, 5)
         vbox.addWidget(self.right_settings)
         hbox.addLayout(vbox)
 

@@ -339,13 +339,9 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         # Set Widget Dimensions
 
         self.select_all.setFixedWidth(20)
-        self.import_button.setFixedWidth(25)
-        self.remove_button.setFixedWidth(25)
-        self.convert_button.setFixedWidth(60)
-        self.write_button.setFixedWidth(40)
-        self.load_button.setFixedWidth(40)
+        self.import_button.setFixedWidth(20)
+        self.remove_button.setFixedWidth(20)
         self.setMaximumHeight(350)
-        self.setMaximumWidth(350)
 
         # Set Widget Tooltips
         self.write_button.setToolTip('Write currently plotted data to .asy files')
@@ -357,9 +353,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
         # Layout Widgets
         hbox_one = QtWidgets.QHBoxLayout()
-        hbox_one.setSpacing(10)
         hbox_one.addWidget(self.select_all)
-        hbox_one.addSpacing(5)
         hbox_one.addWidget(self.import_button)
         hbox_one.addWidget(self.remove_button)
         hbox_one.addWidget(self.convert_button)
