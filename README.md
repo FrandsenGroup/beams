@@ -1,6 +1,6 @@
 ![beams logo](beams/app/resources/icons/logo_3.jpg)
-
-### Features
+[![Release](https://img.shields.io/github/release/FrandsenGroup/beams.svg?style=plastic&colorB=68B7EB)]()
+###  Features
 
 - Convert binary data files from multiple µSR facilities.
 - Display and interact with multiple sets of data.
@@ -17,12 +17,12 @@
     - [Plotting the Asymmetry](#plotting-the-asymmetry)
     - [Interacting with the Asymmetry](#interacting-with-the-asymmetry)
   - [Fitting Asymmetries](#fitting-asymmetries)
-    - [Choosing the Fit Expression](#choosing-the-fit-expression)
+    - [Choosing the Fit Expression](#choosing-your-fit-expression)
     - [Fit Parameters](#fit-parameters)
     - [Selecting Runs](#selecting-runs)
     - [Fit Options](#fit-options)
 - [File Formats](#file-formats)
-  - [External File Formats](#external-file-formats)
+  - [External File Formats](#external-supported-file-formats)
   - [BEAMS File Formats](#beams-file-formats)
 - [Troubleshooting](#troubleshooting)
 
@@ -77,6 +77,8 @@ histograms should be used to calculate the asymmetry for that particular file. I
 for a large selection of files then you can press 'Apply All', otherwise you can press 'Apply' and specify for each file
 individually.
 
+![choosing your histograms for asymmetry](https://github.com/aPeter1/BEAMS/blob/assets/histogram_choice_dialog.png)
+
 If it is a '.asy' file, a file which contains an asymmetry, then the asymmetry will be plotted as no more
 information is needed.
 
@@ -88,6 +90,8 @@ Once your asymmetry is plotted, you can now dynamically interact with it! You ca
 the slider below each plot to adjust the binning of the asymmetry and adjust the x and y limits to focus in on different
 areas. In the left side panel you will see the legend for the plots, as well as options for styling and adjusting
 the alpha parameter for the asymmetry.
+
+![choosing your histograms for asymmetry](https://github.com/aPeter1/BEAMS/blob/assets/plot_interaction.png)
 
 ### Fitting Asymmetries
 #### Choosing your Fit Expression
