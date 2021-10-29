@@ -701,6 +701,7 @@ class Fit:
         self.string_expression = expression
         self.title = title
         self.run_id = run_id
+        self.run = None
         self.meta = meta
         self.asymmetry = asymmetry
 

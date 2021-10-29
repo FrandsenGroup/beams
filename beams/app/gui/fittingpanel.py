@@ -1761,6 +1761,10 @@ class FitTabPresenter:
         self.__update_if_table_changes = True
 
     def _update_fit_changes(self, dataset):
+        runs = self._run_service.get_runs_by_ids(dataset.fits.keys())
+        for run, f in zip(runs, dataset.fits.values()):
+            f.run = run
+
         self._fit_service.add_dataset([dataset])
         self._update_alphas(dataset)
         self.__update_if_table_changes = False
