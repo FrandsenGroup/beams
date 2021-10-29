@@ -1,4 +1,4 @@
-
+![beams logo](beams/app/resources/icons/logo_3.jpg)
 
 ### Features
 
