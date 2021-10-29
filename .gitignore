@@ -129,5 +129,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+/testfiles/addfile.ft2
+/testfiles/adduncert.ft2
+/testfiles/bigtest.beams
 /testfiles/bigtest2.ft2
-/testfiles/
+/testfiles/bigtest3.ft2
+/testfiles/brigg.ft2
+/testfiles/regex1.ft2
+/testfiles/regex2.ft2
+/testfiles/regex3.ft2

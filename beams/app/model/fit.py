@@ -80,7 +80,7 @@ class FitParameter:
             and other.uncertainty == self.uncertainty
 
     def __str__(self):
-        return '{}={:.5f}'.format(self.symbol, self.value)
+        return '{}={}'.format(self.symbol, self.value)
 
     def __repr__(self):
         return 'FitParameter ({})=({},{},{},{},{},{},{})'.format(self.symbol, self.value, self.lower, self.upper,
@@ -157,6 +157,13 @@ class FitExpression:
 
 
 class FitConfig:
+    """
+
+    IMPORTANT NOTE : All of the get function use a for loop on self.parameters.items(). Always do this to keep the order
+    of the items we get out consistent. The least squares method we use doesn't let us specify the value or lower bound
+    etc of a symbol except by passing in arrays ordered the same as the array of symbols.
+
+    """
 
     def __init__(self):
         self.expression = ''
@@ -359,40 +366,37 @@ class FitEngine:
         for run_id, (time, asymmetry, uncertainty, meta) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
             function = ALPHA_CORRECTION.format(config.expression, config.expression)
-            lambda_expression = FitExpression(function, variables=config.get_symbols_for_run(run_id))
+
+            # Replace the symbols with fixed values with their actual values. This way they don't throw off uncertainty.
+            fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
+            fixed_values = config.get_values_for_run(run_id, is_fixed=True)
+            function = FitEngine._replace_fixed(function, fixed_symbols, fixed_values)
+
+            # Create a residual expression for the least squares fit
+            lambda_expression = FitExpression(function, variables=config.get_symbols_for_run(run_id, is_fixed=False))
             residual = FitEngine._residual(lambda_expression)
 
-            guesses = config.get_values_for_run(run_id)
-            lowers = config.get_lower_values_for_run(run_id)
-            uppers = config.get_upper_values_for_run(run_id)
-
-            self.__logger.debug("Symbols <{}> : {}".format(run_id, config.get_symbols_for_run(run_id)))
-            self.__logger.debug("Initials <{}> : {}".format(run_id, guesses))
-            self.__logger.debug("Lowers <{}> : {}".format(run_id, lowers))
-            self.__logger.debug("Uppers <{}> : {}".format(run_id, uppers))
+            guesses = config.get_values_for_run(run_id, is_fixed=False)
+            lowers = config.get_lower_values_for_run(run_id, is_fixed=False)
+            uppers = config.get_upper_values_for_run(run_id, is_fixed=False)
 
             # 6) Perform a least squares fit
             opt = least_squares(residual, guesses, bounds=[lowers, uppers],
                                 args=(time, asymmetry, uncertainty))
 
-            self.__logger.debug("Output from least_squares batch : ".format(opt))
-
             try:
                 unc, chi_sq = get_std_unc(opt, asymmetry)
-
-                for i, symbol in enumerate(config.get_symbols_for_run(run_id)):
-                    if config.parameters[run_id][symbol].is_fixed or config.parameters[run_id][symbol].is_fixed_run:
-                        unc[i] = 0.0
-
             except (np.linalg.LinAlgError, NameError):  # Fit did not converge
                 unc = [-1 for _ in opt.x]
 
-            self.__logger.debug("Uncertainty: ".format(str(unc)))
-
             # 7) Replace initial values with fitted values for unfixed variables
-            for i, symbol in enumerate(config.get_symbols_for_run(run_id)):
+            for i, symbol in enumerate(config.get_symbols_for_run(run_id, is_fixed=False)):
                 for o_run_id in config.data.keys():
                     config.set_outputs(o_run_id, symbol, opt.x[i], unc[i])
+
+            for symbol, value in zip(fixed_symbols, fixed_values):
+                for o_run_id in config.data.keys():
+                    config.set_outputs(o_run_id, symbol, value, 0)
 
             # 9) Fill in all values for our new fit object
             new_fit = domain.Fit(copy.deepcopy(config.parameters[run_id]), config.expression, config.titles[run_id], run_id, meta, asymmetry)
