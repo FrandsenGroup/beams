@@ -130,7 +130,13 @@ File Extension | Description
 
 ## Troubleshooting
 #### Can't install requirements on Mac (Apple Silicon)
-For trouble installing requirements on Apple Silicon see the answer to this issue: https://github.com/scipy/scipy/issues/13409
+For trouble installing requirements on Apple Silicon see the answer to this [issue](https://github.com/scipy/scipy/issues/13409).
+
+```shell
+$ brew install openblas
+$ pip install cython pybind11 pythran numpy
+$ OPENBLAS=$(brew --prefix openblas) CFLAGS="-falign-functions=8 ${CFLAGS}" pip install --no-use-pep517 scipy
+```
 
 #### Text in file trees is truncated
 If the text is truncated or the items on the screen are misaligned slightly you most likely don't have PyQt5 installed (you can confirm this by running `pip freeze` in the terminal and you will probably see QtPy). Simply fix by using pip to install PyQt5.
@@ -140,5 +146,6 @@ $ pip install PyQt5
 ```
 
 #### (PyQt5) ImportError: DLL load failed
-Resolved in this issue #37\
+Resolved in this [Issue 37](/FrandsenGroup/beams/issues/3)
+
 Possible solution in the answer to this question on Stack Overflow: https://stackoverflow.com/questions/42863505/dll-load-failed-when-importing-pyqt5
