@@ -14,13 +14,13 @@ class WriteFitDialog(QtWidgets.QDialog):
         self._dataset = dataset
         self._ignore_radio_button = False
 
-        self.radio_short = QtWidgets.QRadioButton("Short")
-        self.radio_verbose = QtWidgets.QRadioButton("Verbose")
+        self.radio_summary = QtWidgets.QRadioButton("Summary")
         self.radio_directory = QtWidgets.QRadioButton("Directory")
         self.radio_zip = QtWidgets.QRadioButton("Zip")
         self.button_save_as = qt_widgets.StyleOneButton("Save As")
         self.button_done = qt_widgets.StyleOneButton("Done")
         self.option_prefix = QtWidgets.QComboBox()
+        self.option_order_by = QtWidgets.QComboBox()
 
         self.summary_button_group = QtWidgets.QButtonGroup()
         self.individual_button_group = QtWidgets.QButtonGroup()
@@ -33,36 +33,47 @@ class WriteFitDialog(QtWidgets.QDialog):
         self._presenter = WriteFitDialogPresenter(self, dataset)
 
     def _set_attributes(self):
-        self.option_prefix.addItems(list(self._dataset.fits.values())[0].meta.keys())
+        magical_list = list(self._dataset.fits.values())[0].meta.keys()
+
+        self.option_prefix.addItems(magical_list)
         self.option_prefix.setEnabled(False)
-        self.radio_short.setChecked(True)
+
+        possible_values_list = [files.TEMPERATURE_KEY, files.FIELD_KEY, files.RUN_NUMBER_KEY]
+        order_by_list = [x for x in possible_values_list if x in magical_list]
+
+        self.option_order_by.addItems(order_by_list)
 
         self.individual_button_group.addButton(self.radio_zip)
         self.individual_button_group.addButton(self.radio_directory)
-        self.summary_button_group.addButton(self.radio_short)
-        self.summary_button_group.addButton(self.radio_verbose)
+        self.summary_button_group.addButton(self.radio_summary)
 
         self.summary_button_group.setExclusive(False)
         self.individual_button_group.setExclusive(False)
 
+        self.radio_summary.setChecked(True)
+
         self.radio_zip.toggled.connect(lambda: self._radio_button_clicked(self.radio_zip.text()))
-        self.radio_short.toggled.connect(lambda: self._radio_button_clicked(self.radio_short.text()))
-        self.radio_verbose.toggled.connect(lambda: self._radio_button_clicked(self.radio_verbose.text()))
+        self.radio_summary.toggled.connect(lambda: self._radio_button_clicked(self.radio_summary.text()))
         self.radio_directory.toggled.connect(lambda: self._radio_button_clicked(self.radio_directory.text()))
 
     def _set_layout(self):
-        hbox = QtWidgets.QHBoxLayout()
-        hbox.addWidget(self.radio_short)
-        hbox.addWidget(self.radio_verbose)
+        vbox = QtWidgets.QVBoxLayout()
+        vbox.addWidget(self.radio_summary)
+        vbox.addWidget(self.option_order_by)
 
         summary_group = QtWidgets.QGroupBox("Summary")
-        summary_group.setLayout(hbox)
+        summary_group.setLayout(vbox)
+
+
+        vbox = QtWidgets.QVBoxLayout()
 
         hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.radio_directory)
         hbox.addWidget(self.radio_zip)
+        vbox.addLayout(hbox)
+        vbox.addWidget(self.option_prefix)
         individual_group = QtWidgets.QGroupBox("Individual")
-        individual_group.setLayout(hbox)
+        individual_group.setLayout(vbox)
 
         hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(summary_group)
@@ -72,12 +83,6 @@ class WriteFitDialog(QtWidgets.QDialog):
         main_layout.addLayout(hbox)
 
         hbox = QtWidgets.QHBoxLayout()
-        hbox.addWidget(self.option_prefix)
-        prefix_group = QtWidgets.QGroupBox("File Prefix")
-        prefix_group.setLayout(hbox)
-
-        hbox = QtWidgets.QHBoxLayout()
-        hbox.addWidget(prefix_group)
         hbox.addWidget(self.button_save_as)
         hbox.addWidget(self.button_done)
 
@@ -92,21 +97,14 @@ class WriteFitDialog(QtWidgets.QDialog):
         # Otherwise it will try to update.
         self._ignore_radio_button = True
 
-        if self.radio_verbose.text() != text:
-            self.radio_verbose.setChecked(False)
-
-        if self.radio_zip.text() != text:
-            self.radio_zip.setChecked(False)
-
-        if self.radio_short.text() != text:
-            self.radio_short.setChecked(False)
-
-        if self.radio_directory.text() != text:
-            self.radio_directory.setChecked(False)
+        self.radio_summary.setChecked(self.radio_summary.text() == text)
+        self.radio_zip.setChecked(self.radio_zip.text() == text)
+        self.radio_directory.setChecked(self.radio_directory.text() == text)
 
         self._ignore_radio_button = False
 
         self.option_prefix.setEnabled(self.radio_directory.text() == text or self.radio_zip.text() == text)
+        self.option_order_by.setEnabled(self.radio_summary.text() == text)
 
     def set_status_message(self, message):
         self.status_bar.showMessage(message)
@@ -136,19 +134,7 @@ class WriteFitDialogPresenter(QtCore.QObject):
     def _handle_save_as(self):
         prefix_key = self._view.option_prefix.currentText()
 
-        if self._view.radio_short.isChecked():
-            save_path = self._get_save_path("Fit (*{})".format(files.Extensions.FIT_SUMMARY))
-
-            if not save_path:
-                return
-
-            try:
-                self._dataset.write(save_path)
-            except Exception as e:
-                dialog_misc.WarningMessageDialog.launch(["Error writing dataset file: " + str(e)])
-                return
-
-        elif self._view.radio_verbose.isChecked():
+        if self._view.radio_summary.isChecked():
             save_path = self._get_save_path("Fit (*{})".format(files.Extensions.FIT_SUMMARY_VERBOSE))
 
             if not save_path:
