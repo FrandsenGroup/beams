@@ -762,6 +762,7 @@ class FitDataset:
 
     def write(self, out_file, order_by_key):
         # Writing the Summary Block
+
         fit_parameters_string = "\n# Summary\n"
 
         f = list(self.fits.values())[0]
@@ -778,7 +779,7 @@ class FitDataset:
         # Make a list from the fit dictionary so that we can then sort it by the meta value
         fit_list = list(self.fits.values())
 
-        # Doesn't quite work for temperature (which is encoded as string, this can only really reliably sort numbers)
+        # Sorting the fit list by the user-selected meta value
         try:
             fit_list.sort(key=lambda fit: float(re.search("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?", fit.meta[order_by_key])[0]))
         except:
@@ -793,7 +794,7 @@ class FitDataset:
             fit_parameters_string += "\n"
 
         # Writing the Verbose Section
-        fit_parameters_string += "\n# Fit Parameters\n\n# {:<8}{:<10}{:<8}{:<8}".format("Name", "Value", "Lower",
+        fit_parameters_string += "\n# Fit Parameters\n\n# \t{:<8}{:<10}{:<12}{:<8}{:<8}".format("Name", "Value", "Uncertainty", "Lower",
                                                                                      "Upper") + "\n\n"
 
         if self.flags & FitDataset.Flags.GLOBAL or self.flags & FitDataset.Flags.GLOBAL_PLUS:  # Add common parameters
@@ -802,7 +803,7 @@ class FitDataset:
             f = list(self.fits.values())[0]
             for name, v in f.parameters.items():
                 if v.is_global:
-                    fit_parameters_string += "\t" + "{:<8}{:<10.5f}{:<10.5f}{:<8.5f}{:<8.5f}".format(v.symbol,
+                    fit_parameters_string += "\t" + "{:<8}{:<10.5f}{:<12.5f}{:<8.5f}{:<8.5f}".format(v.symbol,
                                                                                                      v.value,
                                                                                                      v.uncertainty,
                                                                                                      v.lower,
@@ -812,12 +813,13 @@ class FitDataset:
 
         for f in self.fits.values():  # Add run specific parameters
             run = services.RunService().get_runs_by_ids([f.run_id])[0]
+            fit_parameters_string += run.file.file_path + "\n"
             fit_parameters_string += "# Specific parameters for run {} ({})\n\n".format(run.meta["RunNumber"],
                                                                                         f.title)
 
             for name, v in f.parameters.items():
                 if not v.is_global:
-                    fit_parameters_string += "\t" + "{:<8}{:<10.5f}{:<10.5f}{:<8.5f}{:<8.5f}".format(v.symbol,
+                    fit_parameters_string += "\t" + "{:<8}{:<10.5f}{:<12.5f}{:<8.5f}{:<8.5f}".format(v.symbol,
                                                                                                      v.value,
                                                                                                      v.uncertainty,
                                                                                                      v.lower,
