@@ -133,6 +133,7 @@ class WriteFitDialogPresenter(QtCore.QObject):
     @QtCore.pyqtSlot()
     def _handle_save_as(self):
         prefix_key = self._view.option_prefix.currentText()
+        order_by_key = self._view.option_order_by.currentText()
 
         if self._view.radio_summary.isChecked():
             save_path = self._get_save_path("Fit (*{})".format(files.Extensions.FIT_SUMMARY_VERBOSE))
@@ -141,7 +142,8 @@ class WriteFitDialogPresenter(QtCore.QObject):
                 return
 
             try:
-                self._dataset.write(save_path, verbose_format=True)
+
+                self._dataset.write(save_path, order_by_key)
             except Exception as e:
                 dialog_misc.WarningMessageDialog.launch(["Error writing dataset file: " + str(e)])
                 return

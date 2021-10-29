@@ -758,24 +758,34 @@ class FitDataset:
         self.flags = 0
         self.expression = None
 
-    def write(self, out_file, order_by):
+    def write(self, out_file, order_by_key):
         # Writing the Summary Block
         fit_parameters_string = "\n# Summary\n"
 
         f = list(self.fits.values())[0]
 
-
         # helpful code
+        fit_parameters_string += "{:<8}\t".format(files.RUN_NUMBER_KEY)
+        if order_by_key != files.RUN_NUMBER_KEY:
+            fit_parameters_string += "{:<12}\t".format(order_by_key)
+
         for name, v in f.parameters.items():  # getting the column headers
             fit_parameters_string += "{:<8}\t".format(name)
+        fit_parameters_string += "\n"
 
-        fit_parameters_string += "{:<8}".format("RUN") + "\n"
+        # Make a list from the fit dictionary so that we can then sort it by the meta value
+        fit_list = list(self.fits.values())
+        # Doesn't quite work for temperature (which is encoded as string, this can only really reliably sort numbers)
+        fit_list.sort(key=lambda fit: fit.meta[order_by_key])
 
-        for f in self.fits.values():  # adding values for each run
+        for f in fit_list:  # adding values for each run
+            fit_parameters_string += "{:<8}\t".format(f.meta[files.RUN_NUMBER_KEY])
+            if order_by_key != files.RUN_NUMBER_KEY:
+                fit_parameters_string += "{:<12}\t".format(f.meta[order_by_key])
             for name, v in f.parameters.items():
                 fit_parameters_string += "{:<8}\t".format("{:.5f}".format(v.value))
-            run = services.RunService().get_runs_by_ids([f.run_id])[0]
-            fit_parameters_string += "{:<8}".format(run.meta["RunNumber"]) + "\n"
+            # run = services.RunService().get_runs_by_ids([f.run_id])[0]
+            fit_parameters_string += "\n"
 
         # Writing the Verbose Section
         fit_parameters_string += "\n# Fit Parameters\n\n# {:<8}{:<10}{:<8}{:<8}".format("Name", "Value", "Lower",
