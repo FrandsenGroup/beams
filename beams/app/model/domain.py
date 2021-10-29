@@ -1,6 +1,7 @@
 import enum
 import os
 import time
+import re
 
 import numpy as np
 import uuid
@@ -775,9 +776,12 @@ class FitDataset:
 
         # Make a list from the fit dictionary so that we can then sort it by the meta value
         fit_list = list(self.fits.values())
-        # Doesn't quite work for temperature (which is encoded as string, this can only really reliably sort numbers)
-        fit_list.sort(key=lambda fit: fit.meta[order_by_key])
 
+        # Doesn't quite work for temperature (which is encoded as string, this can only really reliably sort numbers)
+        try:
+            fit_list.sort(key=lambda fit: float(re.search("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?", fit.meta[order_by_key])[0]))
+        except:
+            pass
         for f in fit_list:  # adding values for each run
             fit_parameters_string += "{:<8}\t".format(f.meta[files.RUN_NUMBER_KEY])
             if order_by_key != files.RUN_NUMBER_KEY:
