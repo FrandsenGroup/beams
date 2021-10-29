@@ -10,7 +10,21 @@
 # BEAMS
 > A simple interface for visualizing and analyzing µSR data.
 
-**Table of Contents**
+## Table of Contents
+- [Getting Started](#getting-started)
+- [User Guide](#user-guide)
+  - [Plotting Asymmetries](#plotting-asymmetries)
+    - [Plotting the Asymmetry](#plotting-the-asymmetry)
+    - [Interacting with the Asymmetry](#interacting-with-the-asymmetry)
+  - [Fitting Asymmetries](#fitting-asymmetries)
+    - [Choosing the Fit Expression](#choosing-the-fit-expression)
+    - [Fit Parameters](#fit-parameters)
+    - [Selecting Runs](#selecting-runs)
+    - [Fit Options](#fit-options)
+- [File Formats](#file-formats)
+  - [External File Formats](#external-file-formats)
+  - [BEAMS File Formats](#beams-file-formats)
+- [Troubleshooting](#troubleshooting)
 
 ## Getting Started
 
