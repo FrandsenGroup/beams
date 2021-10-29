@@ -146,6 +146,6 @@ $ pip install PyQt5
 ```
 
 #### (PyQt5) ImportError: DLL load failed
-Resolved in this [Issue 37](/FrandsenGroup/beams/issues/3)
+Resolved in this [Issue 37](FrandsenGroup/beams/issues/37)
 
 Possible solution in the answer to this question on Stack Overflow: https://stackoverflow.com/questions/42863505/dll-load-failed-when-importing-pyqt5
