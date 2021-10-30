@@ -214,7 +214,6 @@ class FittingPanel(Panel):
             self.button_lookup_folder = qt_widgets.StyleTwoButton("Folder")
 
             self.new_button.setToolTip('Create a new empty fit')
-            self.save_button.setToolTip('Save fit')
             self.button_save_results.setToolTip('Save fit to selected folder')
             self.button_lookup_folder.setToolTip('Select folder')
 
