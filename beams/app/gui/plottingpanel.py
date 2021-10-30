@@ -601,7 +601,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 return
             self.axes_time.set_xlim(x_min, x_max)
 
-        def set_fft_plot_limits(self, max_fft):
+        def set_fft_plot_limits(self, max_fft, max_freq=None):
             if not self._settings.is_fft_auto():
                 try:
                     y_min = self._settings.get_min_fft()
@@ -627,10 +627,8 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self.axes_freq.set_xlim(x_min, x_max)
             else:
                 # Here is where we will want to do the magic.
-                x_min = self._settings.get_min_freq()
-                x_max = self._settings.get_max_freq()
-                self._settings.set_min_freq(x_min)
-                self._settings.set_max_freq(x_max)
+                self._settings.set_min_freq(0)
+                self._settings.set_max_freq(max_freq)
 
         def finish_plotting(self, remove_legend=False):
             self.set_style(remove_legend)
@@ -1252,7 +1250,11 @@ class PlottingPanelPresenter(PanelPresenter):
 
             if not fast:
                 f_min = settings.get_min_freq()
-                f_max = settings.get_max_freq()
+                if settings.is_freq_auto():
+                    f_max = 1 / (2 * (bin_size / 100))
+                else:
+                    f_max = settings.get_max_freq()
+
                 frequencies, fft = self.get_fft_data(time, asymmetry, min_time, max_time, bin_size, f_min, f_max)
                 local_max = np.max(fft)
                 max_fft = local_max if local_max > max_fft else max_fft
@@ -1260,9 +1262,9 @@ class PlottingPanelPresenter(PanelPresenter):
                 display.plot_fft(frequencies, fft,
                                  style[self.__style_service.Keys.DEFAULT_COLOR],
                                  style[self.__style_service.Keys.LABEL])
+                display.set_fft_plot_limits(max_fft, f_max)
 
         display.set_asymmetry_plot_limits(max_asymmetry, min_asymmetry)
-        display.set_fft_plot_limits(max_fft)
         display.finish_plotting(fast)
 
         self._view.legend_display.set_legend(legend_values)

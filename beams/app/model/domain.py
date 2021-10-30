@@ -582,7 +582,7 @@ class FFT:
     def __init__(self, asymmetry, time, f_min, f_max):
         f_min = f_min
         f_max = f_max
-        f_step = (f_max - f_min) / 100
+        f_step = (f_max - f_min) / 200
         z_min = 2 * np.pi * f_min
         z_max = 2 * np.pi * f_max
         z_step = 2 * np.pi * f_step
