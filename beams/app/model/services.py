@@ -7,7 +7,7 @@ import pickle
 from PyQt5 import QtCore
 
 import app.model.data_access as dao
-from app.model import domain, files
+from app.model import objects, files
 from app.resources import resources
 
 
@@ -44,19 +44,16 @@ class FitService:
         self.__dao.add_fits(datasets)
 
         if not suppress_signal:
-            self.__logger.debug("Emitted: added")
             self.signals.added.emit()
 
     def remove_dataset(self, ids):
         self.__dao.remove_fits_by_ids(ids)
-        self.__logger.debug("Emitted: changed")
         self.signals.changed.emit()
 
     def remove_fits_from_datasets(self, id_mappings):
         raise NotImplementedError()
 
     def changed(self):
-        self.__logger.debug("Emitted: changed")
         self.signals.changed.emit()
 
 
@@ -99,50 +96,50 @@ class RunService:
         pass
 
     def recalculate_asymmetries(self, ids):
+        self.__logger.debug("Updated Asymmetry for Runs=({})".format(str(ids)))
         for run in self.__dao.get_runs_by_ids(ids):
             if len(run.histograms_used) == 2:
-                run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] = domain.Asymmetry(
+                run.asymmetries[objects.RunDataset.FULL_ASYMMETRY] = objects.Asymmetry(
                     histogram_one=run.histograms[run.histograms_used[0]],
                     histogram_two=run.histograms[run.histograms_used[1]],
-                    alpha=run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].alpha)
+                    alpha=run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].alpha)
 
-                if run.asymmetries[domain.RunDataset.LEFT_BINNED_ASYMMETRY] is not None:
-                    run.asymmetries[domain.RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(
-                        run.asymmetries[domain.RunDataset.LEFT_BINNED_ASYMMETRY].bin_size)
-                    run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(
-                        run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
+                if run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY] is not None:
+                    run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(
+                        run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY].bin_size)
+                    run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(
+                        run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
 
-        self.__logger.debug("Emitted: changed")
         self.signals.changed.emit()
 
     def add_runs(self, paths):
-        builder = domain.DataBuilder()
+        builder = objects.DataBuilder()
         for path in paths:
             run = builder.build_minimal(path)
             self.__dao.add_runs([run])
 
-        self.__logger.debug("Emitted: added")
         self.signals.added.emit()
 
     def remove_runs_by_ids(self, ids):
+        self.__logger.debug("Removing Run Datasets=({})".format(str(ids)))
         self.__dao.remove_runs_by_ids(ids)
 
-        self.__logger.debug("Emitted: loaded")
         self.signals.loaded.emit()
 
     def add_dataset(self, datasets, suppress_signal):
+        self.__logger.debug("Adding Run Datasets=({})".format(str(datasets)))
         self.__dao.add_runs(datasets)
 
         if not suppress_signal:
-            self.__logger.debug("Emitted: added")
             self.signals.added.emit()
 
     def update_runs_by_ids(self, ids, asymmetries):
+        self.__logger.debug("Updating Asymmetries for Runs=({}) with Asymmetries=({})".format(str(ids), str(asymmetries)))
         self.__dao.update_runs_by_id(ids, asymmetries)
-        self.__logger.debug("Emitted: changed")
         self.signals.changed.emit()
 
     def update_alphas(self, ids, alphas):
+        self.__logger.debug("Updating Alphas for Runs=({}) with Alphas=({})".format(str(ids), str(alphas)))
         if len(alphas) == 1:  # When we update alpha from plotting panel we send one alpha for multiple runs
             alpha = alphas[0]
             alphas = [alpha for _ in ids]
@@ -150,19 +147,17 @@ class RunService:
         for rid, alpha in zip(ids, alphas):
             run = self.__dao.get_runs_by_ids([rid])[0]
 
-            run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].correct(alpha)
+            run.asymmetries[objects.RunDataset.FULL_ASYMMETRY] = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].correct(alpha)
 
-            if run.asymmetries[domain.RunDataset.LEFT_BINNED_ASYMMETRY] is not None:
-                run.asymmetries[domain.RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(
-                    run.asymmetries[domain.RunDataset.LEFT_BINNED_ASYMMETRY].bin_size)
-                run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(
-                    run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
+            if run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY] is not None:
+                run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(
+                    run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY].bin_size)
+                run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(
+                    run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
 
-        self.__logger.debug("Emitted: changed")
         self.signals.changed.emit()
 
     def changed(self):
-        self.__logger.debug("Emitted: changed")
         self.signals.changed.emit()
 
 
@@ -259,7 +254,6 @@ class StyleService:
         try:
             return self.__dao.get_styles([run_id])[0]
         except KeyError:
-            self.__logger.warning("Style for {} not found. Key Error.".format(run_id))
             return None
 
     def get_visible_styles(self):
@@ -303,6 +297,7 @@ class StyleService:
         style[StyleService.Keys.FIT_COLOR] = 'Default'
         style[StyleService.Keys.FIT_LINESTYLE] = '-'
 
+        self.__logger.debug("Style Created for Run ({}) = {}".format(run.id, style))
         self.__dao.add_style(run.id, style)
 
     def change_color_for_run(self, run_id, color, stop_signal=None):
@@ -533,8 +528,8 @@ class FileService:
                 continue
 
             f = files.file(path)
-            data_set = domain.DataBuilder.build_minimal(f)
-            file_set = domain.FileDataset(f)
+            data_set = objects.DataBuilder.build_minimal(f)
+            file_set = objects.FileDataset(f)
 
             if data_set is not None:
                 file_set.dataset = data_set
@@ -544,14 +539,13 @@ class FileService:
                 except AttributeError:
                     file_set.title = os.path.split(path)[-1]
 
-                if isinstance(data_set, domain.RunDataset):
+                if isinstance(data_set, objects.RunDataset):
                     self.__run_service.add_dataset([data_set], suppress_signal=True)
                 elif isinstance(data_set, domain.FitDataset):
                     self.__fit_service.add_dataset([data_set])
 
             self.__dao.add_files([file_set])
 
-        self.__logger.debug("Emitted: changed")
         self.signals.changed.emit()
 
     def load_files(self, ids):
@@ -560,11 +554,10 @@ class FileService:
         for file_dataset in self.__dao.get_files_by_ids(ids):
             if not file_dataset.isLoaded:
                 is_changed = True
-                domain.DataBuilder.build_full(file_dataset.file, file_dataset.dataset)
+                objects.DataBuilder.build_full(file_dataset.file, file_dataset.dataset)
                 file_dataset.isLoaded = True
 
         if is_changed:
-            self.__logger.debug("Emitted: changed")
             self.signals.changed.emit()
             self.__run_service.changed()
             self.__fit_service.changed()
@@ -578,7 +571,6 @@ class FileService:
             self.__dao.remove_files_by_id(rf.id)
 
         self.__run_service.remove_runs_by_ids(run_ids)
-        self.__logger.debug("Emitted: changed")
         self.signals.changed.emit()
 
     def save_session(self, save_path):
@@ -586,7 +578,6 @@ class FileService:
             raise RuntimeError("Session file needs to have a .beams extension.")
 
         with open(save_path, 'wb') as session_file_object:
-            # pickled = pickle.dumps(FileService.__system_dao.get_database())
             pickle.dump(self.__system_dao.get_database(), session_file_object)
 
         self.add_files([save_path])
@@ -609,7 +600,6 @@ class FileService:
 
         self.__system_dao.set_database(database)
 
-        self.__logger.debug("Emitted: Database Changed")
         print(self.signals.receivers(self.signals.changed), 'receivers')
         self.signals.changed.emit()
         self.__fit_service.signals.added.emit()

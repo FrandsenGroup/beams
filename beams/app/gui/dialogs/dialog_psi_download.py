@@ -62,6 +62,20 @@ class PSIDownloadDialog(QtWidgets.QDialog):
         self.setFixedWidth(600)
 
     def _set_widget_attributes(self):
+        self.input_area.setToolTip("Area of facility where experiment was conducted.")
+        self.input_year.setToolTip("Year the experiment was conducted.")
+        self.input_runs.setToolTip("Range of run numbers to search for (i.e. 65333 or 65333-65336).")
+        self.input_file.setToolTip("Directory the runs will be downloaded to.")
+        self.input_expt.setToolTip("Experiment number.")
+        self.output_list.setToolTip("Results of search will be shown here.")
+        self.output_web.setToolTip("Request updates will be shown here.")
+        self.title_search.setToolTip("Title of run (can be a partial title).")
+        self.download_selected.setToolTip("Download only the checked runs.")
+        self.download_all.setToolTip("Download all runs in search result.")
+        self.select_button.setToolTip("Select directory to download runs to.")
+        self.search_button.setToolTip("Search for runs based on provided criteria.")
+        self.done_button.setToolTip("Close prompt.")
+
         self.input_area.addItems(['LEM', 'GPS', 'LTF', 'Dolly', 'GPD', 'ALC', 'HAL', 'ALL'])
         self.input_year.addItems(list([str(year) for year in range(datetime.today().year, 1992, -1)]))
 

@@ -1,3 +1,4 @@
+import sys
 import uuid
 
 import numpy as np
@@ -10,7 +11,7 @@ import logging
 import copy
 import traceback
 
-from app.model import domain
+from app.model import objects
 
 INDEPENDENT_VARIABLE = "t"
 
@@ -198,11 +199,8 @@ class FitConfig:
     def get_symbols_for_run(self, run_id, is_fixed=None, is_global=None):
         symbols = []
         for symbol, parameter in self.parameters[run_id].items():
-            if (is_fixed is None and is_global is None) \
-                    or (is_fixed and (parameter.is_fixed or parameter.is_fixed_run)) \
-                    or (is_fixed is not None and (is_fixed == parameter.is_fixed and is_fixed == parameter.is_fixed_run)) \
-                    or (is_global and parameter.is_global) \
-                    or (is_global is not None and (is_global == parameter.is_global)):
+            if (is_fixed is None or (is_fixed == (parameter.is_fixed or parameter.is_fixed_run))) and \
+                    (is_global is None or (is_global == parameter.is_global)):
                 symbols.append(symbol)
 
         return symbols
@@ -211,53 +209,46 @@ class FitConfig:
         values = []
 
         for _, parameter in self.parameters[run_id].items():
-            if (is_fixed is None and is_global is None) \
-                    or (is_fixed and (parameter.is_fixed or parameter.is_fixed_run)) \
-                    or (is_fixed is not None and (is_fixed == parameter.is_fixed and is_fixed == parameter.is_fixed_run)) \
-                    or (is_global and parameter.is_global) \
-                    or (is_global is not None and (is_global == parameter.is_global)):
+            if (is_fixed is None or (is_fixed == (parameter.is_fixed or parameter.is_fixed_run))) and \
+                    (is_global is None or (is_global == parameter.is_global)):
                 values.append(parameter.get_value())
 
-        return values
+        return np.array(values, dtype=float)
 
     def get_lower_values_for_run(self, run_id, is_fixed=None, is_global=None):
         values = []
 
         for _, parameter in self.parameters[run_id].items():
-            if (is_fixed is None and is_global is None) \
-                    or (is_fixed and (parameter.is_fixed or parameter.is_fixed_run)) \
-                    or (is_fixed is not None and (is_fixed == parameter.is_fixed and is_fixed == parameter.is_fixed_run)) \
-                    or (is_global and parameter.is_global) \
-                    or (is_global is not None and (is_global == parameter.is_global)):
+            if (is_fixed is None or (is_fixed == (parameter.is_fixed or parameter.is_fixed_run))) and \
+                    (is_global is None or (is_global == parameter.is_global)):
 
                 if parameter.is_fixed or parameter.is_fixed_run:
                     values.append(parameter.get_value() - 0.0000001)
                 else:
                     values.append(parameter.lower)
 
-        return values
+        return np.array(values, dtype=float)
 
     def get_upper_values_for_run(self, run_id, is_fixed=None, is_global=None):
         values = []
 
         for _, parameter in self.parameters[run_id].items():
-            if (is_fixed is None and is_global is None) \
-                    or (is_fixed and (parameter.is_fixed or parameter.is_fixed_run)) \
-                    or (is_fixed is not None and (is_fixed == parameter.is_fixed and is_fixed == parameter.is_fixed_run)) \
-                    or (is_global and parameter.is_global) \
-                    or (is_global is not None and (is_global == parameter.is_global)):
+            if (is_fixed is None or (is_fixed == (parameter.is_fixed or parameter.is_fixed_run))) and \
+                    (is_global is None or (is_global == parameter.is_global)):
 
                 if parameter.is_fixed or parameter.is_fixed_run:
                     values.append(parameter.get_value() + 0.0000001)
                 else:
                     values.append(parameter.upper)
 
-        return values
+        return np.array(values, dtype=float)
 
     def get_adjusted_global_symbols(self):
         symbols = []
         for i, run_id in enumerate(self.parameters.keys()):
             for symbol, parameter in self.parameters[run_id].items():
+                if parameter.is_fixed_run or parameter.is_fixed:
+                    continue
                 if parameter.is_global and i == 0:
                     symbols.append(symbol)
                 elif not parameter.is_global:
@@ -269,46 +260,34 @@ class FitConfig:
         values = []
         for i, run_id in enumerate(self.parameters.keys()):
             for _, parameter in self.parameters[run_id].items():
-                if parameter.is_global and i == 0:
-                    values.append(parameter.get_value())
-                elif not parameter.is_global:
-                    values.append(parameter.get_value())
+                if parameter.is_fixed_run or parameter.is_fixed:
+                    continue
+                if (parameter.is_global and i == 0) or (not parameter.is_global):
+                    values.append(float(parameter.get_value()))
 
-        return values
+        return np.array(values, dtype=float)
 
     def get_adjusted_global_lowers(self):
         lowers = []
         for i, run_id in enumerate(self.parameters.keys()):
             for _, parameter in self.parameters[run_id].items():
-                if parameter.is_global and i == 0:
-                    if parameter.is_fixed or parameter.is_fixed_run:
-                        lowers.append(parameter.get_value() - 0.0000001)
-                    else:
-                        lowers.append(parameter.lower)
-                elif not parameter.is_global:
-                    if parameter.is_fixed or parameter.is_fixed_run:
-                        lowers.append(parameter.get_value() - 0.0000001)
-                    else:
-                        lowers.append(parameter.lower)
+                if parameter.is_fixed_run or parameter.is_fixed:
+                    continue
+                if (parameter.is_global and i == 0) or (not parameter.is_global):
+                    lowers.append(float(parameter.lower))
 
-        return lowers
+        return np.array(lowers, dtype=float)
 
     def get_adjusted_global_uppers(self):
         uppers = []
         for i, run_id in enumerate(self.parameters.keys()):
             for _, parameter in self.parameters[run_id].items():
-                if parameter.is_global and i == 0:
-                    if parameter.is_fixed or parameter.is_fixed_run:
-                        uppers.append(parameter.get_value() + 0.0000001)
-                    else:
-                        uppers.append(parameter.upper)
-                elif not parameter.is_global:
-                    if parameter.is_fixed or parameter.is_fixed_run:
-                        uppers.append(parameter.get_value() + 0.0000001)
-                    else:
-                        uppers.append(parameter.upper)
+                if parameter.is_fixed_run or parameter.is_fixed:
+                    continue
+                if (parameter.is_global and i == 0) or (not parameter.is_global):
+                    uppers.append(float(parameter.upper))
 
-        return uppers
+        return np.array(uppers, dtype=float)
 
     def get_kwargs(self, run_id):
         kwargs = {}
@@ -328,7 +307,7 @@ class FitEngine:
     def __init__(self):
         self.__logger = logging.getLogger('FitEngine')
 
-    def fit(self, config: FitConfig) -> domain.FitDataset:
+    def fit(self, config: FitConfig) -> objects.FitDataset:
         self.__logger.debug("Config passed to FitEngine: {}".format(str(config)))
 
         if len(set([len(asymmetry) for asymmetry in config.data.values()])) != 1:
@@ -357,13 +336,13 @@ class FitEngine:
                     par.value = mean_values[par.symbol]
 
         dataset = self._fit_global(config)
-        dataset.flags |= domain.FitDataset.Flags.GLOBAL_PLUS
+        dataset.flags |= objects.FitDataset.Flags.GLOBAL_PLUS
 
         return dataset
 
     def _fit_batch(self, config: FitConfig):
-        dataset = domain.FitDataset()
-        dataset.flags |= domain.FitDataset.Flags.BATCH
+        dataset = objects.FitDataset()
+        dataset.flags |= objects.FitDataset.Flags.BATCH
 
         for run_id, (time, asymmetry, uncertainty, meta) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
@@ -387,7 +366,7 @@ class FitEngine:
                 opt = least_squares(residual, guesses, bounds=[lowers, uppers],
                                     args=(time, asymmetry, uncertainty))
             except Exception:
-                raise Exception(traceback.format_exc())
+                raise Exception(str(sys.exc_info()))
 
             try:
                 unc, chi_sq = get_std_unc(opt, asymmetry)
@@ -404,7 +383,8 @@ class FitEngine:
                     config.set_outputs(o_run_id, symbol, value, 0)
 
             # 9) Fill in all values for our new fit object
-            new_fit = domain.Fit(copy.deepcopy(config.parameters[run_id]), config.expression, config.titles[run_id], run_id, meta, asymmetry)
+            new_fit = objects.Fit(copy.deepcopy(config.parameters[run_id]), config.expression, config.titles[run_id], run_id, meta, asymmetry)
+
             # 10) Add fit to our dataset
             dataset.fits[run_id] = new_fit
 
@@ -441,7 +421,7 @@ class FitEngine:
             opt = least_squares(residual, guesses, bounds=[lowers, uppers],
                                 args=(concatenated_time, concatenated_asymmetry, concatenated_uncertainty))
         except Exception:
-            raise Exception(traceback.format_exc())
+            raise Exception(str(sys.exc_info()))
 
         try:
             unc, chi_sq = get_std_unc(opt, concatenated_asymmetry)
@@ -450,8 +430,8 @@ class FitEngine:
 
         # Assemble the Fit object, first by updating the parameters in the config with the outputs from
         #   the fit, as well as adding a FitExpression object that can be called.
-        dataset = domain.FitDataset()
-        dataset.flags |= domain.FitDataset.Flags.GLOBAL
+        dataset = objects.FitDataset()
+        dataset.flags |= objects.FitDataset.Flags.GLOBAL
 
         values = {}
         uncertainties = {}
@@ -473,7 +453,7 @@ class FitEngine:
             for symbol, value in zip(fixed_symbols, fixed_values):
                 config.set_outputs(run_id, symbol, value, 0)
 
-            new_fit = domain.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id)
+            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id)
 
             dataset.fits[run_id] = new_fit
 
@@ -481,8 +461,8 @@ class FitEngine:
 
         return dataset
 
-    def _fit_non_global(self, config) -> domain.FitDataset:
-        dataset = domain.FitDataset()
+    def _fit_non_global(self, config) -> objects.FitDataset:
+        dataset = objects.FitDataset()
 
         for run_id, (time, asymmetry,  uncertainty, meta) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
@@ -506,7 +486,7 @@ class FitEngine:
                 opt = least_squares(residual, guesses, bounds=[lowers, uppers],
                                     args=(time, asymmetry, uncertainty))
             except Exception:
-                raise Exception(traceback.format_exc())
+                raise Exception(str(sys.exc_info()))
 
             try:
                 unc, chi_sq = get_std_unc(opt, asymmetry)
@@ -521,7 +501,7 @@ class FitEngine:
                 config.set_outputs(run_id, symbol, value, 0)
 
             # 9) Fill in all values for our new fit object
-            new_fit = domain.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id, meta, asymmetry)
+            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id, meta, asymmetry)
 
             # 10) Add fit to our dataset
             dataset.fits[run_id] = new_fit
@@ -591,7 +571,7 @@ class FitEngine:
     @staticmethod
     def _residual(lambda_expression):
         def residual(pars, x, y_data, dy_data):
-            y_calc = lambda_expression(x, *pars)  # y_calc is coming out as shorter sometimes then y_data.
+            y_calc = lambda_expression(x, *pars)
             return np.divide(np.subtract(y_data, y_calc), dy_data)
 
         return residual
@@ -636,21 +616,6 @@ def get_std_unc(result, data, error=None, num_constraints=0):
     chi_sq = rw ** 2 / r_exp ** 2
 
     return p_unc, chi_sq
-
-    # if dataErr is None:
-    #     dataErr = np.ones_like(data)
-
-    # weights = 1.0 / dataErr ** 2
-    # Rw = np.sqrt((fitResult.fun ** 2).sum() / (data ** 2 * weights).sum())
-    # numParams = len(fitResult.x)
-    # Rexp = np.sqrt((data.shape[0] - numParams + numConstraints) / (data ** 2 * weights).sum())
-    # j = fitResult.jac
-    # jac = np.dot(j.transpose(), j)
-    # cov = np.linalg.inv(jac) * Rw ** 2 / Rexp ** 2
-    # pUnc = np.sqrt(cov.diagonal())
-    # chisq = Rw ** 2 / Rexp ** 2
-
-    # return pUnc, chisq
 
 
 def parse(s):
@@ -723,7 +688,7 @@ def parse(s):
         pass
 
     if len(free_set.intersection(bad_char_set)) > 0:
-        raise ValueError('Bad expression')
+        raise ValueError('Bad expression')  # Bad because these chars will cause sympify issues
 
     return free_set
 

@@ -9,7 +9,7 @@ from app.gui.dialogs.dialog_musr_download import MusrDownloadDialog
 from app.gui.dialogs.dialog_psi_download import PSIDownloadDialog
 from app.gui.dialogs.dialog_write_data import WriteDataDialog
 from app.gui.gui import PanelPresenter
-from app.model import files, services, domain
+from app.model import files, services, objects
 from app.util import qt_widgets, qt_constants
 
 
@@ -46,7 +46,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
             ids = []
             while iterator.value():
-                if isinstance(iterator.value().model, domain.FileDataset):
+                if isinstance(iterator.value().model, objects.FileDataset):
                     ids.append(iterator.value().model.id)
 
                 iterator += 1
@@ -84,7 +84,6 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
         @QtCore.pyqtSlot()
         def update(self):
-            self.__logger.debug("Accepted Signal")
             ids = self.__view.get_file_ids()
             file_datasets = self.__file_service.get_files()
             tree = self._create_tree_model(file_datasets)
@@ -124,7 +123,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
             data_object = file_data.dataset
 
-            if isinstance(data_object, domain.RunDataset):
+            if isinstance(data_object, objects.RunDataset):
                 if data_object.isLoaded:
                     histogram_node = MainConsolePanel.HeadingNode("Histograms")
                     if data_object.histograms:
@@ -335,13 +334,9 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         # Set Widget Dimensions
 
         self.select_all.setFixedWidth(20)
-        self.import_button.setFixedWidth(25)
-        self.remove_button.setFixedWidth(25)
-        self.convert_button.setFixedWidth(60)
-        self.write_button.setFixedWidth(40)
-        self.load_button.setFixedWidth(40)
+        self.import_button.setFixedWidth(20)
+        self.remove_button.setFixedWidth(20)
         self.setMaximumHeight(350)
-        self.setMaximumWidth(350)
 
         # Set Widget Tooltips
         self.write_button.setToolTip('Write currently plotted data to .asy files')
@@ -353,9 +348,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
         # Layout Widgets
         hbox_one = QtWidgets.QHBoxLayout()
-        hbox_one.setSpacing(10)
         hbox_one.addWidget(self.select_all)
-        hbox_one.addSpacing(5)
         hbox_one.addWidget(self.import_button)
         hbox_one.addWidget(self.remove_button)
         hbox_one.addWidget(self.convert_button)
