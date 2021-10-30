@@ -612,7 +612,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                     return
                 self.axes_freq.set_xlim(x_min, x_max)
             else:
-                # Here is where we will want to do the magic.
                 self._settings.set_min_freq(0)
                 self._settings.set_max_freq(max_freq)
 
