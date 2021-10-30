@@ -1251,7 +1251,7 @@ class PlottingPanelPresenter(PanelPresenter):
             if not fast:
                 f_min = settings.get_min_freq()
                 if settings.is_freq_auto():
-                    f_max = 1 / (2 * (bin_size / 100))
+                    f_max = 1 / (2 * (bin_size / 1000))
                 else:
                     f_max = settings.get_max_freq()
 
@@ -1308,16 +1308,10 @@ class PlottingPanelPresenter(PanelPresenter):
             self.__run_service.update_alphas(ids, [alpha])
 
     def get_fft_data(self, time, asymmetry, x_min, x_max, bin_size, f_min, f_max):
-        num_bins = self.get_num_bins(x_min, x_max, bin_size)
-        start_bin = self.get_start_bin(x_min, bin_size)
+        num_bins = int((float(x_max) - float(x_min)) / (float(bin_size) / 1000))
+        start_bin = int(float(x_min) / (float(bin_size) / 1000))
         fft = domain.FFT(asymmetry[start_bin:start_bin + num_bins], time[start_bin:start_bin + num_bins], f_min, f_max)
         return fft.z, fft.fft / max(fft.fft)
-
-    def get_num_bins(self, xmin, xmax, bin_size):
-        return int((float(xmax) - float(xmin)) / (float(bin_size) / 1000))
-
-    def get_start_bin(self, xmin, bin_size):
-        return int(float(xmin) / (float(bin_size) / 1000))
 
     def _style_parameter_changed(self, key, value):
         if not self.__populating_settings:
