@@ -10,7 +10,7 @@ import numpy as np
 
 from app.gui.dialogs.dialog_misc import WarningMessageDialog, LoadingDialog
 from app.util import qt_widgets, qt_constants
-from app.model import domain, fit, files, services
+from app.model import objects, fit, files, services
 from app.gui.gui import PanelPresenter, Panel
 
 
@@ -60,7 +60,7 @@ class FittingPanel(Panel):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.FitDataset):
+                    if isinstance(iterator.value().model, objects.FitDataset):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -74,7 +74,7 @@ class FittingPanel(Panel):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.FitDataset):
+                    if isinstance(iterator.value().model, objects.FitDataset):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -86,7 +86,7 @@ class FittingPanel(Panel):
                 iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Selected)
 
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.Fit) or isinstance(iterator.value().model, domain.FitDataset):
+                    if isinstance(iterator.value().model, objects.Fit) or isinstance(iterator.value().model, objects.FitDataset):
                         return iterator.value().model
                     iterator += 1
 
@@ -115,7 +115,6 @@ class FittingPanel(Panel):
 
             @QtCore.pyqtSlot()
             def update(self):
-                self.__logger.debug("Accepted Signal")
                 fit_datasets = self.__fit_service.get_fit_datasets()
                 tree = self._create_tree_model(fit_datasets)
                 self.__view.set_tree(tree)
@@ -128,7 +127,7 @@ class FittingPanel(Panel):
                 self.__fit_service = services.FitService()
                 self.__parent = None
                 self.setFlags(self.flags() | QtCore.Qt.ItemFlag.ItemIsEditable)
-                if isinstance(dataset, domain.FitDataset):
+                if isinstance(dataset, objects.FitDataset):
                     for fit_data in dataset.fits.values():
                         self.addChild(FittingPanel.SupportPanel.FitNode(fit_data))
 
@@ -190,6 +189,11 @@ class FittingPanel(Panel):
             self.save_button = qt_widgets.StyleTwoButton("Save")
             self.button_save_results = qt_widgets.StyleTwoButton("Save Fit")
             self.button_lookup_folder = qt_widgets.StyleTwoButton("Folder")
+
+            self.new_button.setToolTip('Create a new empty fit')
+            self.save_button.setToolTip('Save fit')
+            self.button_save_results.setToolTip('Save fit to selected folder')
+            self.button_lookup_folder.setToolTip('Select folder')
 
             self.input_file_name = QtWidgets.QLineEdit()
             self.input_folder_name = QtWidgets.QLineEdit()
@@ -284,11 +288,7 @@ class FittingPanel(Panel):
             errorbar_color = color if errorbar_color == 'Default' else errorbar_color
             marker_face_color = marker_color if fillstyle != 'none' else 'none'
             fit_color = color if fit_color == 'Default' else fit_color
-            self.__logger = logging.getLogger('qt_fitting_panel_plot_fit')
-            self.__logger.debug(
-                "About to plot : time<{}>, asymmetry<{}>, marker_face_color<{}>, marker_color<{}>, color<{}>, linestyle<{}>, marker<{}>, fillstyle<{}>, line_width<{}>, marker_size<{}>, label<{}>".format(len(time), len(asymmetry), marker_face_color, marker_color,
-                                                                    color, linestyle, marker, fillstyle, line_width,
-                                                                    marker_size, label))
+
             if uncertainty is not None:
                 self.axes_time.errorbar(time, asymmetry, uncertainty, mfc=marker_face_color, mec=marker_color,
                                         color=color, linestyle=linestyle, marker=marker, fillstyle=fillstyle,
@@ -350,6 +350,8 @@ class FittingPanel(Panel):
 
             self.slider_bin = QtWidgets.QSlider(qt_constants.Horizontal)
             self.input_bin = QtWidgets.QLineEdit()
+
+            self.slider_bin.setToolTip('Time bins (ns)')
 
             self._label_time = QtWidgets.QLabel('Time')
             self._label_time_xmin = QtWidgets.QLabel('XMin')
@@ -581,6 +583,12 @@ class FittingPanel(Panel):
         self.button_save_user_equation = qt_widgets.StyleTwoButton("Save")
         self.button_plot = qt_widgets.StyleTwoButton("Plot")
 
+        self.button_fit.setToolTip('Run fit')
+        self.button_insert_preset_equation.setToolTip('Insert predefined function')
+        self.button_insert_user_equation.setToolTip('Insert user defined function')
+        self.button_save_user_equation.setToolTip('Save user defined function')
+        self.button_plot.setToolTip('Plot data')
+
         self.label_global_plus = QtWidgets.QLabel("Global+")
         self.label_ordering = QtWidgets.QLabel("Order by")
         self.label_use_previous = QtWidgets.QLabel("Use Previous Run")
@@ -608,36 +616,12 @@ class FittingPanel(Panel):
         self.group_table_runs = QtWidgets.QGroupBox("Runs")
         self.group_function = QtWidgets.QGroupBox("Function")
 
-        # self._set_logging()
         self._set_widget_layout()
         self._set_widget_attributes()
         self._set_widget_dimensions()
 
         self._presenter = FitTabPresenter(self)
         self._line_edit_style = self.input_fit_equation.styleSheet()
-
-    def _set_logging(self):
-        self.input_fit_equation.textChanged.connect(lambda: self.__logger.debug("input_fit_equation.textChanged ({})".format(self.input_fit_equation.text())))
-        self.button_insert_preset_equation.released.connect(lambda: self.__logger.debug("button_insert_preset_equation.released ({})".format(self.option_preset_fit_equations.currentText())))
-        self.button_insert_user_equation.released.connect(lambda: self.__logger.debug("button_insert_user_equation.released ({})".format(self.option_user_fit_equations.currentText())))
-        self.button_save_user_equation.released.connect(lambda: self.__logger.debug("button_save_user_equation.released ({})".format(self.option_user_fit_equations.currentText())))
-        self.insert_sigma.released.connect(lambda: self.__logger.debug("insert_sigma.released"))
-        self.insert_pi.released.connect(lambda: self.__logger.debug("insert_pi.released"))
-        self.insert_phi.released.connect(lambda: self.__logger.debug("insert_phi.released"))
-        self.insert_naught.released.connect(lambda: self.__logger.debug("insert_naught.released"))
-        self.insert_lambda.released.connect(lambda: self.__logger.debug("insert_lambda.released"))
-        self.insert_delta.released.connect(lambda: self.__logger.debug("insert_delta.released"))
-        self.insert_alpha.released.connect(lambda: self.__logger.debug("insert_alpha.released"))
-        self.insert_beta.released.connect(lambda: self.__logger.debug("insert_beta.released"))
-        self.fit_spectrum_settings.input_time_xmax.returnPressed.connect(lambda: self.__logger.debug("fit_spectrum_settings.input_time_xmax.returnPressed ({})".format(self.fit_spectrum_settings.input_time_xmax.text())))
-        self.fit_spectrum_settings.input_time_xmin.returnPressed.connect(lambda: self.__logger.debug("fit_spectrum_settings.input_time_xmin.returnPressed ({})".format(self.fit_spectrum_settings.input_time_xmin.text())))
-        self.fit_spectrum_settings.input_bin.returnPressed.connect(lambda: self.__logger.debug("fit_spectrum_settings.input_bin.returnPressed ({})".format(self.fit_spectrum_settings.input_bin.text())))
-        self.fit_spectrum_settings.slider_bin.sliderMoved.connect(lambda: self.__logger.debug("fit_spectrum_settings.slider_bin.sliderMoved ({})".format(self.fit_spectrum_settings.slider_bin.value())))
-        self.button_plot.released.connect(lambda: self.__logger.debug("button_plot.released ({})".format(self.get_checked_run_titles())))
-        self.table_parameters.itemChanged.connect(lambda: self.__logger.debug("table_parameters.itemChanged"))
-        self.button_fit.released.connect(lambda: self.__logger.debug("button_fit.released ({}, {}, {}, {}, {}, {}, {}, {}, batch {}, global {})".format(self.get_names(), self.get_initial_values(), self.get_lower_bounds(), self.get_upper_bounds(), self.get_fixed(), self.get_check_global(), self.get_expression(), self.get_checked_run_titles(), self.check_batch_fit.isChecked(), self.check_global_plus.isChecked())))
-        self.button_save_results.released.connect(lambda: self.__logger.debug("button_save_results.released"))
-        self.support_panel.new_button.released.connect(lambda: self.__logger.debug("support_panel.new_button.released"))
 
     def _set_widget_attributes(self):
         self.parameter_table.batch_table.itemChanged.connect(self._update_batch_table_states)
@@ -817,7 +801,6 @@ class FittingPanel(Panel):
         self.__update_states = True
 
     def _update_batch_table_states(self):
-        self.__logger.debug("_update_batch_table_states : updating={}".format(self.__update_states))
         if not self.__update_states:
             return
 
@@ -859,7 +842,6 @@ class FittingPanel(Panel):
                 item_value.setText(str(value))
                 self.parameter_table.batch_table.setItem(j, self.parameter_table.FIXED_VALUE_COLUMN, item_value)
 
-        self.__logger.debug("Batch table state after updating : <{}>".format(str(self.__batch_table_states)))
         self.__update_states = True
 
     def createSupportPanel(self) -> QtWidgets.QDockWidget:
@@ -1293,7 +1275,7 @@ class FitTabPresenter:
         if selected_data is None:
             return
 
-        if isinstance(selected_data, domain.FitDataset):
+        if isinstance(selected_data, objects.FitDataset):
             selected_data.write("out_file_x.txt", fit.FitOptions.SAVE_2)
         else:
             selected_data.write("out_file_x.txt")
@@ -1373,14 +1355,15 @@ class FitTabPresenter:
         checked_run_ids.extend(self._view.get_checked_run_ids())
         alphas = dict()
 
+        # Plot the fit lines
         for i, (run_id, parameters) in enumerate(self.__variable_groups.items()):
             if run_id not in checked_run_ids:
                 continue
 
             parameters = self.__variable_groups[run_id]
             alphas[run_id] = parameters[fit.ALPHA].value
-            time = domain.Time(input_array=None, bin_size=(max_time - min_time) * 1000 / 200, length=200,
-                               time_zero=min_time)
+            time = objects.Time(input_array=None, bin_size=(max_time - min_time) * 1000 / 200, length=200,
+                                time_zero=min_time)
             fit_asymmetry = self.__expression(time, **{symbol: par.get_value() for symbol, par in parameters.items()})
 
             try:
@@ -1399,7 +1382,6 @@ class FitTabPresenter:
                 local_min = np.min(fit_asymmetry[start_index:end_index])
                 min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
 
-            self.__logger.debug("About to plot : expression<{}>, run_id<{}>, parameters<{}>, time<{}>".format(self.__expression, run_id, parameters, len(time)))
             self._view.fit_display.plot_asymmetry(time, fit_asymmetry, None, None,
                                                   color=colors[run_id],
                                                   marker='.',
@@ -1415,20 +1397,22 @@ class FitTabPresenter:
                                                   fit_color=colors[run_id],
                                                   fit_linestyle='none',
                                                   label=None)
+
+        # Plot the asymmetries
         for i, run in enumerate(runs):
             if run.id not in run_ids:
                 continue
 
-            asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(bin_size).cut(min_time=min_time,
-                                                                                            max_time=max_time)
+            asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(bin_size).cut(min_time=min_time,
+                                                                                             max_time=max_time)
             if len(asymmetry) == 0:
                 return
 
             if run.id in alphas:
                 asymmetry = asymmetry.correct(alphas[run.id])
 
-            raw_asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time,
-                                                                                                      max_time=max_time)
+            raw_asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time,
+                                                                                                       max_time=max_time)
             self._asymmetries[run.id] = raw_asymmetry
             time = asymmetry.time
             uncertainty = asymmetry.uncertainty
@@ -1442,9 +1426,6 @@ class FitTabPresenter:
             max_asymmetry = local_max if local_max > max_asymmetry else max_asymmetry
             local_min = np.min(asymmetry[start_index:end_index])
             min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
-            self.__logger.debug(
-                "About to plot : time<{}>, asymmetry<{}>, uncertainty<{}>, title<{}>".format(len(time), len(asymmetry),
-                                                                                             len(uncertainty), run.id))
 
             self._view.fit_display.plot_asymmetry(time, asymmetry, uncertainty, None,
                                                   color=colors[run.id],
@@ -1624,7 +1605,7 @@ class FitTabPresenter:
                         min_time = self._view.fit_spectrum_settings.get_min_time()
                         max_time = self._view.fit_spectrum_settings.get_max_time()
                         bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
-                        raw_asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time, max_time=max_time)
+                        raw_asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time, max_time=max_time)
                         self._asymmetries[run.id] = raw_asymmetry
                         data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id], self._asymmetries[run.id].uncertainty)
 
@@ -1645,11 +1626,12 @@ class FitTabPresenter:
         config.parameters = variables
         config.titles = fit_titles
         config.set_flags(0)
-        self.__logger.debug(str(config))
+        self.__logger.info(str(config))
 
         # Fit to spec
         worker = FitWorker(config)
         worker.signals.result.connect(self._update_fit_changes)
+        worker.signals.error.connect(lambda e: self.__logger.error(e))
         worker.signals.error.connect(lambda error_message: WarningMessageDialog.launch([error_message]))
         self._threadpool.start(worker)
 
@@ -1668,7 +1650,7 @@ class FitTabPresenter:
             self.__update_if_table_changes = True
             return
 
-        if type(selected_data) == domain.Fit:
+        if type(selected_data) == objects.Fit:
             for i in range(self._view.run_list.count()):
                 item = self._view.run_list.item(i)
                 if item.identifier == selected_data.run_id:
@@ -1698,7 +1680,7 @@ class FitTabPresenter:
             self._view.input_fit_equation.setText(str(selected_data.expression))
             self._update_display()
 
-        elif type(selected_data) == domain.FitDataset:
+        elif type(selected_data) == objects.FitDataset:
             for i in range(self._view.run_list.count()):
                 item = self._view.run_list.item(i)
                 if item.identifier in selected_data.fits.keys():
@@ -1751,10 +1733,9 @@ class FitTabPresenter:
             self._run_service.update_alphas(ids, alphas)
 
     def update(self):
-        self.__logger.debug("Accepted Signal")
         runs = []
         for run in self._run_service.get_loaded_runs():
-            if run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] is not None:
+            if run.asymmetries[objects.RunDataset.FULL_ASYMMETRY] is not None:
                 runs.append(run)
         self._runs = runs
         self._view.update_run_table(runs)
@@ -1778,17 +1759,13 @@ class FitWorker(QtCore.QRunnable):
             # Wait on process to finish
             x = futures.wait([self.__process], return_when=futures.ALL_COMPLETED)
 
-            # TODO We also need to handle errors.
-            # TODO We should move all processing after fit is finished to this method. They aren't intensive.
-            #   Plus then we keep everything in one place and the process only deals in primitive data types..sort of.
             dataset = x.done.pop().result()
 
             for run_id, fit_data in dataset.fits.items():
                 fit_data.expression = fit.FitExpression(fit_data.string_expression)
 
         except Exception as e:
-            print(str(e))
-            self.signals.error.emit(str(e))
+            self.signals.error.emit("Error Running Fit: ({})".format(str(e)))
         else:
             self.signals.result.emit(dataset)
         finally:
@@ -1797,6 +1774,6 @@ class FitWorker(QtCore.QRunnable):
 
 class FitSignals(QtCore.QObject):
     finished = QtCore.pyqtSignal()
-    result = QtCore.pyqtSignal(domain.FitDataset)
+    result = QtCore.pyqtSignal(objects.FitDataset)
     error = QtCore.pyqtSignal(str)
     progress = QtCore.pyqtSignal(int)

@@ -10,7 +10,7 @@ import numpy as np
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
 from app.gui.dialogs.dialog_plot_file import PlotFileDialog
 from app.gui.gui import Panel, PanelPresenter
-from app.model import files, domain, services
+from app.model import files, objects, services
 from app.util import qt_widgets, qt_constants
 
 
@@ -175,7 +175,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.RunDataset):
+                    if isinstance(iterator.value().model, objects.RunDataset):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -188,7 +188,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.RunDataset):
+                    if isinstance(iterator.value().model, objects.RunDataset):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -201,7 +201,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.RunDataset):
+                    if isinstance(iterator.value().model, objects.RunDataset):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -214,7 +214,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.RunDataset):
+                    if isinstance(iterator.value().model, objects.RunDataset):
                         ids.append(iterator.value().model.meta[files.TITLE_KEY])
 
                     iterator += 1
@@ -227,7 +227,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.RunDataset):
+                    if isinstance(iterator.value().model, objects.RunDataset):
                         ids.append(iterator.value().model.meta[files.TITLE_KEY])
 
                     iterator += 1
@@ -264,7 +264,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
             @QtCore.pyqtSlot()
             def update(self):
-                self.__logger.debug("Accepted Signal")
                 ids = self.__view.get_run_ids()
                 run_datasets = self.__run_service.get_loaded_runs()
                 tree = self._create_tree_model(run_datasets)
@@ -301,6 +300,10 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.plot_button = qt_widgets.StyleOneButton("Plot")
             self.plot_all_button = qt_widgets.StyleOneButton("Plot All")
             self.clear_all_button = qt_widgets.StyleTwoButton("Clear All")
+
+            self.plot_button.setToolTip('Plot selected files')
+            self.plot_all_button.setToolTip('Plot all files')
+            self.clear_all_button.setToolTip('Clear all files')
 
             self.item_tree = self.Tree()
             self.legend_box = self.LegendBox()
@@ -467,23 +470,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self._check_add_star(self.plot_style_box.errorbar_width_options, True)
 
             self.plot_style_box.errorbar_width_options.setCurrentText(width)
-
-    class PlotToolbar(NavigationToolbar2QT):
-        def _init_toolbar(self):
-            # fixme, if there are no errors then this is fine
-            pass
-
-        NavigationToolbar2QT.toolitems = (
-            ('Home', 'Reset original view', 'home', 'home'),
-            ('Back', 'Back to previous view', 'back', 'back'),
-            ('Forward', 'Forward to next view', 'forward', 'forward'),
-            # (None, None, None, None),
-            ('Pan', 'Pan axes with left mouse, zoom with right', 'move', 'pan'),
-            ('Zoom', 'Zoom to rectangle', 'zoom_to_rect', 'zoom'),
-            # ('Subplots', 'Configure subplots', 'subplots', 'configure_subplots'),
-            # (None, None, None, None),
-            ('Save', 'Save the figure', 'filesave', 'save_figure'),
-        )
 
     class PlotDisplay(FigureCanvas):
         def __init__(self, settings):
@@ -654,6 +640,8 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.slider_bin = QtWidgets.QSlider(qt_constants.Horizontal)
             self.input_bin = QtWidgets.QLineEdit()
 
+            self.slider_bin.setToolTip('Time bins (ns)')
+
             self._label_time = QtWidgets.QLabel('Time')
             self._label_time_xmin = QtWidgets.QLabel('XMin')
             self._label_time_xmax = QtWidgets.QLabel('XMax')
@@ -723,7 +711,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             pass
 
         def _set_widget_dimensions(self):
-            box_size = 40
+            box_size = 20
             self.input_time_xmin.setMinimumWidth(box_size)
             self.input_time_xmax.setMinimumWidth(box_size)
             self.input_time_ymin.setMinimumWidth(box_size)
@@ -889,7 +877,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         self.right_settings = self.PlotControl()
         self.right_display = self.PlotDisplay(self.right_settings)
 
-        self._set_logging()
         self.legend_display = self.support_panel.legend_box
 
         self._set_widget_layout()
@@ -902,118 +889,16 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
     def createSupportPanel(self) -> QtWidgets.QDockWidget:
         return self.support_panel
 
-    def _set_logging(self):
-        logger = logging.getLogger('qt_plotting')
-
-        self.left_settings.input_bin.returnPressed.connect(lambda: logger.debug(
-            "left_settings.input_bin.returnPressed ({})".format(self.left_settings.input_bin.text())))
-        self.left_settings.input_time_xmin.returnPressed.connect(lambda: logger.debug(
-            "left_settings.input_time_xmin.returnPressed ({})".format(self.left_settings.input_time_xmin.text())))
-        self.left_settings.input_time_xmax.returnPressed.connect(lambda: logger.debug(
-            "left_settings.input_time_xmax.returnPressed ({})".format(self.left_settings.input_time_xmax.text())))
-        self.left_settings.input_time_ymin.returnPressed.connect(lambda: logger.debug(
-            "left_settings.input_time_ymin.returnPressed ({})".format(self.left_settings.input_time_ymin.text())))
-        self.left_settings.input_time_ymax.returnPressed.connect(lambda: logger.debug(
-            "left_settings.input_time_ymax.returnPressed ({})".format(self.left_settings.input_time_ymax.text())))
-        self.left_settings.check_time_yauto.stateChanged.connect(lambda: logger.debug(
-            "left_settings.check_time_yauto.stateChanged ({})".format(self.left_settings.check_time_yauto.isChecked())))
-        self.left_settings.input_freq_xmin.returnPressed.connect(lambda: logger.debug(
-            "left_settings.input_freq_xmin.returnPressed ({})".format(self.left_settings.input_freq_xmin.text())))
-        self.left_settings.input_freq_xmax.returnPressed.connect(lambda: logger.debug(
-            "left_settings.input_freq_xmax.returnPressed ({})".format(self.left_settings.input_freq_xmax.text())))
-        self.left_settings.input_freq_ymin.returnPressed.connect(lambda: logger.debug(
-            "left_settings.input_freq_ymin.returnPressed ({})".format(self.left_settings.input_freq_ymin.text())))
-        self.left_settings.input_freq_ymax.returnPressed.connect(lambda: logger.debug(
-            "left_settings.input_freq_ymax.returnPressed ({})".format(self.left_settings.input_freq_ymax.text())))
-        self.left_settings.check_freq_yauto.stateChanged.connect(lambda: logger.debug(
-            "left_settings.check_freq_yauto.stateChanged ({})".format(self.left_settings.check_freq_yauto.isChecked())))
-        self.left_settings.check_freq_xauto.stateChanged.connect(lambda: logger.debug(
-            "left_settings.check_freq_xauto.stateChanged ({})".format(self.left_settings.check_freq_xauto.isChecked())))
-        self.left_settings.input_freq_xmin.returnPressed.connect(lambda: logger.debug(
-            "left_settings.input_freq_xmin.returnPressed ({})".format(self.left_settings.input_freq_xmin.text())))
-        self.right_settings.slider_bin.sliderMoved.connect(lambda: logger.debug(
-            "left_settings.slider_bin.sliderMoved ({})".format(self.left_settings.slider_bin.value())))
-        self.left_settings.slider_bin.sliderReleased.connect(lambda: logger.debug(
-            "left_settings.slider_bin.sliderReleased ({})".format(self.left_settings.slider_bin.value())))
-
-        self.right_settings.input_bin.returnPressed.connect(lambda: logger.debug(
-            "right_settings.input_bin.returnPressed ({})".format(self.right_settings.input_bin.text())))
-        self.right_settings.input_time_xmin.returnPressed.connect(lambda: logger.debug(
-            "right_settings.input_time_xmin.returnPressed ({})".format(self.right_settings.input_time_xmin.text())))
-        self.right_settings.input_time_xmax.returnPressed.connect(lambda: logger.debug(
-            "right_settings.input_time_xmax.returnPressed ({})".format(self.right_settings.input_time_xmax.text())))
-        self.right_settings.input_time_ymin.returnPressed.connect(lambda: logger.debug(
-            "right_settings.input_time_ymin.returnPressed ({})".format(self.right_settings.input_time_ymin.text())))
-        self.right_settings.input_time_ymax.returnPressed.connect(lambda: logger.debug(
-            "right_settings.input_time_ymax.returnPressed ({})".format(self.right_settings.input_time_ymax.text())))
-        self.right_settings.check_time_yauto.stateChanged.connect(lambda: logger.debug(
-            "right_settings.check_time_yauto.stateChanged ({})".format(
-                self.right_settings.check_time_yauto.isChecked())))
-        self.right_settings.input_freq_xmin.returnPressed.connect(lambda: logger.debug(
-            "right_settings.input_freq_xmin.returnPressed ({})".format(self.right_settings.input_freq_xmin.text())))
-        self.right_settings.input_freq_xmax.returnPressed.connect(lambda: logger.debug(
-            "right_settings.input_freq_xmax.returnPressed ({})".format(self.right_settings.input_freq_xmax.text())))
-        self.right_settings.input_freq_ymin.returnPressed.connect(lambda: logger.debug(
-            "right_settings.input_freq_ymin.returnPressed ({})".format(self.right_settings.input_freq_ymin.text())))
-        self.right_settings.input_freq_ymax.returnPressed.connect(lambda: logger.debug(
-            "right_settings.input_freq_ymax.returnPressed ({})".format(self.right_settings.input_freq_ymax.text())))
-        self.right_settings.check_freq_yauto.stateChanged.connect(lambda: logger.debug(
-            "right_settings.check_freq_yauto.stateChanged ({})".format(
-                self.right_settings.check_freq_yauto.isChecked())))
-        self.right_settings.check_freq_xauto.stateChanged.connect(lambda: logger.debug(
-            "right_settings.check_freq_xauto.stateChanged ({})".format(
-                self.right_settings.check_freq_xauto.isChecked())))
-        self.right_settings.input_freq_xmin.returnPressed.connect(lambda: logger.debug(
-            "right_settings.input_freq_xmin.returnPressed ({})".format(self.right_settings.input_freq_xmin.text())))
-        self.right_settings.slider_bin.sliderMoved.connect(lambda: logger.debug(
-            "right_settings.input_bin.returnPressed ({})".format(self.right_settings.slider_bin.value())))
-        self.right_settings.slider_bin.sliderReleased.connect(lambda: logger.debug(
-            "right_settings.input_bin.returnPressed ({})".format(self.right_settings.slider_bin.value())))
-
-        # self.support_panel.all_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.all_color_options.currentTextChanged ({})".format(self.support_panel.all_color_options.currentText())))
-        # self.support_panel.linestyle_options.currentTextChanged.connect(lambda: logger.debug("support_panel.linestyle_options.currentTextChanged ({})".format(self.support_panel.linestyle_options.currentText())))
-        # self.support_panel.line_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.line_color_options.currentTextChanged ({})".format(self.support_panel.line_color_options.currentText())))
-        # self.support_panel.line_width_options.currentTextChanged.connect(lambda: logger.debug("support_panel.line_width_options.currentTextChanged ({})".format(self.support_panel.line_width_options.currentText())))
-        # self.support_panel.marker_options.currentTextChanged.connect(lambda: logger.debug("support_panel.marker_options.currentTextChanged ({})".format(self.support_panel.marker_options.currentText())))
-        # self.support_panel.marker_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.marker_color_options.currentTextChanged ({})".format(self.support_panel.marker_color_options.currentText())))
-        # self.support_panel.marker_size_options.currentTextChanged.connect(lambda: logger.debug("support_panel.marker_size_options.currentTextChanged ({})".format(self.support_panel.marker_size_options.currentText())))
-        # self.support_panel.fillstyle_options.currentTextChanged.connect(lambda: logger.debug("support_panel.fillstyle_options.currentTextChanged ({})".format(self.support_panel.fillstyle_options.currentText())))
-        # self.support_panel.errorbar_style_options.currentTextChanged.connect(lambda: logger.debug("support_panel.errorbar_style_options.currentTextChanged ({})".format(self.support_panel.errorbar_style_options.currentText())))
-        # self.support_panel.errorbar_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.errorbar_color_options.currentTextChanged ({})".format(self.support_panel.errorbar_color_options.currentText())))
-        # self.support_panel.errorbar_width_options.currentTextChanged.connect(lambda: logger.debug("support_panel.errorbar_width_options.currentTextChanged ({})".format(self.support_panel.errorbar_width_options.currentText())))
-        # self.support_panel.fit_color_options.currentTextChanged.connect(lambda: logger.debug("support_panel.fit_color_options.currentTextChanged ({})".format(self.support_panel.fit_color_options.currentText())))
-        # self.support_panel.fit_linestyle_options.currentTextChanged.connect(lambda: logger.debug("support_panel.fit_linestyle_options.currentTextChanged ({})".format(self.support_panel.fit_linestyle_options.currentText())))
-
-        self.support_panel.item_tree.itemSelectionChanged.connect(lambda: logger.debug(
-            "support_panel.item_tree.itemSelectionChanged ({})".format(
-                self.support_panel.item_tree.get_selected_names())))
-
-        self.support_panel.plot_button.pressed.connect(lambda: logger.debug(
-            "support_panel.plot_button.pressed ({})".format(self.support_panel.item_tree.get_selected_names())))
-        self.support_panel.plot_all_button.pressed.connect(lambda: logger.debug(
-            "support_panel.plot_all_button.pressed ({})".format(self.support_panel.item_tree.get_names())))
-        self.support_panel.clear_all_button.pressed.connect(lambda: logger.debug(
-            "support_panel.clear_all_button.pressed ({})".format(self.support_panel.item_tree.get_selected_names())))
-        self.support_panel.asymmetry_param_box.alpha_input.returnPressed.connect(lambda: logger.debug(
-            "support_panel.alpha_input.returnPressed ({})".format(
-                self.support_panel.asymmetry_param_box.alpha_input.text())))
-
-    def _set_widget_attributes(self):
-        pass
-
-    def _set_widget_dimensions(self):
-        pass
-
     def _set_widget_layout(self):
         hbox = QtWidgets.QHBoxLayout()
 
         vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self.left_display, 2)
+        vbox.addWidget(self.left_display, 5)
         vbox.addWidget(self.left_settings)
         hbox.addLayout(vbox)
 
         vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self.right_display, 2)
+        vbox.addWidget(self.right_display, 5)
         vbox.addWidget(self.right_settings)
         hbox.addLayout(vbox)
 
@@ -1126,7 +1011,7 @@ class PlottingPanelPresenter(PanelPresenter):
         def _verify_asymmetries_are_calculated():
             runs_without_asymmetries = []
             for run in runs:
-                if run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] is None:
+                if run.asymmetries[objects.RunDataset.FULL_ASYMMETRY] is None:
                     runs_without_asymmetries.append(run)
 
             if len(runs_without_asymmetries) > 0:
@@ -1198,19 +1083,19 @@ class PlottingPanelPresenter(PanelPresenter):
 
         legend_values = {}
         for run in runs:
-            if run.asymmetries[domain.RunDataset.FULL_ASYMMETRY] is None:
+            if run.asymmetries[objects.RunDataset.FULL_ASYMMETRY] is None:
                 continue
 
             if side == 'left':
-                asymmetry = run.asymmetries[domain.RunDataset.LEFT_BINNED_ASYMMETRY]
+                asymmetry = run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY]
                 if asymmetry is None or asymmetry.bin_size != bin_size or True:
-                    asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(bin_size)
-                    run.asymmetries[domain.RunDataset.LEFT_BINNED_ASYMMETRY] = asymmetry
+                    asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(bin_size)
+                    run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY] = asymmetry
             else:
-                asymmetry = run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY]
+                asymmetry = run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY]
                 if asymmetry is None or asymmetry.bin_size != bin_size or True:
-                    asymmetry = run.asymmetries[domain.RunDataset.FULL_ASYMMETRY].bin(bin_size)
-                    run.asymmetries[domain.RunDataset.RIGHT_BINNED_ASYMMETRY] = asymmetry
+                    asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(bin_size)
+                    run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY] = asymmetry
 
             time = asymmetry.time
             uncertainty = asymmetry.uncertainty
@@ -1271,7 +1156,6 @@ class PlottingPanelPresenter(PanelPresenter):
 
     @QtCore.pyqtSlot()
     def update(self, runs_changed=False):
-        self.__logger.debug("Accepted Signal")
         run_datasets = self.__run_service.get_runs()
         alphas = {'{:.5f}'.format(run.asymmetries[run.FULL_ASYMMETRY].alpha) for run in run_datasets if
                   run.asymmetries[run.FULL_ASYMMETRY] is not None}
@@ -1310,7 +1194,7 @@ class PlottingPanelPresenter(PanelPresenter):
     def get_fft_data(self, time, asymmetry, x_min, x_max, bin_size, f_min, f_max):
         num_bins = int((float(x_max) - float(x_min)) / (float(bin_size) / 1000))
         start_bin = int(float(x_min) / (float(bin_size) / 1000))
-        fft = domain.FFT(asymmetry[start_bin:start_bin + num_bins], time[start_bin:start_bin + num_bins], f_min, f_max)
+        fft = objects.FFT(asymmetry[start_bin:start_bin + num_bins], time[start_bin:start_bin + num_bins], f_min, f_max)
         return fft.z, fft.fft / max(fft.fft)
 
     def _style_parameter_changed(self, key, value):
@@ -1344,9 +1228,12 @@ class PlottingPanelPresenter(PanelPresenter):
         self.__populating_settings = False
 
     def _populate_with_single_selected(self, styles):
+        """
+        This method populates the combo boxes in the Plot Style group with the style of the run selected.
+        """
+
         style = styles[0]
 
-        # self._view.support_panel.set_alpha
         self._view.support_panel.set_errorbar_color(
             self.__style_service.color_options_extra[style[self.__style_service.Keys.ERRORBAR_COLOR]])
         self._view.support_panel.set_default_color(
@@ -1373,6 +1260,10 @@ class PlottingPanelPresenter(PanelPresenter):
             self.__style_service.marker_size_options[style[self.__style_service.Keys.MARKER_SIZE]])
 
     def _populate_with_multiple_selected(self, styles):
+        """
+        This method populates the combo boxes in the Plot Style group with the style of the runs selected.
+        """
+
         values = {self.__style_service.color_options[style[self.__style_service.Keys.DEFAULT_COLOR]] for style in
                   styles}
         if len(values) > 1:

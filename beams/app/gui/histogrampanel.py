@@ -7,7 +7,7 @@ from matplotlib.figure import Figure
 
 from app.gui.dialogs.dialog_misc import FileDisplayDialog, WarningMessageDialog
 from app.gui.gui import Panel, PanelPresenter
-from app.model import files, services, domain
+from app.model import files, services, objects
 from app.util import qt_widgets, qt_constants
 
 
@@ -25,9 +25,8 @@ class HistogramPanel(Panel):
             pass
 
         def __init__(self, canvas, parent):
+            self.locLabel = QtWidgets.QLabel("")
             super().__init__(canvas, parent)
-            if 'locLabel' not in self.__dict__:
-                self.locLabel = None
 
         # only display the buttons we need
         NavigationToolbar2QT.toolitems = (
@@ -76,7 +75,7 @@ class HistogramPanel(Panel):
 
                 ids = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.Histogram):
+                    if isinstance(iterator.value().model, objects.Histogram):
                         ids.append(iterator.value().model.id)
 
                     iterator += 1
@@ -89,7 +88,7 @@ class HistogramPanel(Panel):
 
                 histograms = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.Histogram):
+                    if isinstance(iterator.value().model, objects.Histogram):
                         histograms.append(iterator.value().model)
                     iterator += 1
                 return histograms
@@ -100,7 +99,7 @@ class HistogramPanel(Panel):
 
                 histograms = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, domain.Histogram):
+                    if isinstance(iterator.value().model, objects.Histogram):
                         histograms.append(iterator.value().model)
                     iterator += 1
                 return histograms
@@ -125,7 +124,6 @@ class HistogramPanel(Panel):
 
             @QtCore.pyqtSlot()
             def update(self):
-                self.__logger.debug("Accepted Signal")
                 run_datasets = self.__run_service.get_loaded_runs()
                 tree = self._create_tree_model(run_datasets)
                 self.__view.set_tree(tree)
@@ -136,7 +134,7 @@ class HistogramPanel(Panel):
                 self.model = run_data
                 self.__selected_items = None
 
-                if isinstance(run_data, domain.RunDataset):
+                if isinstance(run_data, objects.RunDataset):
                     if run_data.isLoaded and run_data.histograms:
                         for histogram in run_data.histograms.values():
                             self.addChild(HistogramPanel.SupportPanel.HistogramNode(histogram))
@@ -190,6 +188,10 @@ class HistogramPanel(Panel):
             self.see_file_button = qt_widgets.StyleOneButton("See File")
             self.reset_button = qt_widgets.StyleOneButton("Reset")
             self.save_button = qt_widgets.StyleTwoButton("Save")
+
+            self.see_file_button.setToolTip('View file details')
+            self.reset_button.setToolTip('Reset bins')
+            self.save_button.setToolTip('Save edits')
 
             hbox = QtWidgets.QHBoxLayout()
             hbox.addWidget(self.see_file_button)
