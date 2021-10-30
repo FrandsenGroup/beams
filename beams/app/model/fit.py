@@ -439,7 +439,7 @@ class FitEngine:
             values[symbol] = opt.x[i]
             uncertainties[symbol] = unc[i]
 
-        for run_id, _ in config.data.items():
+        for run_id, (_, asymmetry, _, meta) in config.data.items():
             for symbol, parameter in config.parameters[run_id].items():
                 if not parameter.is_global:
                     config.set_outputs(run_id, symbol,
@@ -453,7 +453,7 @@ class FitEngine:
             for symbol, value in zip(fixed_symbols, fixed_values):
                 config.set_outputs(run_id, symbol, value, 0)
 
-            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id)
+            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id, meta, asymmetry)
 
             dataset.fits[run_id] = new_fit
 
