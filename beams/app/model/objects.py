@@ -412,10 +412,10 @@ class Asymmetry(np.ndarray):
                          ((alpha + 1) + ((alpha - 1) * self.calculated))
 
             return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
-                             time=self.time, uncertainty=self.uncertainty, alpha=1, calculated=calculated)
+                             time=self.time, uncertainty=self.uncertainty, alpha=alpha, calculated=calculated)
         else:
             return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
-                             time=self.time, uncertainty=self.uncertainty, alpha=1, calculated=self.calculated)
+                             time=self.time, uncertainty=self.uncertainty, alpha=alpha, calculated=self.calculated)
 
     def raw(self):
         """ Returns a new asymmetry corrected (or uncorrected) to a value of 1.
