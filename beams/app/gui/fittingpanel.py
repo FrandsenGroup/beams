@@ -210,11 +210,9 @@ class FittingPanel(Panel):
 
             self.new_button = qt_widgets.StyleTwoButton("New Empty Fit")
             self.reset_button = qt_widgets.StyleOneButton("Reset")
-            self.button_save_results = qt_widgets.StyleTwoButton("Save Fit")
             self.button_lookup_folder = qt_widgets.StyleTwoButton("Folder")
 
             self.new_button.setToolTip('Create a new empty fit')
-            self.button_save_results.setToolTip('Save fit to selected folder')
             self.button_lookup_folder.setToolTip('Select folder')
 
             self.input_file_name = QtWidgets.QLineEdit()
@@ -223,21 +221,6 @@ class FittingPanel(Panel):
             self.group_save_results = QtWidgets.QGroupBox("Save")
 
             self.button_lookup_folder.setFixedWidth(60)
-
-            layout = QtWidgets.QFormLayout()
-            grid = QtWidgets.QGridLayout()
-            grid.addWidget(QtWidgets.QLabel("File Name: "), 0, 0, 1, 1)
-            grid.addWidget(self.input_file_name, 0, 1, 1, 7)
-            grid.addWidget(QtWidgets.QLabel("Save to: "), 1, 0, 1, 1)
-            grid.addWidget(self.input_folder_name, 1, 1, 1, 6)
-            grid.addWidget(self.button_lookup_folder, 1, 7, 1, 1)
-            grid.addWidget(self.button_save_results, 2, 1, 1, 5)
-            row = QtWidgets.QHBoxLayout()
-            row.addLayout(grid)
-            layout.addRow(row)
-            self.group_save_results.setLayout(layout)
-            row_save = QtWidgets.QHBoxLayout()
-            row_save.addWidget(self.group_save_results)
 
             hbox = QtWidgets.QHBoxLayout()
             hbox.addWidget(self.new_button)
@@ -1287,20 +1270,7 @@ class FitTabPresenter:
         self._view.parameter_table.batch_table.itemChanged.connect(self._plot_fit)
         self._view.parameter_table.output_table.itemChanged.connect(self._plot_fit)
         self._view.button_fit.released.connect(self._fit)
-        self._view.support_panel.button_save_results.released.connect(self._save_fit_results)
         self._view.support_panel.new_button.released.connect(self._new_empty_fit)
-
-    def _save_fit_results(self):
-        selected_data = self._view.support_panel.tree.get_selected_data()
-        if selected_data is None:
-            return
-
-        out_file = None
-
-        if isinstance(selected_data, objects.FitDataset):
-            selected_data.write("out_file_x.txt", False)
-        else:
-            selected_data.write("out_file_x.txt")
 
     def _function_input_changed(self):
         if not self.__update_if_table_changes:
