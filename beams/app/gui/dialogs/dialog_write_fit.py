@@ -5,11 +5,11 @@ from PyQt5 import QtCore, QtWidgets
 
 from app.util import qt_widgets
 from app.gui.dialogs import dialog_misc
-from app.model import domain, services, files
+from app.model import objects, services, files
 
 
 class WriteFitDialog(QtWidgets.QDialog):
-    def __init__(self, dataset: domain.FitDataset, *args, **kwargs):
+    def __init__(self, dataset: objects.FitDataset, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._dataset = dataset
         self._ignore_radio_button = False
@@ -64,9 +64,7 @@ class WriteFitDialog(QtWidgets.QDialog):
         summary_group = QtWidgets.QGroupBox("Summary")
         summary_group.setLayout(vbox)
 
-
         vbox = QtWidgets.QVBoxLayout()
-
         hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.radio_directory)
         hbox.addWidget(self.radio_zip)
@@ -117,7 +115,7 @@ class WriteFitDialog(QtWidgets.QDialog):
 
 
 class WriteFitDialogPresenter(QtCore.QObject):
-    def __init__(self, view: WriteFitDialog, dataset: domain.FitDataset):
+    def __init__(self, view: WriteFitDialog, dataset: objects.FitDataset):
         super().__init__()
 
         self._view = view
