@@ -14,9 +14,8 @@ import pandas as pd
 # File Extensions
 class Extensions:
     SESSION = ".beams"
-    FIT_SUMMARY = ".ft3"
-    FIT_SUMMARY_VERBOSE = ".ft2"
-    FIT = ".ft1"
+    FIT_SUMMARY_VERBOSE = ".fit"
+    FIT = ".calc"
     ASYMMETRY = ".asy"
     HISTOGRAM = ".dat"
     TRIUMF = '.msr'
@@ -316,21 +315,6 @@ class MuonAsymmetryFile(ReadableFile):
         return metadata
 
 
-class FitDatasetFile(ReadableFile):
-    SOURCE = Source.BEAMS
-    DATA_FORMAT = Format.FIT_SET
-    DATA_TYPE = DataType.MUON
-    HEADER_ROWS = 1
-
-    def read_data(self):
-        data = pd.read_csv(self.file_path, skiprows=1, delimiter='\t')
-        data.columns = [col.strip() for col in data.columns]
-        return data
-
-    def read_meta(self):
-        return self.read_data()
-
-
 class FitDatasetExpressionFile(ReadableFile):
     SOURCE = Source.BEAMS
     DATA_FORMAT = Format.FIT_SET_VERBOSE
@@ -442,9 +426,6 @@ def file(file_path: str) -> File:
 
     elif check_ext(file_path, Extensions.FIT_SUMMARY_VERBOSE) and is_beams(file_path):
         return FitDatasetExpressionFile(file_path)
-
-    elif check_ext(file_path, Extensions.FIT_SUMMARY) and is_beams(file_path):
-        return FitDatasetFile(file_path)
 
     else:
         return UnknownFile(file_path)

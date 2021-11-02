@@ -700,9 +700,9 @@ class Fit:
         self.parameters = parameters
         self.string_expression = expression
         self.title = title
-        self.run_id = run_id
+        self.run_id = run_id  # "UNLINKED" -> run_id of the dataset you created
         self.meta = meta
-        self.asymmetry = asymmetry
+        self.asymmetry = asymmetry  # Prompt with the plot prompt
 
         from app.model import fit
         self.expression = fit.FitExpression(expression)
@@ -942,7 +942,6 @@ class DataBuilder:
         if not isinstance(f, File):
             f = files.file(f)
 
-        # fixme add conditional for fits
         if d is None or (not isinstance(d, RunDataset) and not isinstance(d, FitDataset)):
             if f.DATA_FORMAT == files.Format.HISTOGRAM or \
                     f.DATA_FORMAT == files.Format.ASYMMETRY:
@@ -950,7 +949,6 @@ class DataBuilder:
                 d.meta = f.read_meta()
                 d.file = f
 
-        # fixme add conditional for fits and sessions
         if f.DATA_FORMAT == files.Format.HISTOGRAM:
             data = f.read_data()
             for histogram_title in d.meta[files.HIST_TITLES_KEY]:
@@ -1006,33 +1004,5 @@ class DataBuilder:
             d.asymmetries[d.FULL_ASYMMETRY] = asymmetry
             d.histograms = None
             d.isLoaded = True
-
-        elif f.DATA_FORMAT == files.Format.FIT_SET:
-            data = f.read_data().to_dict()
-
-            run_parameters = {}
-            for i, run_number in enumerate(data.pop('RUN')):
-                run_parameters[run_number] = {symbol: values[i] for symbol, values in data.items()}
-            return run_parameters
-
-        elif f.DATA_FORMAT == files.Format.FIT_SET_VERBOSE:
-            from app.model import fit
-
-            common, specific, expression = f.read_data()
-
-            d = FitDataset()
-            d.expression = expression
-            for run_number, (title, specific_parameters) in specific.items():
-                parameters = {symbol: fit.FitParameter(symbol, value, lower, upper, False, False,
-                                                       output=value, uncertainty=uncertainty) for
-                              symbol, value, uncertainty, lower, upper in specific_parameters}
-                parameters.update({symbol: fit.FitParameter(symbol, value, lower, upper, False, False,
-                                                            output=value, uncertainty=uncertainty) for
-                                   symbol, value, uncertainty, lower, upper in common})
-
-                f = Fit(parameters, expression, title, None, {files.RUN_NUMBER_KEY: run_number,
-                                                              files.TITLE_KEY: title}, None)
-                d.title += " (unlinked)"
-                d.fits[run_number] = f
 
         return d

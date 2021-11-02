@@ -417,6 +417,21 @@ class MainConsolePanelPresenter(PanelPresenter):
     def _load_file_clicked(self):
         file_ids = self._view.tree_view.get_file_ids()
 
+        """
+        Get checked files from console, check for .fit extension
+        Launch a permission dialog to load runs.
+        Based on result of dialog (they each an int).
+        
+        if yes: 
+            Get the filenames of runs we want to add (the ones in the file) (however we want to access these, whether as an attribute or reading the file again)
+            self.__file_service.add_files(filenames)
+            get those file ids and add those to the list
+             
+        otherwise: 
+            remove those ids from the list
+            
+        """
+
         if len(file_ids) > 0:
             self.__file_service.load_files(file_ids)
 
