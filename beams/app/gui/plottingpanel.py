@@ -676,8 +676,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self._set_widget_dimensions()
             self._set_widget_layout()
 
-            # self.setWidget(self._full_widget)
-
         def _set_widget_attributes(self):
             self.check_freq_xauto.setChecked(True)
             self.check_freq_yauto.setChecked(True)
@@ -697,7 +695,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.input_freq_ymin.setEnabled(False)
             self.input_freq_ymax.setEnabled(False)
 
-            self.slider_bin.setMinimum(0)
+            self.slider_bin.setMinimum(1)
             self.slider_bin.setMaximum(500)
             self.slider_bin.setValue(150)
             self.slider_bin.setTickPosition(QtWidgets.QSlider.TicksBothSides)
@@ -709,7 +707,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             pass
 
         def _set_widget_dimensions(self):
-            box_size = 40
+            box_size = 20
             self.input_time_xmin.setMinimumWidth(box_size)
             self.input_time_xmax.setMinimumWidth(box_size)
             self.input_time_ymin.setMinimumWidth(box_size)
@@ -891,12 +889,12 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         hbox = QtWidgets.QHBoxLayout()
 
         vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self.left_display, 2)
+        vbox.addWidget(self.left_display, 5)
         vbox.addWidget(self.left_settings)
         hbox.addLayout(vbox)
 
         vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self.right_display, 2)
+        vbox.addWidget(self.right_display, 5)
         vbox.addWidget(self.right_settings)
         hbox.addLayout(vbox)
 
@@ -1046,6 +1044,12 @@ class PlottingPanelPresenter(PanelPresenter):
             if value % 5 != 0:
                 return
         else:
+            bin_size = settings.get_bin_from_input()
+
+            if bin_size <= 0:
+                WarningMessageDialog.launch(["Cannot set bin size to {}.".format(bin_size)])  # FIXME just use args*
+                return
+
             settings.set_bin_slider(settings.get_bin_from_input())
 
         self._start_update(side)

@@ -1,6 +1,6 @@
-
-
-### Features
+![beams logo](beams/app/resources/icons/logo_3.jpg)
+[![Release](https://img.shields.io/github/release/FrandsenGroup/beams.svg?style=plastic&colorB=68B7EB)]()
+###  Features
 
 - Convert binary data files from multiple µSR facilities.
 - Display and interact with multiple sets of data.
@@ -10,7 +10,21 @@
 # BEAMS
 > A simple interface for visualizing and analyzing µSR data.
 
-**Table of Contents**
+## Table of Contents
+- [Getting Started](#getting-started)
+- [User Guide](#user-guide)
+  - [Plotting Asymmetries](#plotting-asymmetries)
+    - [Plotting the Asymmetry](#plotting-the-asymmetry)
+    - [Interacting with the Asymmetry](#interacting-with-the-asymmetry)
+  - [Fitting Asymmetries](#fitting-asymmetries)
+    - [Choosing the Fit Expression](#choosing-your-fit-expression)
+    - [Fit Parameters](#fit-parameters)
+    - [Selecting Runs](#selecting-runs)
+    - [Fit Options](#fit-options)
+- [File Formats](#file-formats)
+  - [External File Formats](#external-supported-file-formats)
+  - [BEAMS File Formats](#beams-file-formats)
+- [Troubleshooting](#troubleshooting)
 
 ## Getting Started
 
@@ -63,6 +77,8 @@ histograms should be used to calculate the asymmetry for that particular file. I
 for a large selection of files then you can press 'Apply All', otherwise you can press 'Apply' and specify for each file
 individually.
 
+![choosing your histograms for asymmetry](https://github.com/aPeter1/BEAMS/blob/assets/histogram_choice_dialog.png)
+
 If it is a '.asy' file, a file which contains an asymmetry, then the asymmetry will be plotted as no more
 information is needed.
 
@@ -74,6 +90,8 @@ Once your asymmetry is plotted, you can now dynamically interact with it! You ca
 the slider below each plot to adjust the binning of the asymmetry and adjust the x and y limits to focus in on different
 areas. In the left side panel you will see the legend for the plots, as well as options for styling and adjusting
 the alpha parameter for the asymmetry.
+
+![choosing your histograms for asymmetry](https://github.com/aPeter1/BEAMS/blob/assets/plot_interaction.png)
 
 ### Fitting Asymmetries
 #### Choosing your Fit Expression
@@ -112,7 +130,13 @@ File Extension | Description
 
 ## Troubleshooting
 #### Can't install requirements on Mac (Apple Silicon)
-For trouble installing requirements on Apple Silicon see the answer to this issue: https://github.com/scipy/scipy/issues/13409
+For trouble installing requirements on Apple Silicon see the answer to this [issue](https://github.com/scipy/scipy/issues/13409).
+
+```shell
+$ brew install openblas
+$ pip install cython pybind11 pythran numpy
+$ OPENBLAS=$(brew --prefix openblas) CFLAGS="-falign-functions=8 ${CFLAGS}" pip install --no-use-pep517 scipy
+```
 
 #### Text in file trees is truncated
 If the text is truncated or the items on the screen are misaligned slightly you most likely don't have PyQt5 installed (you can confirm this by running `pip freeze` in the terminal and you will probably see QtPy). Simply fix by using pip to install PyQt5.
@@ -122,5 +146,6 @@ $ pip install PyQt5
 ```
 
 #### (PyQt5) ImportError: DLL load failed
-Resolved in this issue #37\
+Resolved in this [Issue 37](../../issues/37)
+
 Possible solution in the answer to this question on Stack Overflow: https://stackoverflow.com/questions/42863505/dll-load-failed-when-importing-pyqt5
