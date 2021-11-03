@@ -151,7 +151,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
                         run_node.addChild(MainConsolePanel.KeyValueNode(symbol, value))
                     self.addChild(run_node)
 
-            elif isinstance(data_object, domain.FitDataset):
+            elif isinstance(data_object, objects.FitDataset):
                 self.addChild(MainConsolePanel.HeadingNode("Expression: {}".format(data_object.expression)))
                 fits_node = MainConsolePanel.HeadingNode("Fits")
                 for f in data_object.fits.values():
