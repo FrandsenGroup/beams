@@ -794,7 +794,7 @@ class FitDataset:
             fit_parameters_string += "\n"
 
         # Writing the Verbose Section
-        fit_parameters_string += "\n# Fit Parameters\n\n# {:<8}{:<10}{:<8}{:<8}".format("Name", "Value", "Lower",
+        fit_parameters_string += "\n# Fit Parameters\n\n# \t{:<8}{:<10}{:<12}{:<8}{:<8}".format("Name", "Value", "Uncertainty", "Lower",
                                                                                      "Upper") + "\n\n"
 
         if self.flags & FitDataset.Flags.GLOBAL or self.flags & FitDataset.Flags.GLOBAL_PLUS:  # Add common parameters
@@ -803,7 +803,7 @@ class FitDataset:
             f = list(self.fits.values())[0]
             for name, v in f.parameters.items():
                 if v.is_global:
-                    fit_parameters_string += "\t" + "{:<8}{:<10.5f}{:<10.5f}{:<8.5f}{:<8.5f}".format(v.symbol,
+                    fit_parameters_string += "\t" + "{:<8}{:<10.5f}{:<12.5f}{:<8.5f}{:<8.5f}".format(v.symbol,
                                                                                                      v.value,
                                                                                                      v.uncertainty,
                                                                                                      v.lower,
@@ -813,12 +813,13 @@ class FitDataset:
 
         for f in self.fits.values():  # Add run specific parameters
             run = services.RunService().get_runs_by_ids([f.run_id])[0]
+            fit_parameters_string += run.file.file_path + "\n"
             fit_parameters_string += "# Specific parameters for run {} ({})\n\n".format(run.meta["RunNumber"],
                                                                                         f.title)
 
             for name, v in f.parameters.items():
                 if not v.is_global:
-                    fit_parameters_string += "\t" + "{:<8}{:<10.5f}{:<10.5f}{:<8.5f}{:<8.5f}".format(v.symbol,
+                    fit_parameters_string += "\t" + "{:<8}{:<10.5f}{:<12.5f}{:<8.5f}{:<8.5f}".format(v.symbol,
                                                                                                      v.value,
                                                                                                      v.uncertainty,
                                                                                                      v.lower,
