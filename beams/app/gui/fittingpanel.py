@@ -1626,7 +1626,7 @@ class FitTabPresenter:
         config.parameters = variables
         config.titles = fit_titles
         config.set_flags(0)
-        self.__logger.info(str(config))
+        self.__logger.info(str(config).encode("utf-8"))
 
         # Fit to spec
         worker = FitWorker(config)
