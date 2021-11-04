@@ -259,7 +259,7 @@ class LoadingDialog(QtWidgets.QDialog):
         worker.signals.finished.connect(self._stop)
         self.setWindowTitle(" ")
         self.setModal(True)
-        self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowType.Popup)
+        self.setWindowFlags(self.windowFlags() | qt_constants.Popup)
 
         self.message = QtWidgets.QLabel(message)
         font = QtGui.QFont()
