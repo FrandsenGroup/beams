@@ -588,20 +588,9 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_time.set_xlim(x_min, x_max)
 
         def set_fft_plot_limits(self, max_fft, max_freq=None):
-            if not self._settings.is_fft_auto():
-                try:
-                    y_min = self._settings.get_min_fft()
-                    y_max = self._settings.get_max_fft()
-                except ValueError:
-                    WarningMessageDialog.launch(["Invalid frequency limits."])
-                    return
-                self.axes_freq.set_ylim(y_min, y_max)
-            else:
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore')
-                    self.axes_freq.set_ylim(0, max_fft * 1.1)
-                self._settings.set_min_fft(0)
-                self._settings.set_max_fft(max_fft * 1.1)
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore')
+                self.axes_freq.set_ylim(0, max_fft * 1.1)
 
             if not self._settings.is_freq_auto():
                 try:
@@ -658,16 +647,10 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self._label_freq = QtWidgets.QLabel('Frequency')
             self._label_freq_xmin = QtWidgets.QLabel('XMin')
             self._label_freq_xmax = QtWidgets.QLabel('XMax')
-            self._label_freq_ymin = QtWidgets.QLabel('YMin')
-            self._label_freq_ymax = QtWidgets.QLabel('YMax')
-            self._label_freq_yauto = QtWidgets.QLabel('Auto Y')
             self._label_freq_xauto = QtWidgets.QLabel('Auto X')
 
             self.input_freq_xmin = QtWidgets.QLineEdit()
             self.input_freq_xmax = QtWidgets.QLineEdit()
-            self.input_freq_ymin = QtWidgets.QLineEdit()
-            self.input_freq_ymax = QtWidgets.QLineEdit()
-            self.check_freq_yauto = QtWidgets.QCheckBox()
             self.check_freq_xauto = QtWidgets.QCheckBox()
 
             self._set_widget_attributes()
@@ -679,7 +662,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
         def _set_widget_attributes(self):
             self.check_freq_xauto.setChecked(True)
-            self.check_freq_yauto.setChecked(True)
             self.check_time_yauto.setChecked(True)
 
             self.input_time_xmin.setText("0")
@@ -694,9 +676,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
             self.input_freq_xmin.setEnabled(False)
             self.input_freq_xmax.setEnabled(False)
-
-            self.input_freq_ymin.setEnabled(False)
-            self.input_freq_ymax.setEnabled(False)
 
             self.slider_bin.setMinimum(0)
             self.slider_bin.setMaximum(500)
@@ -717,8 +696,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.input_time_ymax.setMinimumWidth(box_size)
             self.input_freq_xmin.setMinimumWidth(box_size)
             self.input_freq_xmax.setMinimumWidth(box_size)
-            self.input_freq_ymin.setMinimumWidth(box_size)
-            self.input_freq_ymax.setMinimumWidth(box_size)
             self.input_bin.setFixedWidth(50)
 
         def _set_widget_layout(self):
@@ -756,23 +733,17 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             freq_form = QtWidgets.QGroupBox('Frequency')
             freq_form.setMaximumHeight(110)
             freq_layout = QtWidgets.QFormLayout()
-            freq_grid = QtWidgets.QGridLayout()
+            hbox = QtWidgets.QHBoxLayout()
 
-            freq_grid.addWidget(self._label_freq_xauto, 0, 0)
-            freq_grid.addWidget(self.check_freq_xauto, 0, 1)
-            freq_grid.addWidget(self._label_freq_xmin, 0, 2)
-            freq_grid.addWidget(self.input_freq_xmin, 0, 3)
-            freq_grid.addWidget(self._label_freq_xmax, 0, 4)
-            freq_grid.addWidget(self.input_freq_xmax, 0, 5)
-            freq_grid.addWidget(self._label_freq_yauto, 1, 0)
-            freq_grid.addWidget(self.check_freq_yauto, 1, 1)
-            freq_grid.addWidget(self._label_freq_ymin, 1, 2)
-            freq_grid.addWidget(self.input_freq_ymin, 1, 3)
-            freq_grid.addWidget(self._label_freq_ymax, 1, 4)
-            freq_grid.addWidget(self.input_freq_ymax, 1, 5)
+            hbox.addWidget(self._label_freq_xauto)
+            hbox.addWidget(self.check_freq_xauto)
+            hbox.addWidget(self._label_freq_xmin)
+            hbox.addWidget(self.input_freq_xmin)
+            hbox.addWidget(self._label_freq_xmax)
+            hbox.addWidget(self.input_freq_xmax)
 
             temp_row = QtWidgets.QHBoxLayout()
-            temp_row.addLayout(freq_grid)
+            temp_row.addLayout(hbox)
             freq_layout.addRow(temp_row)
 
             freq_form.setLayout(freq_layout)
@@ -817,9 +788,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         def is_asymmetry_auto(self):
             return self.check_time_yauto.isChecked()
 
-        def is_fft_auto(self):
-            return self.check_freq_yauto.isChecked()
-
         def is_freq_auto(self):
             return self.check_freq_xauto.isChecked()
 
@@ -830,10 +798,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
         def set_enabled_frequency_auto(self, enabled):
             self.input_freq_xmin.setEnabled(enabled)
             self.input_freq_xmax.setEnabled(enabled)
-
-        def set_enabled_fft_auto(self, enabled):
-            self.input_freq_ymin.setEnabled(enabled)
-            self.input_freq_ymax.setEnabled(enabled)
 
         def set_max_time(self, value):
             self.input_time_xmax.setText('{0:.3f}'.format(value))
@@ -852,12 +816,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
         def set_min_asymmetry(self, value):
             self.input_time_ymin.setText('{0:.3f}'.format(value))
-
-        def set_max_fft(self, value):
-            self.input_freq_ymax.setText('{0:.1f}'.format(value))
-
-        def set_min_fft(self, value):
-            self.input_freq_ymin.setText('{0:.1f}'.format(value))
 
         def set_bin_input(self, value):
             self.input_bin.setText(str(value))
@@ -924,9 +882,6 @@ class PlottingPanelPresenter(PanelPresenter):
         self._view.left_settings.check_time_yauto.stateChanged.connect(lambda: self._check_parameter_changed('left'))
         self._view.left_settings.input_freq_xmin.returnPressed.connect(lambda: self._start_update('left'))
         self._view.left_settings.input_freq_xmax.returnPressed.connect(lambda: self._start_update('left'))
-        self._view.left_settings.input_freq_ymin.returnPressed.connect(lambda: self._start_update('left'))
-        self._view.left_settings.input_freq_ymax.returnPressed.connect(lambda: self._start_update('left'))
-        self._view.left_settings.check_freq_yauto.stateChanged.connect(lambda: self._check_parameter_changed('left'))
         self._view.left_settings.check_freq_xauto.stateChanged.connect(lambda: self._check_parameter_changed('left'))
         self._view.left_settings.slider_bin.sliderMoved.connect(lambda: self._bin_parameter_changed('left', True))
         self._view.left_settings.slider_bin.sliderReleased.connect(lambda: self._bin_parameter_changed('left', False))
@@ -938,9 +893,6 @@ class PlottingPanelPresenter(PanelPresenter):
         self._view.right_settings.check_time_yauto.stateChanged.connect(lambda: self._check_parameter_changed('right'))
         self._view.right_settings.input_freq_xmin.returnPressed.connect(lambda: self._start_update('right'))
         self._view.right_settings.input_freq_xmax.returnPressed.connect(lambda: self._start_update('right'))
-        self._view.right_settings.input_freq_ymin.returnPressed.connect(lambda: self._start_update('right'))
-        self._view.right_settings.input_freq_ymax.returnPressed.connect(lambda: self._start_update('right'))
-        self._view.right_settings.check_freq_yauto.stateChanged.connect(lambda: self._check_parameter_changed('right'))
         self._view.right_settings.check_freq_xauto.stateChanged.connect(lambda: self._check_parameter_changed('left'))
         self._view.right_settings.slider_bin.sliderMoved.connect(lambda: self._bin_parameter_changed('right', True))
         self._view.right_settings.slider_bin.sliderReleased.connect(lambda: self._bin_parameter_changed('right', False))
@@ -1059,7 +1011,6 @@ class PlottingPanelPresenter(PanelPresenter):
 
         settings.set_enabled_asymmetry_auto(not settings.is_asymmetry_auto())
         settings.set_enabled_frequency_auto(not settings.is_freq_auto())
-        settings.set_enabled_fft_auto(not settings.is_fft_auto())
 
     def _update_canvas(self, settings, display, side, fast=False):
         ids = self._view.support_panel.item_tree.get_run_ids()
