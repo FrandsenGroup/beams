@@ -8,6 +8,7 @@ from app.gui.dialogs.dialog_misc import AddFileDialog, PermissionsMessageDialog
 from app.gui.dialogs.dialog_musr_download import MusrDownloadDialog
 from app.gui.dialogs.dialog_psi_download import PSIDownloadDialog
 from app.gui.dialogs.dialog_write_data import WriteDataDialog
+from app.gui.dialogs.dialog_plot_file import PlotFileDialog
 from app.gui.gui import PanelPresenter
 from app.model import files, services, objects
 from app.util import qt_widgets, qt_constants
@@ -426,16 +427,22 @@ class MainConsolePanelPresenter(PanelPresenter):
                 dialog_message += f"\u2022 {f.title}\n"
                 fit_file_ids.append(f.id)
 
+        runs = []
         if fit_files_present:
             code = PermissionsMessageDialog.launch([dialog_message])
             if code == PermissionsMessageDialog.Codes.OKAY:
-                fit_file_paths = []
+
                 for f in file_objects:
                     if f.file.DATA_FORMAT == files.Format.FIT_SET_VERBOSE:
+                        fits_by_ids = {}
                         for fit in f.dataset.fits.values():
-                            fit_file_paths.append(fit.meta[files.FILE_PATH_KEY])
-                file_set_ids = self.__file_service.add_files(fit_file_paths)
-                file_ids.extend(file_set_ids)
+                            run_file = self.__file_service.add_files([fit.meta[files.FILE_PATH_KEY]])[0]
+                            file_ids.append(run_file.id)
+                            fit.run_id = run_file.dataset.id
+                            fits_by_ids[fit.run_id] = fit
+                            runs.append(run_file.dataset)
+                        f.dataset.fits = fits_by_ids
+
             else:
                 file_ids = [f for f in file_ids if f not in fit_file_ids]
         """
@@ -454,6 +461,7 @@ class MainConsolePanelPresenter(PanelPresenter):
 
         if len(file_ids) > 0:
             self.__file_service.load_files(file_ids)
+            PlotFileDialog.launch([runs])
 
     def _convert_file_clicked(self):
         self.__file_service.convert_files(self._view.tree_view.get_file_ids())

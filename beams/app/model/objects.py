@@ -396,6 +396,8 @@ class Asymmetry(np.ndarray):
         asymmetry : Asymmetry
             A new asymmetry object corrected to the provided value.
         """
+        alpha = float(alpha)
+
         if self.alpha == alpha:
             return Asymmetry(input_array=self, time_zero=self.time_zero, bin_size=self.bin_size,
                              time=self.time, uncertainty=self.uncertainty, alpha=1, calculated=self.calculated)
@@ -914,11 +916,11 @@ class DataBuilder:
             fit_dataset = FitDataset()
             fit_dataset.expression = expression
             for run_number, (title, file_path, specific_parameters) in specific.items():
-                parameters = {symbol: fit.FitParameter(symbol, value, lower, upper, False, False,
-                                                       output=value, uncertainty=uncertainty) for
+                parameters = {symbol: fit.FitParameter(symbol, float(value), float(lower), float(upper), False, False,
+                                                       output=float(value), uncertainty=float(uncertainty)) for
                               symbol, value, uncertainty, lower, upper in specific_parameters}
-                parameters.update({symbol: fit.FitParameter(symbol, value, lower, upper, False, False,
-                                                            output=value, uncertainty=uncertainty) for
+                parameters.update({symbol: fit.FitParameter(symbol, float(value), float(lower), float(upper), False, False,
+                                                            output=float(value), uncertainty=float(uncertainty)) for
                                    symbol, value, uncertainty, lower, upper in common})
 
                 fi = Fit(parameters, expression, title, 'UNLINKED' + str(uuid.uuid4()),

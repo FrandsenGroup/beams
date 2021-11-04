@@ -522,7 +522,7 @@ class FileService:
     def add_files(self, paths):
         if len(paths) == 0:
             return
-        file_set_ids = []
+        file_sets = []
         for path in paths:
             if self.__dao.get_files_by_path(path) is not None:
                 continue
@@ -530,8 +530,7 @@ class FileService:
             f = files.file(path)
             data_set = objects.DataBuilder.build_minimal(f)
             file_set = objects.FileDataset(f)
-            file_set_ids.append(file_set.id)
-
+            file_sets.append(file_set)
             if data_set is not None:
                 file_set.dataset = data_set
 
@@ -548,7 +547,7 @@ class FileService:
             self.__dao.add_files([file_set])
 
         self.signals.changed.emit()
-        return file_set_ids
+        return file_sets
 
     def load_files(self, ids):
         is_changed = False
