@@ -126,7 +126,7 @@ class FittingPanel(Panel):
                 self.__selected_items = None
                 self.__fit_service = services.FitService()
                 self.__parent = None
-                self.setFlags(self.flags() | QtCore.Qt.ItemFlag.ItemIsEditable)
+                self.setFlags(self.flags() | qt_constants.ItemIsEditable)
                 if isinstance(dataset, objects.FitDataset):
                     for fit_data in dataset.fits.values():
                         self.addChild(FittingPanel.SupportPanel.FitNode(fit_data))

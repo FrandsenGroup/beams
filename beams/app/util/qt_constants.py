@@ -37,6 +37,7 @@ try:
     RelativeSize = QtCore.Qt.RelativeSize
     NoEditTriggers = QtWidgets.QAbstractItemView.NoEditTriggers
     Popup = QtCore.Qt.Popup
+    ItemIsEditable = QtCore.Qt.ItemIsEditable
 
 except AttributeError:
     Checked = QtCore.Qt.CheckState.Checked
@@ -69,3 +70,4 @@ except AttributeError:
     RelativeSize = QtCore.Qt.SizeMode.RelativeSize
     NoEditTriggers = QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers
     Popup = QtCore.Qt.WindowType.Popup
+    ItemIsEditable = QtCore.Qt.ItemFlag.ItemIsEditable
