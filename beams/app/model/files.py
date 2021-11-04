@@ -67,6 +67,7 @@ GOOD_BIN_TWO_KEY = 'GoodBinTwo'
 RUN_NUMBER_KEY = 'RunNumber'
 T0_KEY = 'T0'
 CALC_HISTS_KEY = 'CalcHists'
+FILE_PATH_KEY = 'FilePath'
 
 
 # TODO Maybe we should have these files inherit from the actual File object
@@ -346,13 +347,17 @@ class FitDatasetExpressionFile(ReadableFile):
             if s_lines:
                 for n, s in enumerate(s_lines):
                     first_i = s + 2
-                    last_i = e_line - 1 if not len(s_lines) > n + 1 else s_lines[n + 1] - 1
+                    last_i = e_line - 1 if not len(s_lines) > n + 1 else s_lines[n + 1] - 2
+                    file_i = s - 1
+                    filename = lines[file_i][:-1]
                     parameters = []
+
                     for i in range(first_i, last_i):
                         parameters.append(lines[i].split())
+
                     line = lines[s]
                     title = line[line.find("(") + 1:-2]
-                    specific_parameters[line.split()[5]] = (title, parameters)
+                    specific_parameters[line.split()[5]] = (title, filename, parameters)
 
             if e_line:
                 e_line_split = lines[e_line + 2].split()

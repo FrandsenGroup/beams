@@ -895,7 +895,7 @@ class FileDataset:
 
 class DataBuilder:
     @staticmethod
-    def build_minimal(f):
+    def build_minimal(f: files.ReadableFile):
         if not isinstance(f, File):
             f = files.file(f)
 
@@ -913,7 +913,7 @@ class DataBuilder:
             common, specific, expression = f.read_data()
             fit_dataset = FitDataset()
             fit_dataset.expression = expression
-            for run_number, (title, specific_parameters) in specific.items():
+            for run_number, (title, file_path, specific_parameters) in specific.items():
                 parameters = {symbol: fit.FitParameter(symbol, value, lower, upper, False, False,
                                                        output=value, uncertainty=uncertainty) for
                               symbol, value, uncertainty, lower, upper in specific_parameters}
@@ -923,7 +923,8 @@ class DataBuilder:
 
                 fi = Fit(parameters, expression, title, 'UNLINKED' + str(uuid.uuid4()),
                          {files.RUN_NUMBER_KEY: run_number,
-                          files.TITLE_KEY: title}, None)
+                          files.TITLE_KEY: title,
+                          files.FILE_PATH_KEY: file_path}, None)
                 fit_dataset.title += " (unlinked)"
                 fit_dataset.fits[run_number] = fi
             return fit_dataset

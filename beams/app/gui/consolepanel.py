@@ -416,7 +416,28 @@ class MainConsolePanelPresenter(PanelPresenter):
 
     def _load_file_clicked(self):
         file_ids = self._view.tree_view.get_file_ids()
+        file_objects = services.FileService().get_files(file_ids)
+        fit_file_ids = []
+        dialog_message = 'Load fits from the following files?\n'
+        fit_files_present = False
+        for f in file_objects:
+            if f.file.DATA_FORMAT == files.Format.FIT_SET_VERBOSE:
+                fit_files_present = True
+                dialog_message += f"\u2022 {f.title}\n"
+                fit_file_ids.append(f.id)
 
+        if fit_files_present:
+            code = PermissionsMessageDialog.launch([dialog_message])
+            if code == PermissionsMessageDialog.Codes.OKAY:
+                fit_file_paths = []
+                for f in file_objects:
+                    if f.file.DATA_FORMAT == files.Format.FIT_SET_VERBOSE:
+                        for fit in f.dataset.fits.values():
+                            fit_file_paths.append(fit.meta[files.FILE_PATH_KEY])
+                file_set_ids = self.__file_service.add_files(fit_file_paths)
+                file_ids.extend(file_set_ids)
+            else:
+                file_ids = [f for f in file_ids if f not in fit_file_ids]
         """
         Get checked files from console, check for .fit extension
         Launch a permission dialog to load runs.
@@ -428,8 +449,7 @@ class MainConsolePanelPresenter(PanelPresenter):
             get those file ids and add those to the list
              
         otherwise: 
-            remove those ids from the list
-            
+            remove those ids from the list           
         """
 
         if len(file_ids) > 0:
