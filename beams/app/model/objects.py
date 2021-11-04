@@ -923,12 +923,13 @@ class DataBuilder:
                                                             output=float(value), uncertainty=float(uncertainty)) for
                                    symbol, value, uncertainty, lower, upper in common})
 
-                fi = Fit(parameters, expression, title, 'UNLINKED' + str(uuid.uuid4()),
+                unlinked_run_id = 'UNLINKED' + str(uuid.uuid4())
+                fi = Fit(parameters, expression, title, unlinked_run_id,
                          {files.RUN_NUMBER_KEY: run_number,
                           files.TITLE_KEY: title,
                           files.FILE_PATH_KEY: file_path}, None)
                 fit_dataset.title += " (unlinked)"
-                fit_dataset.fits[run_number] = fi
+                fit_dataset.fits[unlinked_run_id] = fi
             return fit_dataset
 
         elif f.DATA_FORMAT == files.Format.FIT_SET:

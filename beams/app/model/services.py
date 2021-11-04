@@ -564,14 +564,26 @@ class FileService:
             self.__fit_service.changed()
 
     def remove_files(self, checked_items):
-        run_files = self.__dao.get_files_by_ids(checked_items)
-        run_ids = []
-        for rf in run_files:
-            if rf.isLoaded:
-                run_ids.append(rf.dataset.id)
-            self.__dao.remove_files_by_id(rf.id)
+        file_datasets = self.__dao.get_files_by_ids(checked_items)
 
-        self.__run_service.remove_runs_by_ids(run_ids)
+        fit_datasets = []
+        run_datasets = []
+
+        for fd in file_datasets:
+            if fd.dataset is None:
+                pass
+            elif isinstance(fd.dataset, objects.FitDataset):
+                fit_datasets.append(fd.dataset.id)
+            elif isinstance(fd.dataset, objects.RunDataset):
+                run_datasets.append(fd.dataset.id)
+            else:
+                raise Exception("This file dataset ({}) is not recognized.".format(type(fd.dataset)))
+
+            self.__dao.remove_files_by_id(fd.id)
+
+        self.__run_service.remove_runs_by_ids(run_datasets)
+        self.__fit_service.remove_dataset(fit_datasets)
+
         self.signals.changed.emit()
 
     def save_session(self, save_path):
