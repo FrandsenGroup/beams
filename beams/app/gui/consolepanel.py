@@ -461,7 +461,8 @@ class MainConsolePanelPresenter(PanelPresenter):
 
         if len(file_ids) > 0:
             self.__file_service.load_files(file_ids)
-            PlotFileDialog.launch([runs, False])
+            if fit_files_present:
+                PlotFileDialog.launch([runs, False])
 
     def _convert_file_clicked(self):
         self.__file_service.convert_files(self._view.tree_view.get_file_ids())
