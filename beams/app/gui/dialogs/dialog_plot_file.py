@@ -23,7 +23,6 @@ class PlotFileDialog(QtWidgets.QDialog):
         self.b_apply = qt_widgets.StyleOneButton('Apply')
         self.b_apply_all = qt_widgets.StyleOneButton('Apply All')
         self.b_plot = qt_widgets.StyleOneButton('Plot')
-        self.b_skip = qt_widgets.StyleOneButton('Skip')
         self.b_cancel = qt_widgets.StyleTwoButton('Cancel')
         self.status_bar = QtWidgets.QStatusBar()
 
@@ -33,7 +32,6 @@ class PlotFileDialog(QtWidgets.QDialog):
         self.b_apply.setToolTip("Apply this format to only the current run.")
         self.b_apply_all.setToolTip("Apply this format to all selected runs.")
         self.b_plot.setToolTip("Plot the asymmetries (must choose histograms before plotting).")
-        self.b_skip.setToolTip("Remove current histogram from selection.")
         self.b_cancel.setToolTip("Close prompt.")
 
         self.b_plot.setEnabled(False)
@@ -48,15 +46,19 @@ class PlotFileDialog(QtWidgets.QDialog):
         row_1.addWidget(self.c_hist_two)
         row_2.addWidget(self.b_apply)
         row_2.addWidget(self.b_apply_all)
-        row_2.addWidget(self.b_skip)
         row_2.addWidget(self.b_plot)
         row_2.addWidget(self.b_cancel)
         col.addLayout(row_1)
         col.addLayout(row_2)
         col.addWidget(self.status_bar)
 
+        if len(args) < 2 or args[1]:
+            self.b_skip = qt_widgets.StyleOneButton('Skip')
+            self.b_skip.setToolTip("Remove current histogram from selection.")
+            row_2.addWidget(self.b_skip)
+
         self.setLayout(col)
-        self._presenter = PlotFileDialogPresenter(self, args[0])
+        self._presenter = PlotFileDialogPresenter(self, args[0], args[1] if len(args) > 1 else True)
 
     def get_file(self):
         return self.c_file_list.currentText()
@@ -108,7 +110,7 @@ class PlotFileDialog(QtWidgets.QDialog):
 
 
 class PlotFileDialogPresenter:
-    def __init__(self, view: PlotFileDialog, runs):
+    def __init__(self, view: PlotFileDialog, runs, has_skip):
         self.__run_service = services.RunService()
         self._view = view
         self._runs = runs
@@ -119,13 +121,14 @@ class PlotFileDialogPresenter:
         self._view.set_second_histogram(current_hists)
 
         self._view.set_files([run.file.file_path for run in runs])
-        self._set_callbacks()
+        self._set_callbacks(has_skip)
 
-    def _set_callbacks(self):
+    def _set_callbacks(self, has_skip):
         self._view.b_apply.released.connect(lambda: self._apply_clicked())
         self._view.b_apply_all.released.connect(lambda: self._apply_all_clicked())
         self._view.b_cancel.released.connect(lambda: self._cancel_clicked())
-        self._view.b_skip.released.connect(lambda: self._skip_clicked())
+        if has_skip:
+            self._view.b_skip.released.connect(lambda: self._skip_clicked())
         self._view.b_plot.released.connect(lambda: self._plot_clicked())
         self._view.c_file_list.currentIndexChanged.connect(lambda: self._file_choice_changed())
 
