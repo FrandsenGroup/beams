@@ -52,13 +52,9 @@ class PlotFileDialog(QtWidgets.QDialog):
         col.addLayout(row_2)
         col.addWidget(self.status_bar)
 
-        if len(args) < 2 or args[1]:
-            self.b_skip = qt_widgets.StyleOneButton('Skip')
-            self.b_skip.setToolTip("Remove current histogram from selection.")
-            row_2.addWidget(self.b_skip)
 
         self.setLayout(col)
-        self._presenter = PlotFileDialogPresenter(self, args[0], args[1] if len(args) > 1 else True)
+        self._presenter = PlotFileDialogPresenter(self, args[0])
 
     def get_file(self):
         return self.c_file_list.currentText()
@@ -110,7 +106,7 @@ class PlotFileDialog(QtWidgets.QDialog):
 
 
 class PlotFileDialogPresenter:
-    def __init__(self, view: PlotFileDialog, runs, has_skip):
+    def __init__(self, view: PlotFileDialog, runs):
         self.__run_service = services.RunService()
         self._view = view
         self._runs = runs
@@ -121,14 +117,12 @@ class PlotFileDialogPresenter:
         self._view.set_second_histogram(current_hists)
 
         self._view.set_files([run.file.file_path for run in runs])
-        self._set_callbacks(has_skip)
+        self._set_callbacks()
 
-    def _set_callbacks(self, has_skip):
+    def _set_callbacks(self):
         self._view.b_apply.released.connect(lambda: self._apply_clicked())
         self._view.b_apply_all.released.connect(lambda: self._apply_all_clicked())
         self._view.b_cancel.released.connect(lambda: self._cancel_clicked())
-        if has_skip:
-            self._view.b_skip.released.connect(lambda: self._skip_clicked())
         self._view.b_plot.released.connect(lambda: self._plot_clicked())
         self._view.c_file_list.currentIndexChanged.connect(lambda: self._file_choice_changed())
 
@@ -178,19 +172,6 @@ class PlotFileDialogPresenter:
 
     def _cancel_clicked(self):
         self._view.done(PlotFileDialog.Codes.NO_FILES_PLOTTED)
-
-    def _skip_clicked(self):
-        current_file = self._view.get_file()
-
-        for run in self._runs:
-            if run.file.file_path == current_file:
-                self._runs.remove(run)
-
-        self._formats.pop(current_file)
-        self._view.remove_current_file()
-
-        if self._is_all_formatted():
-            self._view.set_enabled_plot_button(True)
 
     def _plot_clicked(self):
         if self._is_all_formatted():
