@@ -129,7 +129,7 @@ class FittingPanel(Panel):
 
         class FitDatasetNode(QtWidgets.QTreeWidgetItem):
             def __init__(self, dataset):
-                super().__init__([dataset.id])
+                super().__init__([dataset.title])
                 self.model = dataset
                 self.__selected_items = None
                 self.__fit_service = services.FitService()

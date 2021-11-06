@@ -755,8 +755,8 @@ class FitDataset:
         t = time.localtime()
         current_time = time.strftime("%d-%m-%YT%H:%M:%S", t)
 
-        self.id = str(current_time)
-        self.title = self.id
+        self.id = str(uuid.uuid4())
+        self.title = str(current_time)
         self.fits = {}  # run_id : fit object
         self.flags = 0
         self.expression = None
@@ -928,7 +928,6 @@ class DataBuilder:
                          {files.RUN_NUMBER_KEY: run_number,
                           files.TITLE_KEY: title,
                           files.FILE_PATH_KEY: file_path}, None)
-                fit_dataset.title += " (unlinked)"
                 fit_dataset.fits[unlinked_run_id] = fi
             return fit_dataset
 
