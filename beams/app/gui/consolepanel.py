@@ -4,7 +4,7 @@ import os
 from PyQt5 import QtWidgets, QtCore
 
 from app.gui.dialogs.dialog_isis_download import ISISDownloadDialog
-from app.gui.dialogs.dialog_misc import AddFileDialog, PermissionsMessageDialog
+from app.gui.dialogs.dialog_misc import AddFileDialog, PermissionsMessageDialog, WarningMessageDialog
 from app.gui.dialogs.dialog_musr_download import MusrDownloadDialog
 from app.gui.dialogs.dialog_psi_download import PSIDownloadDialog
 from app.gui.dialogs.dialog_write_data import WriteDataDialog
@@ -436,7 +436,14 @@ class MainConsolePanelPresenter(PanelPresenter):
                     if f.file.DATA_FORMAT == files.Format.FIT_SET_VERBOSE:
                         fits_by_ids = {}
                         for fit in f.dataset.fits.values():
-                            run_file = self.__file_service.add_files([fit.meta[files.FILE_PATH_KEY]])[0]
+                            try:
+                                run_file_list = self.__file_service.add_files([fit.meta[files.FILE_PATH_KEY]])
+                            except FileNotFoundError:
+                                WarningMessageDialog.launch([f"{fit.meta[files.FILE_PATH_KEY]} does not exist!"])
+                                continue
+                            if len(run_file_list) == 0:
+                                continue
+                            run_file = run_file_list[0]
                             file_ids.append(run_file.id)
                             fit.run_id = run_file.dataset.id
                             fits_by_ids[fit.run_id] = fit
@@ -462,7 +469,10 @@ class MainConsolePanelPresenter(PanelPresenter):
         if len(file_ids) > 0:
             self.__file_service.load_files(file_ids)
             if fit_files_present:
-                PlotFileDialog.launch([runs, False])
+                if len(runs) > 0:
+                    PlotFileDialog.launch([runs])
+                else:
+                    WarningMessageDialog.launch(["None of the files listed in the .fit file(s) could be found."])
 
     def _convert_file_clicked(self):
         self.__file_service.convert_files(self._view.tree_view.get_file_ids())
