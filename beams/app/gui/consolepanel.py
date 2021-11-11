@@ -435,11 +435,13 @@ class MainConsolePanelPresenter(PanelPresenter):
                 for f in file_objects:
                     if f.file.DATA_FORMAT == files.Format.FIT_SET_VERBOSE:
                         fits_by_ids = {}
+                        bad_files_list = []
                         for fit in f.dataset.fits.values():
                             try:
                                 run_file_list = self.__file_service.add_files([fit.meta[files.FILE_PATH_KEY]])
                             except FileNotFoundError:
-                                WarningMessageDialog.launch([f"{fit.meta[files.FILE_PATH_KEY]} does not exist!"])
+                                # WarningMessageDialog.launch([f"{fit.meta[files.FILE_PATH_KEY]} does not exist!"])
+                                bad_files_list.append(fit.meta[files.FILE_PATH_KEY])
                                 continue
                             if len(run_file_list) == 0:
                                 continue
@@ -448,6 +450,10 @@ class MainConsolePanelPresenter(PanelPresenter):
                             fit.run_id = run_file.dataset.id
                             fits_by_ids[fit.run_id] = fit
                             runs.append(run_file.dataset)
+                        if len(bad_files_list) > 0:
+                            bad_files_str = "The following files could not be found:\n\u2022 "
+                            bad_files_str += '\n\u2022 '.join(bad_files_list)
+                            WarningMessageDialog.launch([bad_files_str])
                         f.dataset.fits = fits_by_ids
 
             else:
