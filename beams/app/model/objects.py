@@ -642,10 +642,8 @@ class Time(np.ndarray):
 
 # min, max
 class FFT:
-    def __init__(self, asymmetry, time):
-        f_min = 0
-        f_max = 1
-        f_step = (f_max - f_min) / 100
+    def __init__(self, asymmetry, time, f_min, f_max):
+        f_step = (f_max - f_min) / 200
         z_min = 2 * np.pi * f_min
         z_max = 2 * np.pi * f_max
         z_step = 2 * np.pi * f_step

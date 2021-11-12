@@ -134,7 +134,7 @@ class FittingPanel(Panel):
                 self.__selected_items = None
                 self.__fit_service = services.FitService()
                 self.__parent = None
-                self.setFlags(self.flags() | QtCore.Qt.ItemFlag.ItemIsEditable)
+                self.setFlags(self.flags() | qt_constants.ItemIsEditable)
                 if isinstance(dataset, objects.FitDataset):
                     for fit_data in dataset.fits.values():
                         self.addChild(FittingPanel.SupportPanel.FitNode(fit_data))
@@ -1623,7 +1623,7 @@ class FitTabPresenter:
         config.parameters = variables
         config.titles = fit_titles
         config.set_flags(0)
-        self.__logger.info(str(config))
+        self.__logger.info(str(config).encode("utf-8"))
 
         # Fit to spec
         worker = FitWorker(config)
