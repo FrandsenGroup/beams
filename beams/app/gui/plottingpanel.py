@@ -984,7 +984,12 @@ class PlottingPanelPresenter(PanelPresenter):
 
         self._start_update(side='both')
 
-    def _bin_parameter_changed(self, settings, side, moving):
+    def _bin_parameter_changed(self, side, moving):
+        if side == 'left':
+            settings = self._view.left_settings
+        else:
+            settings = self._view.right_settings
+
         if moving:
             value = settings.get_bin_from_slider()
             settings.set_bin_input(value)
@@ -1002,7 +1007,12 @@ class PlottingPanelPresenter(PanelPresenter):
 
         self._start_update(side)
 
-    def _check_parameter_changed(self, settings):
+    def _check_parameter_changed(self, side):
+        if side == 'left':
+            settings = self._view.left_settings
+        else:
+            settings = self._view.right_settings
+
         settings.set_enabled_asymmetry_auto(not settings.is_asymmetry_auto())
         settings.set_enabled_frequency_auto(not settings.is_freq_auto())
 
