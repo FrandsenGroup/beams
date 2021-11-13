@@ -1335,12 +1335,10 @@ class FitTabPresenter:
         max_time = self._view.fit_spectrum_settings.get_max_time()
         bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
 
-        colors = {}
-        available_colors = list(self._style_service.color_options_values.values())
-
         styles = self._style_service.get_styles()
+        unavailable_colors = [styles[run.id][self._style_service.Keys.DEFAULT_COLOR] for run in runs]
+        available_colors = [c for c in self._style_service.color_options_values.values() if c not in unavailable_colors]
         colors = {run.id: styles[run.id][self._style_service.Keys.DEFAULT_COLOR] for run in runs}
-        # colors = {run.id: available_colors[i % len(available_colors)] for i, run in enumerate(runs)}
         colors[0] = '#000000'
 
         checked_run_ids = [0]
@@ -1375,7 +1373,7 @@ class FitTabPresenter:
                 min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
 
             if run_id != 0 and 'UNLINKED' in run_id:
-                color = list(self._style_service.color_options_values.values())[-i]
+                color = available_colors[-i]
             else:
                 color = colors[run_id]
 
