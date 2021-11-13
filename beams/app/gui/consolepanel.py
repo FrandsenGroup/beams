@@ -421,15 +421,15 @@ class MainConsolePanelPresenter(PanelPresenter):
 
         fit_file_ids = []
         dialog_message = 'Load fits from the following files?\n'
-        fit_files_present = False
+        unloaded_fit_files_present = False
         for f in file_objects:
             if f.file.DATA_FORMAT == files.Format.FIT_SET_VERBOSE and not f.dataset.is_loaded:
-                fit_files_present = True
+                unloaded_fit_files_present = True
                 dialog_message += f"\u2022 {f.title}\n"
                 fit_file_ids.append(f.id)
 
         runs = []
-        if fit_files_present:
+        if unloaded_fit_files_present:
             code = PermissionsMessageDialog.launch([dialog_message])
             if code == PermissionsMessageDialog.Codes.OKAY:
                 for f in file_objects:
@@ -470,7 +470,7 @@ class MainConsolePanelPresenter(PanelPresenter):
 
         if len(file_ids) > 0:
             self.__file_service.load_files(file_ids)
-            if fit_files_present:
+            if unloaded_fit_files_present:
                 if len(runs) > 0:
                     PlotFileDialog.launch([runs])
                 else:
