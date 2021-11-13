@@ -267,15 +267,15 @@ class StyleService:
         if self.get_style_by_run_id(run.id):
             return
 
-        if len(self._unused_markers.keys()) == 0:
-            self._unused_markers = self._used_markers.copy()
-        marker = list(self._unused_markers.keys())[0]
-        self._update_markers(marker, True)
+        if len(StyleService._unused_markers.keys()) == 0:
+            StyleService._unused_markers = StyleService._used_markers.copy()
+        marker = list(StyleService._unused_markers.keys())[0]
+        StyleService._update_markers(marker, True)
 
-        if len(self._unused_colors.keys()) == 0:
-            self._unused_colors = self._used_colors.copy()
-        color = list(self._unused_colors.keys())[0]
-        self._update_colors(color, True)
+        if len(StyleService._unused_colors.keys()) == 0:
+            StyleService._unused_colors = StyleService._used_colors.copy()
+        color = list(StyleService._unused_colors.keys())[0]
+        StyleService._update_colors(color, True)
 
         style = dict()
         style[StyleService.Keys.ID] = run.id
@@ -304,9 +304,9 @@ class StyleService:
         style = self.get_style_by_run_id(run_id)
         color = StyleService.color_options_values[color]
         if color in StyleService._unused_colors.keys():
-            self._update_colors(color, used=True)
+            StyleService._update_colors(color, used=True)
         if style[StyleService.Keys.DEFAULT_COLOR] in StyleService._used_colors.keys():
-            self._update_colors(style[StyleService.Keys.DEFAULT_COLOR], used=False)
+            StyleService._update_colors(style[StyleService.Keys.DEFAULT_COLOR], used=False)
         if style[StyleService.Keys.DEFAULT_COLOR] == color:
             return
 
@@ -320,10 +320,10 @@ class StyleService:
         style = self.get_style_by_run_id(run_id)
         marker = StyleService.marker_options_values[marker]
         if marker in StyleService._unused_markers.keys():
-            self._update_markers(marker=marker, used=True)
+            StyleService._update_markers(marker=marker, used=True)
 
         if style[StyleService.Keys.MARKER] in StyleService._used_markers.keys():
-            self._update_markers(marker=style[StyleService.Keys.MARKER], used=False)
+            StyleService._update_markers(marker=style[StyleService.Keys.MARKER], used=False)
         if style[StyleService.Keys.MARKER] == marker:
             return
 
@@ -374,7 +374,8 @@ class StyleService:
     def get_styles(self):
         return self.__dao.get_styles()
 
-    def _update_markers(self, marker, used):
+    @staticmethod
+    def _update_markers(marker, used):
         if used:
             if marker not in StyleService._used_markers.keys():
                 StyleService._used_markers[marker] = StyleService._marker_options[marker]
@@ -387,7 +388,8 @@ class StyleService:
                 StyleService._used_markers.pop(marker)
         return True
 
-    def _update_colors(self, color, used):
+    @staticmethod
+    def _update_colors(color, used):
         if used:
             if color not in StyleService._used_colors.keys():
                 StyleService._used_colors[color] = StyleService.color_options[color]
