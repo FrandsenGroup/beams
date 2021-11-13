@@ -1,4 +1,3 @@
-
 # Standard Library Packages
 import abc
 import os
@@ -10,6 +9,18 @@ import enum
 
 # Installed Packages
 import pandas as pd
+
+
+# File Extensions
+class Extensions:
+    SESSION = ".beams"
+    FIT_SUMMARY_VERBOSE = ".fit"
+    FIT = ".calc"
+    ASYMMETRY = ".asy"
+    HISTOGRAM = ".dat"
+    TRIUMF = '.msr'
+    PSI_BIN = '.bin'
+    PSI_MDU = '.mdu'
 
 
 # File Sources
@@ -31,6 +42,9 @@ class Format(enum.Enum):
     ASYMMETRY = 1
     BINARY = 2
     PICKLED = 3
+    FIT = 4
+    FIT_SET = 5
+    FIT_SET_VERBOSE = 6
 
 
 # File Data
@@ -53,6 +67,7 @@ GOOD_BIN_TWO_KEY = 'GoodBinTwo'
 RUN_NUMBER_KEY = 'RunNumber'
 T0_KEY = 'T0'
 CALC_HISTS_KEY = 'CalcHists'
+FILE_PATH_KEY = 'FilePath'
 
 
 # TODO Maybe we should have these files inherit from the actual File object
@@ -152,9 +167,12 @@ class TRIUMFMuonFile(ConvertibleFile):
 
     def convert(self, out_file):
         flags = ['-all']
-        if is_found(self.file_path) and check_ext(self.file_path, '.msr') and check_ext(out_file, '.dat'):
-            system_args = {'win32': ['beams\\app\\resources\\mud\\TRIUMF_WINDOWS', self.file_path, out_file],  # Windows Syntax
-                           'linux': ['./beams/app/resources/mud/TRIUMF_LINUX', self.file_path, out_file],  # Linux Syntax
+        if is_found(self.file_path) and check_ext(self.file_path, Extensions.TRIUMF) and check_ext(out_file,
+                                                                                                   Extensions.HISTOGRAM):
+            system_args = {'win32': ['beams\\app\\resources\\mud\\TRIUMF_WINDOWS', self.file_path, out_file],
+                           # Windows Syntax
+                           'linux': ['./beams/app/resources/mud/TRIUMF_LINUX', self.file_path, out_file],
+                           # Linux Syntax
                            'darwin': ['./beams/app/resources/mud/TRIUMF_MAC', self.file_path, out_file]}  # Mac Syntax
 
             if sys.platform in system_args.keys():
@@ -186,10 +204,12 @@ class PSIMuonFile(ConvertibleFile):
     DATA_TYPE = DataType.MUON
 
     def convert(self, out_file):
-        if is_found(self.file_path) and (check_ext(self.file_path, '.bin') or check_ext(self.file_path, '.mdu')) \
-                and check_ext(out_file, '.dat'):
+        if is_found(self.file_path) and (
+                check_ext(self.file_path, Extensions.PSI_BIN) or check_ext(self.file_path, Extensions.PSI_MDU)) \
+                and check_ext(out_file, Extensions.HISTOGRAM):
 
-            system_args = {'win32': ['beams\\app\\resources\\mud\\PSI_WINDOWS', self.file_path, out_file],  # Windows Syntax
+            system_args = {'win32': ['beams\\app\\resources\\mud\\PSI_WINDOWS', self.file_path, out_file],
+                           # Windows Syntax
                            'linux': ['./beams/app/resources/mud/PSI_LINUX', self.file_path, out_file],  # Linux Syntax
                            'darwin': ['./beams/app/resources/mud/PSI_MAC', self.file_path, out_file]}  # Mac Syntax
 
@@ -296,9 +316,94 @@ class MuonAsymmetryFile(ReadableFile):
         return metadata
 
 
-def file(file_path):
+class FitDatasetExpressionFile(ReadableFile):
+    SOURCE = Source.BEAMS
+    DATA_FORMAT = Format.FIT_SET_VERBOSE
+    DATA_TYPE = DataType.MUON
+    HEADER_ROWS = 1
+
+    def read_data(self):
+        with open(self.file_path, 'r') as f:
+            lines = f.readlines()
+            c_line = None
+            s_lines = []
+            e_line = None
+            for i, l in enumerate(lines):
+                if 'Specific' in l:
+                    s_lines.append(i)
+                elif 'Common' in l:
+                    c_line = i
+                elif 'Expression' in l:
+                    e_line = i
+
+            common_parameters = []
+            if c_line:
+                first_i = c_line + 2
+                last_i = e_line - 1 if len(s_lines) == 0 else s_lines[0] - 1
+                for i in range(first_i, last_i):
+                    common_parameters.append(lines[i].split())
+
+            specific_parameters = {}
+            if s_lines:
+                for n, s in enumerate(s_lines):
+                    first_i = s + 2
+                    last_i = e_line - 1 if not len(s_lines) > n + 1 else s_lines[n + 1] - 2
+                    file_i = s - 1
+                    filename = lines[file_i][:-1]
+                    parameters = []
+
+                    for i in range(first_i, last_i):
+                        parameters.append(lines[i].split())
+
+                    line = lines[s]
+                    title = line[line.find("(") + 1:-2]
+                    specific_parameters[line.split()[5]] = (title, filename, parameters)
+
+            if e_line:
+                e_line_split = lines[e_line + 2].split()
+                for i, e in enumerate(e_line_split):
+                    if '=' in e:
+                        expression = ''.join(e_line_split[i + 1:])
+                        break
+                else:
+                    raise ValueError('Expression not formatted correctly.')
+            else:
+                raise ValueError("Expression not found in file.")
+
+            return common_parameters, specific_parameters, expression
+
+    def read_meta(self):
+        return self.read_data()
+
+
+class FitFile(ReadableFile):
+    SOURCE = Source.BEAMS
+    DATA_FORMAT = Format.FIT
+    DATA_TYPE = DataType.MUON
+    HEADER_ROWS = 3
+
+    def read_data(self):
+        data = pd.read_csv(self.file_path, skiprows=self.HEADER_ROWS - 1)
+        data.columns = ['Time', 'Asymmetry', 'Calculated', 'Uncertainty']
+        return data
+
+    def read_meta(self):
+        with open(self.file_path) as f:
+            f.readline()
+            metadata_line = f.readline().rstrip('\n').rsplit('# ')[1].rsplit(',')
+
+        metadata = [pair.rsplit(':') for pair in metadata_line]
+        for pair in metadata:
+            if len(pair) < 2:
+                pair.append('n/a')
+        metadata = {pair[0]: pair[1] for pair in metadata}
+        metadata[T0_KEY] = 0
+        return metadata
+
+
+def file(file_path: str) -> File:
     """
-    Returns a File object (ReadableFile or ConvertibleFile) for a specified file path.
+    Returns a File object for a specified file path.
 
     :param file_path:
     :return File: a ReadableFile or ConvertibleFile object.
@@ -306,20 +411,26 @@ def file(file_path):
     if not is_found(file_path):
         raise FileNotFoundError(file_path)
 
-    if check_ext(file_path, '.dat') and is_beams(file_path):
+    elif check_ext(file_path, Extensions.HISTOGRAM) and is_beams(file_path):
         return MuonHistogramFile(file_path)
 
-    elif check_ext(file_path, '.asy') and is_beams(file_path):
+    elif check_ext(file_path, Extensions.ASYMMETRY) and is_beams(file_path):
         return MuonAsymmetryFile(file_path)
 
-    elif check_ext(file_path, '.msr'):
+    elif check_ext(file_path, Extensions.TRIUMF):
         return TRIUMFMuonFile(file_path)
 
-    elif check_ext(file_path, '.bin') or check_ext(file_path, '.mdu'):
+    elif check_ext(file_path, Extensions.PSI_BIN) or check_ext(file_path, Extensions.PSI_MDU):
         return PSIMuonFile(file_path)
 
-    elif check_ext(file_path, '.beams'):
+    elif check_ext(file_path, Extensions.SESSION):
         return BeamsSessionFile(file_path)
+
+    elif check_ext(file_path, Extensions.FIT) and is_beams(file_path):
+        return FitFile(file_path)
+
+    elif check_ext(file_path, Extensions.FIT_SUMMARY_VERBOSE) and is_beams(file_path):
+        return FitDatasetExpressionFile(file_path)
 
     else:
         return UnknownFile(file_path)
@@ -357,6 +468,9 @@ def is_beams(filename):
     """
     Checks if file is a BEAMS data file
 
+    This check is purely based on the fact that BEAMS is in the first line, not really worth doing anything more
+    specific.
+
     :param filename:
     :return boolean:
     """
@@ -370,6 +484,7 @@ class UnknownFileSource(Exception):
     Raised when a user once a File object for an unknown file type, or type that the program is not
     currently equipped to handle.
     """
+
     def __init__(self):
         super(UnknownFileSource, self).__init__()
 
@@ -378,5 +493,6 @@ class ConversionError(Exception):
     """
     Raised when there is an error converting a convertible file (usually caused by a subprocess error)
     """
+
     def __init__(self):
         super(ConversionError, self).__init__()

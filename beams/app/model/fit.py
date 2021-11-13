@@ -334,11 +334,17 @@ class FitEngine:
             for symbol, par in parameters.items():
                 if par.is_global:
                     par.value = mean_values[par.symbol]
-        return self._fit_global(config)
+
+        dataset = self._fit_global(config)
+        dataset.flags |= objects.FitDataset.Flags.GLOBAL_PLUS
+
+        return dataset
 
     def _fit_batch(self, config: FitConfig):
         dataset = objects.FitDataset()
-        for run_id, (time, asymmetry, uncertainty) in config.data.items():
+        dataset.flags |= objects.FitDataset.Flags.BATCH
+
+        for run_id, (time, asymmetry, uncertainty, meta) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
             function = ALPHA_CORRECTION.format(config.expression, config.expression)
 
@@ -377,14 +383,13 @@ class FitEngine:
                     config.set_outputs(o_run_id, symbol, value, 0)
 
             # 9) Fill in all values for our new fit object
-            new_fit = objects.Fit(copy.deepcopy(config.parameters[run_id]), config.expression, config.titles[run_id], run_id)
+            new_fit = objects.Fit(copy.deepcopy(config.parameters[run_id]), config.expression, config.titles[run_id], run_id, meta, asymmetry)
 
             # 10) Add fit to our dataset
             dataset.fits[run_id] = new_fit
 
         # 11) Attach fit spec options and function to dataset (mostly for debugging purposes)
         dataset.expression = config.expression
-        dataset.flags = config.flags
         return dataset
 
     def _fit_global(self, config: FitConfig):
@@ -400,7 +405,7 @@ class FitEngine:
         concatenated_asymmetry = np.array([])
         concatenated_uncertainty = np.array([])
         concatenated_time = np.array([])
-        for _, (time, asymmetry, uncertainty) in config.data.items():
+        for _, (time, asymmetry, uncertainty, _) in config.data.items():
             concatenated_asymmetry = np.concatenate((concatenated_asymmetry, asymmetry))
             concatenated_uncertainty = np.concatenate((concatenated_uncertainty, uncertainty))
             concatenated_time = np.concatenate((concatenated_time, time))
@@ -426,35 +431,40 @@ class FitEngine:
         # Assemble the Fit object, first by updating the parameters in the config with the outputs from
         #   the fit, as well as adding a FitExpression object that can be called.
         dataset = objects.FitDataset()
+        dataset.flags |= objects.FitDataset.Flags.GLOBAL
+
         values = {}
         uncertainties = {}
         for i, symbol in enumerate(config.get_adjusted_global_symbols()):
             values[symbol] = opt.x[i]
             uncertainties[symbol] = unc[i]
 
-        for run_id, _ in config.data.items():
+        for run_id, (_, asymmetry, _, meta) in config.data.items():
             for symbol, parameter in config.parameters[run_id].items():
-                if parameter.is_fixed_run or parameter.is_fixed:
-                    config.set_outputs(run_id, symbol, parameter.value, 0)
-                elif not parameter.is_global:
+                if not parameter.is_global:
                     config.set_outputs(run_id, symbol,
                                        values[symbol + _shortened_run_id(run_id)],
                                        uncertainties[symbol + _shortened_run_id(run_id)])
                 else:
                     config.set_outputs(run_id, symbol, values[symbol], uncertainties[symbol])
 
-            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id)
+            fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
+            fixed_values = config.get_values_for_run(run_id, is_fixed=True)
+            for symbol, value in zip(fixed_symbols, fixed_values):
+                config.set_outputs(run_id, symbol, value, 0)
+
+            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id, meta, asymmetry)
 
             dataset.fits[run_id] = new_fit
 
         dataset.expression = config.expression
-        dataset.flags = config.flags
 
         return dataset
 
     def _fit_non_global(self, config) -> objects.FitDataset:
         dataset = objects.FitDataset()
-        for run_id, (time, asymmetry,  uncertainty) in config.data.items():
+
+        for run_id, (time, asymmetry,  uncertainty, meta) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
             function = ALPHA_CORRECTION.format(config.expression)
 
@@ -491,14 +501,13 @@ class FitEngine:
                 config.set_outputs(run_id, symbol, value, 0)
 
             # 9) Fill in all values for our new fit object
-            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id)
+            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id, meta, asymmetry)
 
             # 10) Add fit to our dataset
             dataset.fits[run_id] = new_fit
 
         # 11) Attach fit spec options and function to dataset (mostly for debugging purposes)
         dataset.expression = config.expression
-        dataset.flags = config.flags
         return dataset
 
     def _lambdify_global(self, config: FitConfig):
@@ -679,7 +688,7 @@ def parse(s):
         pass
 
     if len(free_set.intersection(bad_char_set)) > 0:
-        raise ValueError('Bad expression') # Bad because these chars will cause sympify issues
+        raise ValueError('Bad expression')  # Bad because these chars will cause sympify issues
 
     return free_set
 

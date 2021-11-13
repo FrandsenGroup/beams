@@ -877,7 +877,7 @@ class PlottingPanelPresenter(PanelPresenter):
         self._view.left_settings.input_time_xmax.returnPressed.connect(lambda: self._start_update('left'))
         self._view.left_settings.input_time_ymin.returnPressed.connect(lambda: self._start_update('left'))
         self._view.left_settings.input_time_ymax.returnPressed.connect(lambda: self._start_update('left'))
-        self._view.left_settings.check_time_yauto.stateChanged.connect(lambda: self._check_parameter_changed('left'))
+        self._view.left_settings.check_time_yauto.stateChanged.connect(lambda: self._check_parameter_changed(self._view.left_settings))
         self._view.left_settings.input_freq_xmin.returnPressed.connect(lambda: self._start_update('left'))
         self._view.left_settings.input_freq_xmax.returnPressed.connect(lambda: self._start_update('left'))
         self._view.left_settings.check_freq_xauto.stateChanged.connect(lambda: self._check_parameter_changed('left'))
@@ -888,7 +888,7 @@ class PlottingPanelPresenter(PanelPresenter):
         self._view.right_settings.input_time_xmax.returnPressed.connect(lambda: self._start_update('right'))
         self._view.right_settings.input_time_ymin.returnPressed.connect(lambda: self._start_update('right'))
         self._view.right_settings.input_time_ymax.returnPressed.connect(lambda: self._start_update('right'))
-        self._view.right_settings.check_time_yauto.stateChanged.connect(lambda: self._check_parameter_changed('right'))
+        self._view.right_settings.check_time_yauto.stateChanged.connect(lambda: self._check_parameter_changed(self._view.right_settings))
         self._view.right_settings.input_freq_xmin.returnPressed.connect(lambda: self._start_update('right'))
         self._view.right_settings.input_freq_xmax.returnPressed.connect(lambda: self._start_update('right'))
         self._view.right_settings.check_freq_xauto.stateChanged.connect(lambda: self._check_parameter_changed('left'))
@@ -1053,7 +1053,7 @@ class PlottingPanelPresenter(PanelPresenter):
 
             time = asymmetry.time
             uncertainty = asymmetry.uncertainty
-            fit = None
+            fit = asymmetry.calculated
             style = self.__style_service.get_style_by_run_id(run.id)
             legend_values[run.id] = (style[self.__style_service.Keys.LABEL], self.__style_service.color_options_extra[
                 style[self.__style_service.Keys.DEFAULT_COLOR] if style[self.__style_service.Keys.MARKER_COLOR] == 'Default' else

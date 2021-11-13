@@ -79,6 +79,9 @@ class RunService:
     def get_runs_by_ids(self, ids):
         return self.__dao.get_runs_by_ids(ids)
 
+    def get_runs_by_numbers(self, numbers):
+        return self.__dao.get_runs_by_numbers(numbers)
+
     def get_loaded_runs(self):
         loaded_runs = []
         for run in self.__dao.get_runs():
@@ -519,7 +522,7 @@ class FileService:
     def add_files(self, paths):
         if len(paths) == 0:
             return
-
+        file_sets = []
         for path in paths:
             if self.__dao.get_files_by_path(path) is not None:
                 continue
@@ -527,19 +530,24 @@ class FileService:
             f = files.file(path)
             data_set = objects.DataBuilder.build_minimal(f)
             file_set = objects.FileDataset(f)
-
+            file_sets.append(file_set)
             if data_set is not None:
                 file_set.dataset = data_set
-                file_set.title = data_set.meta[files.TITLE_KEY]
+
+                try:
+                    file_set.title = data_set.meta[files.TITLE_KEY]
+                except AttributeError:
+                    file_set.title = os.path.split(path)[-1]
 
                 if isinstance(data_set, objects.RunDataset):
                     self.__run_service.add_dataset([data_set], suppress_signal=True)
-                else:
-                    self.__fit_service.add_dataset([data_set], suppress_signal=True)
+                elif isinstance(data_set, objects.FitDataset):
+                    self.__fit_service.add_dataset([data_set])
 
             self.__dao.add_files([file_set])
 
         self.signals.changed.emit()
+        return file_sets
 
     def load_files(self, ids):
         is_changed = False
@@ -556,14 +564,26 @@ class FileService:
             self.__fit_service.changed()
 
     def remove_files(self, checked_items):
-        run_files = self.__dao.get_files_by_ids(checked_items)
-        run_ids = []
-        for rf in run_files:
-            if rf.isLoaded:
-                run_ids.append(rf.dataset.id)
-            self.__dao.remove_files_by_id(rf.id)
+        file_datasets = self.__dao.get_files_by_ids(checked_items)
 
-        self.__run_service.remove_runs_by_ids(run_ids)
+        fit_datasets = []
+        run_datasets = []
+
+        for fd in file_datasets:
+            if fd.dataset is None:
+                pass
+            elif isinstance(fd.dataset, objects.FitDataset):
+                fit_datasets.append(fd.dataset.id)
+            elif isinstance(fd.dataset, objects.RunDataset):
+                run_datasets.append(fd.dataset.id)
+            else:
+                raise Exception("This file dataset ({}) is not recognized.".format(type(fd.dataset)))
+
+            self.__dao.remove_files_by_id(fd.id)
+
+        self.__run_service.remove_runs_by_ids(run_datasets)
+        self.__fit_service.remove_dataset(fit_datasets)
+
         self.signals.changed.emit()
 
     def save_session(self, save_path):
