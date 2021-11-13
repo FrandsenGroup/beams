@@ -4,7 +4,7 @@ from collections import OrderedDict
 from concurrent import futures
 from functools import partial
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
@@ -98,6 +98,19 @@ class FittingPanel(Panel):
                         return iterator.value().model
                     iterator += 1
 
+            def set_colors(self, colors):
+                iterator = QtWidgets.QTreeWidgetItemIterator(self)
+                while iterator.value():
+                    if isinstance(iterator.value().model, objects.Fit):
+                        run_id = iterator.value().model.run_id
+                        if run_id in colors:
+                            iterator.value().set_color(colors[run_id])
+                        else:
+                            iterator.value().set_color('#FFFFFF')
+                    iterator += 1
+
+                self.repaint()
+
         class TreeManager(PanelPresenter):
             def __init__(self, view):
                 super().__init__(view)
@@ -168,8 +181,15 @@ class FittingPanel(Panel):
             def __init__(self, fit_data):
                 super().__init__([fit_data.title])
                 self.model = fit_data
-
                 self.setFlags(self.flags() | QtCore.Qt.ItemFlag.ItemIsEditable)
+
+            def set_color(self, color):
+                pixmap = QtGui.QPixmap(100, 100)
+                pixmap.fill(QtGui.QColor(color))
+                qicon = QtGui.QIcon(pixmap)
+                qcolor = QtWidgets.QToolButton()
+                qcolor.setIcon(qicon)
+                self.setIcon(0, qicon)
 
             def get_actions(self, items):
                 actions = [
@@ -1326,6 +1346,8 @@ class FitTabPresenter:
         run_ids = self._view.get_checked_run_ids()
 
         runs = self._runs
+        checked_run_ids = [0]
+        checked_run_ids.extend(self._view.get_checked_run_ids())
 
         self._view.fit_display.start_plotting()
 
@@ -1338,11 +1360,10 @@ class FitTabPresenter:
         styles = self._style_service.get_styles()
         unavailable_colors = [styles[run.id][self._style_service.Keys.DEFAULT_COLOR] for run in runs]
         available_colors = [c for c in self._style_service.color_options_values.values() if c not in unavailable_colors]
-        colors = {run.id: styles[run.id][self._style_service.Keys.DEFAULT_COLOR] for run in runs}
+        colors = {run.id: styles[run.id][self._style_service.Keys.DEFAULT_COLOR] for run in runs if run.id in checked_run_ids}
+        self._view.support_panel.tree.set_colors(colors)
         colors[0] = '#000000'
 
-        checked_run_ids = [0]
-        checked_run_ids.extend(self._view.get_checked_run_ids())
         alphas = dict()
 
         # Plot the fit lines
@@ -1374,6 +1395,7 @@ class FitTabPresenter:
 
             if run_id != 0 and 'UNLINKED' in run_id:
                 color = available_colors[-i]
+                colors[run_id] = color
             else:
                 color = colors[run_id]
 
@@ -1438,9 +1460,12 @@ class FitTabPresenter:
                                                   fit_linestyle='none',
                                                   label=run.meta[files.TITLE_KEY])
 
+        self._update_tree_colors(colors)
         self._view.fit_display.set_asymmetry_plot_limits(max_asymmetry, min_asymmetry)
-
         self._view.fit_display.finish_plotting(False)
+
+    def _update_tree_colors(self, ids_to_colors):
+        self._view.support_panel.tree.set_colors(ids_to_colors)
 
     def _plot_fit(self):
         if not self.__update_if_table_changes:
