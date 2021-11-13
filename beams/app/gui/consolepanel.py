@@ -439,8 +439,10 @@ class MainConsolePanelPresenter(PanelPresenter):
 
                         for fit in f.dataset.fits.values():
                             try:
+                                # Try to add the file retrieved from the .fit file
                                 run_file_list = self.__file_service.add_files([fit.meta[files.FILE_PATH_KEY]])
                             except FileNotFoundError:
+                                # If the file does not exist then we still need a reference to the fit in the new dict
                                 fits_by_ids[fit.run_id] = fit
                                 bad_files_list.append(fit.meta[files.FILE_PATH_KEY])
                                 continue
@@ -448,6 +450,7 @@ class MainConsolePanelPresenter(PanelPresenter):
                             if len(run_file_list) == 0:
                                 continue
 
+                            # Link the fit to its corresponding run dataset
                             run_file = run_file_list[0]
                             file_ids.append(run_file.id)
                             fit.run_id = run_file.dataset.id
