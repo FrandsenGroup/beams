@@ -1149,7 +1149,7 @@ class PlottingPanelPresenter(PanelPresenter):
         num_bins = int((float(x_max) - float(x_min)) / (float(bin_size) / 1000))
         start_bin = int(float(x_min) / (float(bin_size) / 1000))
         fft = objects.FFT(asymmetry[start_bin:start_bin + num_bins], time[start_bin:start_bin + num_bins], f_min, f_max)
-        return fft.z, fft.fft / max(fft.fft)
+        return fft.z, np.divide(fft.fft, max(fft.fft))
 
     def _style_parameter_changed(self, key, value):
         if not self.__populating_settings:
