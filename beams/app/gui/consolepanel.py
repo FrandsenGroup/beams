@@ -424,11 +424,20 @@ class MainConsolePanelPresenter(PanelPresenter):
         fit_file_ids = []
         dialog_message = 'Load fits from the following files?\n'
         fit_files_present = False
+
         for f in file_objects:
             if f.file.DATA_FORMAT == files.Format.FIT_SET_VERBOSE:
                 fit_files_present = True
                 dialog_message += f"\u2022 {f.title}\n"
                 fit_file_ids.append(f.id)
+            elif f.file.DATA_FORMAT == files.Format.PICKLED:
+                code = PermissionsMessageDialog.launch(["Loading a saved session will remove all current session data, do you wish to continue?"])
+                if code == PermissionsMessageDialog.Codes.OKAY:
+                    try:
+                        self.__file_service.load_session(f.id)
+                        return
+                    except files.BeamsFileReadError as e:
+                        WarningMessageDialog.launch([str(e)])
 
         runs = []
         if fit_files_present:
