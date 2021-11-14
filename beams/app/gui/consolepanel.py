@@ -169,7 +169,10 @@ class MainConsolePanel(QtWidgets.QDockWidget):
             if isinstance(self.model.file, files.BeamsSessionFile):
                 code = PermissionsMessageDialog.launch(["Loading a saved session will remove all current session data, do you wish to continue?"])
                 if code == PermissionsMessageDialog.Codes.OKAY:
-                    self.__file_service.load_session(self.model.id)
+                    try:
+                        self.__file_service.load_session(self.model.id)
+                    except files.BeamsFileReadError as e:
+                        WarningMessageDialog.launch([str(e)])
 
     class FitNode(QtWidgets.QTreeWidgetItem):
         def __init__(self, fit):
@@ -476,7 +479,12 @@ class MainConsolePanelPresenter(PanelPresenter):
         """
 
         if len(file_ids) > 0:
-            self.__file_service.load_files(file_ids)
+            try:
+                self.__file_service.load_files(file_ids)
+            except files.BeamsFileReadError as e:
+                WarningMessageDialog.launch([e.message])
+                return
+
             if fit_files_present:
                 if len(runs) > 0:
                     PlotFileDialog.launch([runs])
