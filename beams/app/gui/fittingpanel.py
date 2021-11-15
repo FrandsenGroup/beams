@@ -2,13 +2,15 @@ import logging
 import re
 from collections import OrderedDict
 from concurrent import futures
+from functools import partial
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, QtGui
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
 
 from app.gui.dialogs.dialog_misc import WarningMessageDialog, LoadingDialog
+from app.gui.dialogs.dialog_write_fit import WriteFitDialog
 from app.util import qt_widgets, qt_constants
 from app.model import objects, fit, files, services
 from app.gui.gui import PanelPresenter, Panel
@@ -46,7 +48,13 @@ class FittingPanel(Panel):
                     return
 
                 item = self.itemAt(point)
-                menu = item.menu(self.selectedItems(), self)
+
+                actions = item.get_actions(self.selectedItems())
+                menu = QtWidgets.QMenu()
+
+                for action in actions:
+                    menu.addAction(action[0], partial(action[1], self.selectedItems(), self))
+
                 menu.exec_(self.mapToGlobal(point))
 
             def set_tree(self, tree):
@@ -90,6 +98,19 @@ class FittingPanel(Panel):
                         return iterator.value().model
                     iterator += 1
 
+            def set_colors(self, colors):
+                iterator = QtWidgets.QTreeWidgetItemIterator(self)
+                while iterator.value():
+                    if isinstance(iterator.value().model, objects.Fit):
+                        run_id = iterator.value().model.run_id
+                        if run_id in colors:
+                            iterator.value().set_color(colors[run_id])
+                        else:
+                            iterator.value().set_color('#FFFFFF')
+                    iterator += 1
+
+                self.repaint()
+
         class TreeManager(PanelPresenter):
             def __init__(self, view):
                 super().__init__(view)
@@ -121,7 +142,7 @@ class FittingPanel(Panel):
 
         class FitDatasetNode(QtWidgets.QTreeWidgetItem):
             def __init__(self, dataset):
-                super().__init__([dataset.id])
+                super().__init__([dataset.title])
                 self.model = dataset
                 self.__selected_items = None
                 self.__fit_service = services.FitService()
@@ -131,68 +152,87 @@ class FittingPanel(Panel):
                     for fit_data in dataset.fits.values():
                         self.addChild(FittingPanel.SupportPanel.FitNode(fit_data))
 
-            def menu(self, items, parent):
-                self.__selected_items = items
-                self.__parent = parent
-                menu = QtWidgets.QMenu()
-                menu.addAction("Rename", self._action_rename)
-                menu.addAction("Save", self._action_save)
-                menu.addAction("Remove", self._action_remove)
-                menu.addSeparator()
-                menu.addAction("Expand", self._action_expand)
-                return menu
+            def get_actions(self, items):
+                actions = [
+                    ("Rename", self._action_rename),
+                    ("Remove", self._action_remove),
+                    # ("Expand", self._action_expand)
+                ]
 
-            def _action_rename(self):
-                self.__parent.editItem(self)
+                if len(items) == 1:
+                    actions.append(("Save", self._action_save))
 
-            def _action_save(self):
-                pass
+                return actions
 
-            def _action_remove(self):
-                self.__fit_service.remove_dataset([item.model.id for item in self.__selected_items])
+            def _action_rename(self, _, parent):
+                parent.editItem(self)
 
-            def _action_expand(self):
-                for item in self.__selected_items:
+            def _action_save(self, items, parent):
+                WriteFitDialog.launch(dataset=items[0].model)
+
+            def _action_remove(self, items, _):
+                self.__fit_service.remove_dataset([item.model.id for item in items])
+
+            def _action_expand(self, items, _):
+                for item in items:
                     item.setExpanded(not self.isExpanded())
 
         class FitNode(QtWidgets.QTreeWidgetItem):
             def __init__(self, fit_data):
                 super().__init__([fit_data.title])
                 self.model = fit_data
-                self.__selected_items = None
-                self.__parent = None
-
                 self.setFlags(self.flags() | QtCore.Qt.ItemFlag.ItemIsEditable)
 
-            def menu(self, items, parent):
-                self.__selected_items = items
-                self.__parent = parent
-                menu = QtWidgets.QMenu()
-                menu.addAction("Rename", self._action_rename)
-                menu.addAction("Save", self._action_save)
-                return menu
+            def set_color(self, color):
+                pixmap = QtGui.QPixmap(100, 100)
+                pixmap.fill(QtGui.QColor(color))
+                qicon = QtGui.QIcon(pixmap)
+                qcolor = QtWidgets.QToolButton()
+                qcolor.setIcon(qicon)
+                self.setIcon(0, qicon)
 
-            def _action_rename(self):
-                self.__parent.editItem(self)
+            def get_actions(self, items):
+                actions = [
+                    ("Rename", self._action_rename)
+                ]
 
-            def _action_save(self):
-                pass
+                if len({id(item.parent()) for item in items}) == 1:
+                    actions.append(("Save", self._action_save))
+
+                return actions
+
+            def _action_rename(self, items, parent):
+                parent.editItem(self)
+
+            def _action_save(self, items, parent):
+
+                dataset = objects.FitDataset()
+                dataset.fits = {i.model.id: i.model for i in items}
+                dataset.flags = items[0].parent().model.flags
+
+                WriteFitDialog.launch(dataset=dataset)
 
         def __init__(self):
             super().__init__()
+            # TODO How to set it up?
+            #   we want to be able to save a set of fits using some meta attribute as a prefix.
+            #   just have two dialogs that come up when it is a single fit vs a set of fits.
+            #   When saving fit dataset they should have an option of four formats to save the set as
+            #   short, verbose, all to a directory with prefix, same but in a zip. Maybe we could have a
+            #   window which gives a preview.
+            # TODO We need to do a similar thing with everything else because the current write button doesn't
+            #   contextually make much sense so lets just have right-click save options for all items in the
+            #   support panels.
+
             self.tree = FittingPanel.SupportPanel.Tree()
             self.setTitleBarWidget(QtWidgets.QWidget())
             main_layout = QtWidgets.QVBoxLayout()
 
             self.new_button = qt_widgets.StyleTwoButton("New Empty Fit")
             self.reset_button = qt_widgets.StyleOneButton("Reset")
-            self.save_button = qt_widgets.StyleTwoButton("Save")
-            self.button_save_results = qt_widgets.StyleTwoButton("Save Fit")
             self.button_lookup_folder = qt_widgets.StyleTwoButton("Folder")
 
             self.new_button.setToolTip('Create a new empty fit')
-            self.save_button.setToolTip('Save fit')
-            self.button_save_results.setToolTip('Save fit to selected folder')
             self.button_lookup_folder.setToolTip('Select folder')
 
             self.input_file_name = QtWidgets.QLineEdit()
@@ -202,28 +242,11 @@ class FittingPanel(Panel):
 
             self.button_lookup_folder.setFixedWidth(60)
 
-            layout = QtWidgets.QFormLayout()
-            grid = QtWidgets.QGridLayout()
-            grid.addWidget(QtWidgets.QLabel("File Name: "), 0, 0, 1, 1)
-            grid.addWidget(self.input_file_name, 0, 1, 1, 7)
-            grid.addWidget(QtWidgets.QLabel("Save to: "), 1, 0, 1, 1)
-            grid.addWidget(self.input_folder_name, 1, 1, 1, 6)
-            grid.addWidget(self.button_lookup_folder, 1, 7, 1, 1)
-            grid.addWidget(self.button_save_results, 2, 1, 1, 5)
-            row = QtWidgets.QHBoxLayout()
-            row.addLayout(grid)
-            layout.addRow(row)
-            self.group_save_results.setLayout(layout)
-            row_save = QtWidgets.QHBoxLayout()
-            row_save.addWidget(self.group_save_results)
-
             hbox = QtWidgets.QHBoxLayout()
             hbox.addWidget(self.new_button)
-            hbox.addWidget(self.save_button)
             main_layout.addLayout(hbox)
 
             main_layout.addWidget(self.tree)
-            main_layout.addLayout(row_save)
             temp = QtWidgets.QWidget()
             temp.setLayout(main_layout)
             self.setWidget(temp)
@@ -1267,18 +1290,7 @@ class FitTabPresenter:
         self._view.parameter_table.batch_table.itemChanged.connect(self._plot_fit)
         self._view.parameter_table.output_table.itemChanged.connect(self._plot_fit)
         self._view.button_fit.released.connect(self._fit)
-        self._view.support_panel.button_save_results.released.connect(self._save_fit_results)
         self._view.support_panel.new_button.released.connect(self._new_empty_fit)
-
-    def _save_fit_results(self):
-        selected_data = self._view.support_panel.tree.get_selected_data()
-        if selected_data is None:
-            return
-
-        if isinstance(selected_data, objects.FitDataset):
-            selected_data.write("out_file_x.txt", fit.FitOptions.SAVE_2)
-        else:
-            selected_data.write("out_file_x.txt")
 
     def _function_input_changed(self):
         if not self.__update_if_table_changes:
@@ -1334,6 +1346,8 @@ class FitTabPresenter:
         run_ids = self._view.get_checked_run_ids()
 
         runs = self._runs
+        checked_run_ids = [0]
+        checked_run_ids.extend(self._view.get_checked_run_ids())
 
         self._view.fit_display.start_plotting()
 
@@ -1343,21 +1357,18 @@ class FitTabPresenter:
         max_time = self._view.fit_spectrum_settings.get_max_time()
         bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
 
-        colors = {}
-        available_colors = list(self._style_service.color_options_values.values())
-
         styles = self._style_service.get_styles()
-        colors = {run.id: styles[run.id][self._style_service.Keys.DEFAULT_COLOR] for run in runs}
-        # colors = {run.id: available_colors[i % len(available_colors)] for i, run in enumerate(runs)}
+        unavailable_colors = [styles[run.id][self._style_service.Keys.DEFAULT_COLOR] for run in runs]
+        available_colors = [c for c in self._style_service.color_options_values.values() if c not in unavailable_colors]
+        colors = {run.id: styles[run.id][self._style_service.Keys.DEFAULT_COLOR] for run in runs if run.id in checked_run_ids}
+        self._view.support_panel.tree.set_colors(colors)
         colors[0] = '#000000'
 
-        checked_run_ids = [0]
-        checked_run_ids.extend(self._view.get_checked_run_ids())
         alphas = dict()
 
         # Plot the fit lines
         for i, (run_id, parameters) in enumerate(self.__variable_groups.items()):
-            if run_id not in checked_run_ids:
+            if (run_id == 0 or 'UNLINKED' not in run_id) and run_id not in checked_run_ids:
                 continue
 
             parameters = self.__variable_groups[run_id]
@@ -1382,19 +1393,25 @@ class FitTabPresenter:
                 local_min = np.min(fit_asymmetry[start_index:end_index])
                 min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
 
+            if run_id != 0 and 'UNLINKED' in run_id:
+                color = available_colors[-i]
+                colors[run_id] = color
+            else:
+                color = colors[run_id]
+
             self._view.fit_display.plot_asymmetry(time, fit_asymmetry, None, None,
-                                                  color=colors[run_id],
+                                                  color=color,
                                                   marker='.',
                                                   linestyle='-',
                                                   fillstyle='none',
-                                                  marker_color=colors[run_id],
+                                                  marker_color=color,
                                                   marker_size=1,
-                                                  line_color=colors[run_id],
+                                                  line_color=color,
                                                   line_width=1,
-                                                  errorbar_color=colors[run_id],
+                                                  errorbar_color=color,
                                                   errorbar_style='none',
                                                   errorbar_width=1,
-                                                  fit_color=colors[run_id],
+                                                  fit_color=color,
                                                   fit_linestyle='none',
                                                   label=None)
 
@@ -1443,9 +1460,12 @@ class FitTabPresenter:
                                                   fit_linestyle='none',
                                                   label=run.meta[files.TITLE_KEY])
 
+        self._update_tree_colors(colors)
         self._view.fit_display.set_asymmetry_plot_limits(max_asymmetry, min_asymmetry)
-
         self._view.fit_display.finish_plotting(False)
+
+    def _update_tree_colors(self, ids_to_colors):
+        self._view.support_panel.tree.set_colors(ids_to_colors)
 
     def _plot_fit(self):
         if not self.__update_if_table_changes:
@@ -1592,7 +1612,7 @@ class FitTabPresenter:
 
         variables = {}
         fit_titles = {}
-        data = OrderedDict()
+        data = OrderedDict()  # Ordered dict is important.
         for run_id in run_ids:
             for run in self._runs:
                 if run.id == run_id:
@@ -1600,14 +1620,14 @@ class FitTabPresenter:
                     if run.id in self._asymmetries.keys():
                         # We have to store references to all three instead of just the asymmetry because the
                         #   new process won't pick up those references.
-                        data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id], self._asymmetries[run.id].uncertainty)
+                        data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id], self._asymmetries[run.id].uncertainty, run.meta)
                     else:
                         min_time = self._view.fit_spectrum_settings.get_min_time()
                         max_time = self._view.fit_spectrum_settings.get_max_time()
                         bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
                         raw_asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time, max_time=max_time)
                         self._asymmetries[run.id] = raw_asymmetry
-                        data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id], self._asymmetries[run.id].uncertainty)
+                        data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id], self._asymmetries[run.id].uncertainty, run.meta)
 
                     run_parameters = {}
                     for symbol, value, value_min, value_max, value_output, value_uncertainty, is_fixed, \
@@ -1667,17 +1687,18 @@ class FitTabPresenter:
                                          output_value=parameter.output, output_uncertainty=parameter.uncertainty,
                                          run_id=selected_data.run_id)
 
-            run = self._run_service.get_runs_by_ids([selected_data.run_id])[0]
+            # Fits loaded from a file may not have a run associated with them yet.
+            run = None if 'UNLINKED' in selected_data.run_id else self._run_service.get_runs_by_ids([selected_data.run_id])[0]
 
             try:
                 self._view.support_panel.input_file_name.setText('{}_fit.txt'.format(run.meta[files.RUN_NUMBER_KEY]))
-            except KeyError:
+            except (KeyError, AttributeError):
                 self._view.support_panel.input_file_name.setText('{}_fit.txt'.format(selected_data.title))
 
             self._view.support_panel.input_folder_name.setText(self._system_service.get_last_used_directory())
             self.__expression = selected_data.expression
             self.__variable_groups = {selected_data.run_id: selected_data.parameters}
-            self._view.input_fit_equation.setText(str(selected_data.expression))
+            self._view.input_fit_equation.setText(str(selected_data.string_expression))
             self._update_display()
 
         elif type(selected_data) == objects.FitDataset:
@@ -1701,7 +1722,7 @@ class FitTabPresenter:
             fits = list(selected_data.fits.values())
             self._view.support_panel.input_file_name.setText('{}_fit.txt'.format(selected_data.id))
             self._view.support_panel.input_folder_name.setText(self._system_service.get_last_used_directory())
-            self._view.input_fit_equation.setText(str(fits[0].expression))
+            self._view.input_fit_equation.setText(str(fits[0].string_expression))
             self.__expression = fits[0].expression
             self.__variable_groups = {f.run_id: f.parameters for f in fits}
             self._update_display()

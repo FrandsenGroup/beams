@@ -79,6 +79,9 @@ class RunService:
     def get_runs_by_ids(self, ids):
         return self.__dao.get_runs_by_ids(ids)
 
+    def get_runs_by_numbers(self, numbers):
+        return self.__dao.get_runs_by_numbers(numbers)
+
     def get_loaded_runs(self):
         loaded_runs = []
         for run in self.__dao.get_runs():
@@ -264,15 +267,15 @@ class StyleService:
         if self.get_style_by_run_id(run.id):
             return
 
-        if len(self._unused_markers.keys()) == 0:
-            self._unused_markers = self._used_markers.copy()
-        marker = list(self._unused_markers.keys())[0]
-        self._update_markers(marker, True)
+        if len(StyleService._unused_markers.keys()) == 0:
+            StyleService._unused_markers = StyleService._used_markers.copy()
+        marker = list(StyleService._unused_markers.keys())[0]
+        StyleService._update_markers(marker, True)
 
-        if len(self._unused_colors.keys()) == 0:
-            self._unused_colors = self._used_colors.copy()
-        color = list(self._unused_colors.keys())[0]
-        self._update_colors(color, True)
+        if len(StyleService._unused_colors.keys()) == 0:
+            StyleService._unused_colors = StyleService._used_colors.copy()
+        color = list(StyleService._unused_colors.keys())[0]
+        StyleService._update_colors(color, True)
 
         style = dict()
         style[StyleService.Keys.ID] = run.id
@@ -301,9 +304,9 @@ class StyleService:
         style = self.get_style_by_run_id(run_id)
         color = StyleService.color_options_values[color]
         if color in StyleService._unused_colors.keys():
-            self._update_colors(color, used=True)
+            StyleService._update_colors(color, used=True)
         if style[StyleService.Keys.DEFAULT_COLOR] in StyleService._used_colors.keys():
-            self._update_colors(style[StyleService.Keys.DEFAULT_COLOR], used=False)
+            StyleService._update_colors(style[StyleService.Keys.DEFAULT_COLOR], used=False)
         if style[StyleService.Keys.DEFAULT_COLOR] == color:
             return
 
@@ -317,10 +320,10 @@ class StyleService:
         style = self.get_style_by_run_id(run_id)
         marker = StyleService.marker_options_values[marker]
         if marker in StyleService._unused_markers.keys():
-            self._update_markers(marker=marker, used=True)
+            StyleService._update_markers(marker=marker, used=True)
 
         if style[StyleService.Keys.MARKER] in StyleService._used_markers.keys():
-            self._update_markers(marker=style[StyleService.Keys.MARKER], used=False)
+            StyleService._update_markers(marker=style[StyleService.Keys.MARKER], used=False)
         if style[StyleService.Keys.MARKER] == marker:
             return
 
@@ -371,7 +374,8 @@ class StyleService:
     def get_styles(self):
         return self.__dao.get_styles()
 
-    def _update_markers(self, marker, used):
+    @staticmethod
+    def _update_markers(marker, used):
         if used:
             if marker not in StyleService._used_markers.keys():
                 StyleService._used_markers[marker] = StyleService._marker_options[marker]
@@ -384,7 +388,8 @@ class StyleService:
                 StyleService._used_markers.pop(marker)
         return True
 
-    def _update_colors(self, color, used):
+    @staticmethod
+    def _update_colors(color, used):
         if used:
             if color not in StyleService._used_colors.keys():
                 StyleService._used_colors[color] = StyleService.color_options[color]
@@ -519,7 +524,7 @@ class FileService:
     def add_files(self, paths):
         if len(paths) == 0:
             return
-
+        file_sets = []
         for path in paths:
             if self.__dao.get_files_by_path(path) is not None:
                 continue
@@ -527,19 +532,24 @@ class FileService:
             f = files.file(path)
             data_set = objects.DataBuilder.build_minimal(f)
             file_set = objects.FileDataset(f)
-
+            file_sets.append(file_set)
             if data_set is not None:
                 file_set.dataset = data_set
-                file_set.title = data_set.meta[files.TITLE_KEY]
+
+                try:
+                    file_set.title = data_set.meta[files.TITLE_KEY]
+                except AttributeError:
+                    file_set.title = os.path.split(path)[-1]
 
                 if isinstance(data_set, objects.RunDataset):
                     self.__run_service.add_dataset([data_set], suppress_signal=True)
-                else:
-                    self.__fit_service.add_dataset([data_set], suppress_signal=True)
+                elif isinstance(data_set, objects.FitDataset):
+                    self.__fit_service.add_dataset([data_set])
 
             self.__dao.add_files([file_set])
 
         self.signals.changed.emit()
+        return file_sets
 
     def load_files(self, ids):
         is_changed = False
@@ -556,14 +566,26 @@ class FileService:
             self.__fit_service.changed()
 
     def remove_files(self, checked_items):
-        run_files = self.__dao.get_files_by_ids(checked_items)
-        run_ids = []
-        for rf in run_files:
-            if rf.isLoaded:
-                run_ids.append(rf.dataset.id)
-            self.__dao.remove_files_by_id(rf.id)
+        file_datasets = self.__dao.get_files_by_ids(checked_items)
 
-        self.__run_service.remove_runs_by_ids(run_ids)
+        fit_datasets = []
+        run_datasets = []
+
+        for fd in file_datasets:
+            if fd.dataset is None:
+                pass
+            elif isinstance(fd.dataset, objects.FitDataset):
+                fit_datasets.append(fd.dataset.id)
+            elif isinstance(fd.dataset, objects.RunDataset):
+                run_datasets.append(fd.dataset.id)
+            else:
+                raise Exception("This file dataset ({}) is not recognized.".format(type(fd.dataset)))
+
+            self.__dao.remove_files_by_id(fd.id)
+
+        self.__run_service.remove_runs_by_ids(run_datasets)
+        self.__fit_service.remove_dataset(fit_datasets)
+
         self.signals.changed.emit()
 
     def save_session(self, save_path):

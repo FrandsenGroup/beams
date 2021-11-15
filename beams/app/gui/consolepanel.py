@@ -1,12 +1,14 @@
-import os, logging
+import logging
+import os
 
 from PyQt5 import QtWidgets, QtCore
 
 from app.gui.dialogs.dialog_isis_download import ISISDownloadDialog
-from app.gui.dialogs.dialog_misc import AddFileDialog, PermissionsMessageDialog
+from app.gui.dialogs.dialog_misc import AddFileDialog, PermissionsMessageDialog, WarningMessageDialog
 from app.gui.dialogs.dialog_musr_download import MusrDownloadDialog
 from app.gui.dialogs.dialog_psi_download import PSIDownloadDialog
 from app.gui.dialogs.dialog_write_data import WriteDataDialog
+from app.gui.dialogs.dialog_plot_file import PlotFileDialog
 from app.gui.gui import PanelPresenter
 from app.model import files, services, objects
 from app.util import qt_widgets, qt_constants
@@ -40,7 +42,6 @@ class MainConsolePanel(QtWidgets.QDockWidget):
             self.addTopLevelItems(tree)
 
         def get_file_ids(self):
-            # Suppressing inspection because it doesn't recognize 'self' as a QTreeWidget
             # noinspection PyTypeChecker
             iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Checked)
 
@@ -92,7 +93,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
     class HeadingNode(QtWidgets.QTreeWidgetItem):
         def __init__(self, title):
-            super(MainConsolePanel.HeadingNode, self).__init__([title])
+            super(MainConsolePanel.HeadingNode, self).__init__([str(title)])
             self.__selected_items = None
 
         def menu(self, items):
@@ -144,6 +145,20 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
                 self.addChild(MainConsolePanel.MetaNode(data_object.meta))
 
+            elif isinstance(data_object, dict):
+                for run_number, parameters in data_object.items():
+                    run_node = MainConsolePanel.HeadingNode(run_number)
+                    for symbol, value in parameters.items():
+                        run_node.addChild(MainConsolePanel.KeyValueNode(symbol, value))
+                    self.addChild(run_node)
+
+            elif isinstance(data_object, objects.FitDataset):
+                self.addChild(MainConsolePanel.HeadingNode("Expression: {}".format(data_object.expression)))
+                fits_node = MainConsolePanel.HeadingNode("Fits")
+                for f in data_object.fits.values():
+                    fits_node.addChild(MainConsolePanel.FitNode(f))
+                self.addChild(fits_node)
+
         def menu(self, items):
             self.__selected_items = items
             menu = QtWidgets.QMenu()
@@ -155,6 +170,19 @@ class MainConsolePanel(QtWidgets.QDockWidget):
                 code = PermissionsMessageDialog.launch(["Loading a saved session will remove all current session data, do you wish to continue?"])
                 if code == PermissionsMessageDialog.Codes.OKAY:
                     self.__file_service.load_session(self.model.id)
+
+    class FitNode(QtWidgets.QTreeWidgetItem):
+        def __init__(self, fit):
+            super(MainConsolePanel.FitNode, self).__init__([fit.title])
+            self.__model = fit
+            self.__selected_items = None
+            for symbol, par in fit.parameters.items():
+                self.addChild(MainConsolePanel.KeyValueNode(symbol, '{}({})'.format(par.value, par.uncertainty)))
+
+        def menu(self, items):
+            self.__selected_items = items
+            menu = QtWidgets.QMenu()
+            return menu
 
     class HistogramNode(QtWidgets.QTreeWidgetItem):
         def __init__(self, histogram):
@@ -255,7 +283,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
     class KeyValueNode(QtWidgets.QTreeWidgetItem):
         def __init__(self, key, value):
-            super(MainConsolePanel.KeyValueNode, self).__init__(["{} : {}".format(key, value)])
+            super(MainConsolePanel.KeyValueNode, self).__init__(["{}: {}".format(key, value)])
             self.__model = (key, value)
             self.__selected_items = None
 
@@ -266,38 +294,6 @@ class MainConsolePanel(QtWidgets.QDockWidget):
             return menu
 
         def _action_edit(self):
-            pass
-
-    class FitNode(QtWidgets.QTreeWidgetItem):
-        def __init__(self):
-            super(MainConsolePanel.FitNode, self).__init__()
-            self.__selected_items = None
-
-        def menu(self, items):
-            self.__selected_items = items
-            menu = QtWidgets.QMenu()
-            menu.addAction("Expand")
-            menu.addSeparator()
-            menu.addAction("Load")
-            menu.addAction("Save")
-            return menu
-
-        def _set_callbacks(self):
-            pass
-
-        def _expand(self):
-            pass
-
-        def _load(self):
-            pass
-
-        def _plot(self):
-            pass
-
-        def _save(self):
-            pass
-
-        def _edit(self):
             pass
 
     class SessionNode(QtWidgets.QTreeWidgetItem):
@@ -421,12 +417,73 @@ class MainConsolePanelPresenter(PanelPresenter):
 
     def _load_file_clicked(self):
         file_ids = self._view.tree_view.get_file_ids()
+        file_objects = services.FileService().get_files(file_ids)
+        fit_file_ids = []
+        dialog_message = 'Load fits from the following files?\n'
+        fit_files_present = False
+        for f in file_objects:
+            if f.file.DATA_FORMAT == files.Format.FIT_SET_VERBOSE:
+                fit_files_present = True
+                dialog_message += f"\u2022 {f.title}\n"
+                fit_file_ids.append(f.id)
+
+        runs = []
+        if fit_files_present:
+            code = PermissionsMessageDialog.launch([dialog_message])
+            if code == PermissionsMessageDialog.Codes.OKAY:
+                for f in file_objects:
+                    if f.file.DATA_FORMAT == files.Format.FIT_SET_VERBOSE:
+
+                        fits_by_ids = {}
+                        bad_files_list = []
+
+                        for fit in f.dataset.fits.values():
+                            try:
+                                run_file_list = self.__file_service.add_files([fit.meta[files.FILE_PATH_KEY]])
+                            except FileNotFoundError:
+                                fits_by_ids[fit.run_id] = fit
+                                bad_files_list.append(fit.meta[files.FILE_PATH_KEY])
+                                continue
+                            if len(run_file_list) == 0:
+                                continue
+
+                            run_file = run_file_list[0]
+                            file_ids.append(run_file.id)
+                            fit.run_id = run_file.dataset.id
+                            fits_by_ids[fit.run_id] = fit
+                            runs.append(run_file.dataset)
+
+                        if len(bad_files_list) > 0:
+                            bad_files_str = "The following files could not be found:\n\u2022 "
+                            bad_files_str += '\n\u2022 '.join(bad_files_list)
+                            WarningMessageDialog.launch([bad_files_str])
+                        f.dataset.fits = fits_by_ids
+
+            else:
+                file_ids = [f for f in file_ids if f not in fit_file_ids]
+        """
+        Get checked files from console, check for .fit extension
+        Launch a permission dialog to load runs.
+        Based on result of dialog (they each an int).
+        
+        if yes: 
+            Get the filenames of runs we want to add (the ones in the file) (however we want to access these, whether as an attribute or reading the file again)
+            self.__file_service.add_files(filenames)
+            get those file ids and add those to the list
+             
+        otherwise: 
+            remove those ids from the list           
+        """
 
         if len(file_ids) > 0:
             self.__file_service.load_files(file_ids)
+            if fit_files_present:
+                if len(runs) > 0:
+                    PlotFileDialog.launch([runs])
+                else:
+                    WarningMessageDialog.launch(["None of the files listed in the .fit file(s) could be found."])
 
     def _convert_file_clicked(self):
-
         self.__file_service.convert_files(self._view.tree_view.get_file_ids())
 
     def _remove_file_clicked(self):
