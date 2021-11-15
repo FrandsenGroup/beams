@@ -1688,7 +1688,11 @@ class FitTabPresenter:
                                          run_id=selected_data.run_id)
 
             # Fits loaded from a file may not have a run associated with them yet.
-            run = None if 'UNLINKED' in selected_data.run_id else self._run_service.get_runs_by_ids([selected_data.run_id])[0]
+            try:
+                run = None if 'UNLINKED' in selected_data.run_id else self._run_service.get_runs_by_ids([selected_data.run_id])[0]
+            except KeyError:
+                selected_data.run_id = 'UNLINKED' + selected_data.run_id
+                run = None
 
             try:
                 self._view.support_panel.input_file_name.setText('{}_fit.txt'.format(run.meta[files.RUN_NUMBER_KEY]))
