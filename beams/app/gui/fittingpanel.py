@@ -1214,9 +1214,11 @@ class FittingPanel(Panel):
     def select_top_child_run(self, dataset_id):
         index = 0
         for i in range(self.support_panel.tree.topLevelItemCount()):
-            if self.support_panel.tree.topLevelItem(i).model.id == dataset_id:
+            if self.support_panel.tree.topLevelItem(i).model.title == dataset_id:
                 index = i
+
         run_id = self.support_panel.tree.topLevelItem(index).child(0).model.run_id
+
         for i in range(self.run_list.count()):
             item = self.run_list.item(i)
             if item.identifier == run_id:
