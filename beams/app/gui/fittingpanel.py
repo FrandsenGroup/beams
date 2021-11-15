@@ -1207,6 +1207,7 @@ class FittingPanel(Panel):
 
     def select_first_fit_from_dataset(self, dataset_id):
         for i in range(self.support_panel.tree.topLevelItemCount()):
+            print(i)
             if self.support_panel.tree.topLevelItem(i).text(0) == dataset_id:
                 self.support_panel.tree.topLevelItem(i).setExpanded(True)
                 self.support_panel.tree.topLevelItem(i).child(0).setSelected(True)
@@ -1741,9 +1742,9 @@ class FitTabPresenter:
         self._fit_service.add_dataset([dataset])
         self._update_alphas(dataset)
         self.__update_if_table_changes = False
-        self._view.select_first_fit_from_dataset(dataset.id)
+        self._view.select_first_fit_from_dataset(dataset.title)
         self.__update_if_table_changes = False
-        self._view.select_top_child_run(dataset.id)
+        self._view.select_top_child_run(dataset.title)
         self.__update_if_table_changes = True
         self._update_display()
 
