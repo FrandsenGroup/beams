@@ -1207,7 +1207,6 @@ class FittingPanel(Panel):
 
     def select_first_fit_from_dataset(self, dataset_id):
         for i in range(self.support_panel.tree.topLevelItemCount()):
-            print(i)
             if self.support_panel.tree.topLevelItem(i).text(0) == dataset_id:
                 self.support_panel.tree.topLevelItem(i).setExpanded(True)
                 self.support_panel.tree.topLevelItem(i).child(0).setSelected(True)
