@@ -9,6 +9,7 @@ from PyQt5 import QtCore, QtWidgets
 try:
     Checked = QtCore.Qt.Checked
     Unchecked = QtCore.Qt.Unchecked
+    PartiallyChecked = QtCore.Qt.PartiallyChecked
     CustomContextMenu = QtCore.Qt.CustomContextMenu
     Horizontal = QtCore.Qt.Horizontal
     ToolButtonTextBesideIcon = QtCore.Qt.ToolButtonTextBesideIcon
@@ -42,6 +43,7 @@ try:
 except AttributeError:
     Checked = QtCore.Qt.CheckState.Checked
     Unchecked = QtCore.Qt.CheckState.Unchecked
+    PartiallyChecked = QtCore.Qt.CheckState.PartiallyChecked
     CustomContextMenu = QtCore.Qt.ContextMenuPolicy.CustomContextMenu
     Horizontal = QtCore.Qt.Orientation.Horizontal
     ToolButtonTextBesideIcon = QtCore.Qt.ToolButtonStyle.ToolButtonTextBesideIcon
