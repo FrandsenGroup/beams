@@ -400,7 +400,7 @@ class Asymmetry(np.ndarray):
 
         if self.alpha == alpha:
             return Asymmetry(input_array=self, time_zero=self.time_zero, bin_size=self.bin_size,
-                             time=self.time, uncertainty=self.uncertainty, alpha=1, calculated=self.calculated)
+                             time=self.time, uncertainty=self.uncertainty, alpha=alpha, calculated=self.calculated)
 
         current_asymmetry = self
 
