@@ -914,12 +914,12 @@ class FittingPanel(Panel):
 
                 updated_states = {run_id: (symbol,
                                            # If the user kept a value as '*' then we keep the previous conflicting values
-                                           value if value != '*' and (run_id in selected_run_ids or run_id not in self.__parameter_table_states[symbol].keys()) else 1.0 if run_id not in self.__parameter_table_states[symbol].keys() else self.__parameter_table_states[symbol][run_id][1],
-                                           min_value if min_value != '*' and (run_id in selected_run_ids or run_id not in self.__parameter_table_states[symbol].keys()) else 1.0 if run_id not in self.__parameter_table_states[symbol].keys() else self.__parameter_table_states[symbol][run_id][2],
-                                           max_value if max_value != '*' and (run_id in selected_run_ids or run_id not in self.__parameter_table_states[symbol].keys()) else 1.0 if run_id not in self.__parameter_table_states[symbol].keys() else self.__parameter_table_states[symbol][run_id][3],
-                                           is_fixed if is_fixed != '*' and (run_id in selected_run_ids or run_id not in self.__parameter_table_states[symbol].keys()) else 1.0 if run_id not in self.__parameter_table_states[symbol].keys() else self.__parameter_table_states[symbol][run_id][4])
+                                           value if value != '*' and (run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else self.__parameter_table_states[symbol][run_id][1],
+                                           min_value if min_value != '*' and (run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else self.__parameter_table_states[symbol][run_id][2],
+                                           max_value if max_value != '*' and (run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else self.__parameter_table_states[symbol][run_id][3],
+                                           is_fixed if is_fixed != '*' and (run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else self.__parameter_table_states[symbol][run_id][4])
 
-                                  for run_id in all_run_ids}
+                                  for run_id, not_state_exists in zip(all_run_ids, [r not in self.__parameter_table_states[symbol].keys() for r in all_run_ids])}
 
                 if symbol not in self.__parameter_table_states.keys():
                     self.__parameter_table_states[symbol] = {}
@@ -1006,7 +1006,6 @@ class FittingPanel(Panel):
 
     def set_parameter_table_states(self, states):
         self.__update_states = False
-        print(states)
         self.clear_parameters()
 
         self.__parameter_table_states = {}
@@ -1016,6 +1015,21 @@ class FittingPanel(Panel):
             for symbol, value, minimum, maximum, is_fixed, is_global, is_run_specific in parameters:
                 if symbol not in self.__parameter_table_states.keys():
                     self.__parameter_table_states[symbol] = {}
+
+                try:
+                    value = float(value)
+                except ValueError:
+                    value = 1.0
+
+                try:
+                    minimum = float(minimum)
+                except ValueError:
+                    minimum = 1.0
+
+                try:
+                    maximum = float(maximum)
+                except ValueError:
+                    maximum = 1.0
 
                 is_globals[symbol] = is_global
                 is_run_specifics[symbol] = is_run_specific
