@@ -1214,9 +1214,11 @@ class FittingPanel(Panel):
     def select_top_child_run(self, dataset_id):
         index = 0
         for i in range(self.support_panel.tree.topLevelItemCount()):
-            if self.support_panel.tree.topLevelItem(i).model.id == dataset_id:
+            if self.support_panel.tree.topLevelItem(i).model.title == dataset_id:
                 index = i
+
         run_id = self.support_panel.tree.topLevelItem(index).child(0).model.run_id
+
         for i in range(self.run_list.count()):
             item = self.run_list.item(i)
             if item.identifier == run_id:
@@ -1688,7 +1690,11 @@ class FitTabPresenter:
                                          run_id=selected_data.run_id)
 
             # Fits loaded from a file may not have a run associated with them yet.
-            run = None if 'UNLINKED' in selected_data.run_id else self._run_service.get_runs_by_ids([selected_data.run_id])[0]
+            try:
+                run = None if 'UNLINKED' in selected_data.run_id else self._run_service.get_runs_by_ids([selected_data.run_id])[0]
+            except KeyError:
+                selected_data.run_id = 'UNLINKED' + selected_data.run_id
+                run = None
 
             try:
                 self._view.support_panel.input_file_name.setText('{}_fit.txt'.format(run.meta[files.RUN_NUMBER_KEY]))
@@ -1737,9 +1743,9 @@ class FitTabPresenter:
         self._fit_service.add_dataset([dataset])
         self._update_alphas(dataset)
         self.__update_if_table_changes = False
-        self._view.select_first_fit_from_dataset(dataset.id)
+        self._view.select_first_fit_from_dataset(dataset.title)
         self.__update_if_table_changes = False
-        self._view.select_top_child_run(dataset.id)
+        self._view.select_top_child_run(dataset.title)
         self.__update_if_table_changes = True
         self._update_display()
 
