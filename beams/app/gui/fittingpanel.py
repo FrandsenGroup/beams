@@ -1037,8 +1037,6 @@ class FittingPanel(Panel):
                 self.__parameter_table_states[symbol][run_id] = (symbol, value, minimum, maximum, is_fixed)
 
         for symbol, run_parameters in self.__parameter_table_states.items():
-            selected_run_ids = self.get_selected_run_ids()
-
             collective_states_set = {self.__parameter_table_states[symbol][run_id] for run_id in states.keys()}
 
             if len(collective_states_set) == 0:

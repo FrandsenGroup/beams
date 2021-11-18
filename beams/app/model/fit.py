@@ -430,6 +430,9 @@ class FitEngine:
 
         for run_id, (_, asymmetry, _, meta) in config.data.items():
             for symbol, parameter in config.parameters[run_id].items():
+                if parameter.is_fixed:
+                    continue
+
                 if not parameter.is_global:
                     config.set_outputs(run_id, symbol,
                                        values[symbol + _shortened_run_id(run_id)],
