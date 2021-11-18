@@ -60,8 +60,8 @@ class CollapsibleBox(QtWidgets.QWidget):
             text=title, checkable=True, checked=False
         )
 
-        text_color = '#070536' if background != '#070536' else '#ffffff'
-        self.toggle_button.setStyleSheet("QToolButton {{ border: none; color: {}; background: {}}}".format(text_color, background))
+        # text_color = '#070536' if background != '#070536' else '#ffffff'
+        # self.toggle_button.setStyleSheet("QToolButton {{ border: none; color: {}; background: {}}}".format(text_color, background))
         self.toggle_button.setToolButtonStyle(
             qt_constants.ToolButtonTextBesideIcon
         )
@@ -77,8 +77,8 @@ class CollapsibleBox(QtWidgets.QWidget):
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed
         )
         self.content_area.setFrameShape(QtWidgets.QFrame.NoFrame)
-        style = 'QScrollArea {{background: {}; color: white;}}'.format(background)
-        self.content_area.setStyleSheet(style)
+        # style = 'QScrollArea {{background: {}; color: white;}}'.format(background)
+        # self.content_area.setStyleSheet(style)
 
         add_button = StyleOneButton("+")
         lay = QtWidgets.QVBoxLayout(self)

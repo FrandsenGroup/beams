@@ -46,8 +46,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.setAutoFillBackground(True)
             self.setBackgroundRole(QtGui.QPalette.Base)
             p = self.palette()
-            p.setColor(self.backgroundRole(), QtGui.QColor('#FFFFFF'))
-            self.setPalette(p)
+
 
         def _selection_changed(self):
             if self.__index == 0:

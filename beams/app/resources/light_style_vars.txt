@@ -14,4 +14,8 @@
 @error = #db2c00
 @success = #00dba9
 
-
+@window_minus_one = #FFFFFF
+@window_zero = #F4F6F7
+@window_plus_one = #F0F1F2
+@blue_button = #54BCE8
+@text = #252525

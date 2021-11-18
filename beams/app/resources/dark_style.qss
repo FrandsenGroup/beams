@@ -1,34 +1,9 @@
-QMainWindow {
-    background-color: @window_zero;
-}
-
-QDockWidget {
-    background-color: @window_minus_one;
-}
-
-QTreeWidget {
-    background-color: @window_minus_one;
-}
-
-QListWidget {
-    background-color: @window_plus_one;
-}
-
-CollapsibleBox {
-    background-color: @window_zero;
-}
-
-QToolButton {
-    background-color: @window_zero;
-    border: none;
-}
-
-QTabBar {
-    background-color: @window_minus_one;
+QWidget {
+    background-color: #101010;
 }
 
 StyleOneButton {
-    background-color: @b_contrast;
+    background-color: #202020;
     border-style: None;
     border-radius: 4px;
     font: bold 12px;
@@ -37,24 +12,24 @@ StyleOneButton {
 }
 
 StyleOneButton:pressed {
-    background-color: #a8a8bd;
+    background-color: #565661;
 }
 
 StyleOneButton:hover:!pressed {
-    background-color: #e8e8fd;
+    background-color: #858591;
 }
 
 StyleOneButton:disabled {
-    background-color: #D2D2D2;
+    background-color: #5C5C5C;
     color: @brand_minus_two;
 }
 
 StyleTwoButton {
-    background-color: @blue_button;
+    background-color: @high_contrast;
     border-style: None;
     border-radius: 4px;
     font: bold 12px;
-    color: white;
+    color: #202020;
     min-height: 22px;
 }
 
@@ -75,7 +50,7 @@ StyleThreeButton {
     border-style: None;
     border-radius: 3px;
     font: bold 12px;
-    color: #ffffff;
+    color: #202020;
     min-height: 22px;
 }
 
@@ -92,14 +67,14 @@ StyleThreeButton:hover:pressed {
 }
 
 StyleOneMenuBar {
-    background-color: #FFFFFF;
-    color: #FFFFFF;
+    background-color: #202020;
+    color: #202020;
     border-style: None;
 }
 
 StyleOneToolButton {
-    background-color: #FFFFFF;
-    color: #FFFFFF;
+    background-color: #202020;
+    color: #202020;
     border-style: None;
 }
 
@@ -109,14 +84,14 @@ StyleOneToolButton:hover:!pressed {
 
 StyleOneDockWidget {
     background-color: @brand_zero;
-    border: 2px solid #FFFFFF;
+    border: 2px solid #202020;
     border-style: solid;
 }
 
 StyleOneListWidget {
     background-color: @brand_zero;
     border-style: None;
-    color: #c0c0c0;
+    color: #949494;
 }
 
 StyleOneLabel {
@@ -128,7 +103,7 @@ QLineEdit {
     border-width: 1px;
     border-radius: 2px;
     border-color: @low_contrast;
-    background-color: @window_minus_one;
+    background-color: white;
 }
 
 QLineEdit:disabled {
