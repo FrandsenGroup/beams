@@ -260,7 +260,7 @@ class FitConfig:
         lowers = []
         for i, run_id in enumerate(self.parameters.keys()):
             for _, parameter in self.parameters[run_id].items():
-                if parameter.is_run_specific or parameter.is_fixed:
+                if parameter.is_fixed:
                     continue
                 if (parameter.is_global and i == 0) or (not parameter.is_global):
                     lowers.append(float(parameter.lower))
@@ -271,7 +271,7 @@ class FitConfig:
         uppers = []
         for i, run_id in enumerate(self.parameters.keys()):
             for _, parameter in self.parameters[run_id].items():
-                if parameter.is_run_specific or parameter.is_fixed:
+                if parameter.is_fixed:
                     continue
                 if (parameter.is_global and i == 0) or (not parameter.is_global):
                     uppers.append(float(parameter.upper))

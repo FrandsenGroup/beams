@@ -910,15 +910,16 @@ class FittingPanel(Panel):
                 # If the parameter is run specific, we want to update the states of the table for every run currently
                 #   selected to the current state of the table.
                 selected_run_ids = self.get_selected_run_ids()
+                all_run_ids = self.get_all_run_ids()
 
                 updated_states = {run_id: (symbol,
                                            # If the user kept a value as '*' then we keep the previous conflicting values
-                                           value if value != '*' else self.__parameter_table_states[symbol][run_id][1],
-                                           min_value if min_value != '*' else self.__parameter_table_states[symbol][run_id][2],
-                                           max_value if max_value != '*' else self.__parameter_table_states[symbol][run_id][3],
-                                           is_fixed if is_fixed != '*' else self.__parameter_table_states[symbol][run_id][4])
+                                           value if value != '*' and (run_id in selected_run_ids or run_id not in self.__parameter_table_states[symbol].keys()) else 1.0 if run_id not in self.__parameter_table_states[symbol].keys() else self.__parameter_table_states[symbol][run_id][1],
+                                           min_value if min_value != '*' and (run_id in selected_run_ids or run_id not in self.__parameter_table_states[symbol].keys()) else 1.0 if run_id not in self.__parameter_table_states[symbol].keys() else self.__parameter_table_states[symbol][run_id][2],
+                                           max_value if max_value != '*' and (run_id in selected_run_ids or run_id not in self.__parameter_table_states[symbol].keys()) else 1.0 if run_id not in self.__parameter_table_states[symbol].keys() else self.__parameter_table_states[symbol][run_id][3],
+                                           is_fixed if is_fixed != '*' and (run_id in selected_run_ids or run_id not in self.__parameter_table_states[symbol].keys()) else 1.0 if run_id not in self.__parameter_table_states[symbol].keys() else self.__parameter_table_states[symbol][run_id][4])
 
-                                  for run_id in selected_run_ids}
+                                  for run_id in all_run_ids}
 
                 if symbol not in self.__parameter_table_states.keys():
                     self.__parameter_table_states[symbol] = {}
@@ -1597,7 +1598,11 @@ class FitTabPresenter:
             alphas[run_id] = parameters[fit.ALPHA].value
             time = objects.Time(input_array=None, bin_size=(max_time - min_time) * 1000 / 200, length=200,
                                 time_zero=min_time)
-            fit_asymmetry = self.__expression(time, **{symbol: par.get_value() for symbol, par in parameters.items()})
+
+            try:
+                fit_asymmetry = self.__expression(time, **{symbol: par.get_value() for symbol, par in parameters.items()})
+            except ValueError:
+                continue
 
             try:
                 if len(fit_asymmetry) == 1:
@@ -1953,15 +1958,12 @@ class FitTabPresenter:
                 # If the selected data is a set of fits, just add those fits to the list we are iterating over
                 for f in data.fits.values():
                     selected_data.append(f)
-            else:
-                # FIXME I honestly don't know why this is here
-                self._view.run_list.setEnabled(True)
-                self._view.table_parameters.setEnabled(True)
 
         # We will need to get parameters to add to table. Clear old table. Same for expression and variable groups
         self._view.set_parameter_table_states(new_table_state)
         self._view.input_fit_equation.setText(str(self.__expression))
 
+        # Set the output and uncertainties in the output table
         for symbol, out_sets in outputs.items():
             if len(out_sets) > 1:
                 self._view.set_output_uncertainty_for_symbol(symbol, '*', '*')
