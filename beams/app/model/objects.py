@@ -758,6 +758,7 @@ class FitDataset:
         self.fits = {}  # run_id : fit object
         self.flags = 0
         self.expression = None
+        self.is_loaded = False
 
     def write(self, out_file, order_by_key):
         # Writing the Summary Block
@@ -833,8 +834,6 @@ class FitDataset:
                                   + fit_parameters_string
                                   + "# Expression\n\n\t"
                                   + "A(t) = " + self.expression)
-
-
 
 
 class RunDataset:

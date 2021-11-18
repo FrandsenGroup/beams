@@ -418,35 +418,39 @@ class MainConsolePanelPresenter(PanelPresenter):
     def _load_file_clicked(self):
         file_ids = self._view.tree_view.get_file_ids()
         file_objects = services.FileService().get_files(file_ids)
+
         fit_file_ids = []
         dialog_message = 'Load fits from the following files?\n'
-        fit_files_present = False
+        unloaded_fit_files_present = False
         for f in file_objects:
-            if f.file.DATA_FORMAT == files.Format.FIT_SET_VERBOSE:
-                fit_files_present = True
+            if f.file.DATA_FORMAT == files.Format.FIT_SET_VERBOSE and not f.dataset.is_loaded:
+                unloaded_fit_files_present = True
                 dialog_message += f"\u2022 {f.title}\n"
                 fit_file_ids.append(f.id)
 
         runs = []
-        if fit_files_present:
+        if unloaded_fit_files_present:
             code = PermissionsMessageDialog.launch([dialog_message])
             if code == PermissionsMessageDialog.Codes.OKAY:
                 for f in file_objects:
-                    if f.file.DATA_FORMAT == files.Format.FIT_SET_VERBOSE:
-
+                    if f.file.DATA_FORMAT == files.Format.FIT_SET_VERBOSE and not f.dataset.is_loaded:
                         fits_by_ids = {}
                         bad_files_list = []
 
                         for fit in f.dataset.fits.values():
                             try:
+                                # Try to add the file retrieved from the .fit file
                                 run_file_list = self.__file_service.add_files([fit.meta[files.FILE_PATH_KEY]])
                             except FileNotFoundError:
+                                # If the file does not exist then we still need a reference to the fit in the new dict
                                 fits_by_ids[fit.run_id] = fit
                                 bad_files_list.append(fit.meta[files.FILE_PATH_KEY])
                                 continue
+
                             if len(run_file_list) == 0:
                                 continue
 
+                            # Link the fit to its corresponding run dataset
                             run_file = run_file_list[0]
                             file_ids.append(run_file.id)
                             fit.run_id = run_file.dataset.id
@@ -457,27 +461,16 @@ class MainConsolePanelPresenter(PanelPresenter):
                             bad_files_str = "The following files could not be found:\n\u2022 "
                             bad_files_str += '\n\u2022 '.join(bad_files_list)
                             WarningMessageDialog.launch([bad_files_str])
-                        f.dataset.fits = fits_by_ids
 
+                        f.dataset.fits = fits_by_ids
+                        f.dataset.is_loaded = True
             else:
+                # If the user doesn't want to load the .fit files then remove them from the list of files to be loaded.
                 file_ids = [f for f in file_ids if f not in fit_file_ids]
-        """
-        Get checked files from console, check for .fit extension
-        Launch a permission dialog to load runs.
-        Based on result of dialog (they each an int).
-        
-        if yes: 
-            Get the filenames of runs we want to add (the ones in the file) (however we want to access these, whether as an attribute or reading the file again)
-            self.__file_service.add_files(filenames)
-            get those file ids and add those to the list
-             
-        otherwise: 
-            remove those ids from the list           
-        """
 
         if len(file_ids) > 0:
             self.__file_service.load_files(file_ids)
-            if fit_files_present:
+            if unloaded_fit_files_present:
                 if len(runs) > 0:
                     PlotFileDialog.launch([runs])
                 else:
