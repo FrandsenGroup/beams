@@ -49,6 +49,14 @@ TRIUMF_WINDOWS_CONVERSION = str(Path('/beams/app/resources/mud/TRIUMF_WINDOWS.ex
 
 CONFIGURATION_FILE = str(Path('beams/app/resources/app.config'))
 
+DARK_MINUS_ONE = '#3C3E3F'
+DARK_ZERO = '#282B2C'
+DARK_PLUS_ONE = '#1E1E1E'
+
+LIGHT_MINUS_ONE = '#FFFFFF'
+LIGHT_ZERO = '#F4F6F7'
+LIGHT_PLUS_ONE = '#F0F1F2'
+
 if not os.path.exists(CONFIGURATION_FILE):
     with open(CONFIGURATION_FILE, 'w+') as f:
         pass

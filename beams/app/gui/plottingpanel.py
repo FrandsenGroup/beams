@@ -6,13 +6,15 @@ from PyQt5 import QtGui, QtWidgets, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
 import numpy as np
+import matplotlib.pyplot as plt
+import darkdetect
 
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
 from app.gui.dialogs.dialog_plot_file import PlotFileDialog
 from app.gui.gui import Panel, PanelPresenter
 from app.model import files, objects, services
 from app.util import qt_widgets, qt_constants
-
+from app.resources import resources
 
 class PlottingPanel(Panel, QtWidgets.QWidget):
     class SupportPanel(QtWidgets.QDockWidget):
@@ -473,13 +475,17 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
     class PlotDisplay(FigureCanvas):
         def __init__(self, settings):
+            if darkdetect.isDark():
+                plt.style.use('dark_background')
+                plt.rcParams['axes.facecolor'] = resources.DARK_ZERO
+                plt.rcParams['figure.facecolor'] = resources.DARK_PLUS_ONE
             self._draw_pending = True
             self._is_drawing = True
             self._settings = settings
 
             FigureCanvas.__init__(self, Figure())
             axes = self.figure.subplots(2, 1, gridspec_kw={'height_ratios': [2, 1]})
-            self.figure.set_facecolor("#ffffff")
+            # self.figure.set_facecolor('#00FF00')
             self.axes_time = axes[0]
             self.axes_freq = axes[1]
 
@@ -496,7 +502,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_time.xaxis.label.set_color("#c0c0c0")
             self.axes_time.tick_params(axis='x', colors='white')
             self.axes_time.tick_params(axis='y', colors='white')
-            self.axes_time.set_facecolor("#ffffff")
+            # self.axes_time.set_facecolor(resources.DARK_ZERO)
 
             self.axes_freq.spines['right'].set_visible(False)
             self.axes_freq.spines['top'].set_visible(False)
@@ -504,13 +510,13 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_freq.spines['bottom'].set_visible(False)
             self.axes_freq.tick_params(axis='x', colors='white')
             self.axes_freq.tick_params(axis='y', colors='white')
-            self.axes_freq.set_facecolor("#ffffff")
+            # self.axes_freq.set_facecolor(resources.DARK_ZERO)
 
         def set_style(self, remove_legend):
-            self.axes_time.tick_params(axis='x', colors='black')
-            self.axes_time.tick_params(axis='y', colors='black')
-            self.axes_freq.tick_params(axis='x', colors='black')
-            self.axes_freq.tick_params(axis='y', colors='black')
+            self.axes_time.tick_params(axis='x', colors='white')
+            self.axes_time.tick_params(axis='y', colors='white')
+            self.axes_freq.tick_params(axis='x', colors='white')
+            self.axes_freq.tick_params(axis='y', colors='white')
 
             title_font_size = 12
             self.axes_time.spines['right'].set_visible(False)
@@ -519,8 +525,8 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_time.spines['bottom'].set_visible(True)
             self.axes_time.set_xlabel("Time (" + chr(956) + "s)", fontsize=title_font_size)
             self.axes_time.set_ylabel("Asymmetry", fontsize=title_font_size)
-            self.axes_time.xaxis.label.set_color("#000000")
-            self.axes_time.set_facecolor("#ffffff")
+            # self.axes_time.xaxis.label.set_color("#FFFFFF")
+            # self.axes_time.set_facecolor(resources.DARK_ZERO)
 
             self.axes_freq.spines['right'].set_visible(False)
             self.axes_freq.spines['top'].set_visible(False)
@@ -529,7 +535,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_freq.set_xlabel(r'Frequency (MHz)', fontsize=title_font_size)
             self.axes_freq.set_ylabel(r'FFT$^2$', fontsize=title_font_size)
             self.axes_freq.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
-            self.axes_freq.set_facecolor("#ffffff")
+            # self.axes_freq.set_facecolor(resources.DARK_ZERO)
 
             self.figure.tight_layout()
 

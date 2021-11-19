@@ -6,12 +6,15 @@ from concurrent import futures
 from PyQt5 import QtWidgets, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 import numpy as np
+import darkdetect
 
 from app.gui.dialogs.dialog_misc import WarningMessageDialog, LoadingDialog
 from app.util import qt_widgets, qt_constants
 from app.model import objects, fit, files, services
 from app.gui.gui import PanelPresenter, Panel
+from app.resources import resources
 
 
 class FittingPanel(Panel):
@@ -237,13 +240,17 @@ class FittingPanel(Panel):
 
     class PlotDisplay(FigureCanvas):
         def __init__(self, settings):
+            if darkdetect.isDark():
+                plt.style.use('dark_background')
+                plt.rcParams['axes.facecolor'] = resources.DARK_ZERO
+                plt.rcParams['figure.facecolor'] = resources.DARK_PLUS_ONE
             self._draw_pending = True
             self._is_drawing = True
             self._settings = settings
 
             FigureCanvas.__init__(self, Figure())
             axes = self.figure.subplots(1, 1)
-            self.figure.set_facecolor("#ffffff")
+            # self.figure.set_facecolor(resources.DARK_PLUS_ONE)
             self.axes_time = axes
 
             self.set_blank()
@@ -260,7 +267,7 @@ class FittingPanel(Panel):
             self.axes_time.xaxis.label.set_color("#c0c0c0")
             self.axes_time.tick_params(axis='x', colors='white')
             self.axes_time.tick_params(axis='y', colors='white')
-            self.axes_time.set_facecolor("#ffffff")
+            # self.axes_time.set_facecolor(resources.DARK_PLUS_ONE)
 
         def set_style(self, remove_legend):
             self.axes_time.tick_params(axis='x', colors='black')
@@ -274,7 +281,7 @@ class FittingPanel(Panel):
             self.axes_time.set_xlabel("Time (" + chr(956) + "s)", fontsize=title_font_size)
             self.axes_time.set_ylabel("Asymmetry", fontsize=title_font_size)
             self.axes_time.xaxis.label.set_color("#000000")
-            self.axes_time.set_facecolor("#ffffff")
+            # self.axes_time.set_facecolor(resources.DARK_PLUS_ONE)
             self.axes_time.legend(loc='upper right')
             self.figure.tight_layout()
 

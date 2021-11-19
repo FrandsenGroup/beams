@@ -4,20 +4,26 @@ import logging
 from PyQt5 import QtWidgets, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 
 from app.gui.dialogs.dialog_misc import FileDisplayDialog, WarningMessageDialog
 from app.gui.gui import Panel, PanelPresenter
 from app.model import files, services, objects
 from app.util import qt_widgets, qt_constants
-
+from app.resources import resources
+import darkdetect
 
 class HistogramPanel(Panel):
     class HistogramDisplay(FigureCanvas):
         def __init__(self):
+            if darkdetect.isDark():
+                plt.style.use('dark_background')
+                plt.rcParams['axes.facecolor'] = resources.DARK_ZERO
+                plt.rcParams['figure.facecolor'] = resources.DARK_PLUS_ONE
             self._draw_pending = True
             self._is_drawing = True
             FigureCanvas.__init__(self, Figure())
-            self.figure.set_facecolor("#FFFFFF")
+            # self.figure.set_facecolor(resources.DARK_PLUS_ONE)
             self.canvas_axes = self.figure.add_subplot(111, label='Canvas')
 
     class HistogramToolbar(NavigationToolbar2QT):
@@ -272,7 +278,7 @@ class HistogramPanel(Panel):
         self.canvas.canvas_axes.tick_params(axis='y', colors='white')
         self.canvas.canvas_axes.set_xlabel("", fontsize=12)
         self.canvas.canvas_axes.set_ylabel("", fontsize=12)
-        self.canvas.canvas_axes.set_facecolor("#FFFFFF")
+        # self.canvas.canvas_axes.set_facecolor(resources.DARK_PLUS_ONE)
 
         self.canvas.canvas_axes.figure.canvas.draw()
 
@@ -460,7 +466,7 @@ class HistogramPanel(Panel):
             self.canvas.canvas_axes.title.set_color("#B8B8B8")
             self.canvas.canvas_axes.tick_params(axis='x', colors='white')
             self.canvas.canvas_axes.tick_params(axis='y', colors='white')
-            self.canvas.canvas_axes.set_facecolor("#FFFFFF")
+            # self.canvas.canvas_axes.set_facecolor(resources.DARK_PLUS_ONE)
             self.canvas.canvas_axes.figure.canvas.draw()
             self.label_bkgd2.setEnabled(enabled)
             self.label_bkgd1.setEnabled(enabled)
@@ -487,7 +493,7 @@ class HistogramPanel(Panel):
             self.canvas.canvas_axes.set_xlabel("Time Bin", fontsize=title_font_size)
             self.canvas.canvas_axes.set_ylabel("Counts", fontsize=title_font_size)
             self.canvas.canvas_axes.xaxis.label.set_color("#000000")
-            self.canvas.canvas_axes.set_facecolor("#FFFFFF")
+            # self.canvas.canvas_axes.set_facecolor(resources.DARK_PLUS_ONE)
             self.canvas.canvas_axes.figure.canvas.draw()
 
     def get_histogram_label(self):
