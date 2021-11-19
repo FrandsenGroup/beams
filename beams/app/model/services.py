@@ -615,7 +615,6 @@ class FileService:
 
         self.__system_dao.set_database(database)
 
-        print(self.signals.receivers(self.signals.changed), 'receivers')
         self.signals.changed.emit()
         self.__fit_service.signals.added.emit()
         self.__run_service.signals.added.emit()

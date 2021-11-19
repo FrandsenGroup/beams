@@ -54,7 +54,7 @@ ALPHA_CORRECTION = '((1-\u03B1)+((1+\u03B1)*({0})))/((1+\u03B1)+((1-\u03B1)*({0}
 
 
 class FitParameter:
-    def __init__(self, symbol, value, lower, upper, is_global, is_fixed, is_fixed_run=False, fixed_value=None, output=None, uncertainty=None):
+    def __init__(self, symbol, value, lower, upper, is_global, is_fixed, is_run_specific=False, output=None, uncertainty=None):
         self.uncertainty = uncertainty
         self.output = output
         self.upper = upper
@@ -62,35 +62,32 @@ class FitParameter:
         self.value = value
         self.symbol = symbol
         self.is_fixed = is_fixed
-        self.fixed_value = fixed_value
-        self.is_fixed_run = is_fixed_run
+        self.is_run_specific = is_run_specific
         self.is_global = is_global
 
     def __copy__(self):
-        return FitParameter(self.symbol, self.value, self.lower, self.upper, self.is_global, self.is_fixed, self.is_fixed_run, self.fixed_value, self.output, self.uncertainty)
+        return FitParameter(self.symbol, self.value, self.lower, self.upper, self.is_global, self.is_fixed, self.is_run_specific, self.output, self.uncertainty)
 
     def __eq__(self, other):
         return other.symbol == self.symbol \
-            and other.value == self.value \
-            and other.lower == self.lower \
-            and other.upper == self.upper \
-            and other.is_global == self.is_global \
-            and other.is_fixed == self.is_fixed \
-            and other.is_fixed_run == self.is_fixed_run \
-            and other.fixed_value == self.fixed_value \
-            and other.output == self.output \
-            and other.uncertainty == self.uncertainty
+               and other.value == self.value \
+               and other.lower == self.lower \
+               and other.upper == self.upper \
+               and other.is_global == self.is_global \
+               and other.is_fixed == self.is_fixed \
+               and other.is_run_specific == self.is_run_specific \
+               and other.output == self.output \
+               and other.uncertainty == self.uncertainty
 
     def __str__(self):
         return '{}={}'.format(self.symbol, self.value)
 
     def __repr__(self):
-        return 'FitParameter ({})=({},{},{},{},{},{},{})'.format(self.symbol, self.value, self.lower, self.upper,
-                                                                 self.is_global, self.is_fixed, self.is_fixed_run,
-                                                                 self.fixed_value)
+        return 'FitParameter ({})=({},{},{},{},{},{})'.format(self.symbol, self.value, self.lower, self.upper,
+                                                              self.is_global, self.is_fixed, self.is_run_specific)
 
     def get_value(self):
-        return float(self.value if not self.is_fixed_run else self.fixed_value)
+        return float(self.value)
 
 
 class FitExpression:
@@ -199,7 +196,7 @@ class FitConfig:
     def get_symbols_for_run(self, run_id, is_fixed=None, is_global=None):
         symbols = []
         for symbol, parameter in self.parameters[run_id].items():
-            if (is_fixed is None or (is_fixed == (parameter.is_fixed or parameter.is_fixed_run))) and \
+            if (is_fixed is None or (is_fixed == parameter.is_fixed)) and \
                     (is_global is None or (is_global == parameter.is_global)):
                 symbols.append(symbol)
 
@@ -209,7 +206,7 @@ class FitConfig:
         values = []
 
         for _, parameter in self.parameters[run_id].items():
-            if (is_fixed is None or (is_fixed == (parameter.is_fixed or parameter.is_fixed_run))) and \
+            if (is_fixed is None or (is_fixed == parameter.is_fixed)) and \
                     (is_global is None or (is_global == parameter.is_global)):
                 values.append(parameter.get_value())
 
@@ -219,13 +216,9 @@ class FitConfig:
         values = []
 
         for _, parameter in self.parameters[run_id].items():
-            if (is_fixed is None or (is_fixed == (parameter.is_fixed or parameter.is_fixed_run))) and \
+            if (is_fixed is None or (is_fixed == parameter.is_fixed)) and \
                     (is_global is None or (is_global == parameter.is_global)):
-
-                if parameter.is_fixed or parameter.is_fixed_run:
-                    values.append(parameter.get_value() - 0.0000001)
-                else:
-                    values.append(parameter.lower)
+                values.append(parameter.lower)
 
         return np.array(values, dtype=float)
 
@@ -233,13 +226,9 @@ class FitConfig:
         values = []
 
         for _, parameter in self.parameters[run_id].items():
-            if (is_fixed is None or (is_fixed == (parameter.is_fixed or parameter.is_fixed_run))) and \
+            if (is_fixed is None or (is_fixed == parameter.is_fixed)) and \
                     (is_global is None or (is_global == parameter.is_global)):
-
-                if parameter.is_fixed or parameter.is_fixed_run:
-                    values.append(parameter.get_value() + 0.0000001)
-                else:
-                    values.append(parameter.upper)
+                values.append(parameter.upper)
 
         return np.array(values, dtype=float)
 
@@ -247,7 +236,7 @@ class FitConfig:
         symbols = []
         for i, run_id in enumerate(self.parameters.keys()):
             for symbol, parameter in self.parameters[run_id].items():
-                if parameter.is_fixed_run or parameter.is_fixed:
+                if parameter.is_fixed:
                     continue
                 if parameter.is_global and i == 0:
                     symbols.append(symbol)
@@ -260,7 +249,7 @@ class FitConfig:
         values = []
         for i, run_id in enumerate(self.parameters.keys()):
             for _, parameter in self.parameters[run_id].items():
-                if parameter.is_fixed_run or parameter.is_fixed:
+                if parameter.is_fixed:
                     continue
                 if (parameter.is_global and i == 0) or (not parameter.is_global):
                     values.append(float(parameter.get_value()))
@@ -271,7 +260,7 @@ class FitConfig:
         lowers = []
         for i, run_id in enumerate(self.parameters.keys()):
             for _, parameter in self.parameters[run_id].items():
-                if parameter.is_fixed_run or parameter.is_fixed:
+                if parameter.is_fixed:
                     continue
                 if (parameter.is_global and i == 0) or (not parameter.is_global):
                     lowers.append(float(parameter.lower))
@@ -282,7 +271,7 @@ class FitConfig:
         uppers = []
         for i, run_id in enumerate(self.parameters.keys()):
             for _, parameter in self.parameters[run_id].items():
-                if parameter.is_fixed_run or parameter.is_fixed:
+                if parameter.is_fixed:
                     continue
                 if (parameter.is_global and i == 0) or (not parameter.is_global):
                     uppers.append(float(parameter.upper))
@@ -441,6 +430,9 @@ class FitEngine:
 
         for run_id, (_, asymmetry, _, meta) in config.data.items():
             for symbol, parameter in config.parameters[run_id].items():
+                if parameter.is_fixed:
+                    continue
+
                 if not parameter.is_global:
                     config.set_outputs(run_id, symbol,
                                        values[symbol + _shortened_run_id(run_id)],
