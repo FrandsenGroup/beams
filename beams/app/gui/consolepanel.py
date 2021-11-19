@@ -169,7 +169,10 @@ class MainConsolePanel(QtWidgets.QDockWidget):
             if isinstance(self.model.file, files.BeamsSessionFile):
                 code = PermissionsMessageDialog.launch(["Loading a saved session will remove all current session data, do you wish to continue?"])
                 if code == PermissionsMessageDialog.Codes.OKAY:
-                    self.__file_service.load_session(self.model.id)
+                    try:
+                        self.__file_service.load_session(self.model.id)
+                    except files.BeamsFileReadError as e:
+                        WarningMessageDialog.launch([str(e)])
 
     class FitNode(QtWidgets.QTreeWidgetItem):
         def __init__(self, fit):
@@ -421,12 +424,21 @@ class MainConsolePanelPresenter(PanelPresenter):
 
         fit_file_ids = []
         dialog_message = 'Load fits from the following files?\n'
+        
         unloaded_fit_files_present = False
         for f in file_objects:
             if f.file.DATA_FORMAT == files.Format.FIT_SET_VERBOSE and not f.dataset.is_loaded:
                 unloaded_fit_files_present = True
                 dialog_message += f"\u2022 {f.title}\n"
                 fit_file_ids.append(f.id)
+            elif f.file.DATA_FORMAT == files.Format.PICKLED:
+                code = PermissionsMessageDialog.launch(["Loading a saved session will remove all current session data, do you wish to continue?"])
+                if code == PermissionsMessageDialog.Codes.OKAY:
+                    try:
+                        self.__file_service.load_session(f.id)
+                        return
+                    except files.BeamsFileReadError as e:
+                        WarningMessageDialog.launch([str(e)])
 
         runs = []
         if unloaded_fit_files_present:
@@ -469,7 +481,12 @@ class MainConsolePanelPresenter(PanelPresenter):
                 file_ids = [f for f in file_ids if f not in fit_file_ids]
 
         if len(file_ids) > 0:
-            self.__file_service.load_files(file_ids)
+            try:
+                self.__file_service.load_files(file_ids)
+            except files.BeamsFileReadError as e:
+                WarningMessageDialog.launch([e.message])
+                return
+
             if unloaded_fit_files_present:
                 if len(runs) > 0:
                     PlotFileDialog.launch([runs])
