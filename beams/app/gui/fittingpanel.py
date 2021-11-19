@@ -17,7 +17,6 @@ from app.gui.gui import PanelPresenter, Panel
 
 
 class FittingPanel(Panel):
-    # __NAME_COLUMN = 0
     __VALUE_COLUMN = 0
     __LOWER_COLUMN = 1
     __UPPER_COLUMN = 2
@@ -366,10 +365,6 @@ class FittingPanel(Panel):
     class PlotControl(QtWidgets.QWidget):
         def __init__(self):
             QtWidgets.QWidget.__init__(self)
-            # self.setTitleBarWidget(QtWidgets.QWidget())
-
-            # self._full_widget = QtWidgets.QWidget()
-
             self._label_slider_bin = QtWidgets.QLabel('')
             self._label_input_bin = QtWidgets.QLabel('Time Bins (ns)')
 
@@ -396,8 +391,6 @@ class FittingPanel(Panel):
             self._set_widget_tooltips()
             self._set_widget_dimensions()
             self._set_widget_layout()
-
-            # self.setWidget(self._full_widget)
 
         def _set_widget_attributes(self):
             self.check_time_yauto.setChecked(True)
@@ -571,8 +564,6 @@ class FittingPanel(Panel):
 
     def __init__(self):
         super(FittingPanel, self).__init__()
-        self.__parameter_table_states = {}
-        self.__update_states = True
         self.__logger = logging.getLogger('QtFitting')
 
         self.support_panel = FittingPanel.SupportPanel()
@@ -646,12 +637,6 @@ class FittingPanel(Panel):
         self._line_edit_style = self.input_fit_equation.styleSheet()
 
     def _set_widget_attributes(self):
-        self.parameter_table.config_table.itemChanged.connect(self._update_parameter_table_states)
-        self.run_list.itemChanged.connect(self._update_parameter_table_states)
-        self.run_list.itemSelectionChanged.connect(self._update_parameter_table)
-        self.check_batch_fit.stateChanged.connect(self._update_batch_options)
-        self.check_global_plus.stateChanged.connect(self._update_batch_options)
-
         self.run_list.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
 
         self.option_preset_fit_equations.addItems(list(fit.EQUATION_DICTIONARY.keys()))
@@ -800,27 +785,6 @@ class FittingPanel(Panel):
 
         self.setLayout(main_layout)
 
-    def _update_batch_table(self):
-        for j in range(self.parameter_table.batch_table.rowCount()):
-            item_run_specific = self.parameter_table.batch_table.cellWidget(j, self.parameter_table.FIXED_RUN_COLUMN)
-            item_global = self.parameter_table.batch_table.cellWidget(j, self.parameter_table.GLOBAL_COLUMN)
-
-            if item_run_specific is None or item_global is None:
-                continue
-
-            is_global = item_global.findChild(QtWidgets.QCheckBox).checkState() == qt_constants.Checked
-            is_run_specific = item_run_specific.findChild(QtWidgets.QCheckBox).checkState() == qt_constants.Checked
-
-            item_run_specific.findChild(QtWidgets.QCheckBox).setEnabled(not is_global)
-            item_global.findChild(QtWidgets.QCheckBox).setEnabled(not is_run_specific)
-
-            if not is_run_specific:
-                row_values = self._get_row(j)
-                if row_values is None:
-                    continue
-                for run_id in self.__parameter_table_states[row_values[0]].keys():
-                    self.__parameter_table_states[row_values[0]][run_id] = row_values
-
     def _get_row(self, j):
         item_symbol = self.parameter_table.config_table.verticalHeaderItem(j)
         if item_symbol is None:
@@ -880,190 +844,6 @@ class FittingPanel(Panel):
 
         return symbol, value, min_value, max_value, is_fixed
 
-    def _update_parameter_table_states(self):
-        """
-        This method is called when the content of the config table is changed.
-        """
-
-        if not self.__update_states:
-            return
-
-        # We are creating a dictionary in this loop to keep track of the table states (if the user wants a run specific
-        #   parameter this means we need to keep track of the specified values as he clicks between runs).
-
-        # State dictionary looks like: {symbol : {run_id : (symbol, value, min, max, fixed)}} so you can think of it
-        #   like we keep the state of a row in the config table for each run.
-        for j in range(self.parameter_table.config_table.rowCount()):  # Iterate over all symbols (rows)
-            row_values = self._get_row(j)
-            if row_values is None:
-                continue
-            symbol, value, min_value, max_value, is_fixed = row_values
-
-            # Get the boolean indicating whether the parameter is run specific
-            item_run_specific = self.parameter_table.batch_table.cellWidget(j, self.parameter_table.FIXED_RUN_COLUMN)
-            if item_run_specific is None:
-                continue
-            else:
-                is_run_specific = item_run_specific.findChild(QtWidgets.QCheckBox).checkState() == qt_constants.Checked
-
-            if is_run_specific:
-                # If the parameter is run specific, we want to update the states of the table for every run currently
-                #   selected to the current state of the table.
-                selected_run_ids = self.get_selected_run_ids()
-                all_run_ids = self.get_all_run_ids()
-
-                updated_states = {run_id: (symbol,
-                                           # If the user kept a value as '*' then we keep the previous conflicting values
-                                           value if value != '*' and (run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else self.__parameter_table_states[symbol][run_id][1],
-                                           min_value if min_value != '*' and (run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else self.__parameter_table_states[symbol][run_id][2],
-                                           max_value if max_value != '*' and (run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else self.__parameter_table_states[symbol][run_id][3],
-                                           is_fixed if is_fixed != '*' and (run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else self.__parameter_table_states[symbol][run_id][4])
-
-                                  for run_id, not_state_exists in zip(all_run_ids, [r not in self.__parameter_table_states[symbol].keys() for r in all_run_ids])}
-
-                if symbol not in self.__parameter_table_states.keys():
-                    self.__parameter_table_states[symbol] = {}
-
-                self.__parameter_table_states[symbol].update(updated_states)
-            else:
-                # Otherwise, we will want to set the state of all runs to the current state of the table.
-                self.__parameter_table_states[symbol] = {run_id: (symbol, value, min_value, max_value, is_fixed)
-                                                         for run_id in self.get_all_run_ids()}
-
-    def _update_parameter_table(self):
-        """
-        This method is called when the run selection of the user is changed.
-        """
-
-        # Don't want to update the states needlessly since we are the ones updating the table (from the state info)
-        self.__update_states = False
-
-        selected_run_ids = self.get_selected_run_ids()
-        for j in range(self.parameter_table.config_table.rowCount()):  # Iterate over every symbol in table
-            symbol = self.parameter_table.config_table.verticalHeaderItem(j).text()
-
-            # We use a set simply so we know if we are dealing with 0, 1 or multiple conflicting states.
-            collective_states_set = {self.__parameter_table_states[symbol][run_id] for run_id in selected_run_ids}
-
-            if len(collective_states_set) == 0:
-                continue  # not sure we can even get here
-
-            elif len(collective_states_set) == 1:
-                # If the user has one run selected (or multiple with the same state), then simply populate the table
-                #   with the state for that run.
-                state = collective_states_set.pop()
-
-                item_value = QtWidgets.QTableWidgetItem()
-                item_value.setText(str(state[1]))
-
-                item_min = QtWidgets.QTableWidgetItem()
-                item_min.setText(str(state[2]))
-
-                item_max = QtWidgets.QTableWidgetItem()
-                item_max.setText(str(state[3]))
-
-                item_fixed = self._create_check_box_for_table(state[4], self._update_parameter_table_states)
-            else:
-                # If the user has multiple runs selected with conflicting states then we will check which parts of the
-                #   the state conflict and put '*''s into those cells.
-                value_set = set([s[1] for s in collective_states_set])
-                min_set = set([s[2] for s in collective_states_set])
-                max_set = set([s[3] for s in collective_states_set])
-                fixed_set = set([s[4] for s in collective_states_set])
-
-                item_value = QtWidgets.QTableWidgetItem()
-                if len(value_set) == 1:
-                    item_value.setText(str(value_set.pop()))
-                else:
-                    item_value.setText('*')
-
-                item_min = QtWidgets.QTableWidgetItem()
-                if len(min_set) == 1:
-                    item_min.setText(str(min_set.pop()))
-                else:
-                    item_min.setText('*')
-
-                item_max = QtWidgets.QTableWidgetItem()
-                if len(max_set) == 1:
-                    item_max.setText(str(max_set.pop()))
-                else:
-                    item_max.setText('*')
-
-                if len(fixed_set) == 1:
-                    item_fixed = self._create_check_box_for_table(checked=fixed_set.pop(),
-                                                                  connect=self._update_parameter_table_states)
-                else:
-                    # Puts a partial checkmark in the box since we have both fixed and unfixed selected.
-                    item_fixed = self._create_check_box_for_table(connect=self._update_parameter_table_states,
-                                                                  partial=True)
-
-            self.parameter_table.config_table.setItem(j, self.parameter_table.VALUE_COLUMN, item_value)
-            self.parameter_table.config_table.setItem(j, self.parameter_table.MIN_COLUMN, item_min)
-            self.parameter_table.config_table.setItem(j, self.parameter_table.MAX_COLUMN, item_max)
-            self.parameter_table.config_table.setCellWidget(j, self.ParameterTable.FIXED_COLUMN, item_fixed)
-
-        self.__update_states = True
-
-    def set_parameter_table_states(self, states):
-        self.__update_states = False
-        self.clear_parameters()
-
-        self.__parameter_table_states = {}
-        is_globals = {}
-        is_run_specifics = {}
-        for run_id, parameters in states.items():
-            for symbol, value, minimum, maximum, is_fixed, is_global, is_run_specific in parameters:
-                if symbol not in self.__parameter_table_states.keys():
-                    self.__parameter_table_states[symbol] = {}
-
-                try:
-                    value = float(value)
-                except ValueError:
-                    value = 1.0
-
-                try:
-                    minimum = float(minimum)
-                except ValueError:
-                    minimum = 1.0
-
-                try:
-                    maximum = float(maximum)
-                except ValueError:
-                    maximum = 1.0
-
-                is_globals[symbol] = is_global
-                is_run_specifics[symbol] = is_run_specific
-
-                self.__parameter_table_states[symbol][run_id] = (symbol, value, minimum, maximum, is_fixed)
-
-        for symbol, run_parameters in self.__parameter_table_states.items():
-            collective_states_set = {self.__parameter_table_states[symbol][run_id] for run_id in states.keys()}
-
-            if len(collective_states_set) == 0:
-                print(collective_states_set)
-                continue
-            elif len(collective_states_set) == 1:
-                _, value, minimum, maximum, is_fixed = collective_states_set.pop()
-            else:
-                value_set = set([s[1] for s in collective_states_set])
-                min_set = set([s[2] for s in collective_states_set])
-                max_set = set([s[3] for s in collective_states_set])
-                fixed_set = set([s[4] for s in collective_states_set])
-
-                value = '*' if len(value_set) > 1 else value_set.pop()
-                minimum = '*' if len(min_set) > 1 else min_set.pop()
-                maximum = '*' if len(max_set) > 1 else max_set.pop()
-                is_fixed = '*' if len(fixed_set) > 1 else fixed_set.pop()
-
-            self.add_parameter(symbol, value, minimum, maximum, is_fixed, is_globals[symbol], is_run_specifics[symbol])
-
-        self.__update_states = True
-
-    def _update_batch_options(self):
-        self.label_ordering.setEnabled(self.check_batch_fit.isChecked() or self.check_global_plus.isChecked())
-        self.option_run_ordering.setEnabled(self.check_batch_fit.isChecked() or self.check_global_plus.isChecked())
-        self.option_ascending.setEnabled(self.check_batch_fit.isChecked() or self.check_global_plus.isChecked())
-
     def createSupportPanel(self) -> QtWidgets.QDockWidget:
         return self.support_panel
 
@@ -1122,11 +902,11 @@ class FittingPanel(Panel):
 
                 if config_fixed is not None:
                     if config_fixed == '*':
-                        item_fixed = self._create_check_box_for_table(connect=self._update_parameter_table_states,
+                        item_fixed = self._create_check_box_for_table(connect=self._presenter._update_parameter_table_states,
                                                                       partial=True)
                     else:
                         item_fixed = self._create_check_box_for_table(checked=config_fixed,
-                                                                      connect=self._update_parameter_table_states)
+                                                                      connect=self._presenter._update_parameter_table_states)
 
                     self.parameter_table.config_table.setCellWidget(i, self.ParameterTable.FIXED_COLUMN, item_fixed)
 
@@ -1166,15 +946,15 @@ class FittingPanel(Panel):
 
             if config_fixed is not None:
                 if config_fixed == '*':
-                    item_fixed = self._create_check_box_for_table(connect=self._update_parameter_table_states,
+                    item_fixed = self._create_check_box_for_table(connect=self._presenter._update_parameter_table_states,
                                                                   partial=True)
                 else:
                     item_fixed = self._create_check_box_for_table(checked=config_fixed,
-                                                                  connect=self._update_parameter_table_states)
+                                                                  connect=self._presenter._update_parameter_table_states)
 
                 self.parameter_table.config_table.setCellWidget(n, self.ParameterTable.FIXED_COLUMN, item_fixed)
             else:
-                item_fixed = self._create_check_box_for_table(False, self._update_parameter_table_states)
+                item_fixed = self._create_check_box_for_table(False, self._presenter._update_parameter_table_states)
                 self.parameter_table.config_table.setCellWidget(n, self.ParameterTable.FIXED_COLUMN, item_fixed)
 
         n = self.parameter_table.batch_table.verticalHeader().count()
@@ -1190,11 +970,11 @@ class FittingPanel(Panel):
                 in_table = True
 
                 if batch_global is not None:
-                    item_global = self._create_check_box_for_table(batch_global, connect=self._update_batch_table)
+                    item_global = self._create_check_box_for_table(batch_global, connect=self._presenter._update_batch_table)
                     self.parameter_table.batch_table.setCellWidget(i, self.ParameterTable.GLOBAL_COLUMN, item_global)
 
                 if batch_run_dependent is not None:
-                    item_fixed = self._create_check_box_for_table(batch_run_dependent, connect=self._update_batch_table)
+                    item_fixed = self._create_check_box_for_table(batch_run_dependent, connect=self._presenter._update_batch_table)
                     self.parameter_table.batch_table.setCellWidget(i, self.ParameterTable.FIXED_RUN_COLUMN, item_fixed)
 
         if not in_table:
@@ -1205,17 +985,17 @@ class FittingPanel(Panel):
             self.parameter_table.batch_table.setVerticalHeaderItem(n, item_symbol)
 
             if batch_global is not None:
-                item_global = self._create_check_box_for_table(batch_global, connect=self._update_batch_table)
+                item_global = self._create_check_box_for_table(batch_global, connect=self._presenter._update_batch_table)
                 self.parameter_table.batch_table.setCellWidget(n, self.ParameterTable.GLOBAL_COLUMN, item_global)
             else:
-                item_global = self._create_check_box_for_table(False, connect=self._update_batch_table)
+                item_global = self._create_check_box_for_table(False, connect=self._presenter._update_batch_table)
                 self.parameter_table.batch_table.setCellWidget(n, self.ParameterTable.GLOBAL_COLUMN, item_global)
 
             if batch_run_dependent is not None:
-                item_fixed = self._create_check_box_for_table(batch_run_dependent, connect=self._update_batch_table)
+                item_fixed = self._create_check_box_for_table(batch_run_dependent, connect=self._presenter._update_batch_table)
                 self.parameter_table.batch_table.setCellWidget(n, self.ParameterTable.FIXED_RUN_COLUMN, item_fixed)
             else:
-                item_fixed = self._create_check_box_for_table(False, connect=self._update_batch_table)
+                item_fixed = self._create_check_box_for_table(False, connect=self._presenter._update_batch_table)
                 self.parameter_table.batch_table.setCellWidget(n, self.ParameterTable.FIXED_RUN_COLUMN, item_fixed)
 
         n = self.parameter_table.output_table.verticalHeader().count()
@@ -1257,7 +1037,7 @@ class FittingPanel(Panel):
                 self.parameter_table.output_table.setItem(n, self.ParameterTable.UNCERTAINTY_COLUMN, item_value)
 
         self.__update_states = True
-        self._update_parameter_table_states()
+        self._presenter._update_parameter_table_states()
 
     def clear_parameters(self, symbols=None):
         n = self.parameter_table.config_table.verticalHeader().count()
@@ -1354,49 +1134,6 @@ class FittingPanel(Panel):
             ids.append(item.identifier)
         return ids
 
-    def get_parameters(self):
-        default = []
-        is_globals = {}
-        is_run_specific = {}
-        for i in range(self.parameter_table.config_table.rowCount()):
-            item_symbol = self.parameter_table.config_table.verticalHeaderItem(i)
-            item_value = self.parameter_table.config_table.item(i, self.parameter_table.VALUE_COLUMN)
-            item_min = self.parameter_table.config_table.item(i, self.parameter_table.MIN_COLUMN)
-            item_max = self.parameter_table.config_table.item(i, self.parameter_table.MAX_COLUMN)
-            item_fixed = self.parameter_table.config_table.cellWidget(i, self.parameter_table.FIXED_COLUMN)
-            item_global = self.parameter_table.batch_table.cellWidget(i, self.parameter_table.GLOBAL_COLUMN)
-
-            if item_symbol is None:
-                continue
-
-            symbol = item_symbol.text()
-            value = 1 if item_value is None or item_value.text() == '' else float(item_value.text())
-            value_min = -np.inf if item_min is None or item_min.text() == '' else float(item_min.text())
-            value_max = np.inf if item_max is None or item_max.text() == '' else float(item_max.text())
-            is_fixed = item_fixed is not None and item_fixed.findChild(QtWidgets.QCheckBox).checkState() > 0
-            is_global = item_global is not None and item_global.findChild(QtWidgets.QCheckBox).checkState() > 0
-
-            default.append((symbol, value, value_min, value_max, is_fixed, is_global, False))
-
-            item_run_specific = self.parameter_table.batch_table.cellWidget(i, self.parameter_table.FIXED_RUN_COLUMN)
-
-            if item_symbol is None:
-                continue
-
-            is_globals[symbol] = item_global is not None and item_global.findChild(QtWidgets.QCheckBox).checkState() > 0
-            is_run_specific[symbol] = item_run_specific is not None and item_run_specific.findChild(
-                QtWidgets.QCheckBox).checkState() > 0
-
-        run_ids = self.get_all_run_ids()
-        final_parameters = {run_id: [] for run_id in run_ids}
-
-        for symbol, states in self.__parameter_table_states.items():
-            for run_id in run_ids:
-                final_parameters[run_id].append(self.__parameter_table_states[symbol][run_id] + (is_globals[symbol], is_run_specific[symbol],))
-
-        final_parameters['default'] = default
-        return final_parameters
-
     def get_batch_ordering(self):
         return self.option_run_ordering.currentText(), self.option_ascending.currentText() == 'Ascending'
 
@@ -1477,6 +1214,9 @@ class FittingPanel(Panel):
 
 class FitTabPresenter:
     def __init__(self, view: FittingPanel):
+        self.__parameter_table_states = {}
+        self.__update_states = True
+
         self._view = view
         self._run_service = services.RunService()
         self._fit_service = services.FitService()
@@ -1503,6 +1243,12 @@ class FitTabPresenter:
         self.__logger = logging.getLogger('FittingPanelPresenter')
 
     def _set_callbacks(self):
+        self._view.parameter_table.config_table.itemChanged.connect(self._update_parameter_table_states)
+        self._view.run_list.itemChanged.connect(self._update_parameter_table_states)
+        self._view.run_list.itemSelectionChanged.connect(self._update_parameter_table)
+        self._view.check_batch_fit.stateChanged.connect(self._update_batch_options)
+        self._view.check_global_plus.stateChanged.connect(self._update_batch_options)
+
         self._view.support_panel.tree.itemSelectionChanged.connect(self._selection_changed)
         self._view.input_fit_equation.textChanged.connect(self._function_input_changed)
         self._view.button_insert_preset_equation.released.connect(self._view.copy_loaded_function_to_cursor)
@@ -1726,7 +1472,7 @@ class FitTabPresenter:
 
     def _get_expression_and_values(self, get_default=False):
         try:
-            parameters = self._view.get_parameters()
+            parameters = self.get_parameters()
             expression = self._view.get_expression()
         except ValueError:
             # self._view.highlight_input_red(self._view.parameter_table, True)
@@ -1833,7 +1579,7 @@ class FitTabPresenter:
 
         # Check user input on parameters
         try:
-            parameters = self._view.get_parameters()
+            parameters = self.get_parameters()
         except ValueError:
             WarningMessageDialog.launch(["Parameter input is invalid."])
             self.__update_if_table_changes = True
@@ -1972,7 +1718,7 @@ class FitTabPresenter:
                     selected_data.append(f)
 
         # We will need to get parameters to add to table. Clear old table. Same for expression and variable groups
-        self._view.set_parameter_table_states(new_table_state)
+        self.set_parameter_table_states(new_table_state)
         self._view.input_fit_equation.setText(str(self.__expression))
 
         # Set the output and uncertainties in the output table
@@ -2006,13 +1752,262 @@ class FitTabPresenter:
         if len(ids) > 0:
             self._run_service.update_alphas(ids, alphas)
 
+    def _update_batch_table(self):
+        for j in range(self._view.parameter_table.batch_table.rowCount()):
+            item_run_specific = self._view.parameter_table.batch_table.cellWidget(j, self._view.parameter_table.FIXED_RUN_COLUMN)
+            item_global = self._view.parameter_table.batch_table.cellWidget(j, self._view.parameter_table.GLOBAL_COLUMN)
+
+            if item_run_specific is None or item_global is None:
+                continue
+
+            is_global = item_global.findChild(QtWidgets.QCheckBox).checkState() == qt_constants.Checked
+            is_run_specific = item_run_specific.findChild(QtWidgets.QCheckBox).checkState() == qt_constants.Checked
+
+            item_run_specific.findChild(QtWidgets.QCheckBox).setEnabled(not is_global)
+            item_global.findChild(QtWidgets.QCheckBox).setEnabled(not is_run_specific)
+
+            if not is_run_specific:
+                row_values = self._view._get_row(j)
+                if row_values is None:
+                    continue
+                for run_id in self.__parameter_table_states[row_values[0]].keys():
+                    self.__parameter_table_states[row_values[0]][run_id] = row_values
+
+    def _update_parameter_table_states(self):
+        """
+        This method is called when the content of the config table is changed.
+        """
+
+        if not self.__update_states:
+            return
+
+        # We are creating a dictionary in this loop to keep track of the table states (if the user wants a run specific
+        #   parameter this means we need to keep track of the specified values as he clicks between runs).
+
+        # State dictionary looks like: {symbol : {run_id : (symbol, value, min, max, fixed)}} so you can think of it
+        #   like we keep the state of a row in the config table for each run.
+        for j in range(self._view.parameter_table.config_table.rowCount()):  # Iterate over all symbols (rows)
+            row_values = self._view._get_row(j)
+            if row_values is None:
+                continue
+            symbol, value, min_value, max_value, is_fixed = row_values
+
+            # Get the boolean indicating whether the parameter is run specific
+            item_run_specific = self._view.parameter_table.batch_table.cellWidget(j, self._view.parameter_table.FIXED_RUN_COLUMN)
+            if item_run_specific is None:
+                continue
+            else:
+                is_run_specific = item_run_specific.findChild(QtWidgets.QCheckBox).checkState() == qt_constants.Checked
+
+            if is_run_specific:
+                # If the parameter is run specific, we want to update the states of the table for every run
+                selected_run_ids = self._view.get_selected_run_ids()
+                all_run_ids = self._view.get_all_run_ids()
+
+                updated_states = {run_id: (symbol,
+                                           value if value != '*' and (run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else self.__parameter_table_states[symbol][run_id][1],
+                                           min_value if min_value != '*' and (run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else self.__parameter_table_states[symbol][run_id][2],
+                                           max_value if max_value != '*' and (run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else self.__parameter_table_states[symbol][run_id][3],
+                                           is_fixed if is_fixed != '*' and (run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else self.__parameter_table_states[symbol][run_id][4])
+                                  for run_id, not_state_exists in zip(all_run_ids, [r not in self.__parameter_table_states[symbol].keys() for r in all_run_ids])}
+
+                if symbol not in self.__parameter_table_states.keys():
+                    self.__parameter_table_states[symbol] = {}
+
+                self.__parameter_table_states[symbol].update(updated_states)
+            else:
+                # Otherwise, we will want to set the state of all runs to the current state of the table.
+                self.__parameter_table_states[symbol] = {run_id: (symbol, value, min_value, max_value, is_fixed)
+                                                         for run_id in self._view.get_all_run_ids()}
+
+    def _update_parameter_table(self):
+        """
+        This method is called when the run selection of the user is changed.
+        """
+
+        # Don't want to update the states needlessly since we are the ones updating the table (from the state info)
+        self.__update_states = False
+
+        selected_run_ids = self._view.get_selected_run_ids()
+        for j in range(self._view.parameter_table.config_table.rowCount()):  # Iterate over every symbol in table
+            symbol = self._view.parameter_table.config_table.verticalHeaderItem(j).text()
+
+            # We use a set simply so we know if we are dealing with 0, 1 or multiple conflicting states.
+            collective_states_set = {self.__parameter_table_states[symbol][run_id] for run_id in selected_run_ids}
+
+            if len(collective_states_set) == 0:
+                continue  # not sure we can even get here
+
+            elif len(collective_states_set) == 1:
+                # If the user has one run selected (or multiple with the same state), then simply populate the table
+                #   with the state for that run.
+                state = collective_states_set.pop()
+
+                item_value = QtWidgets.QTableWidgetItem()
+                item_value.setText(str(state[1]))
+
+                item_min = QtWidgets.QTableWidgetItem()
+                item_min.setText(str(state[2]))
+
+                item_max = QtWidgets.QTableWidgetItem()
+                item_max.setText(str(state[3]))
+
+                item_fixed = self._view._create_check_box_for_table(state[4], self._update_parameter_table_states)
+            else:
+                # If the user has multiple runs selected with conflicting states then we will check which parts of the
+                #   the state conflict and put '*''s into those cells.
+                value_set = set([s[1] for s in collective_states_set])
+                min_set = set([s[2] for s in collective_states_set])
+                max_set = set([s[3] for s in collective_states_set])
+                fixed_set = set([s[4] for s in collective_states_set])
+
+                item_value = QtWidgets.QTableWidgetItem()
+                if len(value_set) == 1:
+                    item_value.setText(str(value_set.pop()))
+                else:
+                    item_value.setText('*')
+
+                item_min = QtWidgets.QTableWidgetItem()
+                if len(min_set) == 1:
+                    item_min.setText(str(min_set.pop()))
+                else:
+                    item_min.setText('*')
+
+                item_max = QtWidgets.QTableWidgetItem()
+                if len(max_set) == 1:
+                    item_max.setText(str(max_set.pop()))
+                else:
+                    item_max.setText('*')
+
+                if len(fixed_set) == 1:
+                    item_fixed = self._view._create_check_box_for_table(checked=fixed_set.pop(),
+                                                                  connect=self._update_parameter_table_states)
+                else:
+                    # Puts a partial checkmark in the box since we have both fixed and unfixed selected.
+                    item_fixed = self._view._create_check_box_for_table(connect=self._update_parameter_table_states,
+                                                                  partial=True)
+
+            self._view.parameter_table.config_table.setItem(j, self._view.parameter_table.VALUE_COLUMN, item_value)
+            self._view.parameter_table.config_table.setItem(j, self._view.parameter_table.MIN_COLUMN, item_min)
+            self._view.parameter_table.config_table.setItem(j, self._view.parameter_table.MAX_COLUMN, item_max)
+            self._view.parameter_table.config_table.setCellWidget(j, self._view.parameter_table.FIXED_COLUMN, item_fixed)
+
+        self.__update_states = True
+
+    def set_parameter_table_states(self, states):
+        self.__update_states = False
+        self._view.clear_parameters()
+
+        self.__parameter_table_states = {}
+        is_globals = {}
+        is_run_specifics = {}
+        for run_id, parameters in states.items():
+            for symbol, value, minimum, maximum, is_fixed, is_global, is_run_specific in parameters:
+                if symbol not in self.__parameter_table_states.keys():
+                    self.__parameter_table_states[symbol] = {}
+
+                try:
+                    value = float(value)
+                except ValueError:
+                    value = 1.0
+
+                try:
+                    minimum = float(minimum)
+                except ValueError:
+                    minimum = 1.0
+
+                try:
+                    maximum = float(maximum)
+                except ValueError:
+                    maximum = 1.0
+
+                is_globals[symbol] = is_global
+                is_run_specifics[symbol] = is_run_specific
+
+                self.__parameter_table_states[symbol][run_id] = (symbol, value, minimum, maximum, is_fixed)
+
+        for symbol, run_parameters in self.__parameter_table_states.items():
+            collective_states_set = {self.__parameter_table_states[symbol][run_id] for run_id in states.keys()}
+
+            if len(collective_states_set) == 0:
+                print(collective_states_set)
+                continue
+            elif len(collective_states_set) == 1:
+                _, value, minimum, maximum, is_fixed = collective_states_set.pop()
+            else:
+                value_set = set([s[1] for s in collective_states_set])
+                min_set = set([s[2] for s in collective_states_set])
+                max_set = set([s[3] for s in collective_states_set])
+                fixed_set = set([s[4] for s in collective_states_set])
+
+                value = '*' if len(value_set) > 1 else value_set.pop()
+                minimum = '*' if len(min_set) > 1 else min_set.pop()
+                maximum = '*' if len(max_set) > 1 else max_set.pop()
+                is_fixed = '*' if len(fixed_set) > 1 else fixed_set.pop()
+
+            self._view.add_parameter(symbol, value, minimum, maximum, is_fixed, is_globals[symbol], is_run_specifics[symbol])
+
+        self.__update_states = True
+
+    def _update_batch_options(self):
+        self._view.label_ordering.setEnabled(self._view.check_batch_fit.isChecked() or self._view.check_global_plus.isChecked())
+        self._view.option_run_ordering.setEnabled(self._view.check_batch_fit.isChecked() or self._view.check_global_plus.isChecked())
+        self._view.option_ascending.setEnabled(self._view.check_batch_fit.isChecked() or self._view.check_global_plus.isChecked())
+
+    def get_parameters(self):
+        default = []
+        is_globals = {}
+        is_run_specific = {}
+        for i in range(self._view.parameter_table.config_table.rowCount()):
+            item_symbol = self._view.parameter_table.config_table.verticalHeaderItem(i)
+            item_value = self._view.parameter_table.config_table.item(i, self._view.parameter_table.VALUE_COLUMN)
+            item_min = self._view.parameter_table.config_table.item(i, self._view.parameter_table.MIN_COLUMN)
+            item_max = self._view.parameter_table.config_table.item(i, self._view.parameter_table.MAX_COLUMN)
+            item_fixed = self._view.parameter_table.config_table.cellWidget(i, self._view.parameter_table.FIXED_COLUMN)
+            item_global = self._view.parameter_table.batch_table.cellWidget(i, self._view.parameter_table.GLOBAL_COLUMN)
+
+            if item_symbol is None:
+                continue
+
+            symbol = item_symbol.text()
+            value = 1 if item_value is None or item_value.text() == '' else float(item_value.text())
+            value_min = -np.inf if item_min is None or item_min.text() == '' else float(item_min.text())
+            value_max = np.inf if item_max is None or item_max.text() == '' else float(item_max.text())
+            is_fixed = item_fixed is not None and item_fixed.findChild(QtWidgets.QCheckBox).checkState() > 0
+            is_global = item_global is not None and item_global.findChild(QtWidgets.QCheckBox).checkState() > 0
+
+            default.append((symbol, value, value_min, value_max, is_fixed, is_global, False))
+
+            item_run_specific = self._view.parameter_table.batch_table.cellWidget(i, self._view.parameter_table.FIXED_RUN_COLUMN)
+
+            if item_symbol is None:
+                continue
+
+            is_globals[symbol] = item_global is not None and item_global.findChild(QtWidgets.QCheckBox).checkState() > 0
+            is_run_specific[symbol] = item_run_specific is not None and item_run_specific.findChild(
+                QtWidgets.QCheckBox).checkState() > 0
+
+        run_ids = self._view.get_all_run_ids()
+        final_parameters = {run_id: [] for run_id in run_ids}
+
+        for symbol, states in self.__parameter_table_states.items():
+            for run_id in run_ids:
+                final_parameters[run_id].append(self.__parameter_table_states[symbol][run_id] + (is_globals[symbol], is_run_specific[symbol],))
+
+        final_parameters['default'] = default
+        return final_parameters
+
     def update(self):
         runs = []
         for run in self._run_service.get_loaded_runs():
             if run.asymmetries[objects.RunDataset.FULL_ASYMMETRY] is not None:
                 runs.append(run)
         self._runs = runs
+
+        self.__update_states = False
         self._view.update_run_table(runs)
+        self.__update_states = True
+        self._update_parameter_table_states()
 
 
 class FitWorker(QtCore.QRunnable):
