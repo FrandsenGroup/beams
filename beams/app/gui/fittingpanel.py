@@ -17,7 +17,6 @@ from app.gui.gui import PanelPresenter, Panel
 
 
 class FittingPanel(Panel):
-    # __NAME_COLUMN = 0
     __VALUE_COLUMN = 0
     __LOWER_COLUMN = 1
     __UPPER_COLUMN = 2
@@ -366,10 +365,6 @@ class FittingPanel(Panel):
     class PlotControl(QtWidgets.QWidget):
         def __init__(self):
             QtWidgets.QWidget.__init__(self)
-            # self.setTitleBarWidget(QtWidgets.QWidget())
-
-            # self._full_widget = QtWidgets.QWidget()
-
             self._label_slider_bin = QtWidgets.QLabel('')
             self._label_input_bin = QtWidgets.QLabel('Time Bins (ns)')
 
@@ -396,8 +391,6 @@ class FittingPanel(Panel):
             self._set_widget_tooltips()
             self._set_widget_dimensions()
             self._set_widget_layout()
-
-            # self.setWidget(self._full_widget)
 
         def _set_widget_attributes(self):
             self.check_time_yauto.setChecked(True)
@@ -2010,7 +2003,11 @@ class FitTabPresenter:
             if run.asymmetries[objects.RunDataset.FULL_ASYMMETRY] is not None:
                 runs.append(run)
         self._runs = runs
+
+        self.__update_states = False
         self._view.update_run_table(runs)
+        self.__update_states = True
+        self._update_parameter_table_states()
 
 
 class FitWorker(QtCore.QRunnable):
