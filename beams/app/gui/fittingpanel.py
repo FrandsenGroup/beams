@@ -827,7 +827,6 @@ class FittingPanel(Panel):
 
         except ValueError:  # Indicates that the user did not provide input which could be cast to float (invalid)
             self.highlight_input_red(self.parameter_table.config_table, True)
-            self.__update_states = True
             return None
 
         # Clear red outline of table (if last input was invalid)
@@ -872,7 +871,6 @@ class FittingPanel(Panel):
                       config_upper = None, config_fixed = None, batch_global = None,
                       batch_run_dependent = None, batch_value: float = None, output_value = None,
                       output_uncertainty = None, run_id: str = None):
-        self.__update_states = False
 
         n = self.parameter_table.config_table.verticalHeader().count()
 
@@ -902,11 +900,11 @@ class FittingPanel(Panel):
 
                 if config_fixed is not None:
                     if config_fixed == '*':
-                        item_fixed = self._create_check_box_for_table(connect=self._presenter._update_parameter_table_states,
+                        item_fixed = self._create_check_box_for_table(connect=self._presenter.update_parameter_table_states,
                                                                       partial=True)
                     else:
                         item_fixed = self._create_check_box_for_table(checked=config_fixed,
-                                                                      connect=self._presenter._update_parameter_table_states)
+                                                                      connect=self._presenter.update_parameter_table_states)
 
                     self.parameter_table.config_table.setCellWidget(i, self.ParameterTable.FIXED_COLUMN, item_fixed)
 
@@ -946,15 +944,15 @@ class FittingPanel(Panel):
 
             if config_fixed is not None:
                 if config_fixed == '*':
-                    item_fixed = self._create_check_box_for_table(connect=self._presenter._update_parameter_table_states,
+                    item_fixed = self._create_check_box_for_table(connect=self._presenter.update_parameter_table_states,
                                                                   partial=True)
                 else:
                     item_fixed = self._create_check_box_for_table(checked=config_fixed,
-                                                                  connect=self._presenter._update_parameter_table_states)
+                                                                  connect=self._presenter.update_parameter_table_states)
 
                 self.parameter_table.config_table.setCellWidget(n, self.ParameterTable.FIXED_COLUMN, item_fixed)
             else:
-                item_fixed = self._create_check_box_for_table(False, self._presenter._update_parameter_table_states)
+                item_fixed = self._create_check_box_for_table(False, self._presenter.update_parameter_table_states)
                 self.parameter_table.config_table.setCellWidget(n, self.ParameterTable.FIXED_COLUMN, item_fixed)
 
         n = self.parameter_table.batch_table.verticalHeader().count()
@@ -1035,9 +1033,6 @@ class FittingPanel(Panel):
                 item_value = QtWidgets.QTableWidgetItem()
                 item_value.setText(output_uncertainty) if output_uncertainty == '*' else item_value.setText('{:.5f}'.format(float(output_uncertainty)))
                 self.parameter_table.output_table.setItem(n, self.ParameterTable.UNCERTAINTY_COLUMN, item_value)
-
-        self.__update_states = True
-        self._presenter._update_parameter_table_states()
 
     def clear_parameters(self, symbols=None):
         n = self.parameter_table.config_table.verticalHeader().count()
@@ -1243,8 +1238,8 @@ class FitTabPresenter:
         self.__logger = logging.getLogger('FittingPanelPresenter')
 
     def _set_callbacks(self):
-        self._view.parameter_table.config_table.itemChanged.connect(self._update_parameter_table_states)
-        self._view.run_list.itemChanged.connect(self._update_parameter_table_states)
+        self._view.parameter_table.config_table.itemChanged.connect(self.update_parameter_table_states)
+        self._view.run_list.itemChanged.connect(self.update_parameter_table_states)
         self._view.run_list.itemSelectionChanged.connect(self._update_parameter_table)
         self._view.check_batch_fit.stateChanged.connect(self._update_batch_options)
         self._view.check_global_plus.stateChanged.connect(self._update_batch_options)
@@ -1280,6 +1275,7 @@ class FitTabPresenter:
 
         expression = "A(t) = " + self._view.get_expression()
 
+        self.__update_states = False
         if fit.is_valid_expression(expression):
             self._view.highlight_input_red(self._view.input_fit_equation, False)
 
@@ -1296,6 +1292,8 @@ class FitTabPresenter:
         else:
             self._view.highlight_input_red(self._view.input_fit_equation, True)
         self.__update_if_table_changes = True
+        self.__update_states = True
+        self.update_parameter_table_states()
         self._plot_fit()
 
     def _save_user_function(self):
@@ -1773,7 +1771,7 @@ class FitTabPresenter:
                 for run_id in self.__parameter_table_states[row_values[0]].keys():
                     self.__parameter_table_states[row_values[0]][run_id] = row_values
 
-    def _update_parameter_table_states(self):
+    def update_parameter_table_states(self):
         """
         This method is called when the content of the config table is changed.
         """
@@ -1852,7 +1850,7 @@ class FitTabPresenter:
                 item_max = QtWidgets.QTableWidgetItem()
                 item_max.setText(str(state[3]))
 
-                item_fixed = self._view._create_check_box_for_table(state[4], self._update_parameter_table_states)
+                item_fixed = self._view._create_check_box_for_table(state[4], self.update_parameter_table_states)
             else:
                 # If the user has multiple runs selected with conflicting states then we will check which parts of the
                 #   the state conflict and put '*''s into those cells.
@@ -1881,11 +1879,11 @@ class FitTabPresenter:
 
                 if len(fixed_set) == 1:
                     item_fixed = self._view._create_check_box_for_table(checked=fixed_set.pop(),
-                                                                  connect=self._update_parameter_table_states)
+                                                                        connect=self.update_parameter_table_states)
                 else:
                     # Puts a partial checkmark in the box since we have both fixed and unfixed selected.
-                    item_fixed = self._view._create_check_box_for_table(connect=self._update_parameter_table_states,
-                                                                  partial=True)
+                    item_fixed = self._view._create_check_box_for_table(connect=self.update_parameter_table_states,
+                                                                        partial=True)
 
             self._view.parameter_table.config_table.setItem(j, self._view.parameter_table.VALUE_COLUMN, item_value)
             self._view.parameter_table.config_table.setItem(j, self._view.parameter_table.MIN_COLUMN, item_min)
@@ -1901,6 +1899,7 @@ class FitTabPresenter:
         self.__parameter_table_states = {}
         is_globals = {}
         is_run_specifics = {}
+
         for run_id, parameters in states.items():
             for symbol, value, minimum, maximum, is_fixed, is_global, is_run_specific in parameters:
                 if symbol not in self.__parameter_table_states.keys():
@@ -1930,7 +1929,6 @@ class FitTabPresenter:
             collective_states_set = {self.__parameter_table_states[symbol][run_id] for run_id in states.keys()}
 
             if len(collective_states_set) == 0:
-                print(collective_states_set)
                 continue
             elif len(collective_states_set) == 1:
                 _, value, minimum, maximum, is_fixed = collective_states_set.pop()
@@ -1948,6 +1946,8 @@ class FitTabPresenter:
             self._view.add_parameter(symbol, value, minimum, maximum, is_fixed, is_globals[symbol], is_run_specifics[symbol])
 
         self.__update_states = True
+
+        self.update_parameter_table_states()
 
     def _update_batch_options(self):
         self._view.label_ordering.setEnabled(self._view.check_batch_fit.isChecked() or self._view.check_global_plus.isChecked())
@@ -2007,7 +2007,7 @@ class FitTabPresenter:
         self.__update_states = False
         self._view.update_run_table(runs)
         self.__update_states = True
-        self._update_parameter_table_states()
+        self.update_parameter_table_states()
 
 
 class FitWorker(QtCore.QRunnable):
