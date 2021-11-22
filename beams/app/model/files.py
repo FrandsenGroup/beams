@@ -154,7 +154,10 @@ class BeamsSessionFile(ReadableFile):
 
     def read_data(self):
         with open(self.file_path, 'rb') as session_file_object:
-            return pickle.load(session_file_object)
+            try:
+                return pickle.load(session_file_object)
+            except Exception:
+                raise BeamsFileReadError("This session file is not supported by your current version of BEAMS.")
 
     def read_meta(self):
         return self.file_path
@@ -195,7 +198,7 @@ class TRIUMFMuonFile(ConvertibleFile):
             else:
                 return MuonHistogramFile(out_file)
 
-        raise ValueError("Binary file is in an unknown format. May need to update executables.")
+        raise BeamsFileConversionError("Binary file is in an unknown format. May need to update executables.")
 
 
 class PSIMuonFile(ConvertibleFile):
@@ -221,18 +224,17 @@ class PSIMuonFile(ConvertibleFile):
                 else:
                     shell = False
             else:
-                return None  # Unrecognized system
+                raise EnvironmentError("Not on a recognized system.")
 
             try:
-                # print(" ".join(args))
                 subprocess.check_call(args, shell=shell)
             except subprocess.CalledProcessError:
                 track = traceback.format_exc()
-                return None  # Error processing file
+                raise BeamsFileConversionError(str(track))
             else:
                 return MuonHistogramFile(out_file)
 
-        return None  # Unrecognized file format
+        raise BeamsFileConversionError("Binary file is in an unknown format. May need to update executables.")
 
 
 class ISISMuonFile(ConvertibleFile):
@@ -261,34 +263,42 @@ class MuonHistogramFile(ReadableFile):
 
     def read_data(self):
         meta = self.read_meta()
-        data = pd.read_csv(self.file_path, skiprows=self.HEADER_ROWS - 1)
-        data.columns = meta[HIST_TITLES_KEY]
-        return data
+
+        try:
+            data = pd.read_csv(self.file_path, skiprows=self.HEADER_ROWS - 1)
+            data.columns = meta[HIST_TITLES_KEY]
+            return data
+        except Exception:
+            raise BeamsFileReadError("This histogram file is not supported by your current version of BEAMS")
 
     def read_meta(self):
-        with open(self.file_path) as f:
-            f.readline()
-            metadata = f.readline().rstrip('\n').rsplit(',')
-            hist_titles = f.readline().rstrip('\n').rsplit(',')
-            background_one = f.readline().rstrip('\n').rsplit(',')
-            background_two = f.readline().rstrip('\n').rsplit(',')
-            good_bins_one = f.readline().rstrip('\n').rsplit(',')
-            good_bins_two = f.readline().rstrip('\n').rsplit(',')
-            initial_time = f.readline().rstrip('\n').rsplit(',')
+        try:
+            with open(self.file_path) as f:
+                f.readline()
+                metadata = f.readline().rstrip('\n').rsplit(',')
+                hist_titles = f.readline().rstrip('\n').rsplit(',')
+                background_one = f.readline().rstrip('\n').rsplit(',')
+                background_two = f.readline().rstrip('\n').rsplit(',')
+                good_bins_one = f.readline().rstrip('\n').rsplit(',')
+                good_bins_two = f.readline().rstrip('\n').rsplit(',')
+                initial_time = f.readline().rstrip('\n').rsplit(',')
 
-        metadata = [pair.rsplit(':') for pair in metadata]
-        for pair in metadata:
-            if len(pair) < 2:
-                pair.append('n/a')
+            metadata = [pair.rsplit(':') for pair in metadata]
+            for pair in metadata:
+                if len(pair) < 2:
+                    pair.append('n/a')
 
-        metadata = {pair[0]: pair[1] for pair in metadata}
-        metadata[HIST_TITLES_KEY] = hist_titles
-        metadata[BACKGROUND_ONE_KEY] = {k: v for k, v in zip(hist_titles, background_one)}
-        metadata[BACKGROUND_TWO_KEY] = {k: v for k, v in zip(hist_titles, background_two)}
-        metadata[GOOD_BIN_ONE_KEY] = {k: v for k, v in zip(hist_titles, good_bins_one)}
-        metadata[GOOD_BIN_TWO_KEY] = {k: v for k, v in zip(hist_titles, good_bins_two)}
-        metadata[T0_KEY] = {k: v for k, v in zip(hist_titles, initial_time)}
-        return metadata
+            metadata = {pair[0]: pair[1] for pair in metadata}
+            metadata[HIST_TITLES_KEY] = hist_titles
+            metadata[BACKGROUND_ONE_KEY] = {k: v for k, v in zip(hist_titles, background_one)}
+            metadata[BACKGROUND_TWO_KEY] = {k: v for k, v in zip(hist_titles, background_two)}
+            metadata[GOOD_BIN_ONE_KEY] = {k: v for k, v in zip(hist_titles, good_bins_one)}
+            metadata[GOOD_BIN_TWO_KEY] = {k: v for k, v in zip(hist_titles, good_bins_two)}
+            metadata[T0_KEY] = {k: v for k, v in zip(hist_titles, initial_time)}
+
+            return metadata
+        except Exception:
+            raise BeamsFileReadError("This histogram file is not supported by your current version of BEAMS")
 
 
 class MuonAsymmetryFile(ReadableFile):
@@ -298,22 +308,29 @@ class MuonAsymmetryFile(ReadableFile):
     HEADER_ROWS = 3
 
     def read_data(self):
-        data = pd.read_csv(self.file_path, skiprows=self.HEADER_ROWS - 1)
-        data.columns = ['Time', 'Asymmetry', 'Uncertainty']
-        return data
+        try:
+            data = pd.read_csv(self.file_path, skiprows=self.HEADER_ROWS - 1)
+            data.columns = ['Time', 'Asymmetry', 'Uncertainty']
+            return data
+        except Exception:
+            raise BeamsFileReadError("This asymmetry file is not supported by your current version of BEAMS")
 
     def read_meta(self):
-        with open(self.file_path) as f:
-            f.readline()
-            metadata_line = f.readline().rstrip('\n').rsplit('# ')[1].rsplit(',')
+        try:
+            with open(self.file_path) as f:
+                f.readline()
+                metadata_line = f.readline().rstrip('\n').rsplit('# ')[1].rsplit(',')
 
-        metadata = [pair.rsplit(':') for pair in metadata_line]
-        for pair in metadata:
-            if len(pair) < 2:
-                pair.append('n/a')
-        metadata = {pair[0]: pair[1] for pair in metadata}
-        metadata[T0_KEY] = 0
-        return metadata
+            metadata = [pair.rsplit(':') for pair in metadata_line]
+            for pair in metadata:
+                if len(pair) < 2:
+                    pair.append('n/a')
+            metadata = {pair[0]: pair[1] for pair in metadata}
+            metadata[T0_KEY] = 0
+
+            return metadata
+        except Exception:
+            raise BeamsFileReadError("This asymmetry file is not supported by your current version of BEAMS")
 
 
 class FitDatasetExpressionFile(ReadableFile):
@@ -336,41 +353,44 @@ class FitDatasetExpressionFile(ReadableFile):
                 elif 'Expression' in l:
                     e_line = i
 
-            common_parameters = []
-            if c_line:
-                first_i = c_line + 2
-                last_i = e_line - 1 if len(s_lines) == 0 else s_lines[0] - 1
-                for i in range(first_i, last_i):
-                    common_parameters.append(lines[i].split())
-
-            specific_parameters = {}
-            if s_lines:
-                for n, s in enumerate(s_lines):
-                    first_i = s + 2
-                    last_i = e_line - 1 if not len(s_lines) > n + 1 else s_lines[n + 1] - 2
-                    file_i = s - 1
-                    filename = lines[file_i][:-1]
-                    parameters = []
-
+            try:
+                common_parameters = []
+                if c_line:
+                    first_i = c_line + 2
+                    last_i = e_line - 1 if len(s_lines) == 0 else s_lines[0] - 1
                     for i in range(first_i, last_i):
-                        parameters.append(lines[i].split())
+                        common_parameters.append(lines[i].split())
 
-                    line = lines[s]
-                    title = line[line.find("(") + 1:-2]
-                    specific_parameters[line.split()[5]] = (title, filename, parameters)
+                specific_parameters = {}
+                if s_lines:
+                    for n, s in enumerate(s_lines):
+                        first_i = s + 2
+                        last_i = e_line - 1 if not len(s_lines) > n + 1 else s_lines[n + 1] - 2
+                        file_i = s - 1
+                        filename = lines[file_i][:-1]
+                        parameters = []
 
-            if e_line:
-                e_line_split = lines[e_line + 2].split()
-                for i, e in enumerate(e_line_split):
-                    if '=' in e:
-                        expression = ''.join(e_line_split[i + 1:])
-                        break
+                        for i in range(first_i, last_i):
+                            parameters.append(lines[i].split())
+
+                        line = lines[s]
+                        title = line[line.find("(") + 1:-2]
+                        specific_parameters[line.split()[5]] = (title, filename, parameters)
+
+                if e_line:
+                    e_line_split = lines[e_line + 2].split()
+                    for i, e in enumerate(e_line_split):
+                        if '=' in e:
+                            expression = ''.join(e_line_split[i + 1:])
+                            break
+                    else:
+                        raise Exception('Expression not formatted correctly in this fit file.')
                 else:
-                    raise ValueError('Expression not formatted correctly.')
-            else:
-                raise ValueError("Expression not found in file.")
+                    raise Exception("Expression not found in this fit file.")
 
-            return common_parameters, specific_parameters, expression
+                return common_parameters, specific_parameters, expression
+            except Exception:
+                raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS")
 
     def read_meta(self):
         return self.read_data()
@@ -383,22 +403,28 @@ class FitFile(ReadableFile):
     HEADER_ROWS = 3
 
     def read_data(self):
-        data = pd.read_csv(self.file_path, skiprows=self.HEADER_ROWS - 1)
-        data.columns = ['Time', 'Asymmetry', 'Calculated', 'Uncertainty']
-        return data
+        try:
+            data = pd.read_csv(self.file_path, skiprows=self.HEADER_ROWS - 1)
+            data.columns = ['Time', 'Asymmetry', 'Calculated', 'Uncertainty']
+            return data
+        except Exception:
+            raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS")
 
     def read_meta(self):
-        with open(self.file_path) as f:
-            f.readline()
-            metadata_line = f.readline().rstrip('\n').rsplit('# ')[1].rsplit(',')
+        try:
+            with open(self.file_path) as f:
+                f.readline()
+                metadata_line = f.readline().rstrip('\n').rsplit('# ')[1].rsplit(',')
 
-        metadata = [pair.rsplit(':') for pair in metadata_line]
-        for pair in metadata:
-            if len(pair) < 2:
-                pair.append('n/a')
-        metadata = {pair[0]: pair[1] for pair in metadata}
-        metadata[T0_KEY] = 0
-        return metadata
+            metadata = [pair.rsplit(':') for pair in metadata_line]
+            for pair in metadata:
+                if len(pair) < 2:
+                    pair.append('n/a')
+            metadata = {pair[0]: pair[1] for pair in metadata}
+            metadata[T0_KEY] = 0
+            return metadata
+        except Exception:
+            raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS")
 
 
 def file(file_path: str) -> File:
@@ -489,10 +515,18 @@ class UnknownFileSource(Exception):
         super(UnknownFileSource, self).__init__()
 
 
-class ConversionError(Exception):
+class BeamsFileReadError(Exception):
+    """
+    Raised when there is a problem reading data from a beams file.
+    """
+    def __init__(self, *args):
+        super(BeamsFileReadError, self).__init__(*args)
+
+
+class BeamsFileConversionError(Exception):
     """
     Raised when there is an error converting a convertible file (usually caused by a subprocess error)
     """
 
-    def __init__(self):
-        super(ConversionError, self).__init__()
+    def __init__(self, *args):
+        super(BeamsFileConversionError, self).__init__(*args)
