@@ -126,20 +126,42 @@ Functions - f(...) | sin | cos | tan | sinh | cosh | tanh | exp
 <br>
 
 #### Specifying your Fit Parameters
+When you provide a valid fit expression you will see the table of parameters and the plot display below the input box update as you type. Below is an example of valid input.
+
+![beams logo](beams/app/resources/icons/example_fit_expression.png)
+
+As you can see, the fit expression has two free variables (λ and β) and a third variable 'α' (this is a reserved symbol for the alpha value of the asymmetry). All three of these are accounted for in the parameter table.
+
+The parameter table also has three separate sections you can interact with; Config, Batch and Output. Each of the three will be explained in depth. 
+
+###### Config
+
+This is the first section of the parameter table shown above. There will be a row for each free variable and an additional row for α. For each parameter you can adjust the initial value used in the fit, the lower and upper bounds for that parameter, and whether or not that parameter should be fixed to the value provided.
+
+- Note - Adjusting a free variable will be reflected in the fit lines in the plot display. Adjusting alpha will be reflected in the asymmetry being plotted.
+
+###### Batch
+
+In the second section of the parameter table, you will once again see rows for each parameter with two new columns for each; Global and Run-Specific. For each parameter, you can only have ONE box checked (checking one will make the other box uncheckable).
+
+![beams logo](beams/app/resources/icons/example_batch.png)
+
+By checking global, you are indicating that you want the parameter to be fit across all datasets - not individually for each.
+
+By checking run-specific, you are indicating that you want to be able to specify every column in the config section (even the fixed column) individually for each run. For example, you get set the initial value for λ for one run to 2.0 and for another run to 3.0. By default, when you set the value that will be the initial value for every single run.-
+
+- In order to assign values to individual runs, you select the runs (as shown below) and while they are selected you adjust the values in the config table. You will then find as you click through each run that the values have been applied and remembered.
 
 
+- If you select multiple runs that have conflicting values in one column or another for a parameter marked as run-specific, you will see a ' * ' in that cell or, if it is the fixed column, you will see a partial checkmark. If you adjust that cell then all conflicting values will be overwritten, otherwise if you don't edit it then they will remain unchanged.
 
-#### Fit Parameters
-Once you have your expression you should be able to see all of your free parameters in the table below. The table is split into three sections; config, batch and output.
-In the config section you can set the starting value for that parameter. As you adjust these values you will see the expression displayed to the right of the table (along with any runs you have selected--see the next section). Additionally you can set the lower and upper bounds and indicate whether or not that parameter should be fixed at the starting value.
-In the batch section you have two options you can check for each parameter. The first is a "Global" option. Global will indicate that this parameter should be fitted across all runs (not locally for each individual run) so when the fit is done, this parameter will have a single result. The second option is "Run Specific." This indicates you want to specify the options in the config section for each individual run for that parameter. 
-In the output section, you will see the final value for that parameter as well as the calculated uncertainty. If the fit failed to converge, the uncertainty will be -1. For fixed parameters, the uncertainty will be 0.
-#### Selecting Runs
-In the list below the parameter table you will be able to select the runs you want to include in the fit. If you click the 'Plot' button, you will see the asymmetries from these runs displayed with the fit expression (whose parameters are shown using the current values of the table). If there are run-specific values specified, you will see separate lines with a matching color for each run. Clicking between the runs you will be able to specify run-specific parameters in the table. 
-You can manipulate the displayed asymmetries with the controls below the display.
-#### Fit Options
-Below the list of runs you will see a group of options you can specify for each run. 
+![beams logo](beams/app/resources/icons/example_run_list.png)
 
+###### Output
+
+In the third section of the parameter table, you will see rows for each parameter and two new columns; Value and Uncertainty. These columns are only filled out after you have run a fit. When you select a fit on the left hand side panel, the value and uncertainty of the calculated parameters will be displayed here. If you select multiple fits at one time, a ' * ' will be placed in cells where there are conflicting values. 
+
+![beams logo](beams/app/resources/icons/example_output.png)
 
 ## File Formats
 
