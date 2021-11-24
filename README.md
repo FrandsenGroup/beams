@@ -144,7 +144,7 @@ This is the first section of the parameter table shown above. There will be a ro
 
 In the second section of the parameter table, you will once again see rows for each parameter with two new columns for each; Global and Run-Specific. For each parameter, you can only have ONE box checked (checking one will make the other box uncheckable).
 
-![beams logo](beams/app/resources/icons/example_batch.png)
+<img src="https://github.com/FrandsenGroup/beams/blob/master/beams/app/resources/icons/example_batch.png" width="400" />
 
 By checking global, you are indicating that you want the parameter to be fit across all datasets - not individually for each.
 
@@ -155,13 +155,13 @@ By checking run-specific, you are indicating that you want to be able to specify
 
 - If you select multiple runs that have conflicting values in one column or another for a parameter marked as run-specific, you will see a ' * ' in that cell or, if it is the fixed column, you will see a partial checkmark. If you adjust that cell then all conflicting values will be overwritten, otherwise if you don't edit it then they will remain unchanged.
 
-![beams logo](beams/app/resources/icons/example_run_list.png)
+<img src="https://github.com/FrandsenGroup/beams/blob/master/beams/app/resources/icons/example_run_list.png" width="400" />
 
 ###### Output
 
 In the third section of the parameter table, you will see rows for each parameter and two new columns; Value and Uncertainty. These columns are only filled out after you have run a fit. When you select a fit on the left hand side panel, the value and uncertainty of the calculated parameters will be displayed here. If you select multiple fits at one time, a ' * ' will be placed in cells where there are conflicting values. 
 
-![beams logo](beams/app/resources/icons/example_output.png)
+<img src="https://github.com/FrandsenGroup/beams/blob/master/beams/app/resources/icons/example_output.png" width="400" />
 
 ## File Formats
 
