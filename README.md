@@ -1,4 +1,4 @@
-![beams logo](beams/app/resources/icons/logo_3.jpg)
+![beams logo](beams/app/resources/icons/logo.png)
 [![Release](https://img.shields.io/github/release/FrandsenGroup/beams.svg?style=plastic&colorB=68B7EB)]()
 ###  Features
 
@@ -18,6 +18,13 @@
     - [Interacting with the Asymmetry](#interacting-with-the-asymmetry)
   - [Fitting Asymmetries](#fitting-asymmetries)
     - [Choosing the Fit Expression](#choosing-your-fit-expression)
+    - [Setting the Fit Parameters](#setting-the-fit-parameters)
+    - [Saving Fits](#saving-fits)
+    - [Additional Features](#other-fit)
+      - [Saving Custom Fit Expressions](#saving-custom-fit-expressions)
+      - []
+  
+  
     - [Fit Parameters](#fit-parameters)
     - [Selecting Runs](#selecting-runs)
     - [Fit Options](#fit-options)
@@ -95,7 +102,24 @@ the alpha parameter for the asymmetry.
 
 ### Fitting Asymmetries
 #### Choosing your Fit Expression
-Near the top of the fitting tab you see a long input area where you can type in the expression you want to use for your fit. As you type, you will see the parameters of the expression appearing the table below. Aside from typing the expression in each time, you can also choose a pre-defined expression from the box above and insert, or create/use your own that you can create, save and insert using the group of widgets in the top right of the tab.
+![beams logo](beams/app/resources/icons/expression_input.png)
+Near the top of the fitting tab you can see an area where you can provide the fitting expression as a function of 't'. Operations must be typed out explicitly (i.e. use '5*x' rather then '5x'). If the expression you provide is invalid, the box will be highlighted in red.
+
+Reserved Symbols | + | - | * | / | ^ | i | e | π | pi
+--- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+
+Other Reserved | sin(h) | cos(h) | tan(h) | exp 
+--- | --- | --- | --- | --- 
+
+<br>
+
+![beams logo](beams/app/resources/icons/saved_expressions.png)
+Above the input for the expression you will see two boxes. The box on the left (Predefined Functions) contains some common function definitions that come loaded with the program. You can select the template you want to use and press 'Insert'. This will insert the function into the expression input box below (wherever your cursor is at in the box or at the end of the input if your cursor is not in it).
+
+The box on the right (User Defined Functions) allows you to create a new function definition (with a specified name) and save it for future use. You can select from previously saved definitions and press 'Insert' to achieve the same behavior as described above.
+
+<br>
+
 #### Fit Parameters
 Once you have your expression you should be able to see all of your free parameters in the table below. The table is split into three sections; config, batch and output.
 In the config section you can set the starting value for that parameter. As you adjust these values you will see the expression displayed to the right of the table (along with any runs you have selected--see the next section). Additionally you can set the lower and upper bounds and indicate whether or not that parameter should be fixed at the starting value.
