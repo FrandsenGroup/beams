@@ -95,6 +95,8 @@ the alpha parameter for the asymmetry.
 
 ![choosing your histograms for asymmetry](https://github.com/aPeter1/BEAMS/blob/assets/plot_interaction.png)
 
+<br>
+
 ### Fitting Asymmetries
 #### Choosing your Fit Expression
 ![beams logo](beams/app/resources/icons/expression_input.png)
