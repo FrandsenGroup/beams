@@ -105,12 +105,6 @@ the alpha parameter for the asymmetry.
 ![beams logo](beams/app/resources/icons/expression_input.png)
 Near the top of the fitting tab you can see an area where you can provide the fitting expression as a function of 't'. Operations must be typed out explicitly (i.e. use '5*x' rather then '5x'). If the expression you provide is invalid, the box will be highlighted in red.
 
-Reserved Symbols | + | - | * | / | ^ | i | e | π | pi
---- | --- | --- | --- | --- | --- | --- | --- | --- | ---
-
-Other Reserved | sin(h) | cos(h) | tan(h) | exp 
---- | --- | --- | --- | --- 
-
 <br>
 
 ![beams logo](beams/app/resources/icons/saved_expressions.png)
@@ -119,6 +113,21 @@ Above the input for the expression you will see two boxes. The box on the left (
 The box on the right (User Defined Functions) allows you to create a new function definition (with a specified name) and save it for future use. You can select from previously saved definitions and press 'Insert' to achieve the same behavior as described above.
 
 <br>
+
+
+Reserved Symbols | + | - | * | / | ^ | i | e | π | pi
+--- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+
+Functions - f(...) | sin | cos | tan | sinh | cosh | tanh | exp
+--- | --- | --- | --- | --- | --- | --- | ---
+
+
+
+<br>
+
+#### Specifying your Fit Parameters
+
+
 
 #### Fit Parameters
 Once you have your expression you should be able to see all of your free parameters in the table below. The table is split into three sections; config, batch and output.
