@@ -17,17 +17,12 @@
     - [Plotting the Asymmetry](#plotting-the-asymmetry)
     - [Interacting with the Asymmetry](#interacting-with-the-asymmetry)
   - [Fitting Asymmetries](#fitting-asymmetries)
-    - [Choosing the Fit Expression](#choosing-your-fit-expression)
-    - [Setting the Fit Parameters](#setting-the-fit-parameters)
-    - [Saving Fits](#saving-fits)
-    - [Additional Features](#other-fit)
-      - [Saving Custom Fit Expressions](#saving-custom-fit-expressions)
-      - []
-  
-  
-    - [Fit Parameters](#fit-parameters)
-    - [Selecting Runs](#selecting-runs)
-    - [Fit Options](#fit-options)
+    - [Choosing your Fit Expression](#choosing-your-fit-expression)
+    - [Specifying your Fit Parameters](#specifying-your-fit-parameters)
+    - [Parameter Table](#config)
+      - [Config](#config)
+      - [Batch](#batch)
+      - [Output](#output)
 - [File Formats](#file-formats)
   - [External File Formats](#external-supported-file-formats)
   - [BEAMS File Formats](#beams-file-formats)
