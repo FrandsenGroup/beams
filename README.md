@@ -276,3 +276,6 @@ Possible solution in the answer to this question on Stack Overflow: https://stac
 
 #### Histogram navigation toolbar is not loading
 There is an open issue for this ([Issue 97](../../issues/97)). As of right now we do not have a solution. Consider uninstalling and reinstalling the python library 'matplotlib' and 'PyQt5'. 
+
+#### My files from TRIUMF or PSI aren't being converted
+Please open up an issue if this happens as it means we need to update the executables.
