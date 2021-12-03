@@ -23,6 +23,9 @@
       - [Config](#config)
       - [Batch](#batch)
       - [Output](#output)
+  - [Interacting with Histograms](#interacting-with-histograms)
+    - [Navigation Bar](#navigation-bar)
+    - [Adjusting Values](#adjusting-values)
 - [File Formats](#file-formats)
   - [External File Formats](#external-supported-file-formats)
   - [BEAMS File Formats](#beams-file-formats)
@@ -99,12 +102,14 @@ the alpha parameter for the asymmetry.
 
 ### Fitting Asymmetries
 #### Choosing your Fit Expression
-![beams logo](beams/app/resources/icons/expression_input.png)
+![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/expression_input.png)
+
 Near the top of the fitting tab you can see an area where you can provide the fitting expression as a function of 't'. Operations must be typed out explicitly (i.e. use '5*x' rather then '5x'). If the expression you provide is invalid, the box will be highlighted in red.
 
 <br>
 
-![beams logo](beams/app/resources/icons/saved_expressions.png)
+![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/saved_expressions.png)
+
 Above the input for the expression you will see two boxes. The box on the left (Predefined Functions) contains some common function definitions that come loaded with the program. You can select the template you want to use and press 'Insert'. This will insert the function into the expression input box below (wherever your cursor is at in the box or at the end of the input if your cursor is not in it).
 
 The box on the right (User Defined Functions) allows you to create a new function definition (with a specified name) and save it for future use. You can select from previously saved definitions and press 'Insert' to achieve the same behavior as described above.
@@ -125,7 +130,7 @@ Functions - f(...) | sin | cos | tan | sinh | cosh | tanh | exp
 #### Specifying your Fit Parameters
 When you provide a valid fit expression you will see the table of parameters and the plot display below the input box update as you type. Below is an example of valid input.
 
-![beams logo](beams/app/resources/icons/example_fit_expression.png)
+![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/example_fit_expression.png)
 
 As you can see, the fit expression has two free variables (λ and β) and a third variable 'α' (this is a reserved symbol for the alpha value of the asymmetry). All three of these are accounted for in the parameter table.
 
@@ -141,7 +146,7 @@ This is the first section of the parameter table shown above. There will be a ro
 
 In the second section of the parameter table, you will once again see rows for each parameter with two new columns for each; Global and Run-Specific. For each parameter, you can only have ONE box checked (checking one will make the other box uncheckable).
 
-<img src="https://github.com/FrandsenGroup/beams/blob/master/beams/app/resources/icons/example_batch.png" width="400" />
+<img src="https://github.com/aPeter1/BEAMS/blob/assets/example_batch.png" width="400" />
 
 By checking global, you are indicating that you want the parameter to be fit across all datasets - not individually for each.
 
@@ -152,18 +157,85 @@ By checking run-specific, you are indicating that you want to be able to specify
 
 - If you select multiple runs that have conflicting values in one column or another for a parameter marked as run-specific, you will see a ' * ' in that cell or, if it is the fixed column, you will see a partial checkmark. If you adjust that cell then all conflicting values will be overwritten, otherwise if you don't edit it then they will remain unchanged.
 
-<img src="https://github.com/FrandsenGroup/beams/blob/master/beams/app/resources/icons/example_run_list.png" width="400" />
+<img src="https://github.com/aPeter1/BEAMS/blob/assets/example_run_list.png" width="400" />
 
 ###### Output
 
 In the third section of the parameter table, you will see rows for each parameter and two new columns; Value and Uncertainty. These columns are only filled out after you have run a fit. When you select a fit on the left hand side panel, the value and uncertainty of the calculated parameters will be displayed here. If you select multiple fits at one time, a ' * ' will be placed in cells where there are conflicting values. 
 
-<img src="https://github.com/FrandsenGroup/beams/blob/master/beams/app/resources/icons/example_output.png" width="400" />
+<img src="https://github.com/aPeter1/BEAMS/blob/assets/example_output.png" width="400" />
+
+## Interacting with Histograms
+When you navigate to the histogram tab, you will be able to see the histograms for each loaded run and adjust meta values associated with them.
+
+<img src="https://github.com/aPeter1/BEAMS/blob/assets/left_panel_example.png" width="400" />
+
+Upon first opening the tab, you will see this window in the left side panel. From here you can expand a specific run and click on the histogram you want to work with. You should see the histogram displayed on the screen.
+
+Above the panel where you select histograms, you will see three buttons. Descriptions provided below.
+
+###### See File
+This will open up a small window displaying the contents of the file the run was loaded from. You cannot save changes from this prompt, it is purely for reference.
+
+###### Reset
+This will undo all changes you have made in this tab to the values of histograms that are CURRENTLY SELECTED in the panel below. If you  have clicked save, those changes that were saved can not be undone (aside from setting the old values and saving again).
+
+###### Save
+This will save all changes you have made in this tab to the values of histograms that are CURRENTLY SELECTED. Once you save, all affected asymmetries will be recalculated, and you should see the changes shown appropriately in the plotting tab.
+
+### Navigation Bar
+
+Depending on your purpose and the histogram, this may be a bit unwieldy to work with which is why a navigation bar is provided across the top of the tab. 
+
+![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/navigation_bar_example.png)
+
+There are six buttons provided. They are described below in the order they appear on the bar.
+
+###### Home
+Pressing this button will undo all the changes (zooming and panning) that have visually been done to the display below. Useful if you've lost your spot panning around or zoomed in on the wrong area.
+
+###### Undo
+This will undo the last action you made (zooming or panning).
+
+###### Redo
+This will redo the last action that was undone.
+
+###### Pan
+This will allow you to move around the plotted histogram.
+- Note - Once you have pressed this button, you need to press it again to unselect the action.
+
+###### Zoom
+This will allow you to zoom in on specific portions of the plot (you can still see the whole plot if you pan around).
+- Note - Once you have pressed this button, you need to press it again to unselect the action.
+
+###### Save
+This will allow you to save what is currently displayed as an image file. 
+
+![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/zoom_and_pan_example.gif)
+
+### Adjusting Values
+Like other features in BEAMS, we try to make this adjusting values as intuitive and dynamic as possible. Below the navigation toolbar you will see a box with some (by default) disabled areas. As stated in the instructions, you will need to 'Check' the box to the left of the disabled options in order to enable them. 
+
+This is because, as seen in the image below, you can either specify the values for each in the input boxes OR use your mouse to select on the plot where you want those values to be. This can be an issue if, at the same time for example, you have the zoom feature also selected and are trying to navigate around the plot. 
+
+![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/adjusting_values_example.gif)
+
+There are five values you can adjust for each histogram. In order to move those values across the plot with your mouse, you need to have the radio button next to that value selected.
+
+###### Background Start/End
+These values define the section of the histogram which will be used to calculate the background radiation of the run.
+
+###### T0
+This value defines the start time of the run. 
+
+###### Good Bin Start/End
+These values define the section of the histogram which will be used to calculate the asymmetry.
+
 
 ## File Formats
 
 ### External Supported File Formats
-NOTE: Support for ISIS files is currently on the docket, but not yet supported.
+Note - Support for ISIS files is currently on the docket, but not yet supported.
 
 File Extension | Description
 -------------- | -----------
@@ -201,3 +273,9 @@ $ pip install PyQt5
 Resolved in this [Issue 37](../../issues/37)
 
 Possible solution in the answer to this question on Stack Overflow: https://stackoverflow.com/questions/42863505/dll-load-failed-when-importing-pyqt5
+
+#### Histogram navigation toolbar is not loading
+There is an open issue for this ([Issue 97](../../issues/97)). As of right now we do not have a solution. Consider uninstalling and reinstalling the python library 'matplotlib' and 'PyQt5'. 
+
+#### My files from TRIUMF or PSI aren't being converted
+Please open up an issue if this happens as it means we need to update the executables.

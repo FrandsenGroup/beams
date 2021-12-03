@@ -422,7 +422,7 @@ class Separator(QtWidgets.QFrame):
         super(Separator, self).__init__()
         self.setFrameShape(QtWidgets.QFrame.HLine)
         # self.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Expanding)
-        self.setFixedHeight(0.75)
+        self.setFixedHeight(1)
         self.setAutoFillBackground(True)
         self.setBackgroundRole(QtGui.QPalette.Highlight)
         p = self.palette()
