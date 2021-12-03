@@ -220,7 +220,7 @@ This is because, as seen in the image below, you can either specify the values f
 
 ![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/adjusting_values_example.gif)
 
-There are five values you can adjust for each histogram. 
+There are five values you can adjust for each histogram. In order to move those values across the plot with your mouse, you need to have the radio button next to that value selected.
 
 ###### Background Start/End
 These values define the section of the histogram which will be used to calculate the background radiation of the run.
