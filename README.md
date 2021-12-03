@@ -168,7 +168,7 @@ In the third section of the parameter table, you will see rows for each paramete
 ## Interacting with Histograms
 When you navigate to the histogram tab, you will be able to see the histograms for each loaded run and adjust meta values associated with them.
 
-![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/left_panel_example.png)
+<img src="https://github.com/aPeter1/BEAMS/blob/assets/left_panel_example.png" width="400" />
 
 Upon first opening the tab, you will see this window in the left side panel. From here you can expand a specific run and click on the histogram you want to work with. You should see the histogram displayed on the screen.
 
