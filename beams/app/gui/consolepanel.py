@@ -391,18 +391,19 @@ class MainConsolePanelPresenter(PanelPresenter):
         self._set_callbacks()
         
     def _set_callbacks(self):
-        self._view.import_button.released.connect(lambda: self._add_file_clicked())
-        self._view.write_button.released.connect(lambda: self._write_file_clicked())
-        self._view.load_button.released.connect(lambda: self._load_file_clicked())
-        self._view.convert_button.released.connect(lambda: self._convert_file_clicked())
-        self._view.remove_button.released.connect(lambda: self._remove_file_clicked())
-        self._view.select_all.stateChanged.connect(lambda: self._select_all_checked())
+        self._view.import_button.released.connect(self._on_add_file_clicked)
+        self._view.write_button.released.connect(self._on_write_file_clicked)
+        self._view.load_button.released.connect(self._on_load_file_clicked)
+        self._view.convert_button.released.connect(self._on_convert_file_clicked)
+        self._view.remove_button.released.connect(self._on_remove_file_clicked)
+        self._view.select_all.stateChanged.connect(self._on_select_all_checked)
 
     @QtCore.pyqtSlot()
     def update(self, signal):
         pass
 
-    def _add_file_clicked(self):
+    @QtCore.pyqtSlot()
+    def _on_add_file_clicked(self):
         code = AddFileDialog.launch()
 
         if code == AddFileDialog.Codes.FILE_SYSTEM:
@@ -414,11 +415,13 @@ class MainConsolePanelPresenter(PanelPresenter):
         elif code == AddFileDialog.Codes.ISIS_DOWNLOAD:
             ISISDownloadDialog.launch()
 
-    def _write_file_clicked(self):
+    @QtCore.pyqtSlot()
+    def _on_write_file_clicked(self):
         file_ids = self._view.tree_view.get_file_ids()
         WriteDataDialog.launch(*file_ids)
 
-    def _load_file_clicked(self):
+    @QtCore.pyqtSlot()
+    def _on_load_file_clicked(self):
         file_ids = self._view.tree_view.get_file_ids()
         file_objects = services.FileService().get_files(file_ids)
 
@@ -493,10 +496,12 @@ class MainConsolePanelPresenter(PanelPresenter):
                 else:
                     WarningMessageDialog.launch(["None of the files listed in the .fit file(s) could be found."])
 
-    def _convert_file_clicked(self):
+    @QtCore.pyqtSlot()
+    def _on_convert_file_clicked(self):
         self.__file_service.convert_files(self._view.tree_view.get_file_ids())
 
-    def _remove_file_clicked(self):
+    @QtCore.pyqtSlot()
+    def _on_remove_file_clicked(self):
         checked_items = self._view.get_checked_items()
 
         code = PermissionsMessageDialog.launch(["Remove {} file(s)?".format(len(checked_items))])
@@ -504,7 +509,8 @@ class MainConsolePanelPresenter(PanelPresenter):
         if code == PermissionsMessageDialog.Codes.OKAY:
             self.__file_service.remove_files(checked_items)
 
-    def _select_all_checked(self):
+    @QtCore.pyqtSlot()
+    def _on_select_all_checked(self):
         self._view.tree_view.set_all_checked(self._view.select_all.isChecked())
 
     def _get_files_from_system(self):
