@@ -1207,8 +1207,10 @@ class FittingPanel(Panel):
         return dialog.exec()
 
 
-class FitTabPresenter:
+class FitTabPresenter(PanelPresenter):
     def __init__(self, view: FittingPanel):
+        super().__init__(view)
+
         self.__parameter_table_states = {}
         self.__update_states = True
 
@@ -1238,37 +1240,38 @@ class FitTabPresenter:
         self.__logger = logging.getLogger('FittingPanelPresenter')
 
     def _set_callbacks(self):
-        self._view.parameter_table.config_table.itemChanged.connect(self.update_parameter_table_states)
-        self._view.run_list.itemChanged.connect(self.update_parameter_table_states)
-        self._view.run_list.itemSelectionChanged.connect(self._update_parameter_table)
-        self._view.check_batch_fit.stateChanged.connect(self._update_batch_options)
-        self._view.check_global_plus.stateChanged.connect(self._update_batch_options)
+        self._view.parameter_table.config_table.itemChanged.connect(self._on_config_table_changed)
+        self._view.run_list.itemChanged.connect(self._on_run_list_changed)
+        self._view.run_list.itemSelectionChanged.connect(self._on_run_list_selection_changed)
+        self._view.check_batch_fit.stateChanged.connect(self._on_batch_options_changed)
+        self._view.check_global_plus.stateChanged.connect(self._on_batch_options_changed)
 
-        self._view.support_panel.tree.itemSelectionChanged.connect(self._selection_changed)
-        self._view.input_fit_equation.textChanged.connect(self._function_input_changed)
-        self._view.button_insert_preset_equation.released.connect(self._view.copy_loaded_function_to_cursor)
-        self._view.button_insert_user_equation.released.connect(self._view.copy_user_function_to_cursor)
-        self._view.button_save_user_equation.released.connect(self._save_user_function)
-        self._view.insert_sigma.released.connect(lambda: self._view.copy_character_to_cursor(fit.SIGMA))
-        self._view.insert_pi.released.connect(lambda: self._view.copy_character_to_cursor(fit.PI))
-        self._view.insert_phi.released.connect(lambda: self._view.copy_character_to_cursor(fit.PHI))
-        self._view.insert_naught.released.connect(lambda: self._view.copy_character_to_cursor(fit.NAUGHT))
-        self._view.insert_lambda.released.connect(lambda: self._view.copy_character_to_cursor(fit.LAMBDA))
-        self._view.insert_delta.released.connect(lambda: self._view.copy_character_to_cursor(fit.DELTA))
-        self._view.insert_alpha.released.connect(lambda: self._view.copy_character_to_cursor(fit.ALPHA))
-        self._view.insert_beta.released.connect(lambda: self._view.copy_character_to_cursor(fit.BETA))
-        self._view.fit_spectrum_settings.input_time_xmax.returnPressed.connect(self._update_display)
-        self._view.fit_spectrum_settings.input_time_xmin.returnPressed.connect(self._update_display)
-        self._view.fit_spectrum_settings.input_bin.returnPressed.connect(self._update_display)
-        self._view.fit_spectrum_settings.slider_bin.sliderMoved.connect(self._update_display)
-        self._view.button_plot.released.connect(self._update_display)
-        self._view.parameter_table.config_table.itemChanged.connect(self._plot_fit)
-        self._view.parameter_table.batch_table.itemChanged.connect(self._plot_fit)
-        self._view.parameter_table.output_table.itemChanged.connect(self._plot_fit)
-        self._view.button_fit.released.connect(self._fit)
-        self._view.support_panel.new_button.released.connect(self._new_empty_fit)
+        self._view.support_panel.tree.itemSelectionChanged.connect(self._on_fit_selection_changed)
+        self._view.input_fit_equation.textChanged.connect(self._on_function_input_changed)
+        self._view.button_insert_preset_equation.released.connect(self._on_insert_pre_defined_function_clicked)
+        self._view.button_insert_user_equation.released.connect(self._on_insert_user_defined_function_clicked)
+        self._view.button_save_user_equation.released.connect(self._on_save_user_defined_function_clicked)
+        self._view.insert_sigma.released.connect(lambda: self._on_insert_character_clicked(fit.SIGMA))
+        self._view.insert_pi.released.connect(lambda: self._on_insert_character_clicked(fit.PI))
+        self._view.insert_phi.released.connect(lambda: self._on_insert_character_clicked(fit.PHI))
+        self._view.insert_naught.released.connect(lambda: self._on_insert_character_clicked(fit.NAUGHT))
+        self._view.insert_lambda.released.connect(lambda: self._on_insert_character_clicked(fit.LAMBDA))
+        self._view.insert_delta.released.connect(lambda: self._on_insert_character_clicked(fit.DELTA))
+        self._view.insert_alpha.released.connect(lambda: self._on_insert_character_clicked(fit.ALPHA))
+        self._view.insert_beta.released.connect(lambda: self._on_insert_character_clicked(fit.BETA))
+        self._view.fit_spectrum_settings.input_time_xmax.returnPressed.connect(self._on_spectrum_settings_changed)
+        self._view.fit_spectrum_settings.input_time_xmin.returnPressed.connect(self._on_spectrum_settings_changed)
+        self._view.fit_spectrum_settings.input_bin.returnPressed.connect(self._on_spectrum_settings_changed)
+        self._view.fit_spectrum_settings.slider_bin.sliderMoved.connect(self._on_spectrum_settings_changed)
+        self._view.button_plot.released.connect(self._on_plot_clicked)
+        self._view.parameter_table.config_table.itemChanged.connect(self._on_parameter_table_changed)
+        self._view.parameter_table.batch_table.itemChanged.connect(self._on_parameter_table_changed)
+        self._view.parameter_table.output_table.itemChanged.connect(self._on_parameter_table_changed)
+        self._view.button_fit.released.connect(self._on_fit_clicked)
+        self._view.support_panel.new_button.released.connect(self._on_new_clicked)
 
-    def _function_input_changed(self):
+    @QtCore.pyqtSlot()
+    def _on_function_input_changed(self):
         if not self.__update_if_table_changes:
             return
         self.__update_if_table_changes = False
@@ -1296,7 +1299,8 @@ class FitTabPresenter:
         self.update_parameter_table_states()
         self._plot_fit()
 
-    def _save_user_function(self):
+    @QtCore.pyqtSlot()
+    def _on_save_user_defined_function_clicked(self):
         function_name = self._view.input_user_equation_name.text()
 
         if function_name == "":
@@ -1320,6 +1324,237 @@ class FitTabPresenter:
         self._view.option_user_fit_equations.setCurrentText(function_name)
         self._view.input_user_equation_name.clear()
         self._view.input_user_equation.clear()
+
+    @QtCore.pyqtSlot()
+    def _on_spectrum_settings_changed(self):
+        self._update_display()
+
+    @QtCore.pyqtSlot()
+    def _on_plot_clicked(self):
+        self._update_display()
+
+    @QtCore.pyqtSlot()
+    def _on_new_clicked(self):
+        self.__expression = None
+        self.__variable_groups = []
+        self._view.clear()
+
+    @QtCore.pyqtSlot()
+    def _on_fit_selection_changed(self):
+        self.__update_if_table_changes = False
+
+        selected_data = self._view.support_panel.tree.get_selected_data()
+        if len(selected_data) == 0:
+            self.__update_if_table_changes = True
+            return
+
+        for i in range(self._view.run_list.count()):
+            item = self._view.run_list.item(i)
+            item.setCheckState(qt_constants.Unchecked)
+
+        new_table_state = {}
+        self.__expression = None
+        self.__variable_groups = {}
+
+        # TODO we will want to disregard any fits that are in different sets
+        # TODO we need to update the backend with regards to other types of fits probably, mainly global.
+        # TODO we need to have 'unchecking' run-specific do something. Really just update the state so all runs get the
+        #   current state of the table.
+        outputs = dict()
+        for data in selected_data:
+            if type(data) == objects.Fit:
+                # We want to make sure all selected fits have the same expression, otherwise we break out
+                if self.__expression and self.__expression != data.expression:
+                    self.__expression = None
+                    self.__variable_groups = {}
+                    return
+                else:
+                    # We want to keep track of expression and variable groups for updating the display
+                    self.__variable_groups[data.run_id] = data.parameters
+                    self.__expression = data.expression
+
+                # Check the box next to the run for this fit
+                for i in range(self._view.run_list.count()):
+                    item = self._view.run_list.item(i)
+                    if item.identifier == data.run_id:
+                        item.setCheckState(qt_constants.Checked)
+
+                # Update the config table state with this fit. We will pass this up to the view
+                new_table_state[data.run_id] = [(parameter.symbol,
+                                                 parameter.value,
+                                                 parameter.lower,
+                                                 parameter.upper,
+                                                 parameter.is_fixed,
+                                                 parameter.is_global,
+                                                 parameter.is_run_specific)
+                                                for parameter in data.parameters.values()]
+
+                for par in data.parameters.values():
+                    if par.symbol not in outputs.keys():
+                        outputs[par.symbol] = set()
+                    outputs[par.symbol].add((par.output, par.uncertainty))
+
+                # Fits loaded from a file may not have a run associated with them at the moment. This could happen
+                #   because a fit was done and then the runs were removed
+                try:
+                    self._run_service.get_runs_by_ids([data.run_id])[0]
+                except KeyError:
+                    data.run_id = 'UNLINKED' + data.run_id if 'UNLINKED' not in data.run_id else data.run_id
+
+            elif type(data) == objects.FitDataset:
+                # If the selected data is a set of fits, just add those fits to the list we are iterating over
+                for f in data.fits.values():
+                    selected_data.append(f)
+
+        # We will need to get parameters to add to table. Clear old table. Same for expression and variable groups
+        self.set_parameter_table_states(new_table_state)
+        self._view.input_fit_equation.setText(str(self.__expression))
+
+        # Set the output and uncertainties in the output table
+        for symbol, out_sets in outputs.items():
+            if len(out_sets) > 1:
+                self._view.set_output_uncertainty_for_symbol(symbol, '*', '*')
+            else:
+                out_set = out_sets.pop()
+                self._view.set_output_uncertainty_for_symbol(symbol, out_set[0], out_set[1])
+
+        self._update_display()
+
+        self.__update_if_table_changes = True
+
+    @QtCore.pyqtSlot()
+    def _on_insert_character_clicked(self, character):
+        self._on_insert_character_clicked(character)
+
+    @QtCore.pyqtSlot()
+    def _on_parameter_table_changed(self):
+        self._plot_fit()
+
+    @QtCore.pyqtSlot()
+    def _on_run_list_changed(self):
+        self.update_parameter_table_states()
+
+    @QtCore.pyqtSlot()
+    def _on_run_list_selection_changed(self):
+        self._update_parameter_table()
+
+    @QtCore.pyqtSlot()
+    def _on_batch_options_changed(self):
+        self._update_batch_options()
+
+    @QtCore.pyqtSlot()
+    def _on_config_table_changed(self):
+        self.update_parameter_table_states()
+
+    @QtCore.pyqtSlot()
+    def _on_fit_clicked(self):
+        self.__update_if_table_changes = False
+        config = fit.FitConfig()
+
+        # Check user input on fit equation and update config
+        expression = self._view.get_expression()
+        if not fit.is_valid_expression("A(t) = " + expression):
+            WarningMessageDialog.launch(["Fit equation is invalid."])
+            self._view.highlight_input_red(self._view.input_fit_equation, True)
+            self.__update_if_table_changes = True
+            return
+        else:
+            self._view.highlight_input_red(self._view.input_fit_equation, False)
+        config.expression = expression
+
+        # Check user input on runs and update config
+        if self._view.check_batch_fit.isChecked():
+            run_ids = self._get_ordered_run_ids()
+        else:
+            run_ids = self._view.get_checked_run_ids()
+
+        if len(run_ids) == 0:  # User needs to select a run to fit
+            WarningMessageDialog.launch(["Must select at least one run to fit to."])
+            self._view.highlight_input_red(self._view.run_list, True)
+            self.__update_if_table_changes = True
+            return
+        else:
+            self._view.highlight_input_red(self._view.run_list, False)
+
+        # Check user input on parameters
+        try:
+            parameters = self.get_parameters()
+        except ValueError:
+            WarningMessageDialog.launch(["Parameter input is invalid."])
+            self.__update_if_table_changes = True
+            return
+
+        for run_id in run_ids:
+            for symbol, value, value_min, value_max, _, _, _ in parameters[run_id]:
+                if value_min > value_max:
+                    WarningMessageDialog.launch([
+                        "Lower bound is greater then upper bound for {}. ({:.5f} > {:.5f})".format(
+                            symbol, value_min, value_max)])
+                    self.__update_if_table_changes = True
+                    return
+                elif value < value_min:
+                    WarningMessageDialog.launch([
+                        "Bounds for {} and its initial value are incompatible. ({:.5f} < {:.5f})".format(
+                            symbol, value, value_min)])
+                    self.__update_if_table_changes = True
+                    return
+                elif value > value_max:
+                    WarningMessageDialog.launch([
+                        "Bounds for {} and its initial value are incompatible. ({:.5f} > {:.5f})".format(
+                            symbol, value, value_max)])
+                    self.__update_if_table_changes = True
+                    return
+
+        variables = {}
+        fit_titles = {}
+        data = OrderedDict()  # Ordered dict is important for fits where we want to fit runs in a certain order.
+        for run_id in run_ids:
+            for run in self._runs:
+                if run.id == run_id:
+                    fit_titles[run.id] = run.meta[files.TITLE_KEY]
+                    if run.id in self._asymmetries.keys():
+                        data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id],
+                                        self._asymmetries[run.id].uncertainty, run.meta)
+                    else:
+                        min_time = self._view.fit_spectrum_settings.get_min_time()
+                        max_time = self._view.fit_spectrum_settings.get_max_time()
+                        bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
+                        raw_asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(
+                            min_time=min_time, max_time=max_time)
+                        self._asymmetries[run.id] = raw_asymmetry
+                        data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id],
+                                        self._asymmetries[run.id].uncertainty, run.meta)
+
+                    run_parameters = {}
+                    for symbol, value, value_min, value_max, is_fixed, is_global, is_run_specific in parameters[run.id]:
+                        run_parameters[symbol] = fit.FitParameter(symbol=symbol, value=value, lower=value_min,
+                                                                  upper=value_max, is_global=is_global,
+                                                                  is_fixed=is_fixed, is_run_specific=is_run_specific)
+                    variables[run.id] = run_parameters
+
+        config.data = data
+        config.batch = self._view.check_batch_fit.isChecked()
+        config.parameters = variables
+        config.titles = fit_titles
+        config.set_flags(0)
+        self.__logger.info(str(config).encode("utf-8"))
+
+        # Fit to spec
+        worker = FitWorker(config)
+        worker.signals.result.connect(self._update_fit_changes)
+        worker.signals.error.connect(lambda e: self.__logger.error(e))
+        worker.signals.error.connect(lambda error_message: WarningMessageDialog.launch([error_message]))
+        self._threadpool.start(worker)
+
+        LoadingDialog.launch("Your fit is running!", worker)
+
+    @QtCore.pyqtSlot()
+    def _on_insert_user_defined_function_clicked(self):
+        self._view.copy_user_function_to_cursor()
+
+    @QtCore.pyqtSlot()
+    def _on_insert_pre_defined_function_clicked(self):
+        self._view.copy_loaded_function_to_cursor()
 
     def _update_display(self):
         run_ids = self._view.get_checked_run_ids()
@@ -1545,191 +1780,6 @@ class FitTabPresenter:
         run_ids = self._view.get_checked_run_ids()
 
         return sorted(run_ids, key=keys[meta_key], reverse=not ascending)
-
-    def _fit(self):
-        self.__update_if_table_changes = False
-        config = fit.FitConfig()
-
-        # Check user input on fit equation and update config
-        expression = self._view.get_expression()
-        if not fit.is_valid_expression("A(t) = " + expression):
-            WarningMessageDialog.launch(["Fit equation is invalid."])
-            self._view.highlight_input_red(self._view.input_fit_equation, True)
-            self.__update_if_table_changes = True
-            return
-        else:
-            self._view.highlight_input_red(self._view.input_fit_equation, False)
-        config.expression = expression
-
-        # Check user input on runs and update config
-        if self._view.check_batch_fit.isChecked():
-            run_ids = self._get_ordered_run_ids()
-        else:
-            run_ids = self._view.get_checked_run_ids()
-
-        if len(run_ids) == 0:  # User needs to select a run to fit
-            WarningMessageDialog.launch(["Must select at least one run to fit to."])
-            self._view.highlight_input_red(self._view.run_list, True)
-            self.__update_if_table_changes = True
-            return
-        else:
-            self._view.highlight_input_red(self._view.run_list, False)
-
-        # Check user input on parameters
-        try:
-            parameters = self.get_parameters()
-        except ValueError:
-            WarningMessageDialog.launch(["Parameter input is invalid."])
-            self.__update_if_table_changes = True
-            return
-
-        for run_id in run_ids:
-            for symbol, value, value_min, value_max, _, _, _ in parameters[run_id]:
-                if value_min > value_max:
-                    WarningMessageDialog.launch([
-                                                    "Lower bound is greater then upper bound for {}. ({:.5f} > {:.5f})".format(
-                                                        symbol, value_min, value_max)])
-                    self.__update_if_table_changes = True
-                    return
-                elif value < value_min:
-                    WarningMessageDialog.launch([
-                                                    "Bounds for {} and its initial value are incompatible. ({:.5f} < {:.5f})".format(
-                                                        symbol, value, value_min)])
-                    self.__update_if_table_changes = True
-                    return
-                elif value > value_max:
-                    WarningMessageDialog.launch([
-                                                    "Bounds for {} and its initial value are incompatible. ({:.5f} > {:.5f})".format(
-                                                        symbol, value, value_max)])
-                    self.__update_if_table_changes = True
-                    return
-
-        variables = {}
-        fit_titles = {}
-        data = OrderedDict()  # Ordered dict is important for fits where we want to fit runs in a certain order.
-        for run_id in run_ids:
-            for run in self._runs:
-                if run.id == run_id:
-                    fit_titles[run.id] = run.meta[files.TITLE_KEY]
-                    if run.id in self._asymmetries.keys():
-                        data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id], self._asymmetries[run.id].uncertainty, run.meta)
-                    else:
-                        min_time = self._view.fit_spectrum_settings.get_min_time()
-                        max_time = self._view.fit_spectrum_settings.get_max_time()
-                        bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
-                        raw_asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time, max_time=max_time)
-                        self._asymmetries[run.id] = raw_asymmetry
-                        data[run.id] = (self._asymmetries[run.id].time, self._asymmetries[run.id], self._asymmetries[run.id].uncertainty, run.meta)
-
-                    run_parameters = {}
-                    for symbol, value, value_min, value_max, is_fixed, is_global, is_run_specific in parameters[run.id]:
-                        run_parameters[symbol] = fit.FitParameter(symbol=symbol, value=value, lower=value_min,
-                                                                  upper=value_max, is_global=is_global,
-                                                                  is_fixed=is_fixed, is_run_specific=is_run_specific)
-                    variables[run.id] = run_parameters
-
-        config.data = data
-        config.batch = self._view.check_batch_fit.isChecked()
-        config.parameters = variables
-        config.titles = fit_titles
-        config.set_flags(0)
-        self.__logger.info(str(config).encode("utf-8"))
-
-        # Fit to spec
-        worker = FitWorker(config)
-        worker.signals.result.connect(self._update_fit_changes)
-        worker.signals.error.connect(lambda e: self.__logger.error(e))
-        worker.signals.error.connect(lambda error_message: WarningMessageDialog.launch([error_message]))
-        self._threadpool.start(worker)
-
-        LoadingDialog.launch("Your fit is running!", worker)
-
-    def _new_empty_fit(self):
-        self.__expression = None
-        self.__variable_groups = []
-        self._view.clear()
-
-    def _selection_changed(self):
-        self.__update_if_table_changes = False
-
-        selected_data = self._view.support_panel.tree.get_selected_data()
-        if len(selected_data) == 0:
-            self.__update_if_table_changes = True
-            return
-
-        for i in range(self._view.run_list.count()):
-            item = self._view.run_list.item(i)
-            item.setCheckState(qt_constants.Unchecked)
-
-        new_table_state = {}
-        self.__expression = None
-        self.__variable_groups = {}
-
-        # TODO we will want to disregard any fits that are in different sets
-        # TODO we need to update the backend with regards to other types of fits probably, mainly global.
-        # TODO we need to have 'unchecking' run-specific do something. Really just update the state so all runs get the
-        #   current state of the table.
-        outputs = dict()
-        for data in selected_data:
-            if type(data) == objects.Fit:
-                # We want to make sure all selected fits have the same expression, otherwise we break out
-                if self.__expression and self.__expression != data.expression:
-                    self.__expression = None
-                    self.__variable_groups = {}
-                    return
-                else:
-                    # We want to keep track of expression and variable groups for updating the display
-                    self.__variable_groups[data.run_id] = data.parameters
-                    self.__expression = data.expression
-
-                # Check the box next to the run for this fit
-                for i in range(self._view.run_list.count()):
-                    item = self._view.run_list.item(i)
-                    if item.identifier == data.run_id:
-                        item.setCheckState(qt_constants.Checked)
-
-                # Update the config table state with this fit. We will pass this up to the view
-                new_table_state[data.run_id] = [(parameter.symbol,
-                                                 parameter.value,
-                                                 parameter.lower,
-                                                 parameter.upper,
-                                                 parameter.is_fixed,
-                                                 parameter.is_global,
-                                                 parameter.is_run_specific)
-                                                for parameter in data.parameters.values()]
-
-                for par in data.parameters.values():
-                    if par.symbol not in outputs.keys():
-                        outputs[par.symbol] = set()
-                    outputs[par.symbol].add((par.output, par.uncertainty))
-
-                # Fits loaded from a file may not have a run associated with them at the moment. This could happen
-                #   because a fit was done and then the runs were removed
-                try:
-                    self._run_service.get_runs_by_ids([data.run_id])[0]
-                except KeyError:
-                    data.run_id = 'UNLINKED' + data.run_id if 'UNLINKED' not in data.run_id else data.run_id
-
-            elif type(data) == objects.FitDataset:
-                # If the selected data is a set of fits, just add those fits to the list we are iterating over
-                for f in data.fits.values():
-                    selected_data.append(f)
-
-        # We will need to get parameters to add to table. Clear old table. Same for expression and variable groups
-        self.set_parameter_table_states(new_table_state)
-        self._view.input_fit_equation.setText(str(self.__expression))
-
-        # Set the output and uncertainties in the output table
-        for symbol, out_sets in outputs.items():
-            if len(out_sets) > 1:
-                self._view.set_output_uncertainty_for_symbol(symbol, '*', '*')
-            else:
-                out_set = out_sets.pop()
-                self._view.set_output_uncertainty_for_symbol(symbol, out_set[0], out_set[1])
-
-        self._update_display()
-
-        self.__update_if_table_changes = True
 
     def _update_fit_changes(self, dataset):
         self._fit_service.add_dataset([dataset])

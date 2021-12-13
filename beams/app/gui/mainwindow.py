@@ -98,9 +98,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self._set_callbacks()
 
     def _set_callbacks(self):
-        self._tabs.currentChanged.connect(self._change_support_panel)
+        self._tabs.currentChanged.connect(self._on_tab_selection_changed)
 
-    def _change_support_panel(self):
+    @QtCore.pyqtSlot()
+    def _on_tab_selection_changed(self):
         self.removeDockWidget(self._current_support)
 
         index = self._tabs.currentIndex()
