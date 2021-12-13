@@ -6,10 +6,10 @@ from urllib import parse
 from datetime import datetime
 
 import requests
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 
 from app.util import qt_widgets, qt_constants
-from app.model import files, services
+from app.model import services
 
 
 # noinspection PyArgumentList
@@ -214,8 +214,10 @@ class MusrDownloadDialog(QtWidgets.QDialog):
         return dialog.exec()
 
 
-class MusrDownloadDialogPresenter:
+class MusrDownloadDialogPresenter(QtCore.QObject):
     def __init__(self, view: MusrDownloadDialog):
+        super().__init__()
+
         self._view = view
         self._search_url = "http://musr.ca/mud/runSel.php"
         self._data_url = "http://musr.ca/mud/data/"
@@ -226,12 +228,123 @@ class MusrDownloadDialogPresenter:
         self._set_callbacks()
 
     def _set_callbacks(self):
-        self._view.search_button.released.connect(lambda: self._search_clicked())
-        self._view.download_button.released.connect(lambda: self._download_clicked())
-        self._view.done_button.released.connect(lambda: self._done_clicked())
-        self._view.select_button.released.connect(lambda: self._save_to_clicked())
-        self._view.download_selected.released.connect(lambda: self._download_selected_clicked())
-        self._view.download_all.released.connect(lambda: self._download_all_clicked())
+        self._view.search_button.released.connect(self._on_search_clicked)
+        self._view.download_button.released.connect(self._on_download_clicked)
+        self._view.done_button.released.connect(self._on_done_clicked)
+        self._view.select_button.released.connect(self._on_save_to_clicked)
+        self._view.download_selected.released.connect(self._on_download_selected_clicked)
+        self._view.download_all.released.connect(self._on_download_all_clicked)
+
+    @QtCore.pyqtSlot()
+    def _on_search_clicked(self):
+        self._view.set_status_message('Querying ... ')
+        query = self._assemble_query()
+
+        if query is None:
+            return
+
+        if len(query) < 2:
+            self._view.log_message("No query parameters filled.\n")
+        else:
+            self._view.log_message("Sending query : {}\n".format(query))
+
+        full_url = self._search_url + query
+
+        try:
+            response = requests.get(full_url)
+        except requests.exceptions.ConnectionError:
+            self._view.log_message("Error: Check your internet connection.\n")
+            return
+
+        if response.status_code != 200:
+            self._view.log_message("Error : {}\n".format(response.status_code))
+            return
+
+        printed_response = False
+        identifiers = []
+        i = True
+        for x in response.text.split('TR>'):
+            y = x.split('<TD')
+
+            if len(y) > 2:
+                year = y[2][1:5]
+                area = y[3].split('<i>')[1].split('</i>')[0]
+                expt = y[4].split('>')[1].split('<')[0]
+                expt_type = y[5].split('>')[3].split('<')[0]
+                run_numbers = y[6].split('"')
+
+                if len(run_numbers) > 4:
+
+                    if i:
+                        self._view.set_if_empty(expt, year, area)
+                        i = False
+
+                    title_string = x.split('tx=')[1].split('\"')[0]
+                    title = parse.unquote(title_string)
+
+                    run_number = run_numbers[3].split()[2]
+                    identifier = '{} Title: {}, Year: {}, Area: {}'.format(run_number, title, year, area)
+
+                    identifiers.append(identifier)
+                    printed_response = True
+
+        self._view.fill_list(identifiers)
+        if not printed_response:
+            self._view.log_message("No runs found.\n")
+
+        self._view.set_status_message('Done.')
+
+    @QtCore.pyqtSlot()
+    def _on_download_clicked(self):
+        self._view.set_status_message('Downloading ... ')
+
+        downloads = self._assemble_downloads()
+        if downloads is None:
+            self._view.log_message('No runs specified.\n')
+            self._view.set_status_message('Done.')
+            return
+
+        self._download(downloads)
+
+    @QtCore.pyqtSlot()
+    def _on_download_selected_clicked(self):
+        self._view.set_status_message('Downloading ... ')
+
+        downloads = self._assemble_downloads_from_search(True)
+        if downloads is None:
+            self._view.log_message('No runs specified.\n')
+            self._view.set_status_message('Done.')
+            return
+
+        self._download(downloads)
+
+    @QtCore.pyqtSlot()
+    def _on_download_all_clicked(self):
+        self._view.set_status_message('Downloading ... ')
+
+        downloads = self._assemble_downloads_from_search(False)
+        if downloads is None:
+            self._view.log_message('Please finish filling in Expt Number, Year and Area.\n')
+            self._view.set_status_message('Done.')
+            return
+
+        self._download(downloads)
+
+    @QtCore.pyqtSlot()
+    def _on_done_clicked(self):
+        if self._new_files:
+            self._view.done(MusrDownloadDialog.Codes.NEW_FILES)
+        else:
+            self._view.done(MusrDownloadDialog.Codes.NO_NEW_FILES)
+
+    @QtCore.pyqtSlot()
+    def _on_save_to_clicked(self):
+        path = QtWidgets.QFileDialog.getExistingDirectory(self._view, 'Select directory to save MUD files to',
+                                                          self.__system_service.get_last_used_directory(),
+                                                          options=QtWidgets.QFileDialog.ShowDirsOnly)
+        if path:
+            self.__system_service.set_last_used_directory(path)
+            self._view.set_file(path)
 
     def _assemble_query(self):
         query = "?"
@@ -327,97 +440,6 @@ class MusrDownloadDialogPresenter:
 
         return directory + "{}{}".format(separator, download.split('/')[-1])
 
-    def _search_clicked(self):
-        self._view.set_status_message('Querying ... ')
-        query = self._assemble_query()
-
-        if query is None:
-            return
-
-        if len(query) < 2:
-            self._view.log_message("No query parameters filled.\n")
-        else:
-            self._view.log_message("Sending query : {}\n".format(query))
-
-        full_url = self._search_url + query
-
-        try:
-            response = requests.get(full_url)
-        except requests.exceptions.ConnectionError:
-            self._view.log_message("Error: Check your internet connection.\n")
-            return
-
-        if response.status_code != 200:
-            self._view.log_message("Error : {}\n".format(response.status_code))
-            return
-
-        printed_response = False
-        identifiers = []
-        i = True
-        for x in response.text.split('TR>'):
-            y = x.split('<TD')
-
-            if len(y) > 2:
-                year = y[2][1:5]
-                area = y[3].split('<i>')[1].split('</i>')[0]
-                expt = y[4].split('>')[1].split('<')[0]
-                expt_type = y[5].split('>')[3].split('<')[0]
-                run_numbers = y[6].split('"')
-
-                if len(run_numbers) > 4:
-
-                    if i:
-                        self._view.set_if_empty(expt, year, area)
-                        i = False
-
-                    title_string = x.split('tx=')[1].split('\"')[0]
-                    title = parse.unquote(title_string)
-
-                    run_number = run_numbers[3].split()[2]
-                    identifier = '{} Title: {}, Year: {}, Area: {}'.format(run_number, title, year, area)
-
-                    identifiers.append(identifier)
-                    printed_response = True
-
-        self._view.fill_list(identifiers)
-        if not printed_response:
-            self._view.log_message("No runs found.\n")
-
-        self._view.set_status_message('Done.')
-
-    def _download_clicked(self):
-        self._view.set_status_message('Downloading ... ')
-
-        downloads = self._assemble_downloads()
-        if downloads is None:
-            self._view.log_message('No runs specified.\n')
-            self._view.set_status_message('Done.')
-            return
-
-        self._download(downloads)
-
-    def _download_selected_clicked(self):
-        self._view.set_status_message('Downloading ... ')
-
-        downloads = self._assemble_downloads_from_search(True)
-        if downloads is None:
-            self._view.log_message('No runs specified.\n')
-            self._view.set_status_message('Done.')
-            return
-
-        self._download(downloads)
-
-    def _download_all_clicked(self):
-        self._view.set_status_message('Downloading ... ')
-
-        downloads = self._assemble_downloads_from_search(False)
-        if downloads is None:
-            self._view.log_message('Please finish filling in Expt Number, Year and Area.\n')
-            self._view.set_status_message('Done.')
-            return
-
-        self._download(downloads)
-
     def _download(self, downloads):
         good = 0
         if len(downloads) > 500:
@@ -449,18 +471,3 @@ class MusrDownloadDialogPresenter:
         self.__file_service.add_files(new_files)
         self._view.log_message('{}/{} Files downloaded successfully.\n'.format(good, len(downloads)))
         self._view.set_status_message('Done.')
-
-    def _done_clicked(self):
-        if self._new_files:
-            self._view.done(MusrDownloadDialog.Codes.NEW_FILES)
-        else:
-            self._view.done(MusrDownloadDialog.Codes.NO_NEW_FILES)
-
-    # noinspection PyCallByClass
-    def _save_to_clicked(self):
-        path = QtWidgets.QFileDialog.getExistingDirectory(self._view, 'Select directory to save MUD files to',
-                                                          self.__system_service.get_last_used_directory(),
-                                                          options=QtWidgets.QFileDialog.ShowDirsOnly)
-        if path:
-            self.__system_service.set_last_used_directory(path)
-            self._view.set_file(path)

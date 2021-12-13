@@ -97,9 +97,9 @@ class WarningMessageDialog(QtWidgets.QDialog):
         pos_button.setFixedWidth(80)
 
         if pos_function:
-            pos_button.released.connect(lambda: pos_function())
+            pos_button.released.connect(pos_function)
 
-        pos_button.released.connect(lambda: self.close())
+        pos_button.released.connect(self.close)
 
         col = QtWidgets.QVBoxLayout()
 
@@ -136,8 +136,8 @@ class PermissionsMessageDialog(QtWidgets.QDialog):
 
         self.neg_button.released.connect(lambda: self.done(PermissionsMessageDialog.Codes.CANCEL))
 
-        self.neg_button.released.connect(lambda: self.close())
-        self.pos_button.released.connect(lambda: self.close())
+        self.neg_button.released.connect(self.close)
+        self.pos_button.released.connect(self.close)
 
         col = QtWidgets.QVBoxLayout()
         col.addWidget(message)

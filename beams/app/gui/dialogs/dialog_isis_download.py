@@ -10,7 +10,7 @@ from datetime import datetime
 import requests
 from PyQt5 import QtWidgets, QtCore
 
-from app.model import files, services
+from app.model import services
 from app.util import qt_widgets, qt_constants
 
 
@@ -206,8 +206,9 @@ class ISISDownloadDialog(QtWidgets.QDialog):
         return dialog.exec()
 
 
-class ISISDownloadDialogPresenter:
+class ISISDownloadDialogPresenter(QtCore.QObject):
     def __init__(self, view: ISISDownloadDialog):
+        super().__init__()
         self._view = view
 
         self._session_url = r'https://icatisis.esc.rl.ac.uk/icat/session'
@@ -228,11 +229,54 @@ class ISISDownloadDialogPresenter:
         self._set_callbacks()
 
     def _set_callbacks(self):
-        self._view.search_button.released.connect(lambda: self._search_clicked())
-        self._view.done_button.released.connect(lambda: self._done_clicked())
-        self._view.select_button.released.connect(lambda: self._save_to_clicked())
-        self._view.download_selected.released.connect(lambda: self._download_selected_clicked())
-        self._view.download_all.released.connect(lambda: self._download_all_clicked())
+        self._view.search_button.released.connect(self._on_search_clicked)
+        self._view.done_button.released.connect(self._on_done_clicked)
+        self._view.select_button.released.connect(self._on_save_to_clicked)
+        self._view.download_selected.released.connect(self._on_download_selected_clicked)
+        self._view.download_all.released.connect(self._on_download_all_clicked)
+
+    @QtCore.pyqtSlot()
+    def _on_save_to_clicked(self):
+        path = QtWidgets.QFileDialog.getExistingDirectory(self._view, 'Select directory to save MUD files to',
+                                                          self.__system_service.get_last_used_directory(),
+                                                          options=QtWidgets.QFileDialog.ShowDirsOnly)
+        if path:
+            self.__system_service.set_last_used_directory(path)
+            self._view.set_file(path)
+
+    @QtCore.pyqtSlot()
+    def _on_search_clicked(self):
+        self._view.set_status_message('Querying ... ')
+        self._view.setEnabled(False)
+        QtCore.QCoreApplication.processEvents()
+        self._search_request()
+        self._view.setEnabled(True)
+        self._view.set_status_message('Done.')
+
+    @QtCore.pyqtSlot()
+    def _on_download_selected_clicked(self):
+        self._view.set_status_message('Downloading ... ')
+        self._view.setEnabled(False)
+        QtCore.QCoreApplication.processEvents()
+        self._download_items(False)
+        self._view.setEnabled(True)
+        self._view.set_status_message('Done')
+
+    @QtCore.pyqtSlot()
+    def _on_download_all_clicked(self):
+        self._view.set_status_message('Downloading ... ')
+        self._view.setEnabled(False)
+        QtCore.QCoreApplication.processEvents()
+        self._download_items(True)
+        self._view.setEnabled(True)
+        self._view.set_status_message('Done')
+
+    @QtCore.pyqtSlot()
+    def _on_done_clicked(self):
+        if self._new_files:
+            self._view.done(ISISDownloadDialog.Codes.NEW_FILES)
+        else:
+            self._view.done(ISISDownloadDialog.Codes.NO_NEW_FILES)
 
     def _assemble_save(self):
         directory = self._view.get_file()
@@ -241,36 +285,6 @@ class ISISDownloadDialogPresenter:
             directory = os.getcwd()
 
         return directory
-
-    def _search_clicked(self):
-        self._view.set_status_message('Querying ... ')
-        self._view.setEnabled(False)
-        QtCore.QCoreApplication.processEvents()
-        self._search_request()
-        self._view.setEnabled(True)
-        self._view.set_status_message('Done.')
-
-    def _download_selected_clicked(self):
-        self._view.set_status_message('Downloading ... ')
-        self._view.setEnabled(False)
-        QtCore.QCoreApplication.processEvents()
-        self._download_items(False)
-        self._view.setEnabled(True)
-        self._view.set_status_message('Done')
-
-    def _download_all_clicked(self):
-        self._view.set_status_message('Downloading ... ')
-        self._view.setEnabled(False)
-        QtCore.QCoreApplication.processEvents()
-        self._download_items(True)
-        self._view.setEnabled(True)
-        self._view.set_status_message('Done')
-
-    def _done_clicked(self):
-        if self._new_files:
-            self._view.done(ISISDownloadDialog.Codes.NEW_FILES)
-        else:
-            self._view.done(ISISDownloadDialog.Codes.NO_NEW_FILES)
 
     def _renew_session(self):
         data = {'json': json.dumps({'plugin': 'anon', 'credentials': [{'username': ''}, {'password': ''}]})}
@@ -439,12 +453,3 @@ class ISISDownloadDialogPresenter:
         self._new_files = True
         self._view.log_message('{} Files downloaded successfully.\n'.format(len(new_files)))
         self._view.set_status_message('Done.')
-
-    # noinspection PyCallByClass
-    def _save_to_clicked(self):
-        path = QtWidgets.QFileDialog.getExistingDirectory(self._view, 'Select directory to save MUD files to',
-                                                          self.__system_service.get_last_used_directory(),
-                                                          options=QtWidgets.QFileDialog.ShowDirsOnly)
-        if path:
-            self.__system_service.set_last_used_directory(path)
-            self._view.set_file(path)

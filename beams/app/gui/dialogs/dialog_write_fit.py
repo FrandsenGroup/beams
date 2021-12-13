@@ -125,11 +125,15 @@ class WriteFitDialogPresenter(QtCore.QObject):
         self._set_callbacks()
 
     def _set_callbacks(self):
-        self._view.button_save_as.released.connect(self._handle_save_as)
-        self._view.button_done.released.connect(lambda: self._view.done(0))
+        self._view.button_save_as.released.connect(self._on_save_as_clicked)
+        self._view.button_done.released.connect(self._on_done_clicked)
 
     @QtCore.pyqtSlot()
-    def _handle_save_as(self):
+    def _on_done_clicked(self):
+        self._view.done(0)
+
+    @QtCore.pyqtSlot()
+    def _on_save_as_clicked(self):
         prefix_key = self._view.option_prefix.currentText()
         order_by_key = self._view.option_order_by.currentText()
 
