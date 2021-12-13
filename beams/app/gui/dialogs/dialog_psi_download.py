@@ -228,12 +228,120 @@ class PSIDownloadDialogPresenter:
         self._set_callbacks()
 
     def _set_callbacks(self):
-        self._view.search_button.released.connect(lambda: self._search_clicked())
-        self._view.download_button.released.connect(lambda: self._download_clicked())
-        self._view.done_button.released.connect(lambda: self._done_clicked())
-        self._view.select_button.released.connect(lambda: self._save_to_clicked())
-        self._view.download_selected.released.connect(lambda: self._download_selected_clicked())
-        self._view.download_all.released.connect(lambda: self._download_all_clicked())
+        self._view.search_button.released.connect(self._on_search_clicked)
+        self._view.download_button.released.connect(self._on_download_clicked)
+        self._view.done_button.released.connect(self._on_done_clicked)
+        self._view.select_button.released.connect(self._on_save_to_clicked)
+        self._view.download_selected.released.connect(self._on_download_selected_clicked)
+        self._view.download_all.released.connect(self._on_download_all_clicked)
+
+    def _on_search_clicked(self):
+        self._view.set_status_message('Querying ... ')
+        form_data = self._assemble_query()
+
+        if form_data is None:
+            return
+
+        if len(form_data) < 2:
+            self._view.log_message("No query parameters filled.\n")
+        else:
+            self._view.log_message("Sending query : {}\n".format(form_data))
+
+        try:
+            response = requests.post(self._search_url, data=form_data)
+        except requests.exceptions.ConnectionError:
+            self._view.log_message("Error: Check your internet connection.\n")
+            return
+
+        if response.status_code != 200:
+            self._view.log_message("Error : {}\n".format(response.status_code))
+            return
+
+        printed_response = False
+        identifiers = []
+        self._current_identifier_uris = {}
+        i = True
+
+        try:
+            self._counter = response.text.split('name="Counter" value="')[1].split('"')[0]
+        except IndexError:
+            self._view.log_message("No results.\n")
+            return
+
+        for x in response.text.split('<tr>'):
+            y = x.split('<td>')
+
+            if len(y) == 7:
+                title = y[-1].split('</td>')[0]
+                run = y[-3].split('</td>')[0].split('>')[1].split('<')[0]
+                year = y[-4].split('</td>')[0]
+
+                if run != 'RUN':
+                    if i:
+                        self._view.set_if_empty(year_new=year)
+                        i = False
+                    check = y[-6].split('</td>')[0].split('name="')[1].split('"')[0]
+                    uri = y[-6].split('</td>')[0].split('value="')[1].split('"')[0]
+
+                    identifier = '{} Title: {}, Year: {}, Area: {}'.format(run, title, year, form_data['AREA'])
+                    self._current_identifier_uris[identifier] = {'TITLE': title, 'RUN': run, 'YEAR': year,
+                                                                 'CHECK': check, 'URI': uri, 'AREA': form_data['AREA']}
+
+                    identifiers.append(identifier)
+                    printed_response = True
+
+        self._view.fill_list(identifiers)
+        if not printed_response:
+            self._view.log_message("No runs found.\n")
+
+        self._view.set_status_message('Done.')
+
+    def _on_download_clicked(self):
+        self._view.set_status_message('Downloading ... ')
+
+        downloads = self._assemble_downloads()
+        if downloads is None:
+            self._view.log_message('No runs specified.\n')
+            self._view.set_status_message('Done.')
+            return
+
+        self._download(downloads)
+
+    def _on_download_selected_clicked(self):
+        self._view.set_status_message('Downloading ... ')
+
+        downloads = self._assemble_downloads_from_search(True)
+        if downloads is None:
+            self._view.log_message('No runs specified.\n')
+            self._view.set_status_message('Done.')
+            return
+
+        self._download(downloads)
+
+    def _on_download_all_clicked(self):
+        self._view.set_status_message('Downloading ... ')
+
+        downloads = self._assemble_downloads_from_search(False)
+        if downloads is None:
+            self._view.log_message('Please finish filling in Expt Number, Year and Area.\n')
+            self._view.set_status_message('Done.')
+            return
+
+        self._download(downloads)
+
+    def _on_done_clicked(self):
+        if self._new_files:
+            self._view.done(PSIDownloadDialog.Codes.NEW_FILES)
+        else:
+            self._view.done(PSIDownloadDialog.Codes.NO_NEW_FILES)
+
+    def _on_save_to_clicked(self):
+        path = QtWidgets.QFileDialog.getExistingDirectory(self._view, 'Select directory to save MUD files to',
+                                                          self.__system_service.get_last_used_directory(),
+                                                          options=QtWidgets.QFileDialog.ShowDirsOnly)
+        if path:
+            self.__system_service.set_last_used_directory(path)
+            self._view.set_file(path)
 
     def _assemble_query(self):
         form_data_dictionary = {}
@@ -336,100 +444,6 @@ class PSIDownloadDialogPresenter:
 
         return directory
 
-    def _search_clicked(self):
-        self._view.set_status_message('Querying ... ')
-        form_data = self._assemble_query()
-
-        if form_data is None:
-            return
-
-        if len(form_data) < 2:
-            self._view.log_message("No query parameters filled.\n")
-        else:
-            self._view.log_message("Sending query : {}\n".format(form_data))
-
-        try:
-            response = requests.post(self._search_url, data=form_data)
-        except requests.exceptions.ConnectionError:
-            self._view.log_message("Error: Check your internet connection.\n")
-            return
-
-        if response.status_code != 200:
-            self._view.log_message("Error : {}\n".format(response.status_code))
-            return
-
-        printed_response = False
-        identifiers = []
-        self._current_identifier_uris = {}
-        i = True
-
-        try:
-            self._counter = response.text.split('name="Counter" value="')[1].split('"')[0]
-        except IndexError:
-            self._view.log_message("No results.\n")
-            return
-
-        for x in response.text.split('<tr>'):
-            y = x.split('<td>')
-
-            if len(y) == 7:
-                title = y[-1].split('</td>')[0]
-                run = y[-3].split('</td>')[0].split('>')[1].split('<')[0]
-                year = y[-4].split('</td>')[0]
-
-                if run != 'RUN':
-                    if i:
-                        self._view.set_if_empty(year_new=year)
-                        i = False
-                    check = y[-6].split('</td>')[0].split('name="')[1].split('"')[0]
-                    uri = y[-6].split('</td>')[0].split('value="')[1].split('"')[0]
-
-                    identifier = '{} Title: {}, Year: {}, Area: {}'.format(run, title, year, form_data['AREA'])
-                    self._current_identifier_uris[identifier] = {'TITLE': title, 'RUN': run, 'YEAR': year,
-                                                                 'CHECK': check, 'URI': uri, 'AREA': form_data['AREA']}
-
-                    identifiers.append(identifier)
-                    printed_response = True
-
-        self._view.fill_list(identifiers)
-        if not printed_response:
-            self._view.log_message("No runs found.\n")
-
-        self._view.set_status_message('Done.')
-
-    def _download_clicked(self):
-        self._view.set_status_message('Downloading ... ')
-
-        downloads = self._assemble_downloads()
-        if downloads is None:
-            self._view.log_message('No runs specified.\n')
-            self._view.set_status_message('Done.')
-            return
-
-        self._download(downloads)
-
-    def _download_selected_clicked(self):
-        self._view.set_status_message('Downloading ... ')
-
-        downloads = self._assemble_downloads_from_search(True)
-        if downloads is None:
-            self._view.log_message('No runs specified.\n')
-            self._view.set_status_message('Done.')
-            return
-
-        self._download(downloads)
-
-    def _download_all_clicked(self):
-        self._view.set_status_message('Downloading ... ')
-
-        downloads = self._assemble_downloads_from_search(False)
-        if downloads is None:
-            self._view.log_message('Please finish filling in Expt Number, Year and Area.\n')
-            self._view.set_status_message('Done.')
-            return
-
-        self._download(downloads)
-
     def _download(self, form_data):
         try:
             response = requests.post(self._data_url, data=form_data, stream=True)
@@ -455,18 +469,3 @@ class PSIDownloadDialogPresenter:
         self._new_files = True
         self._view.log_message('{} Files downloaded successfully.\n'.format(len(new_files)))
         self._view.set_status_message('Done.')
-
-    def _done_clicked(self):
-        if self._new_files:
-            self._view.done(PSIDownloadDialog.Codes.NEW_FILES)
-        else:
-            self._view.done(PSIDownloadDialog.Codes.NO_NEW_FILES)
-
-    # noinspection PyCallByClass
-    def _save_to_clicked(self):
-        path = QtWidgets.QFileDialog.getExistingDirectory(self._view, 'Select directory to save MUD files to',
-                                                          self.__system_service.get_last_used_directory(),
-                                                          options=QtWidgets.QFileDialog.ShowDirsOnly)
-        if path:
-            self.__system_service.set_last_used_directory(path)
-            self._view.set_file(path)

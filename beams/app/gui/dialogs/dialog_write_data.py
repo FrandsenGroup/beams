@@ -1,8 +1,7 @@
 
 import os
 
-from PyQt5 import QtWidgets, QtCore
-import numpy as np
+from PyQt5 import QtWidgets
 
 from app.util import qt_widgets, qt_constants
 from app.model import files, objects, services
@@ -173,7 +172,6 @@ class WriteDataDialogPresenter:
         self.__system_service = services.SystemService()
         self.__files = self.__service.get_files(self._view.files)
 
-        # fixme, we will want to allow for fits but for now we will just do runs
         unloaded = 0
         files_with_run_datasets = []
         for file in self.__files:
@@ -192,17 +190,20 @@ class WriteDataDialogPresenter:
         self._set_callbacks()
 
     def _set_callbacks(self):
-        self._view.radio_binned.clicked.connect(lambda: self._view.enabled_binning(self._view.is_binned()))
-        self._view.radio_full.clicked.connect(lambda: self._view.enabled_binning(self._view.is_binned()))
-        self._view.radio_fft.clicked.connect(lambda: self._view.enabled_binning(self._view.is_binned()))
-        self._view.radio_binned_size.textChanged.connect(lambda: self._bin_changed())
-        self._view.select_folder.released.connect(lambda: self._save_to_clicked())
-        self._view.write_file.released.connect(lambda: self._write_clicked())
-        self._view.write_all.released.connect(lambda: self._write_all_clicked())
-        self._view.done_button.released.connect(lambda: self._done_clicked())
-        self._view.skip_file.released.connect(lambda: self._skip_clicked())
+        self._view.radio_binned.clicked.connect(self._on_radio_checked)
+        self._view.radio_full.clicked.connect(self._on_radio_checked)
+        self._view.radio_fft.clicked.connect(self._on_radio_checked)
+        self._view.radio_binned_size.textChanged.connect(self._on_bin_changed)
+        self._view.select_folder.released.connect(self._on_save_to_clicked)
+        self._view.write_file.released.connect(self._on_write_clicked)
+        self._view.write_all.released.connect(self._on_write_all_clicked)
+        self._view.done_button.released.connect(self._on_done_clicked)
+        self._view.skip_file.released.connect(self._on_skip_clicked)
 
-    def _write_clicked(self):
+    def _on_radio_checked(self):
+        self._view.enabled_binning(self._view.is_binned())
+
+    def _on_write_clicked(self):
         self._view.set_status_message('Writing files ... ')
         current_file = self._view.get_current_file()
         if self._view.is_binned():
@@ -213,7 +214,7 @@ class WriteDataDialogPresenter:
             self._write_fft(current_file)
         self._view.set_status_message('Done.')
 
-    def _write_all_clicked(self):
+    def _on_write_all_clicked(self):
         self._view.set_status_message('Writing files ... ')
         for file in self._view.get_all_files():
 
@@ -225,7 +226,7 @@ class WriteDataDialogPresenter:
                 self._write_fft(file)
         self._view.set_status_message('Done.')
 
-    def _save_to_clicked(self):
+    def _on_save_to_clicked(self):
         # fixme only specifies for .asy files
         # noinspection PyCallByClass,PyArgumentList
         saved_file_path = QtWidgets.QFileDialog.getSaveFileName(self._view, 'Specify file',
@@ -239,7 +240,7 @@ class WriteDataDialogPresenter:
             self.__system_service.set_last_used_directory(path[0])
             self._view.set_file_path(saved_file_path)
 
-    def _skip_clicked(self):
+    def _on_skip_clicked(self):
         current_file = self._view.get_current_file()
         self._view.remove_current_file()
 
@@ -252,10 +253,10 @@ class WriteDataDialogPresenter:
                 self.__files.remove(file)
                 break
 
-    def _done_clicked(self):
+    def _on_done_clicked(self):
         self._view.done(0)
 
-    def _bin_changed(self):
+    def _on_bin_changed(self):
         try:
             float(self._view.get_bin_size())
             self._view.enable_writing(True)
