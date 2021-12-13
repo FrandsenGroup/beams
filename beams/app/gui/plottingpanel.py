@@ -960,26 +960,7 @@ class PlottingPanelPresenter(PanelPresenter):
 
     @QtCore.pyqtSlot()
     def _on_plot_clicked(self):
-        def _verify_asymmetries_are_calculated():
-            runs_without_asymmetries = []
-            for run in runs:
-                if run.asymmetries[objects.RunDataset.FULL_ASYMMETRY] is None:
-                    runs_without_asymmetries.append(run)
-
-            if len(runs_without_asymmetries) > 0:
-                code = PlotFileDialog.launch([runs_without_asymmetries])
-                if code == PlotFileDialog.Codes.NO_FILES_PLOTTED:
-                    return False
-            return True
-
-        ids = self._view.support_panel.item_tree.get_run_ids()
-        runs = self.__run_service.get_runs_by_ids(ids)
-        verified = _verify_asymmetries_are_calculated()
-
-        if not verified:
-            return
-
-        self._start_update(side='both')
+        self._plot()
 
     @QtCore.pyqtSlot()
     def _on_clear_all_clicked(self):
@@ -1138,6 +1119,28 @@ class PlottingPanelPresenter(PanelPresenter):
             self._start_update('both')
 
         self._populate_settings()
+
+    def _plot(self):
+        def _verify_asymmetries_are_calculated():
+            runs_without_asymmetries = []
+            for run in runs:
+                if run.asymmetries[objects.RunDataset.FULL_ASYMMETRY] is None:
+                    runs_without_asymmetries.append(run)
+
+            if len(runs_without_asymmetries) > 0:
+                code = PlotFileDialog.launch([runs_without_asymmetries])
+                if code == PlotFileDialog.Codes.NO_FILES_PLOTTED:
+                    return False
+            return True
+
+        ids = self._view.support_panel.item_tree.get_run_ids()
+        runs = self.__run_service.get_runs_by_ids(ids)
+        verified = _verify_asymmetries_are_calculated()
+
+        if not verified:
+            return
+
+        self._start_update(side='both')
 
     def update_after_change(self):
         self.update(True)
