@@ -44,19 +44,19 @@ class TestHistograms:
         assert init_dif_c == init_dif
 
     @pytest.mark.parametrize("hist_one, hist_two",
-                             # Histograms with different time zeroes.
+                             # Start bin is greater then the end bin
                              [(objects.Histogram(range(27648),
                                                  980, 1030, 1000, 70, 900, "Front", "RANDOM_ID", 0.2),
                                objects.Histogram(range(27648),
                                                  979, 1030, 27648, 70, 900, "Back", "RANDOM_ID", 0.2)),
 
-                              # Histograms with different good bin starts.
+                              # Start bin is below 0
                               (objects.Histogram(range(27648),
                                                  980, -5, 27648, 70, 900, "Front", "RANDOM_ID", 0.2),
                                objects.Histogram(range(27648),
                                                  980, 1030, 27648, 70, 900, "Back", "RANDOM_ID", 0.2)),
 
-                              # Histograms with different good bin starts.
+                              # End bin is above length of histogram
                               (objects.Histogram(range(27648),
                                                  980, 2000, 70000, 70, 900, "Front", "RANDOM_ID", 0.2),
                                objects.Histogram(range(27648),
@@ -86,10 +86,13 @@ class TestHistograms:
         assert radiation_c == radiation
 
     @pytest.mark.parametrize("hist",
+                             # Background start is below 0
                              [(objects.Histogram(range(27648),
                                                  980, 1030, 27648, -5, 900, "Front", "RANDOM_ID", 0.2)),
+                              # Background start is above background end
                               (objects.Histogram(range(27648),
                                                  980, 1030, 27648, 1200, 900, "Front", "RANDOM_ID", 0.2)),
+                              # Background end is above length of histogram
                               (objects.Histogram(range(27648),
                                                  980, 1030, 27648, 700, 70000, "Front", "RANDOM_ID", 0.2)),
                               ])
