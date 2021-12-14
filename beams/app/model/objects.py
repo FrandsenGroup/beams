@@ -140,7 +140,7 @@ class Histogram(np.ndarray):
         end_bin_two : int
             The last bin that can be used in calculating the asymmetry with the second histogram.
         init_dif : int
-            New adjusted time zero for the asymmetry.
+            New adjusted time zero for the asymmetry. Difference in bins between time zero, and good bin start.
 
         """
         t_one = int(self.time_zero)
@@ -150,6 +150,15 @@ class Histogram(np.ndarray):
         end_one = int(self.good_bin_end)
         end_two = int(other.good_bin_end)
 
+        if (start_one > end_one) or (start_two > end_two) or \
+                (start_one < 0) or (start_two < 0) or \
+                (end_one > len(self)) or (end_two > len(self)):
+            raise ValueError("Invalid range for calculating asymmetry ({}: {}->{}, {}: {}->{})".format(self.title,
+                                                                                                       start_one,
+                                                                                                       end_one,
+                                                                                                       other.title,
+                                                                                                       start_two,
+                                                                                                       end_two))
         dif_one = start_one - t_one
         dif_two = start_two - t_two
 
@@ -161,8 +170,8 @@ class Histogram(np.ndarray):
         num_good_two = end_two - start_bin_two
 
         num_cross_good = num_good_one if num_good_one < num_good_two else num_good_two
-        end_bin_one = start_bin_one + num_cross_good - 1
-        end_bin_two = start_bin_two + num_cross_good - 1
+        end_bin_one = start_bin_one + num_cross_good
+        end_bin_two = start_bin_two + num_cross_good
 
         return start_bin_one, start_bin_two, end_bin_one, end_bin_two, init_dif
 
@@ -177,7 +186,12 @@ class Histogram(np.ndarray):
         float
             Background radiation.
         """
-        return np.mean(self[int(self.background_start):int(self.background_end) - 1])
+        if (self.background_start > self.background_end) or \
+                (self.background_start < 0) or \
+                (self.background_end > len(self)):
+            raise ValueError("Invalid range for calculating background radiation ({}->{})".format(self.background_start,
+                                                                                                  self.background_end))
+        return np.mean(self[int(self.background_start):int(self.background_end) + 1])
 
     def combine(self, *other):
         """ Combines two or more histograms and returns the resulting Histogram.
@@ -263,8 +277,8 @@ class Asymmetry(np.ndarray):
             start_bin_one, start_bin_two, end_bin_one, end_bin_two, time_zero = histogram_one.intersect(histogram_two)
             background_one = histogram_one.background_radiation()
             background_two = histogram_two.background_radiation()
-            histogram_one_good = histogram_one[start_bin_one - 1: end_bin_one + 1]
-            histogram_two_good = histogram_two[start_bin_two - 1: end_bin_two + 1]
+            histogram_one_good = histogram_one[start_bin_one - 1: end_bin_one]
+            histogram_two_good = histogram_two[start_bin_two - 1: end_bin_two]
             input_array = ((histogram_one_good - background_one) - (histogram_two_good - background_two)) / \
                           ((histogram_two_good - background_two) + (histogram_one_good - background_one))
 
@@ -795,8 +809,9 @@ class FitDataset:
             fit_parameters_string += "\n"
 
         # Writing the Verbose Section
-        fit_parameters_string += "\n# Fit Parameters\n\n# \t{:<8}{:<10}{:<12}{:<8}{:<8}".format("Name", "Value", "Uncertainty", "Lower",
-                                                                                     "Upper") + "\n\n"
+        fit_parameters_string += "\n# Fit Parameters\n\n# \t{:<8}{:<10}{:<12}{:<8}{:<8}".format("Name", "Value",
+                                                                                                "Uncertainty", "Lower",
+                                                                                                "Upper") + "\n\n"
 
         if self.flags & FitDataset.Flags.GLOBAL or self.flags & FitDataset.Flags.GLOBAL_PLUS:  # Add common parameters
             fit_parameters_string += "# Common parameters for all runs\n\n"
@@ -916,9 +931,10 @@ class DataBuilder:
                 parameters = {symbol: fit.FitParameter(symbol, float(value), float(lower), float(upper), False, False,
                                                        output=float(value), uncertainty=float(uncertainty)) for
                               symbol, value, uncertainty, lower, upper in specific_parameters}
-                parameters.update({symbol: fit.FitParameter(symbol, float(value), float(lower), float(upper), False, False,
-                                                            output=float(value), uncertainty=float(uncertainty)) for
-                                   symbol, value, uncertainty, lower, upper in common})
+                parameters.update(
+                    {symbol: fit.FitParameter(symbol, float(value), float(lower), float(upper), False, False,
+                                              output=float(value), uncertainty=float(uncertainty)) for
+                     symbol, value, uncertainty, lower, upper in common})
 
                 unlinked_run_id = 'UNLINKED' + str(uuid.uuid4())
                 fi = Fit(parameters, expression, title, unlinked_run_id,
