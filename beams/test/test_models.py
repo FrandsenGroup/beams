@@ -5,6 +5,7 @@ import numpy as np
 from app.model import objects
 
 
+@pytest.mark.Histogram
 class TestHistograms:
     @pytest.mark.parametrize("input_array, t0, good_start, good_end, bkgd_start, bkgd_end, run_id, bin_size, title",
                              [([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
@@ -115,6 +116,7 @@ class TestHistograms:
         pass
 
 
+@pytest.mark.Asymmetry
 class TestAsymmetries:
     @pytest.mark.parametrize("input_array, t0, bin_size, uncertainty, time",
                              [(range(27648), 980, 0.2, range(27648), range(27648))])
@@ -389,5 +391,6 @@ class TestAsymmetries:
             asymmetry.cut(min_time, max_time)
 
 
-class UncertaintyTests:
+@pytest.mark.Uncertainty
+class TestUncertainties:
     pass
