@@ -100,13 +100,50 @@ class TestHistograms:
         with pytest.raises(ValueError):
             hist.background_radiation()
 
+    def test_pickling(self):
+        pass
+
     @pytest.mark.skip
     def test_combine(self):
         pass
 
 
 class AsymmetryTests:
-    pass
+    def test_first_constructor_combination(self):
+        pass
+
+    def test_second_constructor_combination(self):
+        pass
+
+    def test_invalid_constructor_combinations_raise_exception(self):
+        pass
+
+    def test_pickling(self):
+        pass
+
+    def test_bin(self):
+        pass
+
+    def test_bin_raise_exception(self):
+        pass
+
+    def test_correct(self):
+        pass
+
+    def test_correct_raise_exception(self):
+        pass
+
+    def test_raw(self):
+        pass
+
+    def test_raw_raise_exception(self):
+        pass
+
+    def test_cut(self):
+        pass
+
+    def test_cut_raise_exception(self):
+        pass
 
 
 class UncertaintyTests:
