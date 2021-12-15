@@ -91,6 +91,16 @@ class Histogram(np.ndarray):
 
         return self
 
+    def __eq__(self, other):
+        return self.time_zero == other.time_zero and \
+            self.good_bin_start == other.good_bin_start and \
+            self.good_bin_end == other.good_bin_end and \
+            self.background_start == other.background_start and \
+            self.background_end == other.background_end and \
+            self.bin_size == other.bin_size and \
+            self.title == other.title and \
+            np.array_equal(self, other)
+
     def __reduce__(self):
         pickled_state = super(Histogram, self).__reduce__()
 
@@ -183,15 +193,18 @@ class Histogram(np.ndarray):
 
         Returns
         -------
-        float
-            Background radiation.
+        float : Background radiation.
+
+        Raises
+        ------
+        ValueError : self.background_start and self.background_end result in an invalid range for background.
         """
         if (self.background_start > self.background_end) or \
                 (self.background_start < 0) or \
                 (self.background_end > len(self)):
             raise ValueError("Invalid range for calculating background radiation ({}->{})".format(self.background_start,
                                                                                                   self.background_end))
-        return np.mean(self[int(self.background_start):int(self.background_end) + 1])
+        return float(np.mean(self[int(self.background_start):int(self.background_end) + 1]))
 
     def combine(self, *other):
         """ Combines two or more histograms and returns the resulting Histogram.
@@ -205,8 +218,7 @@ class Histogram(np.ndarray):
 
         Returns
         -------
-        Histogram   
-            The resulting combined histogram.
+        Histogram : The resulting combined histogram.
         """
         raise NotImplementedError("Combining histograms is not currently implemented.")
 
@@ -256,9 +268,9 @@ class Asymmetry(np.ndarray):
                 Bin at which the clock starts.
             bin_size : float
                 Time (ns) per bin.
-            uncertainty : Uncertainty
+            uncertainty : Iterable
                 Precalculated uncertainty.
-            time : Time
+            time : Iterable
                 Precalculated time.
 
         SECOND CONSTRUCTOR OPTIONS
@@ -310,6 +322,14 @@ class Asymmetry(np.ndarray):
 
         return self
 
+    def __eq__(self, other):
+        return self.bin_size == other.bin_size and \
+            self.time_zero == other.time_zero and \
+            self.alpha == other.alpha and \
+            np.array_equal(self, other) and \
+            np.array_equal(self.time, other.time) and \
+            np.array_equal(self.uncertainty, other.uncertainty)
+
     def __reduce__(self):
         pickled_state = super(Asymmetry, self).__reduce__()
 
@@ -335,11 +355,11 @@ class Asymmetry(np.ndarray):
 
     @classmethod
     def from_array(cls):
-        pass
+        raise NotImplementedError()
 
     @classmethod
     def from_histogram(cls):
-        pass
+        raise NotImplementedError()
 
     def bin(self, packing):
         """ Returns new asymmetry binned to the provided packing value.
@@ -355,7 +375,13 @@ class Asymmetry(np.ndarray):
         -------
         asymmetry: Asymmetry
             A new asymmetry object binned to the provided value.
+
+        Raises
+        ------
+        ValueError : Packing is a value less then 0 OR would result in an asymmetry with no elements.
         """
+        if packing < 0:
+            raise ValueError("Bin size must be a positive value (got {}ns)".format(packing))
 
         bin_full = self.bin_size / 1000
         bin_binned = float(packing) / 1000
@@ -374,7 +400,10 @@ class Asymmetry(np.ndarray):
         else:
             reshaped_asymmetry = np.reshape(self, (binned_indices_total, binned_indices_per_bin))
 
-        binned_asymmetry = np.apply_along_axis(np.mean, 1, reshaped_asymmetry)
+        try:
+            binned_asymmetry = np.apply_along_axis(np.mean, 1, reshaped_asymmetry)
+        except ValueError:
+            raise ValueError("Invalid bin size for asymmetry ({}ns)".format(packing))
 
         if self.calculated is not None:
             if leftover_bins:
@@ -478,10 +507,20 @@ class Asymmetry(np.ndarray):
         -------
         asymmetry : Asymmetry
             A new asymmetry object cut between the specified times.
+
+        Raises
+        ------
+        ValueError : Provided times create an invalid range. (Min time > Max time)
         """
         start_index = 0
 
-        if min_time is None:
+        if min_time is not None:
+            if max_time is not None and min_time >= max_time:
+                raise ValueError("Min_time and max_time create an invalid range of asymmetry ({} -> {})".format(min_time, max_time))
+            if min_time > self.time[-1]:
+                return Asymmetry(input_array=[], time_zero=self.time_zero, bin_size=self.bin_size, time=[],
+                                 uncertainty=[], alpha=self.alpha, calculated=None if self.calculated is None else [])
+        else:
             min_time = self.time[0] - 1
 
         if max_time is None:
