@@ -580,6 +580,9 @@ class Uncertainty(np.ndarray):
 
         return self
 
+    def __eq__(self, other):
+        return self.bin_size == other.bin_size and np.array_equal(self, other)
+
     def __reduce__(self):
         pickled_state = super(Uncertainty, self).__reduce__()
 
@@ -624,10 +627,13 @@ class Uncertainty(np.ndarray):
         else:
             reshaped_uncertainty = np.reshape(self, (binned_indices_total, binned_indices_per_bin))
 
-        binned_uncertainty = 1 / binned_indices_per_bin * np.sqrt(np.apply_along_axis(np.sum, 1,
-                                                                                      reshaped_uncertainty ** 2))
+        try:
+            binned_uncertainty = 1 / binned_indices_per_bin * np.sqrt(np.apply_along_axis(np.sum, 1,
+                                                                                          reshaped_uncertainty ** 2))
+        except ValueError:
+            raise ValueError("Invalid bin size provided for binning uncertainty.")
 
-        return binned_uncertainty
+        return Uncertainty(binned_uncertainty, packing)
 
 
 class Time(np.ndarray):
