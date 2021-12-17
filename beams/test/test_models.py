@@ -393,4 +393,49 @@ class TestAsymmetries:
 
 @pytest.mark.Uncertainty
 class TestUncertainties:
-    pass
+    @pytest.mark.parametrize("input_array, bin_size",
+                             [([1, 2, 3, 4, 5, 6], 0.2)])
+    def test_first_constructor_combination(self, input_array, bin_size):
+        uncertainty = objects.Uncertainty(input_array, bin_size)
+        assert uncertainty.bin_size == 0.2
+
+    @pytest.mark.parametrize("hist_one, hist_two",
+                             [(objects.Histogram(range(27648),
+                                                 980, 1030, 27648, 70, 900, "Front", "RANDOM_ID", 0.2),
+                               objects.Histogram(range(27648),
+                                                 980, 1030, 27648, 70, 900, "Back", "RANDOM_ID", 0.2))])
+    def test_second_constructor_combination(self, hist_one, hist_two):
+        uncertainty = objects.Uncertainty(histogram_one=hist_one, histogram_two=hist_two)
+        assert uncertainty.bin_size == 0.2
+
+    @pytest.mark.parametrize("uncertainty",
+                             [(objects.Uncertainty([1, 2, 3, 4, 5, 6, 7], 0.2))])
+    def test_pickling(self, uncertainty):
+        uncertainty_unpickled = pickle.loads(pickle.dumps(uncertainty))
+        assert uncertainty_unpickled == uncertainty
+
+    @pytest.mark.parametrize("uncertainty, expected_uncertainty, packing",
+                             [
+                                 (objects.Uncertainty(range(100), 1),
+                                  objects.Uncertainty(range(100), 1),
+                                  1),
+                                 (objects.Uncertainty(range(10), 1),
+                                  objects.Uncertainty([0.500, 1.802, 3.201, 4.609, 6.020], 2),
+                                  2),
+                                 (objects.Uncertainty(range(10), 1),
+                                  objects.Uncertainty(range(10), 1),
+                                  0.5)
+                             ])
+    def test_binning(self, uncertainty, expected_uncertainty, packing):
+        given_uncertainty = uncertainty.bin(packing)
+
+        assert np.allclose(given_uncertainty, expected_uncertainty, 0.005)
+        assert given_uncertainty.bin_size == expected_uncertainty.bin_size
+
+    @pytest.mark.parametrize("uncertainty, packing",
+                             [
+                                 (objects.Uncertainty(range(1), 1), 2)
+                             ])
+    def test_binning_raise_exception(self, uncertainty, packing):
+        with pytest.raises(ValueError):
+            uncertainty.bin(packing)
