@@ -1424,7 +1424,7 @@ class FitTabPresenter(PanelPresenter):
 
     @QtCore.pyqtSlot()
     def _on_insert_character_clicked(self, character):
-        self._on_insert_character_clicked(character)
+        self._view.copy_character_to_cursor(character)
 
     @QtCore.pyqtSlot()
     def _on_parameter_table_changed(self):
