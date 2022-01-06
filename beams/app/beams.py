@@ -35,7 +35,7 @@ class BEAMS(QtWidgets.QApplication):
         self.splash.show()
         self.processEvents()
 
-        self.setStyleSheet(mainwindow.StyleFile(resources.QSS_STYLE_SHEET, resources.STYLE_SHEET_VARIABLES).style)
+        self.setStyleSheet(mainwindow.StyleFile(resources.QSS_STYLE_SHEET, resources.DARK_STYLE_VARIABLES).style)
         db = QtGui.QFontDatabase()
         db.addApplicationFont(resources.LATO_BLACK_FONT)
         db.addApplicationFont(resources.LATO_BLACK_ITALIC_FONT)
@@ -55,16 +55,17 @@ class BEAMS(QtWidgets.QApplication):
         """
 
         self.main_program_window = mainwindow.MainWindow()
-        frame = qt_widgets.Frame()
-        vbox = QtWidgets.QVBoxLayout(frame.content_widget())
-        vbox.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))
-        vbox.addWidget(self.main_program_window)
-        size_object = QtWidgets.QDesktopWidget().screenGeometry(-1)
-        frame.setGeometry(10, 10, size_object.width()-20, size_object.height()-100)
-        frame.show()
+        # frame = qt_widgets.Frame()
+        # vbox = QtWidgets.QVBoxLayout(frame.content_widget())
+        # vbox.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))
+        # vbox.addWidget(self.main_program_window)
+        # size_object = QtWidgets.QDesktopWidget().screenGeometry(-1)
+        # frame.setGeometry(10, 10, size_object.width()-20, size_object.height()-100)
+        # frame.show()
 
-        self.splash.finish(frame)
+        # self.splash.finish(frame)
 
+        self.main_program_window.show()
         sys.exit(self.exec_())
 
     def exec_(self) -> int:

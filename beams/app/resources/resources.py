@@ -37,7 +37,8 @@ LATO_THIN_FONT = str(Path('beams/app/resources/Lato/Lato-Thin.ttf'))
 LATO_THIN_ITALIC_FONT = str(Path('beams/app/resources/Lato/Lato-ThinItalic.ttf'))
 
 QSS_STYLE_SHEET = str(Path('beams/app/resources/light_style.qss'))
-STYLE_SHEET_VARIABLES = str(Path('beams/app/resources/light_style_vars.txt'))
+LIGHT_STYLE_VARIABLES = str(Path('beams/app/resources/light_style_vars.txt'))
+DARK_STYLE_VARIABLES = str(Path('beams/app/resources/dark_style_vars.txt'))
 
 PSI_LINUX_CONVERSION = str(Path('/beams/app/resources/mud/PSI_LINUX'))
 PSI_WINDOWS_CONVERSION = str(Path('/beams/app/resources/mud/PSI_WINDOWS.exe'))

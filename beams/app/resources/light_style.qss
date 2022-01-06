@@ -1,6 +1,34 @@
+QMainWindow {
+    background-color: @window_zero;
+}
+
+QDockWidget {
+    background-color: @window_minus_one;
+}
+
+QTreeWidget {
+    background-color: @window_minus_one;
+}
+
+QListWidget {
+    background-color: @window_plus_one;
+}
+
+CollapsibleBox {
+    background-color: @window_zero;
+}
+
+QToolButton {
+    background-color: @window_zero;
+    border: none;
+}
+
+QTabBar {
+    background-color: @window_minus_one;
+}
 
 StyleOneButton {
-    background-color: #ffffff;
+    background-color: @b_contrast;
     border-style: None;
     border-radius: 4px;
     font: bold 12px;
@@ -22,11 +50,11 @@ StyleOneButton:disabled {
 }
 
 StyleTwoButton {
-    background-color: @high_contrast;
+    background-color: @blue_button;
     border-style: None;
     border-radius: 4px;
     font: bold 12px;
-    color: #ffffff;
+    color: white;
     min-height: 22px;
 }
 
@@ -100,7 +128,7 @@ QLineEdit {
     border-width: 1px;
     border-radius: 2px;
     border-color: @low_contrast;
-    background-color: white;
+    background-color: @window_minus_one;
 }
 
 QLineEdit:disabled {

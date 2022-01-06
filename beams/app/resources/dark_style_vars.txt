@@ -1,0 +1,24 @@
+@brand_zero = #D4D5FF
+@brand_minus_one = #53BCE9
+@brand_minus_two = #4D4D4D
+@brand_minus_three = #556269
+@brand_plus_one = #007cc7
+@brand_plus_two = #89B2E8
+@background = #4E4E4F
+@low_contrast = #79797A
+@lowest_contrast = #6F6F70
+@contrast = #C5C5C7
+@high_contrast = #E3E3E6
+@highest_contrast = #EDEDF0
+@highester_contrast = #FFFFFF
+@error = #db2c00
+@success = #00dba9
+
+@default_background = #151515
+@b_contrast = #404040
+
+@window_minus_one = #3C3E3F
+@window_zero = #282B2C
+@window_plus_one = #1E1E1E
+@blue_button = #54BCE8
+@text = #EBEBEB
