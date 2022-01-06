@@ -1278,8 +1278,8 @@ class FitTabPresenter(PanelPresenter):
 
         expression = "A(t) = " + self._view.get_expression()
 
-        self.__update_states = False
         if fit.is_valid_expression(expression):
+            self.__update_states = False
             self._view.highlight_input_red(self._view.input_fit_equation, False)
 
             variables = fit.parse(fit.split_expression(expression)[1])
@@ -1292,12 +1292,12 @@ class FitTabPresenter(PanelPresenter):
             for var in variables:
                 self._view.add_parameter(symbol=var)
 
+            self.__update_states = True
+            self.update_parameter_table_states()
+            self._plot_fit()
         else:
             self._view.highlight_input_red(self._view.input_fit_equation, True)
         self.__update_if_table_changes = True
-        self.__update_states = True
-        self.update_parameter_table_states()
-        self._plot_fit()
 
     @QtCore.pyqtSlot()
     def _on_save_user_defined_function_clicked(self):
