@@ -20,6 +20,7 @@ CollapsibleBox {
 
 QToolButton {
     background-color: @window_zero;
+    color: @highest_contrast;
     border: none;
 }
 
