@@ -61,7 +61,7 @@ class CollapsibleBox(QtWidgets.QWidget):
         )
 
         text_color = '#070536' if background != '#070536' else '#ffffff'
-        self.toggle_button.setStyleSheet("QToolButton {{ border: none; color: {}; background: {}}}".format(text_color, background))
+        # self.toggle_button.setStyleSheet("QToolButton {{ border: none; color: {}; background: {}}}".format(text_color, background))
         self.toggle_button.setToolButtonStyle(
             qt_constants.ToolButtonTextBesideIcon
         )
