@@ -17,6 +17,7 @@
 @default_background = #151515
 @b_contrast = #404040
 
+@window_minus_two = #6C6E6F
 @window_minus_one = #3C3E3F
 @window_zero = #282B2C
 @window_plus_one = #1E1E1E

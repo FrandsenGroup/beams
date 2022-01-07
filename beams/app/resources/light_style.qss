@@ -20,8 +20,22 @@ CollapsibleBox {
 
 QToolButton {
     background-color: @window_zero;
+    color: @highest_contrast;
     border: none;
 }
+
+QScrollArea {
+    background: @window_minus_one;
+    color: @high_contrast;
+}
+
+QComboBox {
+    background-color: @window_minus_two;
+    border-radius: 3px;
+    border: none;
+    color: @highest_contrast;
+}
+
 
 QTabBar {
     background-color: @window_minus_one;
