@@ -77,8 +77,8 @@ class CollapsibleBox(QtWidgets.QWidget):
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed
         )
         self.content_area.setFrameShape(QtWidgets.QFrame.NoFrame)
-        style = 'QScrollArea {{background: {}; color: white;}}'.format(background)
-        self.content_area.setStyleSheet(style)
+        # style = 'QScrollArea {{background: {}; color: white;}}'.format(background)
+        # self.content_area.setStyleSheet(style)
 
         add_button = StyleOneButton("+")
         lay = QtWidgets.QVBoxLayout(self)

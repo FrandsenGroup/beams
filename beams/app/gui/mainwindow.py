@@ -1,3 +1,4 @@
+import os
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
@@ -7,6 +8,10 @@ from app.gui.plottingpanel import PlottingPanel
 from app.resources import resources
 from app.gui.fittingpanel import FittingPanel
 from app.util import qt_constants
+from app.gui.dialogs.dialog_misc import PermissionsMessageDialog
+from app.model import services
+
+import qdarkstyle
 
 
 # noinspection PyArgumentList
@@ -88,11 +93,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowTitle("BEAMS | Basic and Effective Analysis for Muon Spin-Spectroscopy")
         self.statusBar()
 
+        self.__system_service = services.SystemService()
+        self.__file_service = services.FileService()
+
         self._tabs = MainWindow.MainWindowTabs()
         self._plotting_support = self._tabs.plotting_panel.createSupportPanel()
         self._histogram_support = self._tabs.histogram_panel.createSupportPanel()
         self._fit_support = self._tabs.fit_panel.createSupportPanel()
         self._current_support = self._plotting_support
+        self.createMenus()
 
         self._set_default_panels()
         self._set_callbacks()
@@ -138,6 +147,48 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def update(self):
         pass
+
+    def createMenus(self):
+        fileMenu = self.menuBar().addMenu(self.tr("&File"))
+        fileMenu.addAction("&Save Session", self._action_save)
+        fileMenu.addAction("&Open Session", self._action_open)
+
+        viewMenu = self.menuBar().addMenu(self.tr("&View"))
+        viewMenu.addAction("&Toggle application theme", self._action_toggle_theme)
+
+    def _action_save(self):
+        save_file = QtWidgets.QFileDialog.getSaveFileName(self, 'Save Session',
+                                                          self.__system_service.get_last_used_directory(),
+                                                          "Beams Session (*.beams)")
+
+        save_file = [path for path in save_file if path != '']
+        if len(save_file) > 0:
+            path = os.path.split(save_file[0])
+            self.__file_service.save_session(save_file[0])
+            self.__system_service.set_last_used_directory(path[0])
+
+    def _action_open(self):
+        open_file = QtWidgets.QFileDialog.getOpenFileName(self, 'Open Session',
+                                                          self.__system_service.get_last_used_directory(),
+                                                          "Beams Session (*.beams)")
+
+        open_file = [path for path in open_file if path != '']
+        if len(open_file) > 0:
+            code = PermissionsMessageDialog.launch(
+                ["Opening a saved session will remove all current session data, do you wish to continue?"])
+            if code == PermissionsMessageDialog.Codes.OKAY:
+                print(self.__file_service.signals)
+                self.__file_service.add_files([open_file[0]])
+                self.__file_service.load_session(self.__file_service.get_file_by_path(open_file[0]).id)
+
+    def _action_toggle_theme(self):
+        instance = QtWidgets.QApplication.instance()
+        if instance.styleSheet() == qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette):
+            instance.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
+        else:
+            instance.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette))
+
+
 
 
 # noinspection PyArgumentList

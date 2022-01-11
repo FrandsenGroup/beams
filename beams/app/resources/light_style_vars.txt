@@ -14,4 +14,12 @@
 @error = #db2c00
 @success = #00dba9
 
+@default_background = #eaeaea
+@b_contrast = #bfbfbf
 
+@window_minus_two = #C3C1C0
+@window_minus_one = #D3D1D0
+@window_zero = #E7E4E3
+@window_plus_one = #F1F1F1
+@blue_button = #54BCE8
+@text = #141414

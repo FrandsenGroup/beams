@@ -6,6 +6,7 @@ Main entry point for the application.
 import os
 import sys
 import logging
+import qdarkstyle
 
 # Installed Packages
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -35,7 +36,8 @@ class BEAMS(QtWidgets.QApplication):
         self.splash.show()
         self.processEvents()
 
-        self.setStyleSheet(mainwindow.StyleFile(resources.QSS_STYLE_SHEET, resources.DARK_STYLE_VARIABLES).style)
+        # self.setStyleSheet(mainwindow.StyleFile(resources.QSS_STYLE_SHEET, resources.DARK_STYLE_VARIABLES).style)
+        self.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
         db = QtGui.QFontDatabase()
         db.addApplicationFont(resources.LATO_BLACK_FONT)
         db.addApplicationFont(resources.LATO_BLACK_ITALIC_FONT)
@@ -62,10 +64,9 @@ class BEAMS(QtWidgets.QApplication):
         # size_object = QtWidgets.QDesktopWidget().screenGeometry(-1)
         # frame.setGeometry(10, 10, size_object.width()-20, size_object.height()-100)
         # frame.show()
-
-        # self.splash.finish(frame)
-
         self.main_program_window.show()
+        self.splash.finish(self.main_program_window)
+        # self.splash.finish(frame)
         sys.exit(self.exec_())
 
     def exec_(self) -> int:

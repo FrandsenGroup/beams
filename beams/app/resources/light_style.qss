@@ -23,6 +23,12 @@ QToolButton {
     color: @highest_contrast;
     border: none;
 }
+QGroupBox {
+    background-color: @window_minus_one;
+    border-radius: 5px;
+    color: @text;
+}
+
 
 QScrollArea {
     background: @window_minus_one;
@@ -36,7 +42,17 @@ QComboBox {
     color: @highest_contrast;
 }
 
+/*
+QComboBox::drop-down {
+    border-radius: 3px;
+    border: none;
+    background-color: @window_minus_two;
+}
 
+QComboBox::down-arrow {
+    image: url(:beams/app/resources/icons/close_white.png);
+}
+*/
 QTabBar {
     background-color: @window_minus_one;
 }
