@@ -91,6 +91,16 @@ class Histogram(np.ndarray):
 
         return self
 
+    def __eq__(self, other):
+        return self.time_zero == other.time_zero and \
+            self.good_bin_start == other.good_bin_start and \
+            self.good_bin_end == other.good_bin_end and \
+            self.background_start == other.background_start and \
+            self.background_end == other.background_end and \
+            self.bin_size == other.bin_size and \
+            self.title == other.title and \
+            np.array_equal(self, other)
+
     def __reduce__(self):
         pickled_state = super(Histogram, self).__reduce__()
 
@@ -140,7 +150,7 @@ class Histogram(np.ndarray):
         end_bin_two : int
             The last bin that can be used in calculating the asymmetry with the second histogram.
         init_dif : int
-            New adjusted time zero for the asymmetry.
+            New adjusted time zero for the asymmetry. Difference in bins between time zero, and good bin start.
 
         """
         t_one = int(self.time_zero)
@@ -150,6 +160,15 @@ class Histogram(np.ndarray):
         end_one = int(self.good_bin_end)
         end_two = int(other.good_bin_end)
 
+        if (start_one > end_one) or (start_two > end_two) or \
+                (start_one < 0) or (start_two < 0) or \
+                (end_one > len(self)) or (end_two > len(self)):
+            raise ValueError("Invalid range for calculating asymmetry ({}: {}->{}, {}: {}->{})".format(self.title,
+                                                                                                       start_one,
+                                                                                                       end_one,
+                                                                                                       other.title,
+                                                                                                       start_two,
+                                                                                                       end_two))
         dif_one = start_one - t_one
         dif_two = start_two - t_two
 
@@ -161,8 +180,8 @@ class Histogram(np.ndarray):
         num_good_two = end_two - start_bin_two
 
         num_cross_good = num_good_one if num_good_one < num_good_two else num_good_two
-        end_bin_one = start_bin_one + num_cross_good - 1
-        end_bin_two = start_bin_two + num_cross_good - 1
+        end_bin_one = start_bin_one + num_cross_good
+        end_bin_two = start_bin_two + num_cross_good
 
         return start_bin_one, start_bin_two, end_bin_one, end_bin_two, init_dif
 
@@ -174,10 +193,18 @@ class Histogram(np.ndarray):
 
         Returns
         -------
-        float
-            Background radiation.
+        float : Background radiation.
+
+        Raises
+        ------
+        ValueError : self.background_start and self.background_end result in an invalid range for background.
         """
-        return np.mean(self[int(self.background_start):int(self.background_end) - 1])
+        if (self.background_start > self.background_end) or \
+                (self.background_start < 0) or \
+                (self.background_end > len(self)):
+            raise ValueError("Invalid range for calculating background radiation ({}->{})".format(self.background_start,
+                                                                                                  self.background_end))
+        return float(np.mean(self[int(self.background_start):int(self.background_end) + 1]))
 
     def combine(self, *other):
         """ Combines two or more histograms and returns the resulting Histogram.
@@ -191,8 +218,7 @@ class Histogram(np.ndarray):
 
         Returns
         -------
-        Histogram   
-            The resulting combined histogram.
+        Histogram : The resulting combined histogram.
         """
         raise NotImplementedError("Combining histograms is not currently implemented.")
 
@@ -242,9 +268,9 @@ class Asymmetry(np.ndarray):
                 Bin at which the clock starts.
             bin_size : float
                 Time (ns) per bin.
-            uncertainty : Uncertainty
+            uncertainty : Iterable
                 Precalculated uncertainty.
-            time : Time
+            time : Iterable
                 Precalculated time.
 
         SECOND CONSTRUCTOR OPTIONS
@@ -263,8 +289,8 @@ class Asymmetry(np.ndarray):
             start_bin_one, start_bin_two, end_bin_one, end_bin_two, time_zero = histogram_one.intersect(histogram_two)
             background_one = histogram_one.background_radiation()
             background_two = histogram_two.background_radiation()
-            histogram_one_good = histogram_one[start_bin_one - 1: end_bin_one + 1]
-            histogram_two_good = histogram_two[start_bin_two - 1: end_bin_two + 1]
+            histogram_one_good = histogram_one[start_bin_one - 1: end_bin_one]
+            histogram_two_good = histogram_two[start_bin_two - 1: end_bin_two]
             input_array = ((histogram_one_good - background_one) - (histogram_two_good - background_two)) / \
                           ((histogram_two_good - background_two) + (histogram_one_good - background_one))
 
@@ -296,6 +322,14 @@ class Asymmetry(np.ndarray):
 
         return self
 
+    def __eq__(self, other):
+        return self.bin_size == other.bin_size and \
+            self.time_zero == other.time_zero and \
+            self.alpha == other.alpha and \
+            np.array_equal(self, other) and \
+            np.array_equal(self.time, other.time) and \
+            np.array_equal(self.uncertainty, other.uncertainty)
+
     def __reduce__(self):
         pickled_state = super(Asymmetry, self).__reduce__()
 
@@ -321,11 +355,11 @@ class Asymmetry(np.ndarray):
 
     @classmethod
     def from_array(cls):
-        pass
+        raise NotImplementedError()
 
     @classmethod
     def from_histogram(cls):
-        pass
+        raise NotImplementedError()
 
     def bin(self, packing):
         """ Returns new asymmetry binned to the provided packing value.
@@ -341,7 +375,13 @@ class Asymmetry(np.ndarray):
         -------
         asymmetry: Asymmetry
             A new asymmetry object binned to the provided value.
+
+        Raises
+        ------
+        ValueError : Packing is a value less then 0 OR would result in an asymmetry with no elements.
         """
+        if packing < 0:
+            raise ValueError("Bin size must be a positive value (got {}ns)".format(packing))
 
         bin_full = self.bin_size / 1000
         bin_binned = float(packing) / 1000
@@ -360,7 +400,10 @@ class Asymmetry(np.ndarray):
         else:
             reshaped_asymmetry = np.reshape(self, (binned_indices_total, binned_indices_per_bin))
 
-        binned_asymmetry = np.apply_along_axis(np.mean, 1, reshaped_asymmetry)
+        try:
+            binned_asymmetry = np.apply_along_axis(np.mean, 1, reshaped_asymmetry)
+        except ValueError:
+            raise ValueError("Invalid bin size for asymmetry ({}ns)".format(packing))
 
         if self.calculated is not None:
             if leftover_bins:
@@ -464,10 +507,20 @@ class Asymmetry(np.ndarray):
         -------
         asymmetry : Asymmetry
             A new asymmetry object cut between the specified times.
+
+        Raises
+        ------
+        ValueError : Provided times create an invalid range. (Min time > Max time)
         """
         start_index = 0
 
-        if min_time is None:
+        if min_time is not None:
+            if max_time is not None and min_time >= max_time:
+                raise ValueError("Min_time and max_time create an invalid range of asymmetry ({} -> {})".format(min_time, max_time))
+            if min_time > self.time[-1]:
+                return Asymmetry(input_array=[], time_zero=self.time_zero, bin_size=self.bin_size, time=[],
+                                 uncertainty=[], alpha=self.alpha, calculated=None if self.calculated is None else [])
+        else:
             min_time = self.time[0] - 1
 
         if max_time is None:
@@ -527,6 +580,9 @@ class Uncertainty(np.ndarray):
 
         return self
 
+    def __eq__(self, other):
+        return self.bin_size == other.bin_size and np.array_equal(self, other)
+
     def __reduce__(self):
         pickled_state = super(Uncertainty, self).__reduce__()
 
@@ -571,10 +627,13 @@ class Uncertainty(np.ndarray):
         else:
             reshaped_uncertainty = np.reshape(self, (binned_indices_total, binned_indices_per_bin))
 
-        binned_uncertainty = 1 / binned_indices_per_bin * np.sqrt(np.apply_along_axis(np.sum, 1,
-                                                                                      reshaped_uncertainty ** 2))
+        try:
+            binned_uncertainty = 1 / binned_indices_per_bin * np.sqrt(np.apply_along_axis(np.sum, 1,
+                                                                                          reshaped_uncertainty ** 2))
+        except ValueError:
+            raise ValueError("Invalid bin size provided for binning uncertainty.")
 
-        return binned_uncertainty
+        return Uncertainty(binned_uncertainty, packing)
 
 
 class Time(np.ndarray):
@@ -795,8 +854,9 @@ class FitDataset:
             fit_parameters_string += "\n"
 
         # Writing the Verbose Section
-        fit_parameters_string += "\n# Fit Parameters\n\n# \t{:<8}{:<10}{:<12}{:<8}{:<8}".format("Name", "Value", "Uncertainty", "Lower",
-                                                                                     "Upper") + "\n\n"
+        fit_parameters_string += "\n# Fit Parameters\n\n# \t{:<8}{:<10}{:<12}{:<8}{:<8}".format("Name", "Value",
+                                                                                                "Uncertainty", "Lower",
+                                                                                                "Upper") + "\n\n"
 
         if self.flags & FitDataset.Flags.GLOBAL or self.flags & FitDataset.Flags.GLOBAL_PLUS:  # Add common parameters
             fit_parameters_string += "# Common parameters for all runs\n\n"
@@ -916,9 +976,10 @@ class DataBuilder:
                 parameters = {symbol: fit.FitParameter(symbol, float(value), float(lower), float(upper), False, False,
                                                        output=float(value), uncertainty=float(uncertainty)) for
                               symbol, value, uncertainty, lower, upper in specific_parameters}
-                parameters.update({symbol: fit.FitParameter(symbol, float(value), float(lower), float(upper), False, False,
-                                                            output=float(value), uncertainty=float(uncertainty)) for
-                                   symbol, value, uncertainty, lower, upper in common})
+                parameters.update(
+                    {symbol: fit.FitParameter(symbol, float(value), float(lower), float(upper), False, False,
+                                              output=float(value), uncertainty=float(uncertainty)) for
+                     symbol, value, uncertainty, lower, upper in common})
 
                 unlinked_run_id = 'UNLINKED' + str(uuid.uuid4())
                 fi = Fit(parameters, expression, title, unlinked_run_id,
