@@ -407,10 +407,14 @@ class SystemService:
     class ConfigKeys:
         LAST_DIRECTORY = "LAST_DIRECTORY"
         USER_FUNCTIONS = "USER-DEFINED_FUNCTIONS"
+        THEME_PREFERENCE = "THEME_PREFERENCE"
 
     class Signals(QtCore.QObject):
         changed = QtCore.pyqtSignal()
 
+    DARK_THEME = "DARK"
+    LIGHT_THEME = "LIGHT"
+    DEFAULT_THEME = "DEFAULT"
     _instance = None
 
     def __new__(cls):
@@ -464,10 +468,17 @@ class SystemService:
         else:
             self.__logger.warning("Tried to set last used directory to invalid path: {}".format(directory))
 
+    def get_theme_preference(self):
+        return self.__dao.get_configuration(self.ConfigKeys.THEME_PREFERENCE)
+
+    def set_theme_preference(self, preference):
+        self.__dao.set_configuration(self.ConfigKeys.THEME_PREFERENCE, preference)
+
     def _set_default_configuration(self):
         user_data = {
             self.ConfigKeys.LAST_DIRECTORY: os.getcwd(),
-            self.ConfigKeys.USER_FUNCTIONS: {}
+            self.ConfigKeys.USER_FUNCTIONS: {},
+            self.ConfigKeys.THEME_PREFERENCE: self.DEFAULT_THEME
         }
         with open(resources.CONFIGURATION_FILE, 'w+') as f:
             json.dump(user_data, f)

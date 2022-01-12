@@ -12,6 +12,7 @@ from app.gui.dialogs.dialog_misc import PermissionsMessageDialog
 from app.model import services
 
 import qdarkstyle
+import darkdetect
 
 
 # noinspection PyArgumentList
@@ -101,7 +102,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self._histogram_support = self._tabs.histogram_panel.createSupportPanel()
         self._fit_support = self._tabs.fit_panel.createSupportPanel()
         self._current_support = self._plotting_support
-        self.createMenus()
+        self.create_menus()
 
         self._set_default_panels()
         self._set_callbacks()
@@ -148,13 +149,21 @@ class MainWindow(QtWidgets.QMainWindow):
     def update(self):
         pass
 
-    def createMenus(self):
+    def create_menus(self):
         fileMenu = self.menuBar().addMenu(self.tr("&File"))
         fileMenu.addAction("&Save Session", self._action_save)
         fileMenu.addAction("&Open Session", self._action_open)
 
         viewMenu = self.menuBar().addMenu(self.tr("&View"))
-        viewMenu.addAction("&Toggle application theme", self._action_toggle_theme)
+        # viewMenu.addAction("&Toggle application theme", self._action_toggle_theme)
+        theme_menu = viewMenu.addMenu(self.tr("&Change application theme"))
+        theme_menu.triggered.connect(self._action_change_theme)
+        action_default = theme_menu.addAction("&Default")
+        action_default.setCheckable(True)
+        action_dark = theme_menu.addAction("&Dark")
+        action_dark.setCheckable(True)
+        action_light = theme_menu.addAction("&Light")
+        action_light.setCheckable(True)
 
     def _action_save(self):
         save_file = QtWidgets.QFileDialog.getSaveFileName(self, 'Save Session',
@@ -181,12 +190,21 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.__file_service.add_files([open_file[0]])
                 self.__file_service.load_session(self.__file_service.get_file_by_path(open_file[0]).id)
 
-    def _action_toggle_theme(self):
+    def _action_change_theme(self, action):
+        print(action.text())
         instance = QtWidgets.QApplication.instance()
-        if instance.styleSheet() == qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette):
-            instance.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
-        else:
+        if action.text() == "&Dark":
             instance.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette))
+            self.__system_service.set_theme_preference(self.__system_service.DARK_THEME)
+        elif action.text() == "&Light":
+            instance.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
+            self.__system_service.set_theme_preference(self.__system_service.LIGHT_THEME)
+        else:
+            if darkdetect.isDark():
+                instance.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette))
+            else:
+                instance.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
+            self.__system_service.set_theme_preference(self.__system_service.DEFAULT_THEME)
 
 
 

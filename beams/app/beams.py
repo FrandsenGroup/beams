@@ -17,6 +17,8 @@ from app.model import services
 from app.resources import resources
 from app.gui import mainwindow
 
+import darkdetect
+
 
 class BEAMS(QtWidgets.QApplication):
     """
@@ -36,8 +38,15 @@ class BEAMS(QtWidgets.QApplication):
         self.splash.show()
         self.processEvents()
 
-        # self.setStyleSheet(mainwindow.StyleFile(resources.QSS_STYLE_SHEET, resources.DARK_STYLE_VARIABLES).style)
-        self.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
+        if self.__system_service.get_theme_preference() == self.__system_service.LIGHT_THEME:
+            self.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
+        elif self.__system_service.get_theme_preference() == self.__system_service.DARK_THEME:
+            self.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette))
+        else:
+            if darkdetect.isDark():
+                self.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette))
+            else:
+                self.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
         db = QtGui.QFontDatabase()
         db.addApplicationFont(resources.LATO_BLACK_FONT)
         db.addApplicationFont(resources.LATO_BLACK_ITALIC_FONT)
@@ -57,16 +66,8 @@ class BEAMS(QtWidgets.QApplication):
         """
 
         self.main_program_window = mainwindow.MainWindow()
-        # frame = qt_widgets.Frame()
-        # vbox = QtWidgets.QVBoxLayout(frame.content_widget())
-        # vbox.setContentsMargins(QtCore.QMargins(0, 0, 0, 0))
-        # vbox.addWidget(self.main_program_window)
-        # size_object = QtWidgets.QDesktopWidget().screenGeometry(-1)
-        # frame.setGeometry(10, 10, size_object.width()-20, size_object.height()-100)
-        # frame.show()
         self.main_program_window.show()
         self.splash.finish(self.main_program_window)
-        # self.splash.finish(frame)
         sys.exit(self.exec_())
 
     def exec_(self) -> int:
