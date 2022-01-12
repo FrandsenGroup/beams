@@ -227,10 +227,10 @@ class TitleBar(QtWidgets.QWidget):
         self.menu_bar = StyleOneMenuBar()
         self.menu_bar.setFixedWidth(40)
 
-        self.menu = QtWidgets.QMenu("File", self.menu_bar)
+        self.menu = QtWidgets.QMenu("&File", self.menu_bar)
         self.menu.setIcon(QtGui.QIcon(resources.MENU_IMAGE))
-        self.menu.addAction("Save Session", self._action_save)
-        self.menu.addAction("Open Session", self._action_open)
+        self.menu.addAction("&Save Session", self._action_save)
+        self.menu.addAction("&Open Session", self._action_open)
 
         self.menu_bar.addMenu(self.menu)
 
@@ -422,7 +422,7 @@ class Separator(QtWidgets.QFrame):
         super(Separator, self).__init__()
         self.setFrameShape(QtWidgets.QFrame.HLine)
         # self.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Expanding)
-        self.setFixedHeight(0.75)
+        self.setFixedHeight(1)
         self.setAutoFillBackground(True)
         self.setBackgroundRole(QtGui.QPalette.Highlight)
         p = self.palette()

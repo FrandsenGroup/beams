@@ -47,8 +47,6 @@ TRIUMF_LINUX_CONVERSION = str(Path('/beams/app/resources/mud/TRIUMF_LINUX'))
 TRIUMF_MAC_CONVERSION = str(Path('/beams/app/resources/mud/TRIUMF_MAC'))
 TRIUMF_WINDOWS_CONVERSION = str(Path('/beams/app/resources/mud/TRIUMF_WINDOWS.exe'))
 
-CONFIGURATION_FILE = str(Path('beams/app/resources/app.config'))
-
 DARK_MINUS_ONE = '#3C3E3F'
 DARK_ZERO = '#282B2C'
 DARK_PLUS_ONE = '#1E1E1E'
@@ -57,11 +55,26 @@ LIGHT_MINUS_ONE = '#FFFFFF'
 LIGHT_ZERO = '#F4F6F7'
 LIGHT_PLUS_ONE = '#F0F1F2'
 
-if not os.path.exists(CONFIGURATION_FILE):
-    with open(CONFIGURATION_FILE, 'w+') as f:
-        pass
+try:
+    CONFIGURATION_FILE = str(Path('beams/app/resources/app.config'))
 
-QT_LOG_FILE = str(Path('beams/app/resources/qt.log'))
 
-with open(QT_LOG_FILE, 'w') as fp:
-    fp.truncate(0)
+    if not os.path.exists(CONFIGURATION_FILE):
+        with open(CONFIGURATION_FILE, 'w+') as f:
+            pass
+
+    QT_LOG_FILE = str(Path('beams/app/resources/qt.log'))
+
+    with open(QT_LOG_FILE, 'w') as fp:
+        fp.truncate(0)
+except FileNotFoundError:
+    CONFIGURATION_FILE = str(Path('app.config'))
+
+    if not os.path.exists(CONFIGURATION_FILE):
+        with open(CONFIGURATION_FILE, 'w+') as f:
+            pass
+
+    QT_LOG_FILE = str(Path('qt.log'))
+
+    with open(QT_LOG_FILE, 'w') as fp:
+        fp.truncate(0)

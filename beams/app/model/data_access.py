@@ -33,6 +33,9 @@ class RunDAO:
     def get_runs_by_ids(self, ids):
         return [self.__database.run_table[rid] for rid in ids]
 
+    def get_runs_by_numbers(self, numbers):
+        return {run.meta['RunNumber']: run for run in self.__database.run_table.values() if run.meta['RunNumber'] in numbers}
+
     def add_runs(self, runs):
         for run in runs:
             self.__database.run_table[run.id] = run

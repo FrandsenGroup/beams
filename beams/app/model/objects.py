@@ -1,10 +1,12 @@
+import enum
 import os
 import time
+import re
 
 import numpy as np
 import uuid
 
-from app.model import files
+from app.model import files, services
 from app.model.files import File
 
 
@@ -89,6 +91,16 @@ class Histogram(np.ndarray):
 
         return self
 
+    def __eq__(self, other):
+        return self.time_zero == other.time_zero and \
+            self.good_bin_start == other.good_bin_start and \
+            self.good_bin_end == other.good_bin_end and \
+            self.background_start == other.background_start and \
+            self.background_end == other.background_end and \
+            self.bin_size == other.bin_size and \
+            self.title == other.title and \
+            np.array_equal(self, other)
+
     def __reduce__(self):
         pickled_state = super(Histogram, self).__reduce__()
 
@@ -138,7 +150,7 @@ class Histogram(np.ndarray):
         end_bin_two : int
             The last bin that can be used in calculating the asymmetry with the second histogram.
         init_dif : int
-            New adjusted time zero for the asymmetry.
+            New adjusted time zero for the asymmetry. Difference in bins between time zero, and good bin start.
 
         """
         t_one = int(self.time_zero)
@@ -148,6 +160,15 @@ class Histogram(np.ndarray):
         end_one = int(self.good_bin_end)
         end_two = int(other.good_bin_end)
 
+        if (start_one > end_one) or (start_two > end_two) or \
+                (start_one < 0) or (start_two < 0) or \
+                (end_one > len(self)) or (end_two > len(self)):
+            raise ValueError("Invalid range for calculating asymmetry ({}: {}->{}, {}: {}->{})".format(self.title,
+                                                                                                       start_one,
+                                                                                                       end_one,
+                                                                                                       other.title,
+                                                                                                       start_two,
+                                                                                                       end_two))
         dif_one = start_one - t_one
         dif_two = start_two - t_two
 
@@ -159,8 +180,8 @@ class Histogram(np.ndarray):
         num_good_two = end_two - start_bin_two
 
         num_cross_good = num_good_one if num_good_one < num_good_two else num_good_two
-        end_bin_one = start_bin_one + num_cross_good - 1
-        end_bin_two = start_bin_two + num_cross_good - 1
+        end_bin_one = start_bin_one + num_cross_good
+        end_bin_two = start_bin_two + num_cross_good
 
         return start_bin_one, start_bin_two, end_bin_one, end_bin_two, init_dif
 
@@ -172,10 +193,18 @@ class Histogram(np.ndarray):
 
         Returns
         -------
-        float
-            Background radiation.
+        float : Background radiation.
+
+        Raises
+        ------
+        ValueError : self.background_start and self.background_end result in an invalid range for background.
         """
-        return np.mean(self[int(self.background_start):int(self.background_end) - 1])
+        if (self.background_start > self.background_end) or \
+                (self.background_start < 0) or \
+                (self.background_end > len(self)):
+            raise ValueError("Invalid range for calculating background radiation ({}->{})".format(self.background_start,
+                                                                                                  self.background_end))
+        return float(np.mean(self[int(self.background_start):int(self.background_end) + 1]))
 
     def combine(self, *other):
         """ Combines two or more histograms and returns the resulting Histogram.
@@ -189,8 +218,7 @@ class Histogram(np.ndarray):
 
         Returns
         -------
-        Histogram   
-            The resulting combined histogram.
+        Histogram : The resulting combined histogram.
         """
         raise NotImplementedError("Combining histograms is not currently implemented.")
 
@@ -228,7 +256,7 @@ class Asymmetry(np.ndarray):
     """
 
     def __new__(cls, input_array=None, time_zero=None, bin_size=None, histogram_one=None, histogram_two=None,
-                uncertainty=None, time=None, alpha=None, **kwargs):
+                uncertainty=None, time=None, alpha=None, calculated=None, **kwargs):
         """ Initializes a new Asymmetry.
 
         Parameters
@@ -240,9 +268,9 @@ class Asymmetry(np.ndarray):
                 Bin at which the clock starts.
             bin_size : float
                 Time (ns) per bin.
-            uncertainty : Uncertainty
+            uncertainty : Iterable
                 Precalculated uncertainty.
-            time : Time
+            time : Iterable
                 Precalculated time.
 
         SECOND CONSTRUCTOR OPTIONS
@@ -261,11 +289,11 @@ class Asymmetry(np.ndarray):
             start_bin_one, start_bin_two, end_bin_one, end_bin_two, time_zero = histogram_one.intersect(histogram_two)
             background_one = histogram_one.background_radiation()
             background_two = histogram_two.background_radiation()
-            histogram_one_good = histogram_one[start_bin_one - 1: end_bin_one + 1]
-            histogram_two_good = histogram_two[start_bin_two - 1: end_bin_two + 1]
+            histogram_one_good = histogram_one[start_bin_one - 1: end_bin_one]
+            histogram_two_good = histogram_two[start_bin_two - 1: end_bin_two]
             input_array = ((histogram_one_good - background_one) - (histogram_two_good - background_two)) / \
                           ((histogram_two_good - background_two) + (histogram_one_good - background_one))
-            
+
             if alpha is not None:
                 input_array = ((alpha - 1) + ((alpha + 1) * input_array)) / \
                               ((alpha + 1) + ((alpha - 1) * input_array))
@@ -285,13 +313,22 @@ class Asymmetry(np.ndarray):
             time = Time(input_array=time, bin_size=bin_size, length=len(input_array), time_zero=time_zero)
 
         self = np.asarray(input_array).view(cls)
+        self.calculated = calculated
         self.uncertainty = uncertainty
         self.time = time
         self.bin_size = float(bin_size)
-        self.time_zero = float(time_zero)
+        self.time_zero = int(time_zero)
         self.alpha = alpha if alpha is not None else 1
 
         return self
+
+    def __eq__(self, other):
+        return self.bin_size == other.bin_size and \
+            self.time_zero == other.time_zero and \
+            self.alpha == other.alpha and \
+            np.array_equal(self, other) and \
+            np.array_equal(self.time, other.time) and \
+            np.array_equal(self.uncertainty, other.uncertainty)
 
     def __reduce__(self):
         pickled_state = super(Asymmetry, self).__reduce__()
@@ -309,11 +346,20 @@ class Asymmetry(np.ndarray):
         if obj is None:
             return
 
+        self.calculated = getattr(obj, 'calculated', None)
         self.uncertainty = getattr(obj, 'uncertainty', None)
         self.time = getattr(obj, 'time', None)
         self.bin_size = getattr(obj, 'bin_size', None)
         self.time_zero = getattr(obj, 'time_zero', None)
         self.alpha = getattr(obj, 'alpha', None)
+
+    @classmethod
+    def from_array(cls):
+        raise NotImplementedError()
+
+    @classmethod
+    def from_histogram(cls):
+        raise NotImplementedError()
 
     def bin(self, packing):
         """ Returns new asymmetry binned to the provided packing value.
@@ -329,7 +375,13 @@ class Asymmetry(np.ndarray):
         -------
         asymmetry: Asymmetry
             A new asymmetry object binned to the provided value.
+
+        Raises
+        ------
+        ValueError : Packing is a value less then 0 OR would result in an asymmetry with no elements.
         """
+        if packing < 0:
+            raise ValueError("Bin size must be a positive value (got {}ns)".format(packing))
 
         bin_full = self.bin_size / 1000
         bin_binned = float(packing) / 1000
@@ -348,10 +400,27 @@ class Asymmetry(np.ndarray):
         else:
             reshaped_asymmetry = np.reshape(self, (binned_indices_total, binned_indices_per_bin))
 
-        binned_asymmetry = np.apply_along_axis(np.mean, 1, reshaped_asymmetry)
+        try:
+            binned_asymmetry = np.apply_along_axis(np.mean, 1, reshaped_asymmetry)
+        except ValueError:
+            raise ValueError("Invalid bin size for asymmetry ({}ns)".format(packing))
 
-        return Asymmetry(input_array=binned_asymmetry, time_zero=self.time_zero, bin_size=packing,
-                         time=self.time.bin(packing), uncertainty=self.uncertainty.bin(packing), alpha=self.alpha)
+        if self.calculated is not None:
+            if leftover_bins:
+                reshaped_calculated = np.reshape(self.calculated[:-leftover_bins],
+                                                 (binned_indices_total, binned_indices_per_bin))
+            else:
+                reshaped_calculated = np.reshape(self.calculated, (binned_indices_total, binned_indices_per_bin))
+
+            binned_calculated = np.apply_along_axis(np.mean, 1, reshaped_calculated)
+
+            return Asymmetry(input_array=binned_asymmetry, time_zero=self.time_zero, bin_size=packing,
+                             time=self.time.bin(packing), uncertainty=self.uncertainty.bin(packing), alpha=self.alpha,
+                             calculated=binned_calculated)
+        else:
+            return Asymmetry(input_array=binned_asymmetry, time_zero=self.time_zero, bin_size=packing,
+                             time=self.time.bin(packing), uncertainty=self.uncertainty.bin(packing), alpha=self.alpha,
+                             calculated=self.calculated)
 
     def correct(self, alpha):
         """ Returns a new asymmetry corrected to the provided value.
@@ -370,8 +439,11 @@ class Asymmetry(np.ndarray):
         asymmetry : Asymmetry
             A new asymmetry object corrected to the provided value.
         """
+        alpha = float(alpha)
+
         if self.alpha == alpha:
-            return self
+            return Asymmetry(input_array=self, time_zero=self.time_zero, bin_size=self.bin_size,
+                             time=self.time, uncertainty=self.uncertainty, alpha=alpha, calculated=self.calculated)
 
         current_asymmetry = self
 
@@ -381,8 +453,15 @@ class Asymmetry(np.ndarray):
         input_array = ((alpha - 1) + ((alpha + 1) * current_asymmetry)) / \
                       ((alpha + 1) + ((alpha - 1) * current_asymmetry))
 
-        return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
-                         time=self.time, uncertainty=self.uncertainty, alpha=alpha)
+        if self.calculated is not None:
+            calculated = ((alpha - 1) + ((alpha + 1) * self.calculated)) / \
+                         ((alpha + 1) + ((alpha - 1) * self.calculated))
+
+            return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
+                             time=self.time, uncertainty=self.uncertainty, alpha=alpha, calculated=calculated)
+        else:
+            return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
+                             time=self.time, uncertainty=self.uncertainty, alpha=alpha, calculated=self.calculated)
 
     def raw(self):
         """ Returns a new asymmetry corrected (or uncorrected) to a value of 1.
@@ -396,15 +475,23 @@ class Asymmetry(np.ndarray):
             A new asymmetry object corrected to a value of 1.
         """
         if self.alpha == 1:
-            return self
+            return Asymmetry(input_array=self, time_zero=self.time_zero, bin_size=self.bin_size,
+                             time=self.time, uncertainty=self.uncertainty, alpha=1, calculated=self.calculated)
 
         input_array = ((1 - self.alpha) + (1 + self.alpha) * self) / \
                       ((1 + self.alpha) + (1 - self.alpha) * self)
 
-        return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
-                         time=self.time, uncertainty=self.uncertainty, alpha=1)
+        if self.calculated is not None:
+            calculated = ((1 - self.calculated) + (1 + self.calculated) * self) / \
+                         ((1 + self.calculated) + (1 - self.calculated) * self)
 
-    def cut(self, min_time, max_time):
+            return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
+                             time=self.time, uncertainty=self.uncertainty, alpha=1, calculated=calculated)
+        else:
+            return Asymmetry(input_array=input_array, time_zero=self.time_zero, bin_size=self.bin_size,
+                             time=self.time, uncertainty=self.uncertainty, alpha=1, calculated=self.calculated)
+
+    def cut(self, min_time=None, max_time=None):
         """ Returns a new asymmetry cut between the specified times.
 
         Does not alter the current asymmetry object. Based on the Time attribute of the asymmetry.
@@ -420,8 +507,24 @@ class Asymmetry(np.ndarray):
         -------
         asymmetry : Asymmetry
             A new asymmetry object cut between the specified times.
+
+        Raises
+        ------
+        ValueError : Provided times create an invalid range. (Min time > Max time)
         """
         start_index = 0
+
+        if min_time is not None:
+            if max_time is not None and min_time >= max_time:
+                raise ValueError("Min_time and max_time create an invalid range of asymmetry ({} -> {})".format(min_time, max_time))
+            if min_time > self.time[-1]:
+                return Asymmetry(input_array=[], time_zero=self.time_zero, bin_size=self.bin_size, time=[],
+                                 uncertainty=[], alpha=self.alpha, calculated=None if self.calculated is None else [])
+        else:
+            min_time = self.time[0] - 1
+
+        if max_time is None:
+            max_time = self.time[-1] + 1
 
         for i, n in enumerate(self.time):
             if n >= min_time:
@@ -437,7 +540,8 @@ class Asymmetry(np.ndarray):
 
         return Asymmetry(input_array=self[start_index: end_index], time_zero=self.time_zero, bin_size=self.bin_size,
                          time=self.time[start_index: end_index], uncertainty=self.uncertainty[start_index: end_index],
-                         alpha=self.alpha)
+                         alpha=self.alpha,
+                         calculated=None if self.calculated is None else self.calculated[start_index: end_index])
 
 
 class Uncertainty(np.ndarray):
@@ -460,8 +564,10 @@ class Uncertainty(np.ndarray):
             np.nan_to_num(histogram_one_good)
             np.nan_to_num(histogram_two_good)
             np.seterr(divide='ignore', invalid='ignore')
-            input_array = np.array(np.sqrt(np.power((2 * histogram_one_good * d_histogram_two / np.power(histogram_two_good + histogram_one_good, 2)), 2) +
-                                           np.power((2 * histogram_two_good * d_histogram_one / np.power(histogram_two_good + histogram_one_good, 2)), 2)))
+            input_array = np.array(np.sqrt(np.power(
+                (2 * histogram_one_good * d_histogram_two / np.power(histogram_two_good + histogram_one_good, 2)), 2) +
+                                           np.power((2 * histogram_two_good * d_histogram_one / np.power(
+                                               histogram_two_good + histogram_one_good, 2)), 2)))
             np.seterr(divide='warn', invalid='warn')
             np.nan_to_num(input_array, copy=False)
 
@@ -473,6 +579,9 @@ class Uncertainty(np.ndarray):
         self.bin_size = float(bin_size)
 
         return self
+
+    def __eq__(self, other):
+        return self.bin_size == other.bin_size and np.array_equal(self, other)
 
     def __reduce__(self):
         pickled_state = super(Uncertainty, self).__reduce__()
@@ -492,6 +601,14 @@ class Uncertainty(np.ndarray):
 
         self.bin_size = getattr(obj, 'bin_size', None)
 
+    @classmethod
+    def from_array(cls):
+        pass
+
+    @classmethod
+    def from_histogram(cls):
+        pass
+
     def bin(self, packing):
         bin_full = self.bin_size / 1000
         bin_binned = float(packing) / 1000
@@ -506,14 +623,17 @@ class Uncertainty(np.ndarray):
 
         if leftover_bins:
             reshaped_uncertainty = np.reshape(self[:-leftover_bins],
-                                            (binned_indices_total, binned_indices_per_bin))
+                                              (binned_indices_total, binned_indices_per_bin))
         else:
             reshaped_uncertainty = np.reshape(self, (binned_indices_total, binned_indices_per_bin))
 
-        binned_uncertainty = 1 / binned_indices_per_bin * np.sqrt(np.apply_along_axis(np.sum, 1,
-                                                                                      reshaped_uncertainty ** 2))
+        try:
+            binned_uncertainty = 1 / binned_indices_per_bin * np.sqrt(np.apply_along_axis(np.sum, 1,
+                                                                                          reshaped_uncertainty ** 2))
+        except ValueError:
+            raise ValueError("Invalid bin size provided for binning uncertainty.")
 
-        return binned_uncertainty
+        return Uncertainty(binned_uncertainty, packing)
 
 
 class Time(np.ndarray):
@@ -523,8 +643,10 @@ class Time(np.ndarray):
         numpy array.
         """
 
-    def __new__(cls, input_array=None, bin_size=None, length=None, time_zero=None, run_id=None, time_zero_exact=None, **kwargs):
-        if (input_array is None) and (bin_size is None or length is None or (time_zero is None and time_zero_exact is None)):
+    def __new__(cls, input_array=None, bin_size=None, length=None, time_zero=None, run_id=None, time_zero_exact=None,
+                **kwargs):
+        if (input_array is None) and (
+                bin_size is None or length is None or (time_zero is None and time_zero_exact is None)):
             raise ValueError("No parameters for time constructor may be None")
         if input_array is None and time_zero_exact is not None:
             input_array = (np.arange(length) * float(bin_size) / 1000) + time_zero_exact
@@ -534,7 +656,7 @@ class Time(np.ndarray):
 
         self = np.asarray(input_array).view(cls)
         self.bin_size = float(bin_size)
-        self.length = float(length)
+        self.length = len(input_array) if length is None else float(length)
         self.time_zero = 0 if time_zero is None else float(time_zero)
         self.id = run_id
 
@@ -579,10 +701,8 @@ class Time(np.ndarray):
 
 # min, max
 class FFT:
-    def __init__(self, asymmetry, time):
-        f_min = 0
-        f_max = 1
-        f_step = (f_max - f_min) / 100
+    def __init__(self, asymmetry, time, f_min, f_max):
+        f_step = (f_max - f_min) / 200
         z_min = 2 * np.pi * f_min
         z_max = 2 * np.pi * f_max
         z_step = 2 * np.pi * f_step
@@ -634,28 +754,146 @@ class FFT:
 
 
 class Fit:
-    def __init__(self, parameters, expression, title, run_id):
+    def __init__(self, parameters, expression, title, run_id, meta, asymmetry: Asymmetry):
         self.id = str(uuid.uuid4())
         self.parameters = parameters
         self.string_expression = expression
-        self.expression = None
         self.title = title
-        self.run_id = run_id
+        self.run_id = run_id  # "UNLINKED" -> run_id of the dataset you created
+        self.meta = meta
+        self.asymmetry = asymmetry  # Prompt with the plot prompt
 
-    def __call__(self, *args, **kwargs):
-        pass
+        from app.model import fit
+        self.expression = fit.FitExpression(expression)
+
+    def write(self, out_file, bin_size=None, x_min=None, x_max=None):
+        meta_string = files.TITLE_KEY + ":" + str(self.title) + "," \
+                      + files.BIN_SIZE_KEY + ":" + str(bin_size if bin_size else self.meta[files.BIN_SIZE_KEY]) + "," \
+                      + files.TEMPERATURE_KEY + ":" + str(self.meta[files.TEMPERATURE_KEY]) + "," \
+                      + files.FIELD_KEY + ":" + str(self.meta[files.FIELD_KEY]) + "," \
+                      + files.T0_KEY + ":" + str(self.meta[files.T0_KEY])  # TODO not correct t0, need to fix that.
+
+        runs = services.RunService().get_runs_by_ids([self.run_id])
+
+        if len(runs) == 0:
+            raise Exception("Run ID in fit '{}' did not match any in database.".format(self.title))
+
+        run = runs[0]
+
+        asymmetry = run.asymmetries[RunDataset.FULL_ASYMMETRY]
+        for v in self.parameters.values():
+            if v.symbol == "\u03B1":
+                asymmetry = asymmetry.correct(v.value)
+
+        if bin_size:
+            asymmetry = asymmetry.bin(bin_size)
+
+        if x_min or x_max:
+            asymmetry = asymmetry.cut(x_min, x_max)
+
+        if self.expression:
+            calculated_asymmetry = self.expression(asymmetry.time,
+                                                   **{v.symbol: v.value for v in self.parameters.values()})
+        else:
+            raise Exception("Expression has not been created for fit '{}'".format(self.title))
+
+        np.savetxt(out_file, np.c_[asymmetry.time, asymmetry, calculated_asymmetry, asymmetry.uncertainty],
+                   fmt='%2.9f, %2.4f, %2.4f, %2.4f',
+                   header="BEAMS\n" + meta_string + "\nTime, Asymmetry, Calculated, Uncertainty")
 
 
 class FitDataset:
+    class Flags:
+        GLOBAL = 1
+        GLOBAL_PLUS = 2
+        BATCH = 3
+
     def __init__(self):
         t = time.localtime()
         current_time = time.strftime("%d-%m-%YT%H:%M:%S", t)
 
-        self.id = str(current_time)
-        self.title = self.id
-        self.fits = {}
+        self.id = str(uuid.uuid4())
+        self.title = str(current_time)
+        self.fits = {}  # run_id : fit object
         self.flags = 0
         self.expression = None
+        self.is_loaded = False
+
+    def write(self, out_file, order_by_key):
+        # Writing the Summary Block
+        fit_parameters_string = "\n# Summary\n"
+
+        f = list(self.fits.values())[0]
+
+        # helpful code
+        fit_parameters_string += "{:<8}\t".format(files.RUN_NUMBER_KEY)
+        if order_by_key != files.RUN_NUMBER_KEY:
+            fit_parameters_string += "{:<12}\t".format(order_by_key)
+
+        for name, v in f.parameters.items():  # getting the column headers
+            fit_parameters_string += "{:<8}\t".format(name)
+        fit_parameters_string += "\n"
+
+        # Make a list from the fit dictionary so that we can then sort it by the meta value
+        fit_list = list(self.fits.values())
+
+        # Sorting the fit list by the user-selected meta value
+        try:
+            fit_list.sort(
+                key=lambda fit: float(re.search("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?", fit.meta[order_by_key])[0]))
+        except IndexError:
+            pass
+
+        for f in fit_list:  # adding values for each run
+            fit_parameters_string += "{:<8}\t".format(f.meta[files.RUN_NUMBER_KEY])
+            if order_by_key != files.RUN_NUMBER_KEY:
+                fit_parameters_string += "{:<12}\t".format(f.meta[order_by_key])
+            for name, v in f.parameters.items():
+                fit_parameters_string += "{:<8}\t".format("{:.5f}".format(v.value))
+            # run = services.RunService().get_runs_by_ids([f.run_id])[0]
+            fit_parameters_string += "\n"
+
+        # Writing the Verbose Section
+        fit_parameters_string += "\n# Fit Parameters\n\n# \t{:<8}{:<10}{:<12}{:<8}{:<8}".format("Name", "Value",
+                                                                                                "Uncertainty", "Lower",
+                                                                                                "Upper") + "\n\n"
+
+        if self.flags & FitDataset.Flags.GLOBAL or self.flags & FitDataset.Flags.GLOBAL_PLUS:  # Add common parameters
+            fit_parameters_string += "# Common parameters for all runs\n\n"
+
+            f = list(self.fits.values())[0]
+            for name, v in f.parameters.items():
+                if v.is_global:
+                    fit_parameters_string += "\t" + "{:<8}{:<10.5f}{:<12.5f}{:<8.5f}{:<8.5f}".format(v.symbol,
+                                                                                                     v.value,
+                                                                                                     v.uncertainty,
+                                                                                                     v.lower,
+                                                                                                     v.upper) + "\n"
+
+            fit_parameters_string += "\n"
+
+        for f in self.fits.values():  # Add run specific parameters
+            run = services.RunService().get_runs_by_ids([f.run_id])[0]
+            fit_parameters_string += run.file.file_path + "\n"
+            fit_parameters_string += "# Specific parameters for run {} ({})\n\n".format(run.meta["RunNumber"],
+                                                                                        f.title)
+
+            for name, v in f.parameters.items():
+                if not v.is_global:
+                    fit_parameters_string += "\t" + "{:<8}{:<10.5f}{:<12.5f}{:<8.5f}{:<8.5f}".format(v.symbol,
+                                                                                                     v.value,
+                                                                                                     v.uncertainty,
+                                                                                                     v.lower,
+                                                                                                     v.upper) + "\n"
+
+            fit_parameters_string += "\n"
+
+        # Write out our string
+        with open(out_file, 'w', encoding="utf-8") as out_file_object:
+            out_file_object.write("#BEAMS\n"
+                                  + fit_parameters_string
+                                  + "# Expression\n\n\t"
+                                  + "A(t) = " + self.expression)
 
 
 class RunDataset:
@@ -716,17 +954,48 @@ class FileDataset:
 
 class DataBuilder:
     @staticmethod
-    def build_minimal(f):
+    def build_minimal(f: files.ReadableFile):
         if not isinstance(f, File):
             f = files.file(f)
 
-        # fixme add conditional for fits and sessions
         if f.DATA_FORMAT == files.Format.HISTOGRAM or \
-                f.DATA_FORMAT == files.Format.ASYMMETRY:
+                f.DATA_FORMAT == files.Format.ASYMMETRY or \
+                f.DATA_FORMAT == files.Format.FIT:
             run = RunDataset()
             run.meta = f.read_meta()
             run.file = f
             return run
+
+        elif f.DATA_FORMAT == files.Format.FIT_SET_VERBOSE:
+            from app.model import fit
+
+            common, specific, expression = f.read_data()
+            fit_dataset = FitDataset()
+            fit_dataset.expression = expression
+            for run_number, (title, file_path, specific_parameters) in specific.items():
+                parameters = {symbol: fit.FitParameter(symbol, float(value), float(lower), float(upper), False, False,
+                                                       output=float(value), uncertainty=float(uncertainty)) for
+                              symbol, value, uncertainty, lower, upper in specific_parameters}
+                parameters.update(
+                    {symbol: fit.FitParameter(symbol, float(value), float(lower), float(upper), False, False,
+                                              output=float(value), uncertainty=float(uncertainty)) for
+                     symbol, value, uncertainty, lower, upper in common})
+
+                unlinked_run_id = 'UNLINKED' + str(uuid.uuid4())
+                fi = Fit(parameters, expression, title, unlinked_run_id,
+                         {files.RUN_NUMBER_KEY: run_number,
+                          files.TITLE_KEY: title,
+                          files.FILE_PATH_KEY: file_path}, None)
+                fit_dataset.fits[unlinked_run_id] = fi
+            return fit_dataset
+
+        elif f.DATA_FORMAT == files.Format.FIT_SET:
+            data = f.read_data().to_dict()
+            run_numbers = data.pop('RUN')
+            run_parameters = {}
+            for i, _ in enumerate(run_numbers):
+                run_parameters[run_numbers[i]] = {symbol: values[i] for symbol, values in data.items()}
+            return run_parameters
         else:
             return None
 
@@ -735,7 +1004,6 @@ class DataBuilder:
         if not isinstance(f, File):
             f = files.file(f)
 
-        # fixme add conditional for fits
         if d is None or (not isinstance(d, RunDataset) and not isinstance(d, FitDataset)):
             if f.DATA_FORMAT == files.Format.HISTOGRAM or \
                     f.DATA_FORMAT == files.Format.ASYMMETRY:
@@ -743,7 +1011,6 @@ class DataBuilder:
                 d.meta = f.read_meta()
                 d.file = f
 
-        # fixme add conditional for fits and sessions
         if f.DATA_FORMAT == files.Format.HISTOGRAM:
             data = f.read_data()
             for histogram_title in d.meta[files.HIST_TITLES_KEY]:
@@ -766,11 +1033,35 @@ class DataBuilder:
             uncertainty_values = np.array(data['Uncertainty'].values)
             time_values = np.array(data['Time'].values)
 
+            uncertainty = Uncertainty(uncertainty_values, bin_size=d.meta[files.BIN_SIZE_KEY])
+            times = Time(time_values, time_zero=d.meta[files.T0_KEY], bin_size=d.meta[files.BIN_SIZE_KEY])
+
             asymmetry = Asymmetry(input_array=asymmetry_values,
                                   time_zero=d.meta[files.T0_KEY],
                                   bin_size=d.meta[files.BIN_SIZE_KEY],
-                                  uncertainty=uncertainty_values,
-                                  time=time_values)
+                                  uncertainty=uncertainty,
+                                  time=times)
+
+            d.asymmetries[d.FULL_ASYMMETRY] = asymmetry
+            d.histograms = None
+            d.isLoaded = True
+
+        elif f.DATA_FORMAT == files.Format.FIT:
+            data = f.read_data()
+            asymmetry_values = np.array(data['Asymmetry'].values)
+            uncertainty_values = np.array(data['Uncertainty'].values)
+            time_values = np.array(data['Time'].values)
+            calculated_values = np.array(data['Calculated'].values)
+
+            uncertainty = Uncertainty(uncertainty_values, bin_size=d.meta[files.BIN_SIZE_KEY])
+            times = Time(time_values, time_zero=d.meta[files.T0_KEY], bin_size=d.meta[files.BIN_SIZE_KEY])
+
+            asymmetry = Asymmetry(input_array=asymmetry_values,
+                                  time_zero=d.meta[files.T0_KEY],
+                                  bin_size=d.meta[files.BIN_SIZE_KEY],
+                                  uncertainty=uncertainty,
+                                  time=times,
+                                  calculated=calculated_values)
 
             d.asymmetries[d.FULL_ASYMMETRY] = asymmetry
             d.histograms = None

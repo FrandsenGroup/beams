@@ -1,6 +1,6 @@
 import enum
 
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 
 from app.util import qt_widgets
 from app.model import files, services, objects
@@ -23,7 +23,6 @@ class PlotFileDialog(QtWidgets.QDialog):
         self.b_apply = qt_widgets.StyleOneButton('Apply')
         self.b_apply_all = qt_widgets.StyleOneButton('Apply All')
         self.b_plot = qt_widgets.StyleOneButton('Plot')
-        self.b_skip = qt_widgets.StyleOneButton('Skip')
         self.b_cancel = qt_widgets.StyleTwoButton('Cancel')
         self.status_bar = QtWidgets.QStatusBar()
 
@@ -33,7 +32,6 @@ class PlotFileDialog(QtWidgets.QDialog):
         self.b_apply.setToolTip("Apply this format to only the current run.")
         self.b_apply_all.setToolTip("Apply this format to all selected runs.")
         self.b_plot.setToolTip("Plot the asymmetries (must choose histograms before plotting).")
-        self.b_skip.setToolTip("Remove current histogram from selection.")
         self.b_cancel.setToolTip("Close prompt.")
 
         self.b_plot.setEnabled(False)
@@ -48,12 +46,12 @@ class PlotFileDialog(QtWidgets.QDialog):
         row_1.addWidget(self.c_hist_two)
         row_2.addWidget(self.b_apply)
         row_2.addWidget(self.b_apply_all)
-        row_2.addWidget(self.b_skip)
         row_2.addWidget(self.b_plot)
         row_2.addWidget(self.b_cancel)
         col.addLayout(row_1)
         col.addLayout(row_2)
         col.addWidget(self.status_bar)
+
 
         self.setLayout(col)
         self._presenter = PlotFileDialogPresenter(self, args[0])
@@ -107,8 +105,10 @@ class PlotFileDialog(QtWidgets.QDialog):
         return dialog.exec()
 
 
-class PlotFileDialogPresenter:
+class PlotFileDialogPresenter(QtCore.QObject):
     def __init__(self, view: PlotFileDialog, runs):
+        super().__init__()
+
         self.__run_service = services.RunService()
         self._view = view
         self._runs = runs
@@ -122,20 +122,14 @@ class PlotFileDialogPresenter:
         self._set_callbacks()
 
     def _set_callbacks(self):
-        self._view.b_apply.released.connect(lambda: self._apply_clicked())
-        self._view.b_apply_all.released.connect(lambda: self._apply_all_clicked())
-        self._view.b_cancel.released.connect(lambda: self._cancel_clicked())
-        self._view.b_skip.released.connect(lambda: self._skip_clicked())
-        self._view.b_plot.released.connect(lambda: self._plot_clicked())
-        self._view.c_file_list.currentIndexChanged.connect(lambda: self._file_choice_changed())
+        self._view.b_apply.released.connect(self._on_apply_clicked)
+        self._view.b_apply_all.released.connect(self._on_apply_all_clicked)
+        self._view.b_cancel.released.connect(self._on_cancel_clicked)
+        self._view.b_plot.released.connect(self._on_plot_clicked)
+        self._view.c_file_list.currentIndexChanged.connect(self._on_file_choice_changed)
 
-    def _is_all_formatted(self):
-        for k, v in self._formats.items():
-            if v is None:
-                return False
-        return True
-
-    def _apply_clicked(self):
+    @QtCore.pyqtSlot()
+    def _on_apply_clicked(self):
         current_format = self._current_format()
 
         if not current_format[3]:
@@ -152,7 +146,8 @@ class PlotFileDialogPresenter:
         self._view.increment_current_file()
         self._view.set_status_message("Applied.")
 
-    def _apply_all_clicked(self):
+    @QtCore.pyqtSlot()
+    def _on_apply_all_clicked(self):
         current_format = self._current_format()
 
         if not current_format[3]:
@@ -173,29 +168,19 @@ class PlotFileDialogPresenter:
 
         self._view.set_status_message("Applied.")
 
-    def _cancel_clicked(self):
+    @QtCore.pyqtSlot()
+    def _on_cancel_clicked(self):
         self._view.done(PlotFileDialog.Codes.NO_FILES_PLOTTED)
 
-    def _skip_clicked(self):
-        current_file = self._view.get_file()
-
-        for run in self._runs:
-            if run.file.file_path == current_file:
-                self._runs.remove(run)
-
-        self._formats.pop(current_file)
-        self._view.remove_current_file()
-
-        if self._is_all_formatted():
-            self._view.set_enabled_plot_button(True)
-
-    def _plot_clicked(self):
+    @QtCore.pyqtSlot()
+    def _on_plot_clicked(self):
         if self._is_all_formatted():
             self._load_runs()
         else:
             self._view.set_enabled_plot_button(False)
 
-    def _file_choice_changed(self):
+    @QtCore.pyqtSlot()
+    def _on_file_choice_changed(self):
         current_file = self._view.get_file()
         if len(current_file) < 2:
             self._view.done(PlotFileDialog.Codes.NO_FILES_PLOTTED)
@@ -204,6 +189,12 @@ class PlotFileDialogPresenter:
         current_hists = files.file(current_file).read_meta()[files.HIST_TITLES_KEY]
         self._view.set_first_histogram(current_hists)
         self._view.set_second_histogram(current_hists)
+
+    def _is_all_formatted(self):
+        for k, v in self._formats.items():
+            if v is None:
+                return False
+        return True
 
     def _load_runs(self):
         self._view.done(PlotFileDialog.Codes.FILES_PLOTTED)

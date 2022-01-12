@@ -566,21 +566,22 @@ class HistogramPanelPresenter(PanelPresenter):
         self._set_callbacks()
 
     def _set_callbacks(self):
-        self._view.support_panel.tree.itemSelectionChanged.connect(self._selection_changed)
-        self._view.canvas.figure.canvas.mpl_connect('button_press_event', self._mouse_interaction)
-        self._view.canvas.figure.canvas.mpl_connect('button_release_event', self._mouse_interaction)
-        self._view.canvas.figure.canvas.mpl_connect('motion_notify_event', self._mouse_interaction)
-        self._view.support_panel.reset_button.pressed.connect(self._reset_clicked)
-        self._view.support_panel.save_button.pressed.connect(self._save_clicked)
-        self._view.support_panel.see_file_button.pressed.connect(self._see_file_clicked)
-        self._view.check_editing.stateChanged.connect(self._editing_checked)
-        self._view.input_t0.returnPressed.connect(lambda: self._input_changed('t0', self._view.get_input_t0()))
-        self._view.input_bkgd1.returnPressed.connect(lambda: self._input_changed('bkgd1', self._view.get_input_bkgd1()))
-        self._view.input_bkgd2.returnPressed.connect(lambda: self._input_changed('bkgd2', self._view.get_input_bkgd2()))
-        self._view.input_goodbin1.returnPressed.connect(lambda: self._input_changed('goodbin1', self._view.get_input_goodbin1()))
-        self._view.input_goodbin2.returnPressed.connect(lambda: self._input_changed('goodbin2', self._view.get_input_goodbin2()))
+        self._view.support_panel.tree.itemSelectionChanged.connect(self._on_selection_changed)
+        self._view.canvas.figure.canvas.mpl_connect('button_press_event', self._on_mouse_interaction)
+        self._view.canvas.figure.canvas.mpl_connect('button_release_event', self._on_mouse_interaction)
+        self._view.canvas.figure.canvas.mpl_connect('motion_notify_event', self._on_mouse_interaction)
+        self._view.support_panel.reset_button.pressed.connect(self._on_reset_clicked)
+        self._view.support_panel.save_button.pressed.connect(self._on_save_clicked)
+        self._view.support_panel.see_file_button.pressed.connect(self._on_see_file_clicked)
+        self._view.check_editing.stateChanged.connect(self._on_editing_checked)
+        self._view.input_t0.returnPressed.connect(lambda: self._on_input_changed('t0', self._view.get_input_t0()))
+        self._view.input_bkgd1.returnPressed.connect(lambda: self._on_input_changed('bkgd1', self._view.get_input_bkgd1()))
+        self._view.input_bkgd2.returnPressed.connect(lambda: self._on_input_changed('bkgd2', self._view.get_input_bkgd2()))
+        self._view.input_goodbin1.returnPressed.connect(lambda: self._on_input_changed('goodbin1', self._view.get_input_goodbin1()))
+        self._view.input_goodbin2.returnPressed.connect(lambda: self._on_input_changed('goodbin2', self._view.get_input_goodbin2()))
 
-    def _selection_changed(self):
+    @QtCore.pyqtSlot()
+    def _on_selection_changed(self):
         histograms = self._view.support_panel.tree.get_selected_histograms()
 
         if len(histograms) == 0:
@@ -620,7 +621,8 @@ class HistogramPanelPresenter(PanelPresenter):
 
         self._view.set_enabled(True, self.__multiple, self.__editing)
 
-    def _mouse_interaction(self, event):
+    @QtCore.pyqtSlot()
+    def _on_mouse_interaction(self, event):
         if not self.__editing:
             return
 
@@ -662,7 +664,8 @@ class HistogramPanelPresenter(PanelPresenter):
         elif event.button is None and self.__pressed:
             self.__pressed = False
 
-    def _reset_clicked(self):
+    @QtCore.pyqtSlot()
+    def _on_reset_clicked(self):
         for histogram in self._view.support_panel.tree.get_selected_histograms():
             self.__alterations[histogram.id][histogram.title][files.BACKGROUND_ONE_KEY] = histogram.background_start
             self.__alterations[histogram.id][histogram.title][files.BACKGROUND_TWO_KEY] = histogram.background_end
@@ -676,7 +679,8 @@ class HistogramPanelPresenter(PanelPresenter):
                          self.__current_histogram.good_bin_start,
                          self.__current_histogram.good_bin_end)
 
-    def _save_clicked(self):
+    @QtCore.pyqtSlot()
+    def _on_save_clicked(self):
         altered_run_ids = []
         for histogram in self._view.support_panel.tree.get_all_histograms():
             if histogram.id in self.__alterations.keys() and histogram.title in self.__alterations[histogram.id].keys():
@@ -697,11 +701,13 @@ class HistogramPanelPresenter(PanelPresenter):
 
         self.__run_service.recalculate_asymmetries(altered_run_ids)
 
-    def _editing_checked(self):
+    @QtCore.pyqtSlot()
+    def _on_editing_checked(self):
         self.__editing = self._view.is_editing()
         self._view.set_enabled(True, self.__multiple, self.__editing)
 
-    def _see_file_clicked(self):
+    @QtCore.pyqtSlot()
+    def _on_see_file_clicked(self):
         run = self.__run_service.get_runs_by_ids([self.__current_histogram.id])[0]
         filename = run.file.file_path
 
@@ -710,7 +716,8 @@ class HistogramPanelPresenter(PanelPresenter):
 
         FileDisplayDialog.launch([filename, file_content])
 
-    def _input_changed(self, input_box, input_value):
+    @QtCore.pyqtSlot()
+    def _on_input_changed(self, input_box, input_value):
         try:
             val = int(input_value)
         except ValueError:
