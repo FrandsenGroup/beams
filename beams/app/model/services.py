@@ -411,6 +411,7 @@ class SystemService:
 
     class Signals(QtCore.QObject):
         changed = QtCore.pyqtSignal()
+        theme_changed = QtCore.pyqtSignal()
 
     DARK_THEME = "DARK"
     LIGHT_THEME = "LIGHT"
@@ -473,6 +474,7 @@ class SystemService:
 
     def set_theme_preference(self, preference):
         self.__dao.set_configuration(self.ConfigKeys.THEME_PREFERENCE, preference)
+        self.signals.theme_changed.emit()
 
     def _set_default_configuration(self):
         user_data = {

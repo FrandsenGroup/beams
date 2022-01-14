@@ -191,7 +191,6 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.__file_service.load_session(self.__file_service.get_file_by_path(open_file[0]).id)
 
     def _action_change_theme(self, action):
-        print(action.text())
         instance = QtWidgets.QApplication.instance()
         if action.text() == "&Dark":
             instance.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette))

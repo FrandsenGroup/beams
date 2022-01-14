@@ -5,6 +5,7 @@ import logging
 from PyQt5 import QtGui, QtWidgets, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 import numpy as np
 
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
@@ -473,19 +474,53 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
     class PlotDisplay(FigureCanvas):
         def __init__(self, settings):
+
+            self.__system_service = services.SystemService()
             self._draw_pending = True
             self._is_drawing = True
             self._settings = settings
 
-            FigureCanvas.__init__(self, Figure())
+            FigureCanvas.__init__(self, plt.figure())
             axes = self.figure.subplots(2, 1, gridspec_kw={'height_ratios': [2, 1]})
-            self.figure.set_facecolor("#ffffff")
+
+            # self.figure.set_facecolor("#ffffff")
             self.axes_time = axes[0]
             self.axes_freq = axes[1]
-
+            self._style = self.set_stylesheet()
             self.set_blank()
 
+
+
+        def set_stylesheet(self):
+            style = self.__system_service.get_theme_preference()
+            print(f'trying to change theme to {style}')
+            if style == self.__system_service.DARK_THEME:
+                # plt.style.use('dark_background')
+                # plt.rcParams['axes.facecolor'] = '#19232D'
+                # plt.rcParams['figure.facecolor'] = '#19232D'
+                self.figure.set_facecolor('#19232D')
+                self.axes_freq.set_facecolor('#19232D')
+                self.axes_time.set_facecolor('#19232D')
+            elif style == self.__system_service.LIGHT_THEME:
+                # plt.style.use('default')
+                # plt.rcParams['axes.facecolor'] = '#FAFAFA'
+                # plt.rcParams['figure.facecolor'] = '#FAFAFA'
+                self.figure.set_facecolor('#FAFAFA')
+                self.axes_freq.set_facecolor('#FAFAFA')
+                self.axes_time.set_facecolor('#FAFAFA')
+            else:
+                # darkdetect logic, including updating style to be either dark or light (from default)
+                pass
+            self.axes_time.figure.canvas.draw()
+            self._style = style
+            return style
+
+
+
         def set_blank(self):
+            tick_color = '#FAFAFA'
+            if self._style == self.__system_service.DARK_THEME:
+                tick_color = '#19232D'
             title_font_size = 12
             self.axes_time.spines['right'].set_visible(False)
             self.axes_time.spines['top'].set_visible(False)
@@ -494,23 +529,32 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_time.set_xlabel("Load '.msr', '.dat' or '.asy' files and press 'Plot' to see data.",
                                       fontsize=title_font_size)
             self.axes_time.xaxis.label.set_color("#c0c0c0")
-            self.axes_time.tick_params(axis='x', colors='white')
-            self.axes_time.tick_params(axis='y', colors='white')
-            self.axes_time.set_facecolor("#ffffff")
+            self.axes_time.tick_params(axis='x', colors=tick_color)
+            self.axes_time.tick_params(axis='y', colors=tick_color)
+            # self.axes_time.set_facecolor("#ffffff")
 
             self.axes_freq.spines['right'].set_visible(False)
             self.axes_freq.spines['top'].set_visible(False)
             self.axes_freq.spines['left'].set_visible(False)
             self.axes_freq.spines['bottom'].set_visible(False)
-            self.axes_freq.tick_params(axis='x', colors='white')
-            self.axes_freq.tick_params(axis='y', colors='white')
-            self.axes_freq.set_facecolor("#ffffff")
+            self.axes_freq.tick_params(axis='x', colors=tick_color)
+            self.axes_freq.tick_params(axis='y', colors=tick_color)
+            self.axes_time.figure.canvas.draw()
+            # self.axes_freq.set_facecolor("#ffffff")
 
-        def set_style(self, remove_legend):
-            self.axes_time.tick_params(axis='x', colors='black')
-            self.axes_time.tick_params(axis='y', colors='black')
-            self.axes_freq.tick_params(axis='x', colors='black')
-            self.axes_freq.tick_params(axis='y', colors='black')
+        def set_style(self, remove_legend=False):
+            tick_color = '#19232D'
+            if self._style == self.__system_service.DARK_THEME:
+                print("setting ticks to white ??")
+                tick_color = '#FAFAFA'
+            self.axes_time.tick_params(axis='x', colors=tick_color)
+            self.axes_time.tick_params(axis='y', colors=tick_color)
+            self.axes_time.spines['left'].set_color(tick_color)
+            self.axes_time.spines['bottom'].set_color(tick_color)
+            self.axes_freq.tick_params(axis='x', colors=tick_color)
+            self.axes_freq.tick_params(axis='y', colors=tick_color)
+            self.axes_freq.spines['left'].set_color(tick_color)
+            self.axes_freq.spines['bottom'].set_color(tick_color)
 
             title_font_size = 12
             self.axes_time.spines['right'].set_visible(False)
@@ -519,8 +563,9 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_time.spines['bottom'].set_visible(True)
             self.axes_time.set_xlabel("Time (" + chr(956) + "s)", fontsize=title_font_size)
             self.axes_time.set_ylabel("Asymmetry", fontsize=title_font_size)
-            self.axes_time.xaxis.label.set_color("#000000")
-            self.axes_time.set_facecolor("#ffffff")
+            self.axes_time.xaxis.label.set_color(tick_color)
+            self.axes_time.yaxis.label.set_color(tick_color)
+            # self.axes_time.set_facecolor("#ffffff")
 
             self.axes_freq.spines['right'].set_visible(False)
             self.axes_freq.spines['top'].set_visible(False)
@@ -529,8 +574,10 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_freq.set_xlabel(r'Frequency (MHz)', fontsize=title_font_size)
             self.axes_freq.set_ylabel(r'FFT$^2$', fontsize=title_font_size)
             self.axes_freq.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
-            self.axes_freq.set_facecolor("#ffffff")
-
+            self.axes_freq.xaxis.label.set_color(tick_color)
+            self.axes_freq.yaxis.label.set_color(tick_color)
+            # self.axes_freq.set_facecolor("#ffffff")
+            self.axes_time.figure.canvas.draw()
             self.figure.tight_layout()
 
         def plot_asymmetry(self, time, asymmetry, uncertainty, fit, color, marker_color, line_color, errorbar_color,
@@ -870,6 +917,7 @@ class PlottingPanelPresenter(PanelPresenter):
         self.__populating_settings = False
         self.__update_alpha = True
         self.__logger = logging.getLogger("PlottingPanelPresenter")
+        self.__system_service = services.SystemService()
         self._set_callbacks()
 
     def _set_callbacks(self):
@@ -941,6 +989,8 @@ class PlottingPanelPresenter(PanelPresenter):
                                                   self._view.support_panel.plot_style_box.fit_linestyle_options.currentText()))
         self._view.support_panel.item_tree.itemSelectionChanged.connect(self._populate_settings)
 
+        self.__system_service.signals.theme_changed.connect(self._on_theme_changed)
+
     @QtCore.pyqtSlot()
     def _on_spectrum_settings_changed(self, side):
         self._start_update(side)
@@ -1006,6 +1056,18 @@ class PlottingPanelPresenter(PanelPresenter):
     @QtCore.pyqtSlot()
     def _on_alpha_changed(self):
         self.update_alpha()
+
+    @QtCore.pyqtSlot()
+    def _on_theme_changed(self):
+        self._view.left_display.set_stylesheet()
+        self._view.right_display.set_stylesheet()
+        if self._view.left_display.axes_time.lines:
+            self._view.left_display.set_style()
+            self._view.right_display.set_style()
+        else:
+            self._view.left_display.set_blank()
+            self._view.right_display.set_blank()
+
 
     def _update_canvas(self, settings, display, side, fast=False):
         ids = self._view.support_panel.item_tree.get_run_ids()
