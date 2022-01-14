@@ -4,7 +4,7 @@
 
 - Convert binary data files from multiple µSR facilities.
 - Display and interact with multiple sets of data.
-- Write your data to a common file type.
+- Write data to a common file type.
 - Compatible with Linux, Mac and Windows
 
 # BEAMS
@@ -14,7 +14,7 @@
 - [Getting Started](#getting-started)
 - [User Guide](#user-guide)
   - [Loading Files](#loading-files)
-  - [Plotting Asymmetries](#plotting-asymmetries)
+  - [Plotting Asymmetries](#plotting-asymmetries)Pl
     - [Plotting the Asymmetry](#plotting-the-asymmetry)
     - [Interacting with the Asymmetry](#interacting-with-the-asymmetry)
     - [Integrating the Asymmetry](#integrating-the-asymmetry)
@@ -67,10 +67,13 @@ $ python beams
 
 
 ### Loading Files
-By clicking the + button in the top left corner you will launch a prompt with four options of adding files. 
-From disk (your computer), and then three different facilities: Triumf, PSI and ISIS. 
+By clicking the [+] button in the top left corner you will launch a prompt with four options of adding files. 
+From disk (your computer), and then three different facilities: Triumf, PSI and ISIS. Clicking the [-] button will remove
+all the the files currently checked.
 
-When you download files from one of the three facilities, they need to be converted from their binary format
+<img src="https://github.com/aPeter1/BEAMS/blob/assets/file_panel_example.png" width="400" />
+
+When you download files onto your computer from one of the three facilities, they need to be converted from their binary format
 to a format that our program can work with. You can do this by 'checking' the box next to each file you want
 to convert and pressing the 'convert' button. New files with the '.dat' extension will be created.
 
@@ -106,71 +109,6 @@ the alpha parameter for the asymmetry.
 ![choosing your histograms for asymmetry](https://github.com/aPeter1/BEAMS/blob/assets/plot_interaction.png)
 
 <br>
-
-### Fitting Asymmetries
-#### Choosing your Fit Expression
-![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/expression_input.png)
-
-Near the top of the fitting tab you can see an area where you can provide the fitting expression as a function of 't'. Operations must be typed out explicitly (i.e. use '5*x' rather then '5x'). If the expression you provide is invalid, the box will be highlighted in red.
-
-<br>
-
-![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/saved_expressions.png)
-
-Above the input for the expression you will see two boxes. The box on the left (Predefined Functions) contains some common function definitions that come loaded with the program. You can select the template you want to use and press 'Insert'. This will insert the function into the expression input box below (wherever your cursor is at in the box or at the end of the input if your cursor is not in it).
-
-The box on the right (User Defined Functions) allows you to create a new function definition (with a specified name) and save it for future use. You can select from previously saved definitions and press 'Insert' to achieve the same behavior as described above.
-
-<br>
-
-
-Reserved Symbols | + | - | * | / | ^ | i | e | π | pi
---- | --- | --- | --- | --- | --- | --- | --- | --- | ---
-
-Functions - f(...) | sin | cos | tan | sinh | cosh | tanh | exp
---- | --- | --- | --- | --- | --- | --- | ---
-
-
-
-<br>
-
-#### Specifying your Fit Parameters
-When you provide a valid fit expression you will see the table of parameters and the plot display below the input box update as you type. Below is an example of valid input.
-
-![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/example_fit_expression.png)
-
-As you can see, the fit expression has two free variables (λ and β) and a third variable 'α' (this is a reserved symbol for the alpha value of the asymmetry). All three of these are accounted for in the parameter table.
-
-The parameter table also has three separate sections you can interact with; Config, Batch and Output. Each of the three will be explained in depth. 
-
-###### Config
-
-This is the first section of the parameter table shown above. There will be a row for each free variable and an additional row for α. For each parameter you can adjust the initial value used in the fit, the lower and upper bounds for that parameter, and whether or not that parameter should be fixed to the value provided.
-
-- Note - Adjusting a free variable will be reflected in the fit lines in the plot display. Adjusting alpha will be reflected in the asymmetry being plotted.
-
-###### Batch
-
-In the second section of the parameter table, you will once again see rows for each parameter with two new columns for each; Global and Run-Specific. For each parameter, you can only have ONE box checked (checking one will make the other box uncheckable).
-
-<img src="https://github.com/aPeter1/BEAMS/blob/assets/example_batch.png" width="400" />
-
-By checking global, you are indicating that you want the parameter to be fit across all datasets - not individually for each.
-
-By checking run-specific, you are indicating that you want to be able to specify every column in the config section (even the fixed column) individually for each run. For example, you get set the initial value for λ for one run to 2.0 and for another run to 3.0. By default, when you set the value that will be the initial value for every single run.-
-
-- In order to assign values to individual runs, you select the runs (as shown below) and while they are selected you adjust the values in the config table. You will then find as you click through each run that the values have been applied and remembered.
-
-
-- If you select multiple runs that have conflicting values in one column or another for a parameter marked as run-specific, you will see a ' * ' in that cell or, if it is the fixed column, you will see a partial checkmark. If you adjust that cell then all conflicting values will be overwritten, otherwise if you don't edit it then they will remain unchanged.
-
-<img src="https://github.com/aPeter1/BEAMS/blob/assets/example_run_list.png" width="400" />
-
-###### Output
-
-In the third section of the parameter table, you will see rows for each parameter and two new columns; Value and Uncertainty. These columns are only filled out after you have run a fit. When you select a fit on the left hand side panel, the value and uncertainty of the calculated parameters will be displayed here. If you select multiple fits at one time, a ' * ' will be placed in cells where there are conflicting values. 
-
-<img src="https://github.com/aPeter1/BEAMS/blob/assets/example_output.png" width="400" />
 
 ## Interacting with Histograms
 When you navigate to the histogram tab, you will be able to see the histograms for each loaded run and adjust meta values associated with them.
@@ -237,6 +175,98 @@ This value defines the start time of the run.
 
 ###### Good Bin Start/End
 These values define the section of the histogram which will be used to calculate the asymmetry.
+
+<br>
+
+### Fitting Asymmetries
+#### Choosing your Fit Expression
+![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/expression_input.png)
+
+Near the top of the fitting tab you can see an area where you can provide the fitting expression as a function of 't'. Operations must be typed out explicitly (i.e. use '5*x' rather then '5x'). If the expression you provide is invalid, the box will be highlighted in red.
+
+<br>
+
+![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/saved_expressions.png)
+
+Above the input for the expression you will see two boxes. The box on the left (Predefined Functions) contains some common function definitions that come loaded with the program. You can select the template you want to use and press 'Insert'. This will insert the function into the expression input box below (wherever your cursor is at in the box or at the end of the input if your cursor is not in it).
+
+The box on the right (User Defined Functions) allows you to create a new function definition (with a specified name) and save it for future use. You can select from previously saved definitions and press 'Insert' to achieve the same behavior as described above.
+
+<br>
+
+
+Reserved Symbols | + | - | * | / | ^ | i | e | π | pi
+--- | --- | --- | --- | --- | --- | --- | --- | --- | ---
+
+Functions - f(...) | sin | cos | tan | sinh | cosh | tanh | exp
+--- | --- | --- | --- | --- | --- | --- | ---
+
+
+
+<br>
+
+#### Specifying your Fit Parameters
+When you provide a valid fit expression you will see the table of parameters and the plot display below the input box update as you type. Below is an example of valid input.
+
+![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/example_fit_expression.png)
+
+As you can see, the fit expression has two free variables (λ and β) and a third variable 'α' (this is a reserved symbol for the alpha value of the asymmetry). All three of these are accounted for in the parameter table.
+
+The parameter table also has three separate sections you can interact with; Config, Batch and Output. Each of the three will be explained in depth. 
+
+###### Config
+
+This is the first section of the parameter table shown above. There will be a row for each parameter and an additional row for α. For each parameter you can adjust the initial value used in the fit, the lower and upper bounds for that parameter, and whether or not that parameter should be fixed to the value provided.
+
+- Note - Adjusting a free variable will be reflected in the fit lines in the plot display. Adjusting alpha will be reflected in the asymmetry being plotted.
+
+###### Batch
+
+In the second section of the parameter table, you will once again see rows for each parameter with two new columns for each; 
+Global and Run-Specific. For each parameter, you can only have ONE box checked (checking one will make the other box uncheckable).
+
+<img src="https://github.com/aPeter1/BEAMS/blob/assets/example_batch.png" width="400" />
+
+By checking global, you are indicating that you want the parameter to be fit across all datasets - not individually for each.
+
+By checking run-specific, you are indicating that you want to be able to specify every column in the config section 
+(even the fixed column) individually for each run for that particular parameter. For example, you set the initial value for λ for one run to 
+2.0 and for another run to 3.0. By default, when you set the value that will be the initial value for every single run.
+
+- In order to assign values to individual runs, you select the runs (as shown below) and while they are selected you adjust the values in the config table. You will then find as you click through each run that the values have been applied and remembered.
+
+
+- If you select multiple runs that have conflicting values in one column or another for a parameter marked as run-specific, you will see a ' * ' in that cell or, if it is the fixed column, you will see a partial checkmark. If you adjust that cell then all conflicting values will be overwritten, otherwise if you don't edit it then they will remain unchanged.
+
+<img src="https://github.com/aPeter1/BEAMS/blob/assets/example_run_list.png" width="400" />
+
+###### Output
+
+In the third section of the parameter table, you will see rows for each parameter and two new columns; Value and Uncertainty. These columns are only filled out after you have run a fit. When you select a fit on the left hand side panel, the value and uncertainty of the calculated parameters will be displayed here. If you select multiple fits at one time, a ' * ' will be placed in cells where there are conflicting values. 
+
+<img src="https://github.com/aPeter1/BEAMS/blob/assets/example_output.png" width="400" />
+
+
+#### Specifying the Range and Bin-Size to Use
+Similar to the settings in the tab where we plot the asymmetries, in this tab there are options directly below the display where you can adjust the range and bin-size of the asymmetry to be used in the fit. These setting will be applied to all runs used in the fit.
+
+#### Fitting
+Once you have your fit expression and parameters set you need to check the box next to each run that you want to be part of the fit. Once they are all checked, you can click [Fit] and a loading popup will come up until the fit is finished.
+
+#### Fit Results
+##### Viewing Results
+Once your fit is complete, it will appear in the left-side panel (reference the image below). You will see a parent node (with the current timestamp as the name, you can right-click -> rename to change this) with a child node for each run you 
+chose to include in the fit. If you select one of the children nodes, you will see the asymmetry and the fit line for that particular run shown in the display. If you select the parent node, you will see the asymmetries and fit lines for every
+run included in the fit. Additionally, you can ctrl-click or shift-click to select a custom range of fits to display.
+
+Every run currently being displayed will have the color in the display shown to the left of the name of the run.
+
+![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/fitting-runs-example.gif)
+
+##### Saving Results
+If you right-click on a single fit, a range of fits or a parent node in the left-side panel you will see the option to 'save' these fits. If you click it, you will see a prompt which will offer several choices.
+
+The 
 
 
 ## File Formats
