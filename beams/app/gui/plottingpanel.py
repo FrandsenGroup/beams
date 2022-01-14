@@ -9,6 +9,7 @@ from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import numpy as np
 
+from app.resources import resources
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
 from app.gui.dialogs.dialog_plot_file import PlotFileDialog
 from app.gui.gui import Panel, PanelPresenter
@@ -500,13 +501,13 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 else:
                     style = self.__system_service.LIGHT_THEME
             if style == self.__system_service.DARK_THEME:
-                self.figure.set_facecolor('#19232D')
-                self.axes_freq.set_facecolor('#19232D')
-                self.axes_time.set_facecolor('#19232D')
+                self.figure.set_facecolor(resources.DARK_COLOR)
+                self.axes_freq.set_facecolor(resources.DARK_COLOR)
+                self.axes_time.set_facecolor(resources.DARK_COLOR)
             elif style == self.__system_service.LIGHT_THEME:
-                self.figure.set_facecolor('#FAFAFA')
-                self.axes_freq.set_facecolor('#FAFAFA')
-                self.axes_time.set_facecolor('#FAFAFA')
+                self.figure.set_facecolor(resources.LIGHT_COLOR)
+                self.axes_freq.set_facecolor(resources.LIGHT_COLOR)
+                self.axes_time.set_facecolor(resources.LIGHT_COLOR)
             self.axes_time.figure.canvas.draw()
             self._style = style
             return style
@@ -514,9 +515,9 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
 
         def set_blank(self):
-            tick_color = '#FAFAFA'
+            tick_color = resources.LIGHT_COLOR
             if self._style == self.__system_service.DARK_THEME:
-                tick_color = '#19232D'
+                tick_color = resources.DARK_COLOR
             title_font_size = 12
             self.axes_time.spines['right'].set_visible(False)
             self.axes_time.spines['top'].set_visible(False)
@@ -537,9 +538,9 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_time.figure.canvas.draw()
 
         def set_style(self):
-            tick_color = '#19232D'
+            tick_color = resources.DARK_COLOR
             if self._style == self.__system_service.DARK_THEME:
-                tick_color = '#FAFAFA'
+                tick_color = resources.LIGHT_COLOR
             self.axes_time.tick_params(axis='x', colors=tick_color)
             self.axes_time.tick_params(axis='y', colors=tick_color)
             self.axes_time.spines['left'].set_color(tick_color)
@@ -643,7 +644,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self._settings.set_max_freq(max_freq)
 
         def finish_plotting(self):
-            # self.set_style()
+            self.set_style()
             self.axes_time.figure.canvas.draw()
 
         def start_plotting(self):
