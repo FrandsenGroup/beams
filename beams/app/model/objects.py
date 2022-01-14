@@ -893,7 +893,7 @@ class FitDataset:
             out_file_object.write("#BEAMS\n"
                                   + fit_parameters_string
                                   + "# Expression\n\n\t"
-                                  + "A(t) = " + self.expression)
+                                  + "A(t) = " + str(self.expression))
 
 
 class RunDataset:
