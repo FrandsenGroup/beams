@@ -102,6 +102,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self._histogram_support = self._tabs.histogram_panel.createSupportPanel()
         self._fit_support = self._tabs.fit_panel.createSupportPanel()
         self._current_support = self._plotting_support
+        self._action_dark = None
+        self._action_light = None
+        self._action_default = None
+
         self.create_menus()
 
         self._set_default_panels()
@@ -155,15 +159,17 @@ class MainWindow(QtWidgets.QMainWindow):
         fileMenu.addAction("&Open Session", self._action_open)
 
         viewMenu = self.menuBar().addMenu(self.tr("&View"))
-        # viewMenu.addAction("&Toggle application theme", self._action_toggle_theme)
         theme_menu = viewMenu.addMenu(self.tr("&Change application theme"))
         theme_menu.triggered.connect(self._action_change_theme)
-        action_default = theme_menu.addAction("&Default")
-        action_default.setCheckable(True)
-        action_dark = theme_menu.addAction("&Dark")
-        action_dark.setCheckable(True)
-        action_light = theme_menu.addAction("&Light")
-        action_light.setCheckable(True)
+        self._action_default = theme_menu.addAction("&Default")
+        self._action_default.setCheckable(True)
+        self._action_dark = theme_menu.addAction("&Dark")
+        self._action_dark.setCheckable(True)
+        self._action_light = theme_menu.addAction("&Light")
+        self._action_light.setCheckable(True)
+        self._action_default.setChecked(qt_constants.Checked if self.__system_service.get_theme_preference() == self.__system_service.DEFAULT_THEME else qt_constants.Unchecked)
+        self._action_light.setChecked(qt_constants.Checked if self.__system_service.get_theme_preference() == self.__system_service.LIGHT_THEME else qt_constants.Unchecked)
+        self._action_dark.setChecked(qt_constants.Checked if self.__system_service.get_theme_preference() == self.__system_service.DARK_THEME else qt_constants.Unchecked)
 
     def _action_save(self):
         save_file = QtWidgets.QFileDialog.getSaveFileName(self, 'Save Session',
@@ -192,6 +198,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _action_change_theme(self, action):
         instance = QtWidgets.QApplication.instance()
+        self._action_default.setChecked(qt_constants.Checked if action.text() == '&Default' else qt_constants.Unchecked)
+        self._action_light.setChecked(qt_constants.Checked if action.text() == '&Light' else qt_constants.Unchecked)
+        self._action_dark.setChecked(qt_constants.Checked if action.text() == '&Dark' else qt_constants.Unchecked)
         if action.text() == "&Dark":
             instance.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette))
             self.__system_service.set_theme_preference(self.__system_service.DARK_THEME)

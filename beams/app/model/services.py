@@ -470,7 +470,11 @@ class SystemService:
             self.__logger.warning("Tried to set last used directory to invalid path: {}".format(directory))
 
     def get_theme_preference(self):
-        return self.__dao.get_configuration(self.ConfigKeys.THEME_PREFERENCE)
+        preference = self.__dao.get_configuration(self.ConfigKeys.THEME_PREFERENCE)
+        if preference is None:
+            preference = self.DEFAULT_THEME
+            self.set_theme_preference(preference)
+        return preference
 
     def set_theme_preference(self, preference):
         self.__dao.set_configuration(self.ConfigKeys.THEME_PREFERENCE, preference)

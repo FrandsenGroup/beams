@@ -2,6 +2,7 @@ import threading
 import warnings
 import logging
 
+import darkdetect
 from PyQt5 import QtGui, QtWidgets, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
@@ -493,24 +494,19 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
         def set_stylesheet(self):
             style = self.__system_service.get_theme_preference()
-            print(f'trying to change theme to {style}')
+            if style == self.__system_service.DEFAULT_THEME:
+                if darkdetect.isDark():
+                    style = self.__system_service.DARK_THEME
+                else:
+                    style = self.__system_service.LIGHT_THEME
             if style == self.__system_service.DARK_THEME:
-                # plt.style.use('dark_background')
-                # plt.rcParams['axes.facecolor'] = '#19232D'
-                # plt.rcParams['figure.facecolor'] = '#19232D'
                 self.figure.set_facecolor('#19232D')
                 self.axes_freq.set_facecolor('#19232D')
                 self.axes_time.set_facecolor('#19232D')
             elif style == self.__system_service.LIGHT_THEME:
-                # plt.style.use('default')
-                # plt.rcParams['axes.facecolor'] = '#FAFAFA'
-                # plt.rcParams['figure.facecolor'] = '#FAFAFA'
                 self.figure.set_facecolor('#FAFAFA')
                 self.axes_freq.set_facecolor('#FAFAFA')
                 self.axes_time.set_facecolor('#FAFAFA')
-            else:
-                # darkdetect logic, including updating style to be either dark or light (from default)
-                pass
             self.axes_time.figure.canvas.draw()
             self._style = style
             return style
@@ -531,7 +527,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_time.xaxis.label.set_color("#c0c0c0")
             self.axes_time.tick_params(axis='x', colors=tick_color)
             self.axes_time.tick_params(axis='y', colors=tick_color)
-            # self.axes_time.set_facecolor("#ffffff")
 
             self.axes_freq.spines['right'].set_visible(False)
             self.axes_freq.spines['top'].set_visible(False)
@@ -540,12 +535,10 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_freq.tick_params(axis='x', colors=tick_color)
             self.axes_freq.tick_params(axis='y', colors=tick_color)
             self.axes_time.figure.canvas.draw()
-            # self.axes_freq.set_facecolor("#ffffff")
 
-        def set_style(self, remove_legend=False):
+        def set_style(self):
             tick_color = '#19232D'
             if self._style == self.__system_service.DARK_THEME:
-                print("setting ticks to white ??")
                 tick_color = '#FAFAFA'
             self.axes_time.tick_params(axis='x', colors=tick_color)
             self.axes_time.tick_params(axis='y', colors=tick_color)
@@ -565,7 +558,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_time.set_ylabel("Asymmetry", fontsize=title_font_size)
             self.axes_time.xaxis.label.set_color(tick_color)
             self.axes_time.yaxis.label.set_color(tick_color)
-            # self.axes_time.set_facecolor("#ffffff")
 
             self.axes_freq.spines['right'].set_visible(False)
             self.axes_freq.spines['top'].set_visible(False)
@@ -576,7 +568,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_freq.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
             self.axes_freq.xaxis.label.set_color(tick_color)
             self.axes_freq.yaxis.label.set_color(tick_color)
-            # self.axes_freq.set_facecolor("#ffffff")
             self.axes_time.figure.canvas.draw()
             self.figure.tight_layout()
 
@@ -651,8 +642,8 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self._settings.set_min_freq(0)
                 self._settings.set_max_freq(max_freq)
 
-        def finish_plotting(self, remove_legend=False):
-            self.set_style(remove_legend)
+        def finish_plotting(self):
+            # self.set_style()
             self.axes_time.figure.canvas.draw()
 
         def start_plotting(self):
@@ -1157,7 +1148,7 @@ class PlottingPanelPresenter(PanelPresenter):
                 display.set_fft_plot_limits(max_fft, f_max)
 
         display.set_asymmetry_plot_limits(max_asymmetry, min_asymmetry)
-        display.finish_plotting(fast)
+        display.finish_plotting()
 
         self._view.legend_display.set_legend(legend_values)
 
