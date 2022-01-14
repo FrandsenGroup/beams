@@ -17,15 +17,15 @@ class WriteFitDialog(QtWidgets.QDialog):
         self.radio_summary = QtWidgets.QRadioButton("Summary")
         self.radio_directory = QtWidgets.QRadioButton("Directory")
         self.radio_zip = QtWidgets.QRadioButton("Zip")
-        self.button_save_as = qt_widgets.StyleOneButton("Save As")
-        self.button_done = qt_widgets.StyleOneButton("Done")
+        self.button_save_as = qt_widgets.StyleOneButton("Save")
+        self.button_done = qt_widgets.StyleOneButton("Cancel")
         self.option_prefix = QtWidgets.QComboBox()
         self.option_order_by = QtWidgets.QComboBox()
 
         self.summary_button_group = QtWidgets.QButtonGroup()
         self.individual_button_group = QtWidgets.QButtonGroup()
 
-        # TODO perhaps we should add ability to specify bin size and spectrum limits here.
+        # TODO we should add ability to specify bin size and spectrum limits here.
 
         self._set_attributes()
         self._set_layout()
@@ -63,9 +63,13 @@ class WriteFitDialog(QtWidgets.QDialog):
     def _set_layout(self):
         vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(self.radio_summary)
+        hbox = QtWidgets.QHBoxLayout()
+        hbox.addWidget(QtWidgets.QLabel("Order runs by:"))
+        hbox.addStretch()
+        vbox.addLayout(hbox)
         vbox.addWidget(self.option_order_by)
 
-        summary_group = QtWidgets.QGroupBox("Summary")
+        summary_group = QtWidgets.QGroupBox("Single File")
         summary_group.setLayout(vbox)
 
         vbox = QtWidgets.QVBoxLayout()
@@ -73,8 +77,12 @@ class WriteFitDialog(QtWidgets.QDialog):
         hbox.addWidget(self.radio_directory)
         hbox.addWidget(self.radio_zip)
         vbox.addLayout(hbox)
+        hbox = QtWidgets.QHBoxLayout()
+        hbox.addWidget(QtWidgets.QLabel("Name files by:"))
+        hbox.addStretch()
+        vbox.addLayout(hbox)
         vbox.addWidget(self.option_prefix)
-        individual_group = QtWidgets.QGroupBox("Individual")
+        individual_group = QtWidgets.QGroupBox("Collection of Files")
         individual_group.setLayout(vbox)
 
         hbox = QtWidgets.QHBoxLayout()
