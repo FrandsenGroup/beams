@@ -4,11 +4,14 @@ from collections import OrderedDict
 from concurrent import futures
 from functools import partial
 
+
+import darkdetect
 from PyQt5 import QtWidgets, QtCore, QtGui
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
 
+from app.resources import resources
 from app.gui.dialogs.dialog_misc import WarningMessageDialog, LoadingDialog
 from app.gui.dialogs.dialog_write_fit import WriteFitDialog
 from app.util import qt_widgets, qt_constants
@@ -261,18 +264,42 @@ class FittingPanel(Panel):
 
     class PlotDisplay(FigureCanvas):
         def __init__(self, settings):
+            self.__system_service = services.SystemService()
             self._draw_pending = True
             self._is_drawing = True
             self._settings = settings
 
             FigureCanvas.__init__(self, Figure())
             axes = self.figure.subplots(1, 1)
-            self.figure.set_facecolor("#ffffff")
+            # self.figure.set_facecolor("#ffffff")
             self.axes_time = axes
 
+            self._style = self.set_stylesheet()
             self.set_blank()
 
+        def set_stylesheet(self):
+            style = self.__system_service.get_theme_preference()
+            if style == self.__system_service.DEFAULT_THEME:
+                if darkdetect.isDark():
+                    style = self.__system_service.DARK_THEME
+                else:
+                    style = self.__system_service.LIGHT_THEME
+            if style == self.__system_service.DARK_THEME:
+                self.figure.set_facecolor(resources.DARK_COLOR)
+                self.axes_time.set_facecolor(resources.DARK_COLOR)
+            elif style == self.__system_service.LIGHT_THEME:
+                self.figure.set_facecolor(resources.LIGHT_COLOR)
+                self.axes_time.set_facecolor(resources.LIGHT_COLOR)
+            self.axes_time.figure.canvas.draw()
+            self._style = style
+            return style
+
         def set_blank(self):
+            tick_color = resources.LIGHT_COLOR
+            text_color = resources.DARK_COLOR
+            if self._style == self.__system_service.DARK_THEME:
+                tick_color = resources.DARK_COLOR
+                text_color = resources.LIGHT_COLOR
             self.axes_time.clear()
             title_font_size = 12
             self.axes_time.spines['right'].set_visible(False)
@@ -281,25 +308,34 @@ class FittingPanel(Panel):
             self.axes_time.spines['bottom'].set_visible(False)
             self.axes_time.set_xlabel("Select runs to see live asymmetry and fit.",
                                       fontsize=title_font_size)
-            self.axes_time.xaxis.label.set_color("#c0c0c0")
-            self.axes_time.tick_params(axis='x', colors='white')
-            self.axes_time.tick_params(axis='y', colors='white')
-            self.axes_time.set_facecolor("#ffffff")
+            self.axes_time.xaxis.label.set_color(text_color)
+            self.axes_time.tick_params(axis='x', colors=tick_color)
+            self.axes_time.tick_params(axis='y', colors=tick_color)
+            self.axes_time.set_facecolor(tick_color)
 
-        def set_style(self, remove_legend):
-            self.axes_time.tick_params(axis='x', colors='black')
-            self.axes_time.tick_params(axis='y', colors='black')
+        def set_style(self):
+            tick_color = resources.DARK_COLOR
+            background_color = resources.LIGHT_COLOR
+            if self._style == self.__system_service.DARK_THEME:
+                tick_color = resources.LIGHT_COLOR
+                background_color = resources.DARK_COLOR
+            self.axes_time.tick_params(axis='x', colors=tick_color)
+            self.axes_time.tick_params(axis='y', colors=tick_color)
 
             title_font_size = 12
             self.axes_time.spines['right'].set_visible(False)
             self.axes_time.spines['top'].set_visible(False)
             self.axes_time.spines['left'].set_visible(True)
             self.axes_time.spines['bottom'].set_visible(True)
+            self.axes_time.spines['left'].set_color(tick_color)
+            self.axes_time.spines['bottom'].set_color(tick_color)
             self.axes_time.set_xlabel("Time (" + chr(956) + "s)", fontsize=title_font_size)
             self.axes_time.set_ylabel("Asymmetry", fontsize=title_font_size)
-            self.axes_time.xaxis.label.set_color("#000000")
-            self.axes_time.set_facecolor("#ffffff")
+            self.axes_time.xaxis.label.set_color(tick_color)
+            self.axes_time.yaxis.label.set_color(tick_color)
+            self.axes_time.set_facecolor(background_color)
             self.axes_time.legend(loc='upper right')
+            self.axes_time.figure.canvas.draw()
             self.figure.tight_layout()
 
         def plot_asymmetry(self, time, asymmetry, uncertainty, fit, color, marker_color, line_color, errorbar_color,
@@ -351,7 +387,7 @@ class FittingPanel(Panel):
             self.axes_time.set_xlim(x_min, x_max)
 
         def finish_plotting(self, remove_legend=False):
-            self.set_style(remove_legend)
+            self.set_style()
             self.axes_time.figure.canvas.draw()
 
         def start_plotting(self):
@@ -1269,6 +1305,7 @@ class FitTabPresenter(PanelPresenter):
         self._view.parameter_table.output_table.itemChanged.connect(self._on_parameter_table_changed)
         self._view.button_fit.released.connect(self._on_fit_clicked)
         self._view.support_panel.new_button.released.connect(self._on_new_clicked)
+        self._system_service.signals.theme_changed.connect(self._on_theme_changed)
 
     @QtCore.pyqtSlot()
     def _on_function_input_changed(self):
@@ -1555,6 +1592,15 @@ class FitTabPresenter(PanelPresenter):
     @QtCore.pyqtSlot()
     def _on_insert_pre_defined_function_clicked(self):
         self._view.copy_loaded_function_to_cursor()
+
+    @QtCore.pyqtSlot()
+    def _on_theme_changed(self):
+        self._view.fit_display.set_stylesheet()
+        if self._view.fit_display.axes_time.lines:
+            self._view.fit_display.set_style()
+        else:
+            self._view.fit_display.set_blank()
+
 
     def _update_display(self):
         run_ids = self._view.get_checked_run_ids()
