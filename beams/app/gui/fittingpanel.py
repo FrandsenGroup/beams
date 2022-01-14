@@ -213,6 +213,15 @@ class FittingPanel(Panel):
                 dataset.fits = {i.model.id: i.model for i in items}
                 dataset.flags = items[0].parent().model.flags
 
+                expressions = set([i.model.string_expression for i in items])
+
+                if len(expressions) > 1:
+                    WarningMessageDialog.launch("Can not save collection of fits with more then one fit expression at "
+                                                "the same time.")
+                    return
+
+                dataset.expression = expressions.pop()
+
                 WriteFitDialog.launch(dataset=dataset)
 
         def __init__(self):
