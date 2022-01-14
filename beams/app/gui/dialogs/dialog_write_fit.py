@@ -33,15 +33,19 @@ class WriteFitDialog(QtWidgets.QDialog):
         self._presenter = WriteFitDialogPresenter(self, dataset)
 
     def _set_attributes(self):
-        magical_list = list(self._dataset.fits.values())[0].meta.keys()
+        metas = [f.meta for f in self._dataset.fits.values()]
 
-        self.option_prefix.addItems(magical_list)
-        self.option_prefix.setEnabled(False)
-
-        possible_values_list = [files.TEMPERATURE_KEY, files.FIELD_KEY, files.RUN_NUMBER_KEY]
-        order_by_list = [x for x in possible_values_list if x in magical_list]
+        meta_keys = metas[0].keys()
+        possible_order_by_list = [files.TEMPERATURE_KEY, files.FIELD_KEY, files.RUN_NUMBER_KEY]
+        order_by_list = [x for x in possible_order_by_list if x in meta_keys]
 
         self.option_order_by.addItems(order_by_list)
+
+        # We only want to use keys as filenames if there is a unique value for reach run
+        meta_keys = [k for k in meta_keys if len(set([str(m[k]) for m in metas])) == len(metas)]
+
+        self.option_prefix.addItems(meta_keys)
+        self.option_prefix.setEnabled(False)
 
         self.individual_button_group.addButton(self.radio_zip)
         self.individual_button_group.addButton(self.radio_directory)
