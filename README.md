@@ -266,6 +266,8 @@ Every run currently being displayed will have the color in the display shown to 
 ##### Saving Results
 If you right-click on a single fit, a range of fits or a parent node in the left-side panel you will see the option to 'save' these fits. If you click it, you will see a prompt which will offer several choices.
 
+![dialog for writing fit data](https://github.com/aPeter1/BEAMS/blob/assets/write-fit-dialog.png)
+
 The 
 
 
@@ -274,20 +276,20 @@ The
 ### External Supported File Formats
 Note - Support for ISIS files is currently on the docket, but not yet supported.
 
-File Extension | Description
--------------- | -----------
-.msr | Histogram data from TRIUMF
-.bin | Histogram data from PSI
-.mdu | Histogram data from PSI
+| File Extension | Description                |
+|----------------|----------------------------|
+| .msr           | Histogram data from TRIUMF |
+| .bin           | Histogram data from PSI    |
+| .mdu           | Histogram data from PSI    |
 
 ### BEAMS File Formats
-File Extension | Description
--------------- | -----------
-.dat | Histogram data for a single run.
-.asy | Experimental asymmetry, uncertainty and time for a single run.
-.fit | Experimental and calculated asymmetry, uncertainty and time for a single run.
-.clc | A verbose summary of a fit
-.beams | A saved beams session
+| File Extension | Description                                                                   |
+|----------------|-------------------------------------------------------------------------------|
+| .dat           | Histogram data for a single run.                                              |
+| .asy           | Experimental asymmetry, uncertainty and time for a single run.                |
+| .fit           | Experimental and calculated asymmetry, uncertainty and time for a single run. |
+| .clc           | A verbose summary of a fit                                                    |
+| .beams         | A saved beams session                                                         |
 
 ## Troubleshooting
 #### Can't install requirements on Mac (Apple Silicon)
@@ -314,5 +316,5 @@ Possible solution in the answer to this question on Stack Overflow: https://stac
 #### Histogram navigation toolbar is not loading
 There is an open issue for this ([Issue 97](../../issues/97)). As of right now we do not have a solution. Consider uninstalling and reinstalling the python library 'matplotlib' and 'PyQt5'. 
 
-#### My files from TRIUMF or PSI aren't being converted
+#### My files from TRIUMF, PSI, or ISIS aren't being converted
 Please open up an issue if this happens as it means we need to update the executables.
