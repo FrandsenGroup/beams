@@ -476,7 +476,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
     class PlotDisplay(FigureCanvas):
         def __init__(self, settings):
-
             self.__system_service = services.SystemService()
             self._draw_pending = True
             self._is_drawing = True
@@ -485,26 +484,23 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             FigureCanvas.__init__(self, plt.figure())
             axes = self.figure.subplots(2, 1, gridspec_kw={'height_ratios': [2, 1]})
 
-            # self.figure.set_facecolor("#ffffff")
             self.axes_time = axes[0]
             self.axes_freq = axes[1]
             self._style = self.set_stylesheet()
             self.set_blank()
 
-
-
         def set_stylesheet(self):
             style = self.__system_service.get_theme_preference()
-            if style == self.__system_service.DEFAULT_THEME:
+            if style == self.__system_service.Themes.DEFAULT:
                 if darkdetect.isDark():
-                    style = self.__system_service.DARK_THEME
+                    style = self.__system_service.Themes.DARK
                 else:
-                    style = self.__system_service.LIGHT_THEME
-            if style == self.__system_service.DARK_THEME:
+                    style = self.__system_service.Themes.LIGHT
+            if style == self.__system_service.Themes.DARK:
                 self.figure.set_facecolor(resources.DARK_COLOR)
                 self.axes_freq.set_facecolor(resources.DARK_COLOR)
                 self.axes_time.set_facecolor(resources.DARK_COLOR)
-            elif style == self.__system_service.LIGHT_THEME:
+            elif style == self.__system_service.Themes.LIGHT:
                 self.figure.set_facecolor(resources.LIGHT_COLOR)
                 self.axes_freq.set_facecolor(resources.LIGHT_COLOR)
                 self.axes_time.set_facecolor(resources.LIGHT_COLOR)
@@ -512,11 +508,9 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self._style = style
             return style
 
-
-
         def set_blank(self):
             tick_color = resources.LIGHT_COLOR
-            if self._style == self.__system_service.DARK_THEME:
+            if self._style == self.__system_service.Themes.DARK:
                 tick_color = resources.DARK_COLOR
             title_font_size = 12
             self.axes_time.spines['right'].set_visible(False)
@@ -539,7 +533,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
         def set_style(self):
             tick_color = resources.DARK_COLOR
-            if self._style == self.__system_service.DARK_THEME:
+            if self._style == self.__system_service.Themes.DARK:
                 tick_color = resources.LIGHT_COLOR
             self.axes_time.tick_params(axis='x', colors=tick_color)
             self.axes_time.tick_params(axis='y', colors=tick_color)
@@ -659,8 +653,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
     class PlotControl(QtWidgets.QWidget):
         def __init__(self):
             QtWidgets.QWidget.__init__(self)
-            # self.setTitleBarWidget(QtWidgets.QWidget())
-
             self._label_slider_bin = QtWidgets.QLabel('')
             self._label_input_bin = QtWidgets.QLabel('Time Bins (ns)')
 
@@ -913,28 +905,46 @@ class PlottingPanelPresenter(PanelPresenter):
         self._set_callbacks()
 
     def _set_callbacks(self):
-        self._view.left_settings.input_time_xmin.returnPressed.connect(lambda: self._on_spectrum_settings_changed('left'))
-        self._view.left_settings.input_time_xmax.returnPressed.connect(lambda: self._on_spectrum_settings_changed('left'))
-        self._view.left_settings.input_time_ymin.returnPressed.connect(lambda: self._on_spectrum_settings_changed('left'))
-        self._view.left_settings.input_time_ymax.returnPressed.connect(lambda: self._on_spectrum_settings_changed('left'))
-        self._view.left_settings.check_time_yauto.stateChanged.connect(lambda: self._on_check_parameter_changed(self._view.left_settings))
-        self._view.left_settings.input_freq_xmin.returnPressed.connect(lambda: self._on_spectrum_settings_changed('left'))
-        self._view.left_settings.input_freq_xmax.returnPressed.connect(lambda: self._on_spectrum_settings_changed('left'))
+        self._view.left_settings.input_time_xmin.returnPressed.connect(
+            lambda: self._on_spectrum_settings_changed('left'))
+        self._view.left_settings.input_time_xmax.returnPressed.connect(
+            lambda: self._on_spectrum_settings_changed('left'))
+        self._view.left_settings.input_time_ymin.returnPressed.connect(
+            lambda: self._on_spectrum_settings_changed('left'))
+        self._view.left_settings.input_time_ymax.returnPressed.connect(
+            lambda: self._on_spectrum_settings_changed('left'))
+        self._view.left_settings.check_time_yauto.stateChanged.connect(
+            lambda: self._on_check_parameter_changed(self._view.left_settings))
+        self._view.left_settings.input_freq_xmin.returnPressed.connect(
+            lambda: self._on_spectrum_settings_changed('left'))
+        self._view.left_settings.input_freq_xmax.returnPressed.connect(
+            lambda: self._on_spectrum_settings_changed('left'))
         self._view.left_settings.check_freq_xauto.stateChanged.connect(lambda: self._on_check_parameter_changed('left'))
         self._view.left_settings.slider_bin.sliderMoved.connect(lambda: self._on_bin_parameter_changed('left', True))
-        self._view.left_settings.slider_bin.sliderReleased.connect(lambda: self._on_bin_parameter_changed('left', False))
+        self._view.left_settings.slider_bin.sliderReleased.connect(
+            lambda: self._on_bin_parameter_changed('left', False))
         self._view.left_settings.input_bin.returnPressed.connect(lambda: self._on_bin_parameter_changed('left', False))
-        self._view.right_settings.input_time_xmin.returnPressed.connect(lambda: self._on_spectrum_settings_changed('right'))
-        self._view.right_settings.input_time_xmax.returnPressed.connect(lambda: self._on_spectrum_settings_changed('right'))
-        self._view.right_settings.input_time_ymin.returnPressed.connect(lambda: self._on_spectrum_settings_changed('right'))
-        self._view.right_settings.input_time_ymax.returnPressed.connect(lambda: self._on_spectrum_settings_changed('right'))
-        self._view.right_settings.check_time_yauto.stateChanged.connect(lambda: self._on_check_parameter_changed(self._view.right_settings))
-        self._view.right_settings.input_freq_xmin.returnPressed.connect(lambda: self._on_spectrum_settings_changed('right'))
-        self._view.right_settings.input_freq_xmax.returnPressed.connect(lambda: self._on_spectrum_settings_changed('right'))
-        self._view.right_settings.check_freq_xauto.stateChanged.connect(lambda: self._on_check_parameter_changed('left'))
+        self._view.right_settings.input_time_xmin.returnPressed.connect(
+            lambda: self._on_spectrum_settings_changed('right'))
+        self._view.right_settings.input_time_xmax.returnPressed.connect(
+            lambda: self._on_spectrum_settings_changed('right'))
+        self._view.right_settings.input_time_ymin.returnPressed.connect(
+            lambda: self._on_spectrum_settings_changed('right'))
+        self._view.right_settings.input_time_ymax.returnPressed.connect(
+            lambda: self._on_spectrum_settings_changed('right'))
+        self._view.right_settings.check_time_yauto.stateChanged.connect(
+            lambda: self._on_check_parameter_changed(self._view.right_settings))
+        self._view.right_settings.input_freq_xmin.returnPressed.connect(
+            lambda: self._on_spectrum_settings_changed('right'))
+        self._view.right_settings.input_freq_xmax.returnPressed.connect(
+            lambda: self._on_spectrum_settings_changed('right'))
+        self._view.right_settings.check_freq_xauto.stateChanged.connect(
+            lambda: self._on_check_parameter_changed('left'))
         self._view.right_settings.slider_bin.sliderMoved.connect(lambda: self._on_bin_parameter_changed('right', True))
-        self._view.right_settings.slider_bin.sliderReleased.connect(lambda: self._on_bin_parameter_changed('right', False))
-        self._view.right_settings.input_bin.returnPressed.connect(lambda: self._on_bin_parameter_changed('right', False))
+        self._view.right_settings.slider_bin.sliderReleased.connect(
+            lambda: self._on_bin_parameter_changed('right', False))
+        self._view.right_settings.input_bin.returnPressed.connect(
+            lambda: self._on_bin_parameter_changed('right', False))
         self._view.support_panel.plot_button.pressed.connect(self._on_plot_clicked)
         self._view.support_panel.plot_all_button.pressed.connect(self._on_plot_all_clicked)
         self._view.support_panel.clear_all_button.pressed.connect(self._on_clear_all_clicked)
@@ -942,43 +952,43 @@ class PlottingPanelPresenter(PanelPresenter):
 
         self._view.support_panel.plot_style_box.all_color_options.currentTextChanged.connect(
             lambda: self._on_style_parameter_changed(self.__style_service.Keys.DEFAULT_COLOR,
-                                                  self._view.support_panel.plot_style_box.all_color_options.currentText()))
+                                                     self._view.support_panel.plot_style_box.all_color_options.currentText()))
         self._view.support_panel.plot_style_box.linestyle_options.currentTextChanged.connect(
             lambda: self._on_style_parameter_changed(self.__style_service.Keys.LINESTYLE,
-                                                  self._view.support_panel.plot_style_box.linestyle_options.currentText()))
+                                                     self._view.support_panel.plot_style_box.linestyle_options.currentText()))
         self._view.support_panel.plot_style_box.line_color_options.currentTextChanged.connect(
             lambda: self._on_style_parameter_changed(self.__style_service.Keys.LINE_COLOR,
-                                                  self._view.support_panel.plot_style_box.line_color_options.currentText()))
+                                                     self._view.support_panel.plot_style_box.line_color_options.currentText()))
         self._view.support_panel.plot_style_box.line_width_options.currentTextChanged.connect(
             lambda: self._on_style_parameter_changed(self.__style_service.Keys.LINE_WIDTH,
-                                                  self._view.support_panel.plot_style_box.line_width_options.currentText()))
+                                                     self._view.support_panel.plot_style_box.line_width_options.currentText()))
         self._view.support_panel.plot_style_box.marker_options.currentTextChanged.connect(
             lambda: self._on_style_parameter_changed(self.__style_service.Keys.MARKER,
-                                                  self._view.support_panel.plot_style_box.marker_options.currentText()))
+                                                     self._view.support_panel.plot_style_box.marker_options.currentText()))
         self._view.support_panel.plot_style_box.marker_color_options.currentTextChanged.connect(
             lambda: self._on_style_parameter_changed(self.__style_service.Keys.MARKER_COLOR,
-                                                  self._view.support_panel.plot_style_box.marker_color_options.currentText()))
+                                                     self._view.support_panel.plot_style_box.marker_color_options.currentText()))
         self._view.support_panel.plot_style_box.marker_size_options.currentTextChanged.connect(
             lambda: self._on_style_parameter_changed(self.__style_service.Keys.MARKER_SIZE,
-                                                  self._view.support_panel.plot_style_box.marker_size_options.currentText()))
+                                                     self._view.support_panel.plot_style_box.marker_size_options.currentText()))
         self._view.support_panel.plot_style_box.fillstyle_options.currentTextChanged.connect(
             lambda: self._on_style_parameter_changed(self.__style_service.Keys.FILLSTYLE,
-                                                  self._view.support_panel.plot_style_box.fillstyle_options.currentText()))
+                                                     self._view.support_panel.plot_style_box.fillstyle_options.currentText()))
         self._view.support_panel.plot_style_box.errorbar_style_options.currentTextChanged.connect(
             lambda: self._on_style_parameter_changed(self.__style_service.Keys.ERRORBAR_STYLE,
-                                                  self._view.support_panel.plot_style_box.errorbar_style_options.currentText()))
+                                                     self._view.support_panel.plot_style_box.errorbar_style_options.currentText()))
         self._view.support_panel.plot_style_box.errorbar_color_options.currentTextChanged.connect(
             lambda: self._on_style_parameter_changed(self.__style_service.Keys.ERRORBAR_COLOR,
-                                                  self._view.support_panel.plot_style_box.errorbar_color_options.currentText()))
+                                                     self._view.support_panel.plot_style_box.errorbar_color_options.currentText()))
         self._view.support_panel.plot_style_box.errorbar_width_options.currentTextChanged.connect(
             lambda: self._on_style_parameter_changed(self.__style_service.Keys.ERRORBAR_WIDTH,
-                                                  self._view.support_panel.plot_style_box.errorbar_width_options.currentText()))
+                                                     self._view.support_panel.plot_style_box.errorbar_width_options.currentText()))
         self._view.support_panel.plot_style_box.fit_color_options.currentTextChanged.connect(
             lambda: self._on_style_parameter_changed(self.__style_service.Keys.FIT_COLOR,
-                                                  self._view.support_panel.plot_style_box.fit_color_options.currentText()))
+                                                     self._view.support_panel.plot_style_box.fit_color_options.currentText()))
         self._view.support_panel.plot_style_box.fit_linestyle_options.currentTextChanged.connect(
             lambda: self._on_style_parameter_changed(self.__style_service.Keys.FIT_LINESTYLE,
-                                                  self._view.support_panel.plot_style_box.fit_linestyle_options.currentText()))
+                                                     self._view.support_panel.plot_style_box.fit_linestyle_options.currentText()))
         self._view.support_panel.item_tree.itemSelectionChanged.connect(self._populate_settings)
 
         self.__system_service.signals.theme_changed.connect(self._on_theme_changed)
@@ -1060,7 +1070,6 @@ class PlottingPanelPresenter(PanelPresenter):
             self._view.left_display.set_blank()
             self._view.right_display.set_blank()
 
-
     def _update_canvas(self, settings, display, side, fast=False):
         ids = self._view.support_panel.item_tree.get_run_ids()
         runs = self.__run_service.get_runs_by_ids(ids)
@@ -1101,7 +1110,8 @@ class PlottingPanelPresenter(PanelPresenter):
             fit = asymmetry.calculated
             style = self.__style_service.get_style_by_run_id(run.id)
             legend_values[run.id] = (style[self.__style_service.Keys.LABEL], self.__style_service.color_options_extra[
-                style[self.__style_service.Keys.DEFAULT_COLOR] if style[self.__style_service.Keys.MARKER_COLOR] == 'Default' else
+                style[self.__style_service.Keys.DEFAULT_COLOR] if style[
+                                                                      self.__style_service.Keys.MARKER_COLOR] == 'Default' else
                 style[self.__style_service.Keys.MARKER_COLOR]])
 
             # We have to do this logic because Matplotlib is not good at setting good default plot limits

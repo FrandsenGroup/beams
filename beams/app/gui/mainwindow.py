@@ -1,5 +1,7 @@
 import os
 
+import qdarkstyle
+import darkdetect
 from PyQt5 import QtWidgets, QtCore, QtGui
 
 from app.gui.consolepanel import MainConsolePanel
@@ -10,9 +12,6 @@ from app.gui.fittingpanel import FittingPanel
 from app.util import qt_constants
 from app.gui.dialogs.dialog_misc import PermissionsMessageDialog
 from app.model import services
-
-import qdarkstyle
-import darkdetect
 
 
 # noinspection PyArgumentList
@@ -167,9 +166,13 @@ class MainWindow(QtWidgets.QMainWindow):
         self._action_dark.setCheckable(True)
         self._action_light = theme_menu.addAction("&Light")
         self._action_light.setCheckable(True)
-        self._action_default.setChecked(qt_constants.Checked if self.__system_service.get_theme_preference() == self.__system_service.DEFAULT_THEME else qt_constants.Unchecked)
-        self._action_light.setChecked(qt_constants.Checked if self.__system_service.get_theme_preference() == self.__system_service.LIGHT_THEME else qt_constants.Unchecked)
-        self._action_dark.setChecked(qt_constants.Checked if self.__system_service.get_theme_preference() == self.__system_service.DARK_THEME else qt_constants.Unchecked)
+
+        self._action_default.setChecked(
+            qt_constants.Checked if self.__system_service.get_theme_preference() == self.__system_service.Themes.DEFAULT else qt_constants.Unchecked)
+        self._action_light.setChecked(
+            qt_constants.Checked if self.__system_service.get_theme_preference() == self.__system_service.Themes.LIGHT else qt_constants.Unchecked)
+        self._action_dark.setChecked(
+            qt_constants.Checked if self.__system_service.get_theme_preference() == self.__system_service.Themes.DARK else qt_constants.Unchecked)
 
     def _action_save(self):
         save_file = QtWidgets.QFileDialog.getSaveFileName(self, 'Save Session',
@@ -198,23 +201,23 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _action_change_theme(self, action):
         instance = QtWidgets.QApplication.instance()
+
         self._action_default.setChecked(qt_constants.Checked if action.text() == '&Default' else qt_constants.Unchecked)
         self._action_light.setChecked(qt_constants.Checked if action.text() == '&Light' else qt_constants.Unchecked)
         self._action_dark.setChecked(qt_constants.Checked if action.text() == '&Dark' else qt_constants.Unchecked)
+
         if action.text() == "&Dark":
             instance.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette))
-            self.__system_service.set_theme_preference(self.__system_service.DARK_THEME)
+            self.__system_service.set_theme_preference(self.__system_service.Themes.DARK)
         elif action.text() == "&Light":
             instance.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
-            self.__system_service.set_theme_preference(self.__system_service.LIGHT_THEME)
+            self.__system_service.set_theme_preference(self.__system_service.Themes.LIGHT)
         else:
             if darkdetect.isDark():
                 instance.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette))
             else:
                 instance.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
-            self.__system_service.set_theme_preference(self.__system_service.DEFAULT_THEME)
-
-
+            self.__system_service.set_theme_preference(self.__system_service.Themes.DEFAULT)
 
 
 # noinspection PyArgumentList
@@ -258,7 +261,7 @@ class StyleFile:
                 break
             for key in qss_vars.keys():
                 len_key = len(key)
-                if qss_read_file[current_char:current_char+len_key] == key:
+                if qss_read_file[current_char:current_char + len_key] == key:
                     qss_updated_file += qss_vars[key]
                     current_char += len_key
                     break
@@ -266,4 +269,3 @@ class StyleFile:
                 qss_updated_file += qss_read_file[current_char]
                 current_char += 1
         return qss_updated_file
-

@@ -4,7 +4,6 @@ from collections import OrderedDict
 from concurrent import futures
 from functools import partial
 
-
 import darkdetect
 from PyQt5 import QtWidgets, QtCore, QtGui
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -97,7 +96,8 @@ class FittingPanel(Panel):
 
                 data = []
                 while iterator.value():
-                    if isinstance(iterator.value().model, objects.Fit) or isinstance(iterator.value().model, objects.FitDataset):
+                    if isinstance(iterator.value().model, objects.Fit) or isinstance(iterator.value().model,
+                                                                                     objects.FitDataset):
                         data.append(iterator.value().model)
                     iterator += 1
                 return data
@@ -209,7 +209,6 @@ class FittingPanel(Panel):
                 parent.editItem(self)
 
             def _action_save(self, items, parent):
-
                 dataset = objects.FitDataset()
                 dataset.fits = {i.model.id: i.model for i in items}
                 dataset.flags = items[0].parent().model.flags
@@ -271,7 +270,6 @@ class FittingPanel(Panel):
 
             FigureCanvas.__init__(self, Figure())
             axes = self.figure.subplots(1, 1)
-            # self.figure.set_facecolor("#ffffff")
             self.axes_time = axes
 
             self._style = self.set_stylesheet()
@@ -279,15 +277,15 @@ class FittingPanel(Panel):
 
         def set_stylesheet(self):
             style = self.__system_service.get_theme_preference()
-            if style == self.__system_service.DEFAULT_THEME:
+            if style == self.__system_service.Themes.DEFAULT:
                 if darkdetect.isDark():
-                    style = self.__system_service.DARK_THEME
+                    style = self.__system_service.Themes.DARK
                 else:
-                    style = self.__system_service.LIGHT_THEME
-            if style == self.__system_service.DARK_THEME:
+                    style = self.__system_service.Themes.LIGHT
+            if style == self.__system_service.Themes.DARK:
                 self.figure.set_facecolor(resources.DARK_COLOR)
                 self.axes_time.set_facecolor(resources.DARK_COLOR)
-            elif style == self.__system_service.LIGHT_THEME:
+            elif style == self.__system_service.Themes.LIGHT:
                 self.figure.set_facecolor(resources.LIGHT_COLOR)
                 self.axes_time.set_facecolor(resources.LIGHT_COLOR)
             self.axes_time.figure.canvas.draw()
@@ -297,7 +295,7 @@ class FittingPanel(Panel):
         def set_blank(self):
             tick_color = resources.LIGHT_COLOR
             text_color = resources.DARK_COLOR
-            if self._style == self.__system_service.DARK_THEME:
+            if self._style == self.__system_service.Themes.DARK:
                 tick_color = resources.DARK_COLOR
                 text_color = resources.LIGHT_COLOR
             self.axes_time.clear()
@@ -316,7 +314,7 @@ class FittingPanel(Panel):
         def set_style(self):
             tick_color = resources.DARK_COLOR
             background_color = resources.LIGHT_COLOR
-            if self._style == self.__system_service.DARK_THEME:
+            if self._style == self.__system_service.Themes.DARK:
                 tick_color = resources.LIGHT_COLOR
                 background_color = resources.DARK_COLOR
             self.axes_time.tick_params(axis='x', colors=tick_color)
@@ -738,7 +736,7 @@ class FittingPanel(Panel):
         row.addWidget(self.button_insert_user_equation)
         row.addSpacing(20)
         row.addWidget(self.input_user_equation_name)
-        row.addWidget(self.input_user_equation,2)
+        row.addWidget(self.input_user_equation, 2)
         row.addWidget(self.button_save_user_equation)
         row.addSpacing(10)
         layout = QtWidgets.QFormLayout()
@@ -903,10 +901,10 @@ class FittingPanel(Panel):
 
         return widget
 
-    def add_parameter(self, symbol, config_value = None, config_lower = None,
-                      config_upper = None, config_fixed = None, batch_global = None,
-                      batch_run_dependent = None, batch_value: float = None, output_value = None,
-                      output_uncertainty = None, run_id: str = None):
+    def add_parameter(self, symbol, config_value=None, config_lower=None,
+                      config_upper=None, config_fixed=None, batch_global=None,
+                      batch_run_dependent=None, batch_value: float = None, output_value=None,
+                      output_uncertainty=None, run_id: str = None):
 
         n = self.parameter_table.config_table.verticalHeader().count()
 
@@ -921,23 +919,27 @@ class FittingPanel(Panel):
                 in_table = True
                 if config_value is not None:
                     item_value = QtWidgets.QTableWidgetItem()
-                    item_value.setText(config_value) if config_value == '*' else item_value.setText('{:.5f}'.format(float(config_value)))
+                    item_value.setText(config_value) if config_value == '*' else item_value.setText(
+                        '{:.5f}'.format(float(config_value)))
                     self.parameter_table.config_table.setItem(i, self.ParameterTable.VALUE_COLUMN, item_value)
 
                 if config_lower is not None:
                     item_lower = QtWidgets.QTableWidgetItem()
-                    item_lower.setText(config_lower) if config_lower == '*' else item_lower.setText('{:.5f}'.format(float(config_lower)))
+                    item_lower.setText(config_lower) if config_lower == '*' else item_lower.setText(
+                        '{:.5f}'.format(float(config_lower)))
                     self.parameter_table.config_table.setItem(i, self.ParameterTable.MIN_COLUMN, item_lower)
 
                 if config_upper is not None:
                     item_upper = QtWidgets.QTableWidgetItem()
-                    item_upper.setText(config_upper) if config_upper == '*' else item_upper.setText('{:.5f}'.format(float(config_upper)))
+                    item_upper.setText(config_upper) if config_upper == '*' else item_upper.setText(
+                        '{:.5f}'.format(float(config_upper)))
                     self.parameter_table.config_table.setItem(i, self.ParameterTable.MAX_COLUMN, item_upper)
 
                 if config_fixed is not None:
                     if config_fixed == '*':
-                        item_fixed = self._create_check_box_for_table(connect=self._presenter.update_parameter_table_states,
-                                                                      partial=True)
+                        item_fixed = self._create_check_box_for_table(
+                            connect=self._presenter.update_parameter_table_states,
+                            partial=True)
                     else:
                         item_fixed = self._create_check_box_for_table(checked=config_fixed,
                                                                       connect=self._presenter.update_parameter_table_states)
@@ -953,7 +955,8 @@ class FittingPanel(Panel):
 
             if config_value is not None:
                 item_value = QtWidgets.QTableWidgetItem()
-                item_value.setText(config_value) if config_value == '*' else item_value.setText('{:.5f}'.format(float(config_value)))
+                item_value.setText(config_value) if config_value == '*' else item_value.setText(
+                    '{:.5f}'.format(float(config_value)))
                 self.parameter_table.config_table.setItem(n, self.ParameterTable.VALUE_COLUMN, item_value)
             else:
                 item_value = QtWidgets.QTableWidgetItem()
@@ -962,7 +965,8 @@ class FittingPanel(Panel):
 
             if config_lower is not None:
                 item_lower = QtWidgets.QTableWidgetItem()
-                item_lower.setText(config_lower) if config_lower == '*' else item_lower.setText('{:.5f}'.format(float(config_lower)))
+                item_lower.setText(config_lower) if config_lower == '*' else item_lower.setText(
+                    '{:.5f}'.format(float(config_lower)))
                 self.parameter_table.config_table.setItem(n, self.ParameterTable.MIN_COLUMN, item_lower)
             else:
                 item_lower = QtWidgets.QTableWidgetItem()
@@ -971,7 +975,8 @@ class FittingPanel(Panel):
 
             if config_upper is not None:
                 item_upper = QtWidgets.QTableWidgetItem()
-                item_upper.setText(config_upper) if config_upper == '*' else item_upper.setText('{:.5f}'.format(float(config_upper)))
+                item_upper.setText(config_upper) if config_upper == '*' else item_upper.setText(
+                    '{:.5f}'.format(float(config_upper)))
                 self.parameter_table.config_table.setItem(n, self.ParameterTable.MAX_COLUMN, item_upper)
             else:
                 item_upper = QtWidgets.QTableWidgetItem()
@@ -1004,11 +1009,13 @@ class FittingPanel(Panel):
                 in_table = True
 
                 if batch_global is not None:
-                    item_global = self._create_check_box_for_table(batch_global, connect=self._presenter._update_batch_table)
+                    item_global = self._create_check_box_for_table(batch_global,
+                                                                   connect=self._presenter._update_batch_table)
                     self.parameter_table.batch_table.setCellWidget(i, self.ParameterTable.GLOBAL_COLUMN, item_global)
 
                 if batch_run_dependent is not None:
-                    item_fixed = self._create_check_box_for_table(batch_run_dependent, connect=self._presenter._update_batch_table)
+                    item_fixed = self._create_check_box_for_table(batch_run_dependent,
+                                                                  connect=self._presenter._update_batch_table)
                     self.parameter_table.batch_table.setCellWidget(i, self.ParameterTable.FIXED_RUN_COLUMN, item_fixed)
 
         if not in_table:
@@ -1019,14 +1026,16 @@ class FittingPanel(Panel):
             self.parameter_table.batch_table.setVerticalHeaderItem(n, item_symbol)
 
             if batch_global is not None:
-                item_global = self._create_check_box_for_table(batch_global, connect=self._presenter._update_batch_table)
+                item_global = self._create_check_box_for_table(batch_global,
+                                                               connect=self._presenter._update_batch_table)
                 self.parameter_table.batch_table.setCellWidget(n, self.ParameterTable.GLOBAL_COLUMN, item_global)
             else:
                 item_global = self._create_check_box_for_table(False, connect=self._presenter._update_batch_table)
                 self.parameter_table.batch_table.setCellWidget(n, self.ParameterTable.GLOBAL_COLUMN, item_global)
 
             if batch_run_dependent is not None:
-                item_fixed = self._create_check_box_for_table(batch_run_dependent, connect=self._presenter._update_batch_table)
+                item_fixed = self._create_check_box_for_table(batch_run_dependent,
+                                                              connect=self._presenter._update_batch_table)
                 self.parameter_table.batch_table.setCellWidget(n, self.ParameterTable.FIXED_RUN_COLUMN, item_fixed)
             else:
                 item_fixed = self._create_check_box_for_table(False, connect=self._presenter._update_batch_table)
@@ -1062,12 +1071,14 @@ class FittingPanel(Panel):
 
             if output_value is not None:
                 item_value = QtWidgets.QTableWidgetItem()
-                item_value.setText(output_value) if output_value == '*' else item_value.setText('{:.5f}'.format(float(output_value)))
+                item_value.setText(output_value) if output_value == '*' else item_value.setText(
+                    '{:.5f}'.format(float(output_value)))
                 self.parameter_table.output_table.setItem(n, self.ParameterTable.OUTPUT_VALUE_COLUMN, item_value)
 
             if output_uncertainty is not None:
                 item_value = QtWidgets.QTableWidgetItem()
-                item_value.setText(output_uncertainty) if output_uncertainty == '*' else item_value.setText('{:.5f}'.format(float(output_uncertainty)))
+                item_value.setText(output_uncertainty) if output_uncertainty == '*' else item_value.setText(
+                    '{:.5f}'.format(float(output_uncertainty)))
                 self.parameter_table.output_table.setItem(n, self.ParameterTable.UNCERTAINTY_COLUMN, item_value)
 
     def clear_parameters(self, symbols=None):
@@ -1116,7 +1127,8 @@ class FittingPanel(Panel):
 
                 if uncertainty is not None:
                     item_value = QtWidgets.QTableWidgetItem()
-                    item_value.setText(uncertainty) if uncertainty == '*' else item_value.setText('{:.5f}'.format(float(uncertainty)))
+                    item_value.setText(uncertainty) if uncertainty == '*' else item_value.setText(
+                        '{:.5f}'.format(float(uncertainty)))
                     self.parameter_table.output_table.setItem(i, self.ParameterTable.UNCERTAINTY_COLUMN, item_value)
 
     def get_checked_run_titles(self):
@@ -1176,7 +1188,8 @@ class FittingPanel(Panel):
 
         for i in range(self.parameter_table.batch_table.rowCount()):
             item_fixed = self.parameter_table.batch_table.cellWidget(i, self.parameter_table.FIXED_RUN_COLUMN)
-            is_run_dependent = is_run_dependent or (item_fixed is not None and item_fixed.findChild(QtWidgets.QCheckBox).checkState() > 0)
+            is_run_dependent = is_run_dependent or (
+                        item_fixed is not None and item_fixed.findChild(QtWidgets.QCheckBox).checkState() > 0)
 
         return is_run_dependent
 
@@ -1601,7 +1614,6 @@ class FitTabPresenter(PanelPresenter):
         else:
             self._view.fit_display.set_blank()
 
-
     def _update_display(self):
         run_ids = self._view.get_checked_run_ids()
 
@@ -1620,7 +1632,8 @@ class FitTabPresenter(PanelPresenter):
         styles = self._style_service.get_styles()
         unavailable_colors = [styles[run.id][self._style_service.Keys.DEFAULT_COLOR] for run in runs]
         available_colors = [c for c in self._style_service.color_options_values.values() if c not in unavailable_colors]
-        colors = {run.id: styles[run.id][self._style_service.Keys.DEFAULT_COLOR] for run in runs if run.id in checked_run_ids}
+        colors = {run.id: styles[run.id][self._style_service.Keys.DEFAULT_COLOR] for run in runs if
+                  run.id in checked_run_ids}
         self._view.support_panel.tree.set_colors(colors)
         colors['default'] = '#000000'
 
@@ -1637,7 +1650,8 @@ class FitTabPresenter(PanelPresenter):
                                 time_zero=min_time)
 
             try:
-                fit_asymmetry = self.__expression(time, **{symbol: par.get_value() for symbol, par in parameters.items()})
+                fit_asymmetry = self.__expression(time,
+                                                  **{symbol: par.get_value() for symbol, par in parameters.items()})
             except ValueError:
                 continue
 
@@ -1692,8 +1706,9 @@ class FitTabPresenter(PanelPresenter):
             if run.id in alphas:
                 asymmetry = asymmetry.correct(alphas[run.id])
 
-            raw_asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(min_time=min_time,
-                                                                                                       max_time=max_time)
+            raw_asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].raw().bin(bin_size).cut(
+                min_time=min_time,
+                max_time=max_time)
             self._asymmetries[run.id] = raw_asymmetry
             time = asymmetry.time
             uncertainty = asymmetry.uncertainty
@@ -1848,7 +1863,8 @@ class FitTabPresenter(PanelPresenter):
 
     def _update_batch_table(self):
         for j in range(self._view.parameter_table.batch_table.rowCount()):
-            item_run_specific = self._view.parameter_table.batch_table.cellWidget(j, self._view.parameter_table.FIXED_RUN_COLUMN)
+            item_run_specific = self._view.parameter_table.batch_table.cellWidget(j,
+                                                                                  self._view.parameter_table.FIXED_RUN_COLUMN)
             item_global = self._view.parameter_table.batch_table.cellWidget(j, self._view.parameter_table.GLOBAL_COLUMN)
 
             if item_run_specific is None or item_global is None:
@@ -1887,7 +1903,8 @@ class FitTabPresenter(PanelPresenter):
             symbol, value, min_value, max_value, is_fixed = row_values
 
             # Get the boolean indicating whether the parameter is run specific
-            item_run_specific = self._view.parameter_table.batch_table.cellWidget(j, self._view.parameter_table.FIXED_RUN_COLUMN)
+            item_run_specific = self._view.parameter_table.batch_table.cellWidget(j,
+                                                                                  self._view.parameter_table.FIXED_RUN_COLUMN)
             if item_run_specific is None:
                 continue
             else:
@@ -1899,11 +1916,20 @@ class FitTabPresenter(PanelPresenter):
                 all_run_ids = self._view.get_all_run_ids()
 
                 updated_states = {run_id: (symbol,
-                                           value if value != '*' and (run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else self.__parameter_table_states[symbol][run_id][1],
-                                           min_value if min_value != '*' and (run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else self.__parameter_table_states[symbol][run_id][2],
-                                           max_value if max_value != '*' and (run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else self.__parameter_table_states[symbol][run_id][3],
-                                           is_fixed if is_fixed != '*' and (run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else self.__parameter_table_states[symbol][run_id][4])
-                                  for run_id, not_state_exists in zip(all_run_ids, [r not in self.__parameter_table_states[symbol].keys() for r in all_run_ids])}
+                                           value if value != '*' and (
+                                                       run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else
+                                           self.__parameter_table_states[symbol][run_id][1],
+                                           min_value if min_value != '*' and (
+                                                       run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else
+                                           self.__parameter_table_states[symbol][run_id][2],
+                                           max_value if max_value != '*' and (
+                                                       run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else
+                                           self.__parameter_table_states[symbol][run_id][3],
+                                           is_fixed if is_fixed != '*' and (
+                                                       run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else
+                                           self.__parameter_table_states[symbol][run_id][4])
+                                  for run_id, not_state_exists in zip(all_run_ids, [
+                        r not in self.__parameter_table_states[symbol].keys() for r in all_run_ids])}
 
                 if symbol not in self.__parameter_table_states.keys():
                     self.__parameter_table_states[symbol] = {}
@@ -1984,7 +2010,8 @@ class FitTabPresenter(PanelPresenter):
             self._view.parameter_table.config_table.setItem(j, self._view.parameter_table.VALUE_COLUMN, item_value)
             self._view.parameter_table.config_table.setItem(j, self._view.parameter_table.MIN_COLUMN, item_min)
             self._view.parameter_table.config_table.setItem(j, self._view.parameter_table.MAX_COLUMN, item_max)
-            self._view.parameter_table.config_table.setCellWidget(j, self._view.parameter_table.FIXED_COLUMN, item_fixed)
+            self._view.parameter_table.config_table.setCellWidget(j, self._view.parameter_table.FIXED_COLUMN,
+                                                                  item_fixed)
 
         self.__update_states = True
 
@@ -2039,16 +2066,20 @@ class FitTabPresenter(PanelPresenter):
                 maximum = '*' if len(max_set) > 1 else max_set.pop()
                 is_fixed = '*' if len(fixed_set) > 1 else fixed_set.pop()
 
-            self._view.add_parameter(symbol, value, minimum, maximum, is_fixed, is_globals[symbol], is_run_specifics[symbol])
+            self._view.add_parameter(symbol, value, minimum, maximum, is_fixed, is_globals[symbol],
+                                     is_run_specifics[symbol])
 
         self.__update_states = True
 
         self.update_parameter_table_states()
 
     def _update_batch_options(self):
-        self._view.label_ordering.setEnabled(self._view.check_batch_fit.isChecked() or self._view.check_global_plus.isChecked())
-        self._view.option_run_ordering.setEnabled(self._view.check_batch_fit.isChecked() or self._view.check_global_plus.isChecked())
-        self._view.option_ascending.setEnabled(self._view.check_batch_fit.isChecked() or self._view.check_global_plus.isChecked())
+        self._view.label_ordering.setEnabled(
+            self._view.check_batch_fit.isChecked() or self._view.check_global_plus.isChecked())
+        self._view.option_run_ordering.setEnabled(
+            self._view.check_batch_fit.isChecked() or self._view.check_global_plus.isChecked())
+        self._view.option_ascending.setEnabled(
+            self._view.check_batch_fit.isChecked() or self._view.check_global_plus.isChecked())
 
     def get_parameters(self):
         default = []
@@ -2074,7 +2105,8 @@ class FitTabPresenter(PanelPresenter):
 
             default.append((symbol, value, value_min, value_max, is_fixed, is_global, False))
 
-            item_run_specific = self._view.parameter_table.batch_table.cellWidget(i, self._view.parameter_table.FIXED_RUN_COLUMN)
+            item_run_specific = self._view.parameter_table.batch_table.cellWidget(i,
+                                                                                  self._view.parameter_table.FIXED_RUN_COLUMN)
 
             if item_symbol is None:
                 continue
@@ -2088,7 +2120,8 @@ class FitTabPresenter(PanelPresenter):
 
         for symbol, states in self.__parameter_table_states.items():
             for run_id in run_ids:
-                final_parameters[run_id].append(self.__parameter_table_states[symbol][run_id] + (is_globals[symbol], is_run_specific[symbol],))
+                final_parameters[run_id].append(
+                    self.__parameter_table_states[symbol][run_id] + (is_globals[symbol], is_run_specific[symbol],))
 
         final_parameters['default'] = default
         return final_parameters

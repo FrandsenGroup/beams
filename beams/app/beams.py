@@ -3,21 +3,19 @@ Main entry point for the application.
 """
 
 # Standard Library Packages
-import os
-import sys
 import logging
-import qdarkstyle
+import sys
 
 # Installed Packages
-from PyQt5 import QtWidgets, QtCore, QtGui
+import darkdetect
+import qdarkstyle
+from PyQt5 import QtWidgets, QtGui
 
 # BEAMS Modules
-from app.util import qt_widgets, qt_constants
+from app.gui import mainwindow
 from app.model import services
 from app.resources import resources
-from app.gui import mainwindow
-
-import darkdetect
+from app.util import qt_constants
 
 
 class BEAMS(QtWidgets.QApplication):
@@ -38,9 +36,9 @@ class BEAMS(QtWidgets.QApplication):
         self.splash.show()
         self.processEvents()
 
-        if self.__system_service.get_theme_preference() == self.__system_service.LIGHT_THEME:
+        if self.__system_service.get_theme_preference() == self.__system_service.Themes.LIGHT:
             self.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
-        elif self.__system_service.get_theme_preference() == self.__system_service.DARK_THEME:
+        elif self.__system_service.get_theme_preference() == self.__system_service.Themes.DARK:
             self.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette))
         else:
             if darkdetect.isDark():
