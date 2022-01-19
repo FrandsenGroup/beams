@@ -14,7 +14,7 @@
 - [Getting Started](#getting-started)
 - [User Guide](#user-guide)
   - [Loading Files](#loading-files)
-  - [Plotting Asymmetries](#plotting-asymmetries)Pl
+  - [Plotting Asymmetries](#plotting-asymmetries)
     - [Plotting the Asymmetry](#plotting-the-asymmetry)
     - [Interacting with the Asymmetry](#interacting-with-the-asymmetry)
     - [Integrating the Asymmetry](#integrating-the-asymmetry)
