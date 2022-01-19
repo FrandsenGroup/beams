@@ -45,7 +45,7 @@ class HistogramPanel(Panel):
             if self._style == self.__system_service.Themes.DARK:
                 tick_color = resources.DARK_COLOR
                 text_color = resources.LIGHT_COLOR
-            # self.setEnabled(False)
+
             self.canvas_axes.clear()
             self.canvas_axes.spines['right'].set_visible(False)
             self.canvas_axes.spines['top'].set_visible(False)
