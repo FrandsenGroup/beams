@@ -5,3 +5,5 @@ pandas
 sympy
 scipy
 matplotlib
+qdarkstyle
+darkdetect

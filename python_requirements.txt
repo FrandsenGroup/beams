@@ -6,3 +6,5 @@ sympy
 scipy
 matplotlib
 pytest
+qdarkstyle
+darkdetect
