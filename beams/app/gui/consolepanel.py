@@ -337,9 +337,12 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
         # Set Widget Dimensions
 
-        self.select_all.setFixedWidth(20)
-        self.import_button.setFixedWidth(20)
-        self.remove_button.setFixedWidth(20)
+        self.select_all.setMinimumWidth(15)
+        self.import_button.setMinimumWidth(12)
+        self.remove_button.setMinimumWidth(12)
+        self.select_all.setMaximumWidth(20)
+        self.import_button.setMaximumWidth(24)
+        self.remove_button.setMaximumWidth(24)
         self.setMaximumHeight(350)
 
         # Set Widget Tooltips
@@ -353,12 +356,13 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         # Layout Widgets
         hbox_one = QtWidgets.QHBoxLayout()
         hbox_one.addWidget(self.select_all)
+        hbox_one.setSpacing(3)
         hbox_one.addWidget(self.import_button)
         hbox_one.addWidget(self.remove_button)
         hbox_one.addWidget(self.convert_button)
         hbox_one.addWidget(self.load_button)
         hbox_one.addWidget(self.write_button)
-        hbox_one.addStretch()
+
 
         self.tree_view.setHorizontalScrollBarPolicy(qt_constants.ScrollBarAsNeeded)
         self.tree_view.header().setMinimumSectionSize(600)
