@@ -78,7 +78,7 @@ to a format that our program can work with. You can do this by 'checking' the bo
 to convert and pressing the 'convert' button. New files with the '.dat' extension will be created.
 
 Once you have files in a format that our program can read you select the files you want to work with by checking
-the boxes and clicking the 'load' button. This loads the data from these files into the program and you are now
+the boxes and clicking the 'load' button. This loads the data from these files into the program, and you are now
 ready to interact with the data. 
 
 ### Plotting Asymmetries
@@ -97,13 +97,13 @@ individually.
 If it is a '.asy' file, a file which contains an asymmetry, then the asymmetry will be plotted as no more
 information is needed.
 
-If it is a '.fit' file, a file which contains an experimental asymmetry and an asymmetry calculated from a fit then
+If it is a '.fit' file, a file which contains an experimental asymmetry, and an asymmetry calculated from a fit then
 the experimental asymmetry will be plotted with another plotted line for the calculated asymmetry.
 
 #### Interacting with the Asymmetry
 Once your asymmetry is plotted, you can now dynamically interact with it! You can experiment with this by moving 
-the slider below each plot to adjust the binning of the asymmetry and adjust the x and y limits to focus in on different
-areas. In the left side panel you will see the legend for the plots, as well as options for styling and adjusting
+the slider below each plot to adjust the binning of the asymmetry and adjust the x and y limits to focus on different
+areas. On the left side panel you will see the legend for the plots, as well as options for styling and adjusting
 the alpha parameter for the asymmetry.
 
 ![choosing your histograms for asymmetry](https://github.com/aPeter1/BEAMS/blob/assets/plot_interaction.png)
@@ -115,7 +115,7 @@ When you navigate to the histogram tab, you will be able to see the histograms f
 
 <img src="https://github.com/aPeter1/BEAMS/blob/assets/left_panel_example.png" width="400" />
 
-Upon first opening the tab, you will see this window in the left side panel. From here you can expand a specific run and click on the histogram you want to work with. You should see the histogram displayed on the screen.
+Upon first opening the tab, you will see this window on the left side panel. From here you can expand a specific run and click on the histogram you want to work with. You should see the histogram displayed on the screen.
 
 Above the panel where you select histograms, you will see three buttons. Descriptions provided below.
 
@@ -264,7 +264,7 @@ Every run currently being displayed will have the color in the display shown to 
 ![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/fitting-runs-example.gif)
 
 ##### Saving Results
-If you right-click on a single fit, a range of fits or a parent node in the left-side panel you will see the option to 'save' these fits. If you click it, you will see a prompt which will offer several choices.
+If you right-click on a single fit, a range of fits, or a parent node in the left-side panel you will see the option to 'save' these fits. If you click it, you will see a prompt which will offer several choices.
 
 ![dialog for writing fit data](https://github.com/aPeter1/BEAMS/blob/assets/write-fit-dialog.png)
 
