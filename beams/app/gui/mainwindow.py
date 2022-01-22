@@ -1,4 +1,7 @@
+import os
 
+import qdarkstyle
+import darkdetect
 from PyQt5 import QtWidgets, QtCore, QtGui
 
 from app.gui.consolepanel import MainConsolePanel
@@ -7,6 +10,8 @@ from app.gui.plottingpanel import PlottingPanel
 from app.resources import resources
 from app.gui.fittingpanel import FittingPanel
 from app.util import qt_constants
+from app.gui.dialogs.dialog_misc import PermissionsMessageDialog
+from app.model import services
 
 
 # noinspection PyArgumentList
@@ -88,11 +93,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowTitle("BEAMS | Basic and Effective Analysis for Muon Spin-Spectroscopy")
         self.statusBar()
 
+        self.__system_service = services.SystemService()
+        self.__file_service = services.FileService()
+
         self._tabs = MainWindow.MainWindowTabs()
         self._plotting_support = self._tabs.plotting_panel.createSupportPanel()
         self._histogram_support = self._tabs.histogram_panel.createSupportPanel()
         self._fit_support = self._tabs.fit_panel.createSupportPanel()
         self._current_support = self._plotting_support
+        self._action_dark = None
+        self._action_light = None
+        self._action_default = None
+
+        self.create_menus()
 
         self._set_default_panels()
         self._set_callbacks()
@@ -139,6 +152,73 @@ class MainWindow(QtWidgets.QMainWindow):
     def update(self):
         pass
 
+    def create_menus(self):
+        fileMenu = self.menuBar().addMenu(self.tr("&File"))
+        fileMenu.addAction("&Save Session", self._action_save)
+        fileMenu.addAction("&Open Session", self._action_open)
+
+        viewMenu = self.menuBar().addMenu(self.tr("&View"))
+        theme_menu = viewMenu.addMenu(self.tr("&Change application theme"))
+        theme_menu.triggered.connect(self._action_change_theme)
+        self._action_default = theme_menu.addAction("&Default")
+        self._action_default.setCheckable(True)
+        self._action_dark = theme_menu.addAction("&Dark")
+        self._action_dark.setCheckable(True)
+        self._action_light = theme_menu.addAction("&Light")
+        self._action_light.setCheckable(True)
+
+        self._action_default.setChecked(
+            qt_constants.Checked if self.__system_service.get_theme_preference() == self.__system_service.Themes.DEFAULT else qt_constants.Unchecked)
+        self._action_light.setChecked(
+            qt_constants.Checked if self.__system_service.get_theme_preference() == self.__system_service.Themes.LIGHT else qt_constants.Unchecked)
+        self._action_dark.setChecked(
+            qt_constants.Checked if self.__system_service.get_theme_preference() == self.__system_service.Themes.DARK else qt_constants.Unchecked)
+
+    def _action_save(self):
+        save_file = QtWidgets.QFileDialog.getSaveFileName(self, 'Save Session',
+                                                          self.__system_service.get_last_used_directory(),
+                                                          "Beams Session (*.beams)")
+
+        save_file = [path for path in save_file if path != '']
+        if len(save_file) > 0:
+            path = os.path.split(save_file[0])
+            self.__file_service.save_session(save_file[0])
+            self.__system_service.set_last_used_directory(path[0])
+
+    def _action_open(self):
+        open_file = QtWidgets.QFileDialog.getOpenFileName(self, 'Open Session',
+                                                          self.__system_service.get_last_used_directory(),
+                                                          "Beams Session (*.beams)")
+
+        open_file = [path for path in open_file if path != '']
+        if len(open_file) > 0:
+            code = PermissionsMessageDialog.launch(
+                ["Opening a saved session will remove all current session data, do you wish to continue?"])
+            if code == PermissionsMessageDialog.Codes.OKAY:
+                print(self.__file_service.signals)
+                self.__file_service.add_files([open_file[0]])
+                self.__file_service.load_session(self.__file_service.get_file_by_path(open_file[0]).id)
+
+    def _action_change_theme(self, action):
+        instance = QtWidgets.QApplication.instance()
+
+        self._action_default.setChecked(qt_constants.Checked if action.text() == '&Default' else qt_constants.Unchecked)
+        self._action_light.setChecked(qt_constants.Checked if action.text() == '&Light' else qt_constants.Unchecked)
+        self._action_dark.setChecked(qt_constants.Checked if action.text() == '&Dark' else qt_constants.Unchecked)
+
+        if action.text() == "&Dark":
+            instance.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette))
+            self.__system_service.set_theme_preference(self.__system_service.Themes.DARK)
+        elif action.text() == "&Light":
+            instance.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
+            self.__system_service.set_theme_preference(self.__system_service.Themes.LIGHT)
+        else:
+            if darkdetect.isDark():
+                instance.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette))
+            else:
+                instance.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
+            self.__system_service.set_theme_preference(self.__system_service.Themes.DEFAULT)
+
 
 # noinspection PyArgumentList
 class StyleFile:
@@ -181,7 +261,7 @@ class StyleFile:
                 break
             for key in qss_vars.keys():
                 len_key = len(key)
-                if qss_read_file[current_char:current_char+len_key] == key:
+                if qss_read_file[current_char:current_char + len_key] == key:
                     qss_updated_file += qss_vars[key]
                     current_char += len_key
                     break
@@ -189,4 +269,3 @@ class StyleFile:
                 qss_updated_file += qss_read_file[current_char]
                 current_char += 1
         return qss_updated_file
-

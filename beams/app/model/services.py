@@ -16,7 +16,8 @@ class Service:
         self.__observers = {}
 
     def register(self, observer, signal):
-        self.__observers[signal] = [observer] if signal not in self.__observers.keys() else self.__observers[signal].append(observer)
+        self.__observers[signal] = [observer] if signal not in self.__observers.keys() else self.__observers[
+            signal].append(observer)
 
     def notify(self, signal):
         pass
@@ -105,9 +106,11 @@ class RunService:
                     alpha=run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].alpha)
 
                 if run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY] is not None:
-                    run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(
+                    run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[
+                        objects.RunDataset.FULL_ASYMMETRY].bin(
                         run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY].bin_size)
-                    run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(
+                    run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[
+                        objects.RunDataset.FULL_ASYMMETRY].bin(
                         run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
 
         self.signals.changed.emit()
@@ -134,7 +137,8 @@ class RunService:
             self.signals.added.emit()
 
     def update_runs_by_ids(self, ids, asymmetries):
-        self.__logger.debug("Updating Asymmetries for Runs=({}) with Asymmetries=({})".format(str(ids), str(asymmetries)))
+        self.__logger.debug(
+            "Updating Asymmetries for Runs=({}) with Asymmetries=({})".format(str(ids), str(asymmetries)))
         self.__dao.update_runs_by_id(ids, asymmetries)
         self.signals.changed.emit()
 
@@ -147,12 +151,15 @@ class RunService:
         for rid, alpha in zip(ids, alphas):
             run = self.__dao.get_runs_by_ids([rid])[0]
 
-            run.asymmetries[objects.RunDataset.FULL_ASYMMETRY] = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].correct(alpha)
+            run.asymmetries[objects.RunDataset.FULL_ASYMMETRY] = run.asymmetries[
+                objects.RunDataset.FULL_ASYMMETRY].correct(alpha)
 
             if run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY] is not None:
-                run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(
+                run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY] = run.asymmetries[
+                    objects.RunDataset.FULL_ASYMMETRY].bin(
                     run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY].bin_size)
-                run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(
+                run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY] = run.asymmetries[
+                    objects.RunDataset.FULL_ASYMMETRY].bin(
                     run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
 
         self.signals.changed.emit()
@@ -185,15 +192,15 @@ class StyleService:
         FIT_COLOR = 17
         FIT_LINESTYLE = 18
 
-    color_options_values = {'Blue': '#0000ff', 'Red': '#ff0000', 'Purple': '#9900ff', 'Green': '#009933',
-                            'Orange': '#ff9900', 'Maroon': '#800000', 'Pink': '#ff66ff', 'Dark Blue': '#000099',
+    color_options_values = {'Blue': '#5050EC', 'Red': '#ff0000', 'Purple': '#9900ff', 'Green': '#009933',
+                            'Orange': '#ff9900', 'Maroon': '#800000', 'Pink': '#ff66ff',
                             'Dark Green': '#006600', 'Light Blue': '#0099ff', 'Light Purple': '#cc80ff',
                             'Dark Orange': '#ff6600', 'Yellow': '#ffcc00', 'Light Red': '#ff6666',
                             'Light Green': '#00cc66', 'Black': '#000000'}
     color_options = {v: k for k, v in color_options_values.items()}
 
-    color_options_extra_values = {'Default': 'Default', 'Blue': '#0000ff', 'Red': '#ff0000', 'Purple': '#9900ff',
-                                  'Orange': '#ff9900', 'Maroon': '#800000', 'Pink': '#ff66ff', 'Dark Blue': '#000099',
+    color_options_extra_values = {'Default': 'Default', 'Blue': '#5050EC', 'Red': '#ff0000', 'Purple': '#9900ff',
+                                  'Orange': '#ff9900', 'Maroon': '#800000', 'Pink': '#ff66ff',
                                   'Dark Green': '#006600', 'Light Blue': '#0099ff', 'Light Purple': '#cc80ff',
                                   'Dark Orange': '#ff6600', 'Yellow': '#ffcc00', 'Light Red': '#ff6666',
                                   'Light Green': '#00cc66', 'Green': '#009933', 'Black': '#000000'}
@@ -407,9 +414,16 @@ class SystemService:
     class ConfigKeys:
         LAST_DIRECTORY = "LAST_DIRECTORY"
         USER_FUNCTIONS = "USER-DEFINED_FUNCTIONS"
+        THEME_PREFERENCE = "THEME_PREFERENCE"
+
+    class Themes:
+        DARK = "DARK"
+        LIGHT = "LIGHT"
+        DEFAULT = "DEFAULT"
 
     class Signals(QtCore.QObject):
         changed = QtCore.pyqtSignal()
+        theme_changed = QtCore.pyqtSignal()
 
     _instance = None
 
@@ -464,11 +478,24 @@ class SystemService:
         else:
             self.__logger.warning("Tried to set last used directory to invalid path: {}".format(directory))
 
+    def get_theme_preference(self):
+        preference = self.__dao.get_configuration(self.ConfigKeys.THEME_PREFERENCE)
+        if preference is None:
+            preference = self.Themes.DEFAULT
+            self.set_theme_preference(preference)
+        return preference
+
+    def set_theme_preference(self, preference):
+        self.__dao.set_configuration(self.ConfigKeys.THEME_PREFERENCE, preference)
+        self.signals.theme_changed.emit()
+
     def _set_default_configuration(self):
         user_data = {
             self.ConfigKeys.LAST_DIRECTORY: os.getcwd(),
-            self.ConfigKeys.USER_FUNCTIONS: {}
+            self.ConfigKeys.USER_FUNCTIONS: {},
+            self.ConfigKeys.THEME_PREFERENCE: self.Themes.DEFAULT
         }
+
         with open(resources.CONFIGURATION_FILE, 'w+') as f:
             json.dump(user_data, f)
 

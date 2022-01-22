@@ -106,8 +106,7 @@ class Histogram(np.ndarray):
 
         new_state = pickled_state[2] + (self.__dict__,)
 
-        # Parenthesis are not redundant, don't remove.
-        return (pickled_state[0], pickled_state[1], new_state)
+        return pickled_state[0], pickled_state[1], new_state
 
     def __setstate__(self, state, **kwargs):
         self.__dict__.update(state[-1])
@@ -335,8 +334,7 @@ class Asymmetry(np.ndarray):
 
         new_state = pickled_state[2] + (self.__dict__,)
 
-        # Parenthesis are not redundant, don't remove.
-        return (pickled_state[0], pickled_state[1], new_state)
+        return pickled_state[0], pickled_state[1], new_state
 
     def __setstate__(self, state, **kwargs):
         self.__dict__.update(state[-1])
@@ -588,8 +586,7 @@ class Uncertainty(np.ndarray):
 
         new_state = pickled_state[2] + (self.__dict__,)
 
-        # Parenthesis are not redundant, don't remove.
-        return (pickled_state[0], pickled_state[1], new_state)
+        return pickled_state[0], pickled_state[1], new_state
 
     def __setstate__(self, state, **kwargs):
         self.__dict__.update(state[-1])
@@ -667,8 +664,7 @@ class Time(np.ndarray):
 
         new_state = pickled_state[2] + (self.__dict__,)
 
-        # Parenthesis are not redundant, don't remove.
-        return (pickled_state[0], pickled_state[1], new_state)
+        return pickled_state[0], pickled_state[1], new_state
 
     def __setstate__(self, state, **kwargs):
         self.__dict__.update(state[-1])

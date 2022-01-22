@@ -1,10 +1,11 @@
-
 import logging
 
+import darkdetect
 from PyQt5 import QtWidgets, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
 
+from app.resources import resources
 from app.gui.dialogs.dialog_misc import FileDisplayDialog, WarningMessageDialog
 from app.gui.gui import Panel, PanelPresenter
 from app.model import files, services, objects
@@ -14,11 +15,68 @@ from app.util import qt_widgets, qt_constants
 class HistogramPanel(Panel):
     class HistogramDisplay(FigureCanvas):
         def __init__(self):
+            self.__system_service = services.SystemService()
             self._draw_pending = True
             self._is_drawing = True
             FigureCanvas.__init__(self, Figure())
-            self.figure.set_facecolor("#FFFFFF")
             self.canvas_axes = self.figure.add_subplot(111, label='Canvas')
+            self._style = self.set_stylesheet()
+
+        def set_stylesheet(self):
+            style = self.__system_service.get_theme_preference()
+            if style == self.__system_service.Themes.DEFAULT:
+                if darkdetect.isDark():
+                    style = self.__system_service.Themes.DARK
+                else:
+                    style = self.__system_service.Themes.LIGHT
+            if style == self.__system_service.Themes.DARK:
+                self.figure.set_facecolor(resources.DARK_COLOR)
+                self.canvas_axes.set_facecolor(resources.DARK_COLOR)
+            elif style == self.__system_service.Themes.LIGHT:
+                self.figure.set_facecolor(resources.LIGHT_COLOR)
+                self.canvas_axes.set_facecolor(resources.LIGHT_COLOR)
+            self.canvas_axes.figure.canvas.draw()
+            self._style = style
+            return style
+
+        def set_blank(self):
+            tick_color = resources.LIGHT_COLOR
+            text_color = resources.DARK_COLOR
+            if self._style == self.__system_service.Themes.DARK:
+                tick_color = resources.DARK_COLOR
+                text_color = resources.LIGHT_COLOR
+
+            self.canvas_axes.clear()
+            self.canvas_axes.spines['right'].set_visible(False)
+            self.canvas_axes.spines['top'].set_visible(False)
+            self.canvas_axes.spines['left'].set_visible(False)
+            self.canvas_axes.spines['bottom'].set_visible(False)
+            self.canvas_axes.set_title("Load and select files in the display on the left to see histogram data.",
+                                       fontsize=12)
+            self.canvas_axes.title.set_color(text_color)
+            self.canvas_axes.tick_params(axis='x', colors=tick_color)
+            self.canvas_axes.tick_params(axis='y', colors=tick_color)
+            self.canvas_axes.set_xlabel("", fontsize=12)
+            self.canvas_axes.set_ylabel("", fontsize=12)
+            self.canvas_axes.set_facecolor(tick_color)
+
+            self.canvas_axes.figure.canvas.draw()
+
+        def set_style(self):
+            tick_color = resources.DARK_COLOR
+            background_color = resources.LIGHT_COLOR
+            if self._style == self.__system_service.Themes.DARK:
+                tick_color = resources.LIGHT_COLOR
+                background_color = resources.DARK_COLOR
+            self.canvas_axes.title.set_color(tick_color)
+            self.canvas_axes.tick_params(axis='x', colors=tick_color)
+            self.canvas_axes.tick_params(axis='y', colors=tick_color)
+            self.canvas_axes.xaxis.label.set_color(tick_color)
+            self.canvas_axes.yaxis.label.set_color(tick_color)
+            self.canvas_axes.set_facecolor(background_color)
+            self.canvas_axes.spines['left'].set_color(tick_color)
+            self.canvas_axes.spines['bottom'].set_color(tick_color)
+            self.canvas_axes.figure.canvas.draw()
 
     class HistogramToolbar(NavigationToolbar2QT):
         def _init_toolbar(self):
@@ -243,7 +301,7 @@ class HistogramPanel(Panel):
         layout.addWidget(self._main)
 
         self._presenter = HistogramPanelPresenter(self)
-        self.set_blank()
+        self.canvas.set_blank()
 
         self.histogram = None
         self.histogram_label = None
@@ -258,25 +316,8 @@ class HistogramPanel(Panel):
     def createSupportPanel(self) -> QtWidgets.QDockWidget:
         return self.support_panel
 
-    def set_blank(self):
-        self.setEnabled(False)
-        self.canvas.canvas_axes.clear()
-        self.canvas.canvas_axes.spines['right'].set_visible(False)
-        self.canvas.canvas_axes.spines['top'].set_visible(False)
-        self.canvas.canvas_axes.spines['left'].set_visible(False)
-        self.canvas.canvas_axes.spines['bottom'].set_visible(False)
-        self.canvas.canvas_axes.set_title("Load and select files in the display on the left to see histogram data.",
-                                          fontsize=12)
-        self.canvas.canvas_axes.title.set_color("#B8B8B8")
-        self.canvas.canvas_axes.tick_params(axis='x', colors='white')
-        self.canvas.canvas_axes.tick_params(axis='y', colors='white')
-        self.canvas.canvas_axes.set_xlabel("", fontsize=12)
-        self.canvas.canvas_axes.set_ylabel("", fontsize=12)
-        self.canvas.canvas_axes.set_facecolor("#FFFFFF")
-
-        self.canvas.canvas_axes.figure.canvas.draw()
-
-    def set_new_lines(self, bkg1=None, bkg2=None, t0=None, goodbin1=None, goodbin2=None, thick=False, new_histogram=None):
+    def set_new_lines(self, bkg1=None, bkg2=None, t0=None, goodbin1=None, goodbin2=None, thick=False,
+                      new_histogram=None):
         bkg1_width = 1
         bkg2_width = 1
         t0_width = 1
@@ -425,7 +466,7 @@ class HistogramPanel(Panel):
 
     def set_enabled(self, enabled, multiple=False, editing=False):
         if not enabled:
-            self.set_blank()
+            self.canvas.set_blank()
 
         self.setEnabled(enabled)
         self.support_panel.save_button.setEnabled(enabled)
@@ -455,13 +496,11 @@ class HistogramPanel(Panel):
             self.canvas.canvas_axes.spines['top'].set_visible(False)
             self.canvas.canvas_axes.spines['left'].set_visible(False)
             self.canvas.canvas_axes.spines['bottom'].set_visible(False)
-            self.canvas.canvas_axes.set_title("Cannot display histogram with multiple runs selected.\nValues can be edited above (this will apply changes to all selected runs).",
-                                              fontsize=12)
-            self.canvas.canvas_axes.title.set_color("#B8B8B8")
-            self.canvas.canvas_axes.tick_params(axis='x', colors='white')
-            self.canvas.canvas_axes.tick_params(axis='y', colors='white')
-            self.canvas.canvas_axes.set_facecolor("#FFFFFF")
-            self.canvas.canvas_axes.figure.canvas.draw()
+            self.canvas.set_blank()
+            self.canvas.canvas_axes.set_title(
+                "Cannot display histogram with multiple runs selected.\nValues can be edited above (this will apply changes to all selected runs).",
+                fontsize=12)
+
             self.label_bkgd2.setEnabled(enabled)
             self.label_bkgd1.setEnabled(enabled)
             self.label_t0.setEnabled(enabled)
@@ -474,10 +513,6 @@ class HistogramPanel(Panel):
             self.input_goodbin1.setEnabled(enabled)
         elif enabled:
             self.support_panel.see_file_button.setEnabled(True)
-            self.canvas.canvas_axes.tick_params(axis='x', colors='black')
-            self.canvas.canvas_axes.tick_params(axis='y', colors='black')
-            self.canvas.canvas_axes.tick_params(axis='x', colors='black')
-            self.canvas.canvas_axes.tick_params(axis='y', colors='black')
 
             title_font_size = 12
             self.canvas.canvas_axes.spines['right'].set_visible(False)
@@ -486,9 +521,7 @@ class HistogramPanel(Panel):
             self.canvas.canvas_axes.spines['bottom'].set_visible(True)
             self.canvas.canvas_axes.set_xlabel("Time Bin", fontsize=title_font_size)
             self.canvas.canvas_axes.set_ylabel("Counts", fontsize=title_font_size)
-            self.canvas.canvas_axes.xaxis.label.set_color("#000000")
-            self.canvas.canvas_axes.set_facecolor("#FFFFFF")
-            self.canvas.canvas_axes.figure.canvas.draw()
+            self.canvas.set_style()
 
     def get_histogram_label(self):
         return self.histogram_choices.currentText()
@@ -556,6 +589,7 @@ class HistogramPanelPresenter(PanelPresenter):
         self.__editing = False
         self.__multiple = False
         self.__pressed = False
+        self.__system_service = services.SystemService()
 
         self._set_callbacks()
 
@@ -569,10 +603,15 @@ class HistogramPanelPresenter(PanelPresenter):
         self._view.support_panel.see_file_button.pressed.connect(self._on_see_file_clicked)
         self._view.check_editing.stateChanged.connect(self._on_editing_checked)
         self._view.input_t0.returnPressed.connect(lambda: self._on_input_changed('t0', self._view.get_input_t0()))
-        self._view.input_bkgd1.returnPressed.connect(lambda: self._on_input_changed('bkgd1', self._view.get_input_bkgd1()))
-        self._view.input_bkgd2.returnPressed.connect(lambda: self._on_input_changed('bkgd2', self._view.get_input_bkgd2()))
-        self._view.input_goodbin1.returnPressed.connect(lambda: self._on_input_changed('goodbin1', self._view.get_input_goodbin1()))
-        self._view.input_goodbin2.returnPressed.connect(lambda: self._on_input_changed('goodbin2', self._view.get_input_goodbin2()))
+        self._view.input_bkgd1.returnPressed.connect(
+            lambda: self._on_input_changed('bkgd1', self._view.get_input_bkgd1()))
+        self._view.input_bkgd2.returnPressed.connect(
+            lambda: self._on_input_changed('bkgd2', self._view.get_input_bkgd2()))
+        self._view.input_goodbin1.returnPressed.connect(
+            lambda: self._on_input_changed('goodbin1', self._view.get_input_goodbin1()))
+        self._view.input_goodbin2.returnPressed.connect(
+            lambda: self._on_input_changed('goodbin2', self._view.get_input_goodbin2()))
+        self.__system_service.signals.theme_changed.connect(self._on_theme_changed)
 
     @QtCore.pyqtSlot()
     def _on_selection_changed(self):
@@ -607,11 +646,16 @@ class HistogramPanelPresenter(PanelPresenter):
 
         if not self.__multiple:
             self._view.replace_histogram_plot(self.__current_histogram,
-                                              self.__alterations[self.__current_histogram.id][self.__current_histogram.title][files.BACKGROUND_ONE_KEY],
-                                              self.__alterations[self.__current_histogram.id][self.__current_histogram.title][files.BACKGROUND_TWO_KEY],
-                                              self.__alterations[self.__current_histogram.id][self.__current_histogram.title][files.T0_KEY],
-                                              self.__alterations[self.__current_histogram.id][self.__current_histogram.title][files.GOOD_BIN_ONE_KEY],
-                                              self.__alterations[self.__current_histogram.id][self.__current_histogram.title][files.GOOD_BIN_TWO_KEY])
+                                              self.__alterations[self.__current_histogram.id][
+                                                  self.__current_histogram.title][files.BACKGROUND_ONE_KEY],
+                                              self.__alterations[self.__current_histogram.id][
+                                                  self.__current_histogram.title][files.BACKGROUND_TWO_KEY],
+                                              self.__alterations[self.__current_histogram.id][
+                                                  self.__current_histogram.title][files.T0_KEY],
+                                              self.__alterations[self.__current_histogram.id][
+                                                  self.__current_histogram.title][files.GOOD_BIN_ONE_KEY],
+                                              self.__alterations[self.__current_histogram.id][
+                                                  self.__current_histogram.title][files.GOOD_BIN_TWO_KEY])
 
         self._view.set_enabled(True, self.__multiple, self.__editing)
 
@@ -649,11 +693,15 @@ class HistogramPanelPresenter(PanelPresenter):
             goodbin1 = self._view.get_goodbin1()
             goodbin2 = self._view.get_goodbin2()
 
-            self.__alterations[self.__current_histogram.id][self.__current_histogram.title][files.BACKGROUND_ONE_KEY] = bkgd1
-            self.__alterations[self.__current_histogram.id][self.__current_histogram.title][files.BACKGROUND_TWO_KEY] = bkgd2
+            self.__alterations[self.__current_histogram.id][self.__current_histogram.title][
+                files.BACKGROUND_ONE_KEY] = bkgd1
+            self.__alterations[self.__current_histogram.id][self.__current_histogram.title][
+                files.BACKGROUND_TWO_KEY] = bkgd2
             self.__alterations[self.__current_histogram.id][self.__current_histogram.title][files.T0_KEY] = t0
-            self.__alterations[self.__current_histogram.id][self.__current_histogram.title][files.GOOD_BIN_ONE_KEY] = goodbin1
-            self.__alterations[self.__current_histogram.id][self.__current_histogram.title][files.GOOD_BIN_TWO_KEY] = goodbin2
+            self.__alterations[self.__current_histogram.id][self.__current_histogram.title][
+                files.GOOD_BIN_ONE_KEY] = goodbin1
+            self.__alterations[self.__current_histogram.id][self.__current_histogram.title][
+                files.GOOD_BIN_TWO_KEY] = goodbin2
 
         elif event.button is None and self.__pressed:
             self.__pressed = False
@@ -678,11 +726,15 @@ class HistogramPanelPresenter(PanelPresenter):
         altered_run_ids = []
         for histogram in self._view.support_panel.tree.get_all_histograms():
             if histogram.id in self.__alterations.keys() and histogram.title in self.__alterations[histogram.id].keys():
-                if histogram.background_start != self.__alterations[histogram.id][histogram.title][files.BACKGROUND_ONE_KEY] \
-                        or histogram.background_end != self.__alterations[histogram.id][histogram.title][files.BACKGROUND_TWO_KEY] \
+                if histogram.background_start != self.__alterations[histogram.id][histogram.title][
+                    files.BACKGROUND_ONE_KEY] \
+                        or histogram.background_end != self.__alterations[histogram.id][histogram.title][
+                    files.BACKGROUND_TWO_KEY] \
                         or histogram.time_zero != self.__alterations[histogram.id][histogram.title][files.T0_KEY] \
-                        or histogram.good_bin_start != self.__alterations[histogram.id][histogram.title][files.GOOD_BIN_ONE_KEY] \
-                        or histogram.good_bin_end != self.__alterations[histogram.id][histogram.title][files.GOOD_BIN_TWO_KEY]:
+                        or histogram.good_bin_start != self.__alterations[histogram.id][histogram.title][
+                    files.GOOD_BIN_ONE_KEY] \
+                        or histogram.good_bin_end != self.__alterations[histogram.id][histogram.title][
+                    files.GOOD_BIN_TWO_KEY]:
                     altered_run_ids.append(histogram.id)
                 else:
                     continue
@@ -751,3 +803,10 @@ class HistogramPanelPresenter(PanelPresenter):
             self.__alterations[histogram.id][histogram.title][files.GOOD_BIN_ONE_KEY] = goodbin1
             self.__alterations[histogram.id][histogram.title][files.GOOD_BIN_TWO_KEY] = goodbin2
 
+    @QtCore.pyqtSlot()
+    def _on_theme_changed(self):
+        self._view.canvas.set_stylesheet()
+        if self._view.canvas.canvas_axes.lines:
+            self._view.canvas.set_style()
+        else:
+            self._view.canvas.set_blank()

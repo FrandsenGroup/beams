@@ -36,15 +36,14 @@ LATO_REGULAR_FONT = str(Path('beams/app/resources/Lato/Lato-Regular.ttf'))
 LATO_THIN_FONT = str(Path('beams/app/resources/Lato/Lato-Thin.ttf'))
 LATO_THIN_ITALIC_FONT = str(Path('beams/app/resources/Lato/Lato-ThinItalic.ttf'))
 
-QSS_STYLE_SHEET = str(Path('beams/app/resources/light_style.qss'))
-STYLE_SHEET_VARIABLES = str(Path('beams/app/resources/light_style_vars.txt'))
-
 PSI_LINUX_CONVERSION = str(Path('/beams/app/resources/mud/PSI_LINUX'))
 PSI_WINDOWS_CONVERSION = str(Path('/beams/app/resources/mud/PSI_WINDOWS.exe'))
 TRIUMF_LINUX_CONVERSION = str(Path('/beams/app/resources/mud/TRIUMF_LINUX'))
 TRIUMF_MAC_CONVERSION = str(Path('/beams/app/resources/mud/TRIUMF_MAC'))
 TRIUMF_WINDOWS_CONVERSION = str(Path('/beams/app/resources/mud/TRIUMF_WINDOWS.exe'))
 
+DARK_COLOR = '#19232D'
+LIGHT_COLOR = '#FAFAFA'
 
 try:
     CONFIGURATION_FILE = str(Path('beams/app/resources/app.config'))
