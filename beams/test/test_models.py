@@ -111,9 +111,17 @@ class TestHistograms:
         histogram_unpickled = pickle.loads(pickle.dumps(hist))
         assert hist == histogram_unpickled
 
-    @pytest.mark.skip
-    def test_combine(self):
-        pass
+    @pytest.mark.parametrize("hists, correct_combined_hist",
+                             [((objects.Histogram(range(27648),
+                                                 980, 680, 25000, 600, 1000, "Front", "3412", 0.2),
+                               objects.Histogram(range(27648),
+                                                 980, 1030, 27648, 500, 900, "Front", "3413", 0.2)),
+                              (objects.Histogram(range(0, 55296, 2),
+                                                 980, 1030, 25000, 600, 900, "Front", "3412, 3413", 0.2)))
+                              ])
+    def test_combine(self, hists, correct_combined_hist):
+        combined = objects.Histogram.combine(hists[0], hists[1])
+        assert combined == correct_combined_hist
 
 
 @pytest.mark.Asymmetry
