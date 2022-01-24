@@ -206,21 +206,54 @@ class Histogram(np.ndarray):
                                                                                                   self.background_end))
         return float(np.mean(self[int(self.background_start):int(self.background_end) + 1]))
 
-    def combine(self, *other):
+    @staticmethod
+    def combine(*histograms):
         """ Combines two or more histograms and returns the resulting Histogram.
 
         Does not alter the histogram objects being combined.
 
         Parameters
         ----------
-        other : *Histogram
-            The histgram(s) to be combined with this one.
+        histograms : *Histograms
+            The histgram(s) to be combined.
 
         Returns
         -------
         Histogram : The resulting combined histogram.
+
+        for histogram in other:
+            histogram.time_zero
+
+        take the later background-starts, earlier background_end
+
+        np_array1 + np_array2
+        hist1 + hist2
+
+        new_histogram = Histogram
+
         """
-        raise NotImplementedError("Combining histograms is not currently implemented.")
+
+        new_t0 = histograms[0].time_zero
+        new_good_bin_start = histograms[0].good_bin_start
+        new_good_bin_end = histograms[0].good_bin_end
+        new_bkgd_start = histograms[0].background_start
+        new_bkgd_end = histograms[0].background_end
+        new_bin_size = histograms[0].bin_size
+        new_title = histograms[0].title
+        new_hist_array = np.array(histograms[0])
+        new_id = histograms[0].id
+        for histogram in histograms[1:]:
+            if histogram.time_zero != new_t0:
+                raise NotImplementedError("Only histograms with the same t0 can be combined right now.")
+            new_hist_array += histogram
+            new_good_bin_start = max(new_good_bin_start, histogram.good_bin_start)
+            new_good_bin_end = min(new_good_bin_end, histogram.good_bin_end)
+            new_bkgd_start = max(new_bkgd_start, histogram.background_start)
+            new_bkgd_end = min(new_bkgd_end, histogram.background_end)
+            new_id += f", {histogram.id}"
+        new_histogram = Histogram(new_hist_array, new_t0, new_good_bin_start, new_good_bin_end,
+                                  new_bkgd_start, new_bkgd_end, new_title, "2648", new_bin_size)
+        return new_histogram
 
 
 class Asymmetry(np.ndarray):
