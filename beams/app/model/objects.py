@@ -207,7 +207,7 @@ class Histogram(np.ndarray):
         return float(np.mean(self[int(self.background_start):int(self.background_end) + 1]))
 
     @staticmethod
-    def combine(*histograms):
+    def combine(histograms):
         """ Combines two or more histograms and returns the resulting Histogram.
 
         Does not alter the histogram objects being combined.
@@ -239,7 +239,7 @@ class Histogram(np.ndarray):
         new_bkgd_start = histograms[0].background_start
         new_bkgd_end = histograms[0].background_end
         new_bin_size = histograms[0].bin_size
-        new_title = histograms[0].title
+        new_title = f'combined_{histograms[0].title}'
         new_hist_array = np.array(histograms[0])
         new_id = histograms[0].id
         for histogram in histograms[1:]:
@@ -250,7 +250,7 @@ class Histogram(np.ndarray):
             new_good_bin_end = min(new_good_bin_end, histogram.good_bin_end)
             new_bkgd_start = max(new_bkgd_start, histogram.background_start)
             new_bkgd_end = min(new_bkgd_end, histogram.background_end)
-            new_id += f", {histogram.id}"
+            new_id += f"_{histogram.id}"
         new_histogram = Histogram(new_hist_array, new_t0, new_good_bin_start, new_good_bin_end,
                                   new_bkgd_start, new_bkgd_end, new_title, "2648", new_bin_size)
         return new_histogram

@@ -113,7 +113,7 @@ class PlotFileDialogPresenter(QtCore.QObject):
         self._view = view
         self._runs = runs
         self._formats = {run.file.file_path: None for run in runs}
-
+        # self._formats = {run.id: None for run in runs}
         current_hists = runs[0].histograms.keys()
         self._view.set_first_histogram(current_hists)
         self._view.set_second_histogram(current_hists)

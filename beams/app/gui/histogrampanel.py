@@ -191,6 +191,7 @@ class HistogramPanel(Panel):
                 super(HistogramPanel.SupportPanel.RunNode, self).__init__([run_data.meta[files.TITLE_KEY]])
                 self.model = run_data
                 self.__selected_items = None
+                self.__run_service = services.RunService()
 
                 if isinstance(run_data, objects.RunDataset):
                     if run_data.isLoaded and run_data.histograms:
@@ -202,6 +203,7 @@ class HistogramPanel(Panel):
                 menu = QtWidgets.QMenu()
                 menu.addAction("Plot", self._action_plot)
                 menu.addAction("Save", self._action_save)
+                menu.addAction("Combine selected runs", self._action_combine)
                 return menu
 
             def _action_save(self):
@@ -209,6 +211,25 @@ class HistogramPanel(Panel):
 
             def _action_plot(self):
                 pass
+
+            def _action_combine(self):
+                if len(self.__selected_items) == 1:
+                    WarningMessageDialog.launch(["Must select 2 or more histograms to be combined"])
+                    return
+                histograms_to_combine = {}
+                new_meta = self.__selected_items[0].model.meta
+                for run in self.__selected_items:
+                    original_histograms = run.model.histograms
+                    for histogram in original_histograms:
+                        if histogram not in histograms_to_combine:
+                            histograms_to_combine[histogram] = [original_histograms[histogram]]
+                        else:
+                            histograms_to_combine[histogram].append(original_histograms[histogram])
+                combined_histograms = {}
+                for title, hist_list in histograms_to_combine.items():
+                    combined_histograms[title] = objects.Histogram.combine(hist_list)
+                # Now make new run
+                self.__run_service.add_run_from_histograms(combined_histograms, new_meta)
 
         class HistogramNode(QtWidgets.QTreeWidgetItem):
             def __init__(self, histogram):

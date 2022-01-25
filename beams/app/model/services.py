@@ -167,6 +167,15 @@ class RunService:
     def changed(self):
         self.signals.changed.emit()
 
+    def add_run_from_histograms(self, histograms, meta):
+        run = objects.RunDataset()
+        run.histograms = histograms
+        run.meta = meta
+        run.isLoaded = True
+        self.__dao.add_runs([run])
+        self.signals.added.emit()
+
+
 
 class StyleService:
     class Signals(QtCore.QObject):
