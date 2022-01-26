@@ -217,7 +217,8 @@ class HistogramPanel(Panel):
                     WarningMessageDialog.launch(["Must select 2 or more histograms to be combined"])
                     return
                 histograms_to_combine = {}
-                new_meta = self.__selected_items[0].model.meta
+                new_meta = self.__selected_items[0].model.meta.copy()
+                new_meta['Title'] = f'combined_{new_meta["Title"]}'
                 for run in self.__selected_items:
                     original_histograms = run.model.histograms
                     for histogram in original_histograms:

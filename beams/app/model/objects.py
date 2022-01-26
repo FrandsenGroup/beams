@@ -239,7 +239,7 @@ class Histogram(np.ndarray):
         new_bkgd_start = histograms[0].background_start
         new_bkgd_end = histograms[0].background_end
         new_bin_size = histograms[0].bin_size
-        new_title = f'combined_{histograms[0].title}'
+        new_title = histograms[0].title
         new_hist_array = np.array(histograms[0])
         new_id = histograms[0].id
         for histogram in histograms[1:]:
