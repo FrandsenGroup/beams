@@ -120,7 +120,7 @@ class TestHistograms:
                                                  980, 1030, 25000, 600, 900, "Front", "3412, 3413", 0.2)))
                               ])
     def test_combine(self, hists, correct_combined_hist):
-        combined = objects.Histogram.combine(hists[0], hists[1])
+        combined = objects.Histogram.combine([hists[0], hists[1]])
         assert combined == correct_combined_hist
 
 
