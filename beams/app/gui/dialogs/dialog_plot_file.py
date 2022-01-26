@@ -17,7 +17,6 @@ class PlotFileDialog(QtWidgets.QDialog):
         super(PlotFileDialog, self).__init__()
 
         self.t_tip = QtWidgets.QLabel('Specify the two histograms you want to use calculate the asymmetry.')
-        # self.c_file_list = QtWidgets.QComboBox()
         self.c_title_list = QtWidgets.QComboBox()
         self.c_hist_one = QtWidgets.QComboBox()
         self.c_hist_two = QtWidgets.QComboBox()
@@ -29,7 +28,6 @@ class PlotFileDialog(QtWidgets.QDialog):
 
         self.c_title_list.setToolTip("List of runs selected to plot.")
 
-        # self.c_file_list.setToolTip("List of runs selected to plot.")
         self.c_hist_one.setToolTip("The first histogram to be included in asymmetry.")
         self.c_hist_two.setToolTip("The second histogram to be included in asymmetry.")
         self.b_apply.setToolTip("Apply this format to only the current run.")
@@ -45,7 +43,6 @@ class PlotFileDialog(QtWidgets.QDialog):
 
         col.addWidget(self.t_tip)
         col.addWidget(self.c_title_list)
-        # col.addWidget(self.c_file_list)
         row_1.addWidget(self.c_hist_one)
         row_1.addWidget(self.c_hist_two)
         row_2.addWidget(self.b_apply)
@@ -70,16 +67,6 @@ class PlotFileDialog(QtWidgets.QDialog):
         self.c_title_list.clear()
         self.c_title_list.addItems(titles)
 
-    # def get_file(self):
-    #     return self.c_file_list.currentText()
-    #
-    # def set_file(self, path):
-    #     self.c_file_list.setCurrentText(path)
-    #
-    # def set_files(self, paths):
-    #     self.c_file_list.clear()
-    #     self.c_file_list.addItems(paths)
-
     def set_first_histogram(self, hists):
         self.c_hist_one.clear()
         self.c_hist_one.addItems(hists)
@@ -100,9 +87,6 @@ class PlotFileDialog(QtWidgets.QDialog):
     def set_enabled_plot_button(self, enabled):
         self.b_plot.setEnabled(enabled)
 
-    # def remove_current_file(self):
-    #     self.c_file_list.removeItem(self.c_file_list.currentIndex())
-
     def increment_current_title(self):
         if self.c_title_list.currentIndex() < self.c_title_list.count() - 1:
             self.c_title_list.setCurrentIndex(self.c_title_list.currentIndex() + 1)
@@ -110,7 +94,6 @@ class PlotFileDialog(QtWidgets.QDialog):
             self.c_title_list.setCurrentIndex(0)
 
     def exec(self):
-        # if self.c_file_list.count() == 0:
         if self.c_title_list.count() == 0:
             return self.Codes.FILES_PLOTTED
 
@@ -129,13 +112,11 @@ class PlotFileDialogPresenter(QtCore.QObject):
         self.__run_service = services.RunService()
         self._view = view
         self._runs = runs
-        # self._formats = {run.file.file_path: None for run in runs}
         self._formats = {run.meta['Title']: None for run in runs}
         current_hists = runs[0].histograms.keys()
         self._view.set_first_histogram(current_hists)
         self._view.set_second_histogram(current_hists)
 
-        # self._view.set_files([run.file.file_path for run in runs])
         self._view.set_titles([run.meta['Title'] for run in runs])
         self._set_callbacks()
 
@@ -144,7 +125,6 @@ class PlotFileDialogPresenter(QtCore.QObject):
         self._view.b_apply_all.released.connect(self._on_apply_all_clicked)
         self._view.b_cancel.released.connect(self._on_cancel_clicked)
         self._view.b_plot.released.connect(self._on_plot_clicked)
-        # self._view.c_file_list.currentIndexChanged.connect(self._on_file_choice_changed)
         self._view.c_title_list.currentIndexChanged.connect(self._on_title_choice_changed)
 
     @QtCore.pyqtSlot()
