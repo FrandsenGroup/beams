@@ -1,0 +1,12 @@
+testMuSR.exe : main.o MuSR_td_PSI_bin.o  Makefile_VisualStudio
+	link main.o MuSR_td_PSI_bin.o  /out:$@
+
+main.o : main.cpp MuSR_td_PSI_mdubin.h Makefile_VisualStudio
+	cl /c /EHsc /Fo$@ main.cpp
+
+MuSR_td_PSI_mdubin.o : MuSR_td_PSI_mdubin.cpp MuSR_td_PSI_mdubin.h Makefile_VisualStudio
+	cl /c /EHsc /Fo$@ MuSR_td_PSI_mdubin.cpp
+
+clean :
+	rm testMuSR.exe main.o MuSR_td_PSI_mdubin.o
+
