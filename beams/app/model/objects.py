@@ -252,7 +252,7 @@ class Histogram(np.ndarray):
             new_bkgd_end = min(new_bkgd_end, histogram.background_end)
             new_id += f"_{histogram.id}"
         new_histogram = Histogram(new_hist_array, new_t0, new_good_bin_start, new_good_bin_end,
-                                  new_bkgd_start, new_bkgd_end, new_title, "2648", new_bin_size)
+                                  new_bkgd_start, new_bkgd_end, new_title, new_id, new_bin_size)
         return new_histogram
 
 
