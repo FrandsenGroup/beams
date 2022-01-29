@@ -117,7 +117,13 @@ class TestHistograms:
                                objects.Histogram(range(27648),
                                                  980, 1030, 27648, 500, 900, "Front", "3413", 0.2)),
                               (objects.Histogram(range(0, 55296, 2),
-                                                 980, 1030, 25000, 600, 900, "Front", "3412, 3413", 0.2)))
+                                                 980, 1030, 25000, 600, 900, "Front", "3412, 3413", 0.2))),
+                              ((objects.Histogram(range(27648),
+                                                  1000, 680, 25000, 600, 1000, "Front", "3412", 0.2),
+                                objects.Histogram(range(27648),
+                                                  980, 1030, 27648, 500, 900, "Front", "3413", 0.2)),
+                               (objects.Histogram(range(20, 55276, 2),
+                                                  980, 1030, 24980, 580, 900, "Front", "3412, 3413", 0.2)))
                               ])
     def test_combine(self, hists, correct_combined_hist):
         combined = objects.Histogram.combine([hists[0], hists[1]])

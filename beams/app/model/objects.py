@@ -233,25 +233,41 @@ class Histogram(np.ndarray):
 
         """
 
-        new_t0 = histograms[0].time_zero
-        new_good_bin_start = histograms[0].good_bin_start
-        new_good_bin_end = histograms[0].good_bin_end
-        new_bkgd_start = histograms[0].background_start
-        new_bkgd_end = histograms[0].background_end
+        time_zeroes = [h.time_zero for h in histograms]
+        time_zero_shortest = min(time_zeroes)
+        time_zero_furthest = max(time_zeroes)
+
+        final_hist = None
+        good_bins_start = []
+        good_bins_end = []
+        background_bins_start = []
+        background_bins_end = []
+
+        for histogram in histograms:
+            our_time_zero = histogram.time_zero
+            time_zero_difference_front = our_time_zero - time_zero_shortest
+            time_zero_difference_back = our_time_zero - time_zero_furthest
+
+            if final_hist is None:
+                final_hist = np.array(histogram[time_zero_difference_front:time_zero_difference_back]) if time_zero_difference_back else histogram[time_zero_difference_front:]
+            else:
+                final_hist += histogram[time_zero_difference_front:time_zero_difference_back] if time_zero_difference_back else histogram[time_zero_difference_front:]
+
+            good_bins_start.append(histogram.good_bin_start - time_zero_difference_front)
+            good_bins_end.append(histogram.good_bin_end - time_zero_difference_front)
+            background_bins_start.append(histogram.background_start - time_zero_difference_front)
+            background_bins_end.append(histogram.background_end - time_zero_difference_front)
+
+        new_t0 = time_zero_shortest
+        new_good_bin_start = max(good_bins_start)
+        new_good_bin_end = min(good_bins_end)
+        new_bkgd_start = max(background_bins_start)
+        new_bkgd_end = min(background_bins_end)
+
         new_bin_size = histograms[0].bin_size
         new_title = histograms[0].title
-        new_hist_array = np.array(histograms[0])
-        new_id = histograms[0].id
-        for histogram in histograms[1:]:
-            if histogram.time_zero != new_t0:
-                raise NotImplementedError("Only histograms with the same t0 can be combined right now.")
-            new_hist_array += histogram
-            new_good_bin_start = max(new_good_bin_start, histogram.good_bin_start)
-            new_good_bin_end = min(new_good_bin_end, histogram.good_bin_end)
-            new_bkgd_start = max(new_bkgd_start, histogram.background_start)
-            new_bkgd_end = min(new_bkgd_end, histogram.background_end)
-            new_id += f"_{histogram.id}"
-        new_histogram = Histogram(new_hist_array, new_t0, new_good_bin_start, new_good_bin_end,
+
+        new_histogram = Histogram(final_hist, new_t0, new_good_bin_start, new_good_bin_end,
                                   new_bkgd_start, new_bkgd_end, new_title, "2648", new_bin_size)
         return new_histogram
 
