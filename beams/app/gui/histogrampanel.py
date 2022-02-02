@@ -1,4 +1,5 @@
 import logging
+import uuid
 
 import darkdetect
 from PyQt5 import QtWidgets, QtCore
@@ -219,6 +220,7 @@ class HistogramPanel(Panel):
                 histograms_to_combine = {}
                 new_meta = self.__selected_items[0].model.meta.copy()
                 new_meta['Title'] = f'combined_{new_meta["Title"]}'
+                new_id = str(uuid.uuid4())
                 for run in self.__selected_items:
                     original_histograms = run.model.histograms
                     for histogram in original_histograms:
@@ -229,8 +231,9 @@ class HistogramPanel(Panel):
                 combined_histograms = {}
                 for title, hist_list in histograms_to_combine.items():
                     combined_histograms[title] = objects.Histogram.combine(hist_list)
+                    combined_histograms[title].id = new_id
                 # Now make new run
-                self.__run_service.add_run_from_histograms(combined_histograms, new_meta)
+                self.__run_service.add_run_from_histograms(combined_histograms, new_meta, new_id)
 
         class HistogramNode(QtWidgets.QTreeWidgetItem):
             def __init__(self, histogram):
