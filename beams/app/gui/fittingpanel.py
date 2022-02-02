@@ -562,10 +562,20 @@ class FittingPanel(Panel):
             self.config_table = QtWidgets.QTableWidget()
             self.batch_table = QtWidgets.QTableWidget()
             self.output_table = QtWidgets.QTableWidget()
+            self.goodness_display = QtWidgets.QLineEdit()
 
             self.addTab(self.config_table, "Config")
             self.addTab(self.batch_table, "Batch")
-            self.addTab(self.output_table, "Output")
+
+            output_widget = QtWidgets.QWidget()
+            layout = QtWidgets.QVBoxLayout()
+            layout.addWidget(self.output_table)
+            goodness_row = QtWidgets.QHBoxLayout()
+            goodness_row.addWidget(QtWidgets.QLabel("Goodness-Of-Fit"))
+            goodness_row.addWidget(self.goodness_display)
+            layout.addLayout(goodness_row)
+            output_widget.setLayout(layout)
+            self.addTab(output_widget, "Output")
 
             self._set_attributes()
 
@@ -595,6 +605,8 @@ class FittingPanel(Panel):
             self.output_table.horizontalHeader().setSectionResizeMode(self.UNCERTAINTY_COLUMN,
                                                                       QtWidgets.QHeaderView.Stretch)
             self.output_table.setEditTriggers(qt_constants.NoEditTriggers)
+
+            self.goodness_display.setEnabled(False)
 
     def __init__(self):
         super(FittingPanel, self).__init__()
@@ -1405,11 +1417,8 @@ class FitTabPresenter(PanelPresenter):
         new_table_state = {}
         self.__expression = None
         self.__variable_groups = {}
+        goodness = None
 
-        # TODO we will want to disregard any fits that are in different sets
-        # TODO we need to update the backend with regards to other types of fits probably, mainly global.
-        # TODO we need to have 'unchecking' run-specific do something. Really just update the state so all runs get the
-        #   current state of the table.
         outputs = dict()
         for data in selected_data:
             if type(data) == objects.Fit:
@@ -1417,11 +1426,17 @@ class FitTabPresenter(PanelPresenter):
                 if self.__expression and self.__expression != data.expression:
                     self.__expression = None
                     self.__variable_groups = {}
+                    self._view.parameter_table.goodness_display.setText('*')
                     return
                 else:
                     # We want to keep track of expression and variable groups for updating the display
                     self.__variable_groups[data.run_id] = data.parameters
                     self.__expression = data.expression
+
+                    if goodness:
+                        goodness = 'Multiple Selected'
+                    else:
+                        goodness = data.goodness
 
                 # Check the box next to the run for this fit
                 for i in range(self._view.run_list.count()):
@@ -1459,6 +1474,7 @@ class FitTabPresenter(PanelPresenter):
         # We will need to get parameters to add to table. Clear old table. Same for expression and variable groups
         self.set_parameter_table_states(new_table_state)
         self._view.input_fit_equation.setText(str(self.__expression))
+        self._view.parameter_table.goodness_display.setText(str(goodness) if goodness else '')
 
         # Set the output and uncertainties in the output table
         for symbol, out_sets in outputs.items():
