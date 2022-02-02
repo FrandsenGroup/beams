@@ -692,8 +692,3 @@ class BeamsFileConversionError(Exception):
     def __init__(self, *args):
         super(BeamsFileConversionError, self).__init__(*args)
 
-filepath = r"D:\Research_Frandsen\BEAMS_venv\MUD_Files\ISIS\MUSR00083585.nxs_v2"
-file_object = file(filepath)
-file_object.set_combine_format([0, 33],[32, 64],['forw', 'back'])
-file_object.convert("out.dat")
-
