@@ -375,13 +375,13 @@ class ISISMuonFile(ConvertibleFile):
 
         meta_string = ""
         meta_string += "BEAMS\n"
-        meta_string += "{}:{}, ".format(BIN_SIZE_KEY, resolution)
-        meta_string += "{}:{}, ".format(RUN_NUMBER_KEY, run_number)
-        meta_string += "{}:{}, ".format(TITLE_KEY, title)
-        meta_string += "{}:{}, ".format(LAB_KEY, lab)
-        meta_string += "{}:{}, ".format(AREA_KEY, area)
-        meta_string += "{}:{} {}, ".format(TEMPERATURE_KEY, temperature, temperature_units)
-        meta_string += "{}:{} {}, ".format(FIELD_KEY, field, field_units)
+        meta_string += "{}:{},".format(BIN_SIZE_KEY, resolution)
+        meta_string += "{}:{},".format(RUN_NUMBER_KEY, run_number)
+        meta_string += "{}:{},".format(TITLE_KEY, title)
+        meta_string += "{}:{},".format(LAB_KEY, lab)
+        meta_string += "{}:{},".format(AREA_KEY, area)
+        meta_string += "{}:{} {},".format(TEMPERATURE_KEY, temperature, temperature_units)
+        meta_string += "{}:{} {},".format(FIELD_KEY, field, field_units)
         meta_string += "{}:{}\n".format("Sample", sample)
 
         if self._combine_format:
@@ -402,6 +402,8 @@ class ISISMuonFile(ConvertibleFile):
             np.savetxt(out_file, np.rot90(histograms), delimiter=',', header=meta_string, comments="", fmt="%-8i")
         except Exception:
             raise BeamsFileConversionError("An exception occurred writing ISIS data to {}".format(out_file))
+
+        return MuonHistogramFile(out_file)
 
 
 class JPARCMuonFile(ConvertibleFile):
