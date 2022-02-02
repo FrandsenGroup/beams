@@ -9,6 +9,7 @@ from app.gui.dialogs.dialog_musr_download import MusrDownloadDialog
 from app.gui.dialogs.dialog_psi_download import PSIDownloadDialog
 from app.gui.dialogs.dialog_write_data import WriteDataDialog
 from app.gui.dialogs.dialog_plot_file import PlotFileDialog
+from app.gui.dialogs.dialog_isis_histogram_combinations import IsisHistogramCombinationDialog
 from app.gui.gui import PanelPresenter
 from app.model import files, services, objects
 from app.util import qt_widgets, qt_constants
@@ -502,7 +503,14 @@ class MainConsolePanelPresenter(PanelPresenter):
 
     @QtCore.pyqtSlot()
     def _on_convert_file_clicked(self):
-        self.__file_service.convert_files(self._view.tree_view.get_file_ids())
+        file_ids = self._view.tree_view.get_file_ids()
+        file_objects = self.__file_service.get_files(file_ids)
+
+        isis_files = list(filter(lambda o: o.file.SOURCE == files.Source.ISIS, file_objects))
+        if len(isis_files) != 0:
+            IsisHistogramCombinationDialog.launch(isis_files)
+
+        self.__file_service.convert_files(file_ids)
 
     @QtCore.pyqtSlot()
     def _on_remove_file_clicked(self):
