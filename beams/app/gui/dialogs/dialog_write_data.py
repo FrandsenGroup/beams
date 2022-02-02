@@ -26,7 +26,7 @@ class WriteDataDialog(QtWidgets.QDialog):
         self.input_filename.setPlaceholderText('Default is [run number].asy')
         self.label_full = QtWidgets.QLabel('Full Data')
         self.label_binned = QtWidgets.QLabel('Binned Data')
-        self.label_binned_size = QtWidgets.QLabel('Bin Size')
+        self.label_binned_size = QtWidgets.QLabel('Bin Size (ns)')
         self.label_fft = QtWidgets.QLabel('FFT')
         self.radio_binned = QtWidgets.QRadioButton()
         self.radio_binned_size = QtWidgets.QLineEdit()
