@@ -3,6 +3,8 @@ import os
 import time
 import re
 
+from typing import Sequence
+
 import numpy as np
 import uuid
 
@@ -207,7 +209,7 @@ class Histogram(np.ndarray):
         return float(np.mean(self[int(self.background_start):int(self.background_end) + 1]))
 
     @staticmethod
-    def combine(histograms):
+    def combine(histograms: Sequence['Histogram']) -> 'Histogram':
         """ Combines two or more histograms and returns the resulting Histogram.
 
         Does not alter the histogram objects being combined.
@@ -232,6 +234,16 @@ class Histogram(np.ndarray):
         new_histogram = Histogram
 
         """
+        if len(histograms) < 2:
+            raise ValueError("At least 2 histograms must be provided to be combined.")
+
+        h1 = histograms[0]
+        for i in range(1, len(histograms)):
+            h = histograms[i]
+            if h1.bin_size != h.bin_size:
+                raise ValueError("Bin sizes must be the same on all histograms to be combined")
+            if h1.title != h.title:
+                raise ValueError("Histogram titles must match to be combined")
 
         time_zeroes = [h.time_zero for h in histograms]
         time_zero_shortest = min(time_zeroes)
@@ -258,6 +270,7 @@ class Histogram(np.ndarray):
             background_bins_start.append(histogram.background_start - time_zero_difference_front)
             background_bins_end.append(histogram.background_end - time_zero_difference_front)
 
+
         new_t0 = time_zero_shortest
         new_good_bin_start = max(good_bins_start)
         new_good_bin_end = min(good_bins_end)
@@ -268,7 +281,7 @@ class Histogram(np.ndarray):
         new_title = histograms[0].title
 
         new_histogram = Histogram(final_hist, new_t0, new_good_bin_start, new_good_bin_end,
-                                  new_bkgd_start, new_bkgd_end, new_title, "2648", new_bin_size)
+                                  new_bkgd_start, new_bkgd_end, new_title, "none", new_bin_size)
         return new_histogram
 
 
