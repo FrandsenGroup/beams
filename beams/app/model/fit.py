@@ -373,7 +373,7 @@ class FitEngine:
                     config.set_outputs(o_run_id, symbol, value, 0)
 
             # 9) Fill in all values for our new fit object
-            new_fit = objects.Fit(copy.deepcopy(config.parameters[run_id]), config.expression, config.titles[run_id], run_id, meta, asymmetry, chi_sq)
+            new_fit = objects.Fit(copy.deepcopy(config.parameters[run_id]), config.expression, config.titles[run_id], run_id, meta, asymmetry, goodness=chi_sq)
 
             # 10) Add fit to our dataset
             dataset.fits[run_id] = new_fit
@@ -447,7 +447,7 @@ class FitEngine:
             for symbol, value in zip(fixed_symbols, fixed_values):
                 config.set_outputs(run_id, symbol, value, 0)
 
-            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id, meta, asymmetry, chi_sq)
+            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id, meta, asymmetry, goodness=chi_sq)
 
             dataset.fits[run_id] = new_fit
 
@@ -496,7 +496,7 @@ class FitEngine:
                 config.set_outputs(run_id, symbol, value, 0)
 
             # 9) Fill in all values for our new fit object
-            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id, meta, asymmetry, chi_sq)
+            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id, meta, asymmetry, goodness=chi_sq)
 
             # 10) Add fit to our dataset
             dataset.fits[run_id] = new_fit
