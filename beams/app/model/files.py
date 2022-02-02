@@ -263,7 +263,42 @@ class ISISMuonFile(ConvertibleFile):
         UNITS = ['units']
         FIRST_GOOD_BIN = ['first_good_bin']
         LAST_GOOD_BIN = ['last_good_bin']
+        FIRST_BKGD_BIN = ['null']
+        LAST_BKGD_BIN = ['null']
         T0_BIN = ['t0_bin']
+
+    def __init__(self, file_path):
+        super().__init__(file_path)
+        self._combine_format = None
+
+    def set_combine_format(self, starts, ends, names):
+        # Check if the values provided are of a valid datatype. Doing this first prevents sneaky bugs.
+        try:
+            starts = [int(s) for s in starts]
+            ends = [int(e) for e in ends]
+            names = [str(n) for n in names]
+        except ValueError:
+            raise Exception("Format for combining histograms contains values of invalid types.")
+
+        distinct_starts = set(starts)
+        distinct_ends = set(ends)
+        distinct_names = set(names)
+
+        # Check if any values are repeated or if one set of values is larger then another
+        if len(distinct_starts) != len(distinct_ends) or len(distinct_starts) != (len(distinct_names)) \
+                or len(starts) != len(distinct_starts) or len(ends) != len(distinct_ends) \
+                or len(names) != len(distinct_names) or len(distinct_starts) == 0:
+            raise Exception("Invalid format for combining histograms.")
+
+        # Check the start and end make sense.
+        for i, (start, end, name) in enumerate(zip(starts, ends, names)):
+            if start in ends or end in starts or start > end:
+                raise Exception("Invalid range of histograms to combine.")
+
+        if max(ends) > self.get_number_of_histograms():
+            raise Exception("Invalid range of histograms to combine.")
+
+        self._combine_format = (starts, ends, names)
 
     @staticmethod
     def get_value(data_paths, hdf_file_object, full=None):
@@ -290,11 +325,14 @@ class ISISMuonFile(ConvertibleFile):
 
         try:
             data = self.get_value(self.DataPaths.HISTOGRAMS, f, True)
-            return len(data.shape[1])  # Expected shape is something like 1x64x2048
+            return data.shape[1]  # Expected shape is something like 1x64x2048
         except (AttributeError, KeyError):
             raise BeamsFileConversionError("Binary file is in an unknown format. May need to update executables.")
 
     def convert(self, out_file):
+        if not check_ext(out_file, Extensions.HISTOGRAM):
+            raise Exception("Out file does not have a valid extension (.dat).")
+
         f = h5py.File(self.file_path, 'r+')
 
         try:
@@ -304,30 +342,66 @@ class ISISMuonFile(ConvertibleFile):
             lab = self.get_value(self.DataPaths.LAB, f)
             area = self.get_value(self.DataPaths.AREA, f)
             resolution = self.get_value(self.DataPaths.RESOLUTION, f)
-            resolution_units = self.get_attribute(self.DataPaths.RESOLUTION, self.Attributes.UNITS, f)
+            resolution_units = str(self.get_attribute(self.DataPaths.RESOLUTION, self.Attributes.UNITS, f))
+
+            # We want the resolution (bin size) to be in nanoseconds.
+            if 'p' in resolution_units:
+                resolution *= 1000
+            elif '\u00b5' in resolution_units or 'm' in resolution_units:
+                resolution /= 1000
+
             temperature = self.get_value(self.DataPaths.TEMPERATURE, f)
             temperature_units = self.get_attribute(self.DataPaths.TEMPERATURE, self.Attributes.UNITS, f)
             field = self.get_value(self.DataPaths.FIELD, f)
             field_units = self.get_attribute(self.DataPaths.FIELD, self.Attributes.UNITS, f)
+
             first_good_bin = self.get_attribute(self.DataPaths.HISTOGRAMS, self.Attributes.FIRST_GOOD_BIN, f)
             last_good_bin = self.get_attribute(self.DataPaths.HISTOGRAMS, self.Attributes.LAST_GOOD_BIN, f)
             t0_bin = self.get_attribute(self.DataPaths.HISTOGRAMS, self.Attributes.T0_BIN, f)
+
+            try:
+                first_bkgd_bin = self.get_attribute(self.DataPaths.HISTOGRAMS, self.Attributes.FIRST_BKGD_BIN, f)
+            except AttributeError:
+                first_bkgd_bin = 0
+
+            try:
+                last_bkgd_bin = self.get_attribute(self.DataPaths.HISTOGRAMS, self.Attributes.FIRST_BKGD_BIN, f)
+            except AttributeError:
+                last_bkgd_bin = t0_bin
+
             data = self.get_value(self.DataPaths.HISTOGRAMS, f, True)
         except (AttributeError, KeyError):
             raise BeamsFileConversionError("Binary file is in an unknown format. May need to update executables.")
 
         meta_string = ""
         meta_string += "BEAMS\n"
-        meta_string += "{}:{}".format(BIN_SIZE_KEY, resolution)
-        meta_string += "{}:{}".format(RUN_NUMBER_KEY, run_number)
-        meta_string += "{}:{}".format(TITLE_KEY, title)
-        meta_string += "{}:{}".format(LAB_KEY, lab)
-        meta_string += "{}:{}".format(AREA_KEY, area)
-        meta_string += "{}:{} {}".format(TEMPERATURE_KEY, temperature, temperature_units)
-        meta_string += "{}:{} {}".format(FIELD_KEY, field, field_units)
+        meta_string += "{}:{}, ".format(BIN_SIZE_KEY, resolution)
+        meta_string += "{}:{}, ".format(RUN_NUMBER_KEY, run_number)
+        meta_string += "{}:{}, ".format(TITLE_KEY, title)
+        meta_string += "{}:{}, ".format(LAB_KEY, lab)
+        meta_string += "{}:{}, ".format(AREA_KEY, area)
+        meta_string += "{}:{} {}, ".format(TEMPERATURE_KEY, temperature, temperature_units)
+        meta_string += "{}:{} {}, ".format(FIELD_KEY, field, field_units)
         meta_string += "{}:{}\n".format("Sample", sample)
 
-        np.savetxt(out_file, np.rot90(data[0]), delimiter=',', header=meta_string, comments="")
+        if self._combine_format:
+            starts, ends, names = self._combine_format
+            histograms = [sum(data[0][start:end]) for start, end in zip(starts, ends)]
+
+        else:
+            names = [str(n) for n in range(self.get_number_of_histograms())]
+            histograms = data[0]
+
+        meta_string += '\n'.join([','.join([val if val else name for name in names]) for val in [None,
+                                                                                                 str(first_bkgd_bin),
+                                                                                                 str(last_bkgd_bin),
+                                                                                                 str(t0_bin),
+                                                                                                 str(first_good_bin),
+                                                                                                 str(last_good_bin)]])
+        try:
+            np.savetxt(out_file, np.rot90(histograms), delimiter=',', header=meta_string, comments="", fmt="%-8i")
+        except Exception:
+            raise BeamsFileConversionError("An exception occurred writing ISIS data to {}".format(out_file))
 
 
 class JPARCMuonFile(ConvertibleFile):
@@ -617,3 +691,9 @@ class BeamsFileConversionError(Exception):
 
     def __init__(self, *args):
         super(BeamsFileConversionError, self).__init__(*args)
+
+filepath = r"D:\Research_Frandsen\BEAMS_venv\MUD_Files\ISIS\MUSR00083585.nxs_v2"
+file_object = file(filepath)
+file_object.set_combine_format([0, 33],[32, 64],['forw', 'back'])
+file_object.convert("out.dat")
+
