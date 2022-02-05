@@ -27,7 +27,6 @@ class PlotFileDialog(QtWidgets.QDialog):
         self.status_bar = QtWidgets.QStatusBar()
 
         self.c_title_list.setToolTip("List of runs selected to plot.")
-
         self.c_hist_one.setToolTip("The first histogram to be included in asymmetry.")
         self.c_hist_two.setToolTip("The second histogram to be included in asymmetry.")
         self.b_apply.setToolTip("Apply this format to only the current run.")
@@ -113,6 +112,7 @@ class PlotFileDialogPresenter(QtCore.QObject):
         self._view = view
         self._runs = runs
         self._formats = {run.meta['Title']: None for run in runs}
+
         current_hists = runs[0].histograms.keys()
         self._view.set_first_histogram(current_hists)
         self._view.set_second_histogram(current_hists)
@@ -179,24 +179,15 @@ class PlotFileDialogPresenter(QtCore.QObject):
             self._view.set_enabled_plot_button(False)
 
     @QtCore.pyqtSlot()
-    def _on_file_choice_changed(self):
-        current_file = self._view.get_file()
-        if len(current_file) < 2:
-            self._view.done(PlotFileDialog.Codes.NO_FILES_PLOTTED)
-            return
-
-        current_hists = files.file(current_file).read_meta()[files.HIST_TITLES_KEY]
-        self._view.set_first_histogram(current_hists)
-        self._view.set_second_histogram(current_hists)
-
-    @QtCore.pyqtSlot()
     def _on_title_choice_changed(self):
         current_title = self._view.get_title()
         current_run = self._runs[0]
+
         for run in self._runs:
-            if run.meta['Title'] == current_title:
+            if run.meta[files.TITLE_KEY] == current_title:
                 current_run = run
                 break
+
         current_hists = current_run.histograms
         self._view.set_first_histogram(current_hists)
         self._view.set_second_histogram(current_hists)
