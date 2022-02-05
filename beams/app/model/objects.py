@@ -1,8 +1,6 @@
-import enum
 import os
 import time
 import re
-
 from typing import Sequence
 
 import numpy as np
@@ -261,15 +259,16 @@ class Histogram(np.ndarray):
             time_zero_difference_back = our_time_zero - time_zero_furthest
 
             if final_hist is None:
-                final_hist = np.array(histogram[time_zero_difference_front:time_zero_difference_back]) if time_zero_difference_back else histogram[time_zero_difference_front:]
+                final_hist = np.array(histogram[time_zero_difference_front:time_zero_difference_back]) if \
+                    time_zero_difference_back else histogram[time_zero_difference_front:]
             else:
-                final_hist += histogram[time_zero_difference_front:time_zero_difference_back] if time_zero_difference_back else histogram[time_zero_difference_front:]
+                final_hist += histogram[time_zero_difference_front:time_zero_difference_back] if \
+                    time_zero_difference_back else histogram[time_zero_difference_front:]
 
             good_bins_start.append(histogram.good_bin_start - time_zero_difference_front)
             good_bins_end.append(histogram.good_bin_end - time_zero_difference_front)
             background_bins_start.append(histogram.background_start - time_zero_difference_front)
             background_bins_end.append(histogram.background_end - time_zero_difference_front)
-
 
         new_t0 = time_zero_shortest
         new_good_bin_start = max(good_bins_start)
