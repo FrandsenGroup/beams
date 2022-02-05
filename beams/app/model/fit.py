@@ -564,6 +564,10 @@ class FitEngine:
     def _residual(lambda_expression):
         def residual(pars, x, y_data, dy_data):
             y_calc = lambda_expression(x, *pars)
+
+            if np.isnan(y_calc).any():
+                y_calc = np.nan_to_num(y_calc)
+
             return np.divide(np.subtract(y_data, y_calc), dy_data)
 
         return residual
