@@ -1344,10 +1344,11 @@ class FitTabPresenter(PanelPresenter):
 
             self.__update_states = True
             self.update_parameter_table_states()
+            self.__update_if_table_changes = True
             self._plot_fit()
         else:
+            self.__update_if_table_changes = True
             self._view.highlight_input_red(self._view.input_fit_equation, True)
-        self.__update_if_table_changes = True
 
     @QtCore.pyqtSlot()
     def _on_save_user_defined_function_clicked(self):
@@ -1381,7 +1382,7 @@ class FitTabPresenter(PanelPresenter):
 
     @QtCore.pyqtSlot()
     def _on_plot_clicked(self):
-        self._update_display()
+        self._plot_fit()
 
     @QtCore.pyqtSlot()
     def _on_new_clicked(self):
