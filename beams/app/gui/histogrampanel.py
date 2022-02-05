@@ -217,10 +217,11 @@ class HistogramPanel(Panel):
                 if len(self.__selected_items) == 1:
                     WarningMessageDialog.launch(["Must select 2 or more histograms to be combined"])
                     return
+
                 histograms_to_combine = {}
                 new_meta = self.__selected_items[0].model.meta.copy()
-                new_meta['Title'] = f'combined_{new_meta["Title"]}'
-                new_id = str(uuid.uuid4())
+                new_meta[files.TITLE_KEY] = f'combined_{new_meta[files.TITLE_KEY]}'
+
                 for run in self.__selected_items:
                     original_histograms = run.model.histograms
                     for histogram in original_histograms:
@@ -228,12 +229,13 @@ class HistogramPanel(Panel):
                             histograms_to_combine[histogram] = [original_histograms[histogram]]
                         else:
                             histograms_to_combine[histogram].append(original_histograms[histogram])
+
                 combined_histograms = {}
                 for title, hist_list in histograms_to_combine.items():
                     combined_histograms[title] = objects.Histogram.combine(hist_list)
-                    combined_histograms[title].id = new_id
+
                 # Now make new run
-                self.__run_service.add_run_from_histograms(combined_histograms, new_meta, new_id)
+                self.__run_service.add_run_from_histograms(combined_histograms, new_meta)
 
         class HistogramNode(QtWidgets.QTreeWidgetItem):
             def __init__(self, histogram):

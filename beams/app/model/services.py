@@ -167,13 +167,17 @@ class RunService:
     def changed(self):
         self.signals.changed.emit()
 
-    def add_run_from_histograms(self, histograms, meta, run_id):
+    def add_run_from_histograms(self, histograms, meta):
         run = objects.RunDataset()
+
+        for hist in histograms.values():
+            hist.id = run.id
+
         run.histograms = histograms
         run.meta = meta
-        run.id = run_id
         run.isLoaded = True
         self.__dao.add_runs([run])
+
         self.signals.added.emit()
 
 
