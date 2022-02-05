@@ -93,13 +93,13 @@ class Histogram(np.ndarray):
 
     def __eq__(self, other):
         return self.time_zero == other.time_zero and \
-            self.good_bin_start == other.good_bin_start and \
-            self.good_bin_end == other.good_bin_end and \
-            self.background_start == other.background_start and \
-            self.background_end == other.background_end and \
-            self.bin_size == other.bin_size and \
-            self.title == other.title and \
-            np.array_equal(self, other)
+               self.good_bin_start == other.good_bin_start and \
+               self.good_bin_end == other.good_bin_end and \
+               self.background_start == other.background_start and \
+               self.background_end == other.background_end and \
+               self.bin_size == other.bin_size and \
+               self.title == other.title and \
+               np.array_equal(self, other)
 
     def __reduce__(self):
         pickled_state = super(Histogram, self).__reduce__()
@@ -323,11 +323,11 @@ class Asymmetry(np.ndarray):
 
     def __eq__(self, other):
         return self.bin_size == other.bin_size and \
-            self.time_zero == other.time_zero and \
-            self.alpha == other.alpha and \
-            np.array_equal(self, other) and \
-            np.array_equal(self.time, other.time) and \
-            np.array_equal(self.uncertainty, other.uncertainty)
+               self.time_zero == other.time_zero and \
+               self.alpha == other.alpha and \
+               np.array_equal(self, other) and \
+               np.array_equal(self.time, other.time) and \
+               np.array_equal(self.uncertainty, other.uncertainty)
 
     def __reduce__(self):
         pickled_state = super(Asymmetry, self).__reduce__()
@@ -514,7 +514,8 @@ class Asymmetry(np.ndarray):
 
         if min_time is not None:
             if max_time is not None and min_time >= max_time:
-                raise ValueError("Min_time and max_time create an invalid range of asymmetry ({} -> {})".format(min_time, max_time))
+                raise ValueError(
+                    "Min_time and max_time create an invalid range of asymmetry ({} -> {})".format(min_time, max_time))
             if min_time > self.time[-1]:
                 return Asymmetry(input_array=[], time_zero=self.time_zero, bin_size=self.bin_size, time=[],
                                  uncertainty=[], alpha=self.alpha, calculated=None if self.calculated is None else [])
@@ -750,7 +751,7 @@ class FFT:
 
 
 class Fit:
-    def __init__(self, parameters, expression, title, run_id, meta, asymmetry: Asymmetry):
+    def __init__(self, parameters, expression, title, run_id, meta, asymmetry: Asymmetry, goodness: float = None):
         self.id = str(uuid.uuid4())
         self.parameters = parameters
         self.string_expression = expression
@@ -758,6 +759,7 @@ class Fit:
         self.run_id = run_id  # "UNLINKED" -> run_id of the dataset you created
         self.meta = meta
         self.asymmetry = asymmetry  # Prompt with the plot prompt
+        self.goodness = float(goodness)
 
         from app.model import fit
         self.expression = fit.FitExpression(expression)
