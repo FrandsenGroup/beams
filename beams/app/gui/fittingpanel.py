@@ -1382,7 +1382,7 @@ class FitTabPresenter(PanelPresenter):
 
     @QtCore.pyqtSlot()
     def _on_plot_clicked(self):
-        self._plot_fit()
+        self._plot_fit(force_update=True)
 
     @QtCore.pyqtSlot()
     def _on_new_clicked(self):
@@ -1747,13 +1747,13 @@ class FitTabPresenter(PanelPresenter):
     def _update_tree_colors(self, ids_to_colors):
         self._view.support_panel.tree.set_colors(ids_to_colors)
 
-    def _plot_fit(self):
+    def _plot_fit(self, force_update=False):
         if not self.__update_if_table_changes:
             return
 
         expression, parameters = self._get_expression_and_values(get_default=True)
 
-        if expression == self.__expression and self.__variable_groups == parameters:
+        if expression == self.__expression and self.__variable_groups == parameters and not force_update:
             return
 
         if len(parameters) == 0:
