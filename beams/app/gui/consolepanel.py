@@ -1,5 +1,6 @@
 import logging
 import os
+import traceback
 
 from PyQt5 import QtWidgets, QtCore
 
@@ -364,7 +365,6 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         hbox_one.addWidget(self.load_button)
         hbox_one.addWidget(self.write_button)
 
-
         self.tree_view.setHorizontalScrollBarPolicy(qt_constants.ScrollBarAsNeeded)
         self.tree_view.header().setMinimumSectionSize(600)
         self.tree_view.header().setDefaultSectionSize(900)
@@ -513,6 +513,7 @@ class MainConsolePanelPresenter(PanelPresenter):
         try:
             self.__file_service.convert_files(file_ids)
         except files.BeamsFileConversionError:
+            self.__logger.error(traceback.format_exc())
             WarningMessageDialog.launch(["There was an error converting some or all of the selected files."])
 
     @QtCore.pyqtSlot()
