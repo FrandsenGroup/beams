@@ -290,32 +290,31 @@ class ISISMuonFile(ConvertibleFile):
                 or len(names) != len(distinct_names) or len(distinct_starts) == 0:
             raise Exception("Invalid format for combining histograms.")
 
-        # Check the start and end make sense.
-        for i, (start, end, name) in enumerate(zip(starts, ends, names)):
-            if start in ends or end in starts or start > end:
-                raise Exception("Invalid range of histograms to combine.")
-
         if max(ends) > self.get_number_of_histograms():
             raise Exception("Invalid range of histograms to combine.")
 
         self._combine_format = (starts, ends, names)
 
     @staticmethod
-    def get_value(data_paths, hdf_file_object, full=None):
+    def get_value(data_paths, hdf_file_object, full=None, string=False):
         for path in data_paths:
             if path in hdf_file_object:
                 if full:
                     return hdf_file_object[path]
+                if string:
+                    return str(hdf_file_object[path][0]).strip('b').strip("'")
                 return hdf_file_object[path][0]
             elif path == data_paths[-1]:
                 raise KeyError("Path not found in HDF file.")
 
     @staticmethod
-    def get_attribute(data_paths, attribute, hdf_file_object):
+    def get_attribute(data_paths, attribute, hdf_file_object, string=False):
         dataset = ISISMuonFile.get_value(data_paths, hdf_file_object, True)
 
         for att in attribute:
             if att in dataset.attrs:
+                if string:
+                    return str(dataset.attrs[att]).strip('b').strip("'")
                 return dataset.attrs[att]
             elif att == attribute[-1]:
                 raise AttributeError("Attribute not found on dataset.")
@@ -336,13 +335,13 @@ class ISISMuonFile(ConvertibleFile):
         f = h5py.File(self.file_path, 'r+')
 
         try:
-            title = self.get_value(self.DataPaths.TITLE, f)
+            title = self.get_value(self.DataPaths.TITLE, f, string=True)
             run_number = self.get_value(self.DataPaths.RUN_NUMBER, f)
-            sample = self.get_value(self.DataPaths.SAMPLE_NAME, f)
-            lab = self.get_value(self.DataPaths.LAB, f)
-            area = self.get_value(self.DataPaths.AREA, f)
+            sample = self.get_value(self.DataPaths.SAMPLE_NAME, f, string=True)
+            lab = self.get_value(self.DataPaths.LAB, f, string=True)
+            area = self.get_value(self.DataPaths.AREA, f, string=True)
             resolution = self.get_value(self.DataPaths.RESOLUTION, f)
-            resolution_units = str(self.get_attribute(self.DataPaths.RESOLUTION, self.Attributes.UNITS, f))
+            resolution_units = str(self.get_attribute(self.DataPaths.RESOLUTION, self.Attributes.UNITS, f, string=True))
 
             # We want the resolution (bin size) to be in nanoseconds.
             if 'p' in resolution_units:
@@ -351,23 +350,24 @@ class ISISMuonFile(ConvertibleFile):
                 resolution /= 1000
 
             temperature = self.get_value(self.DataPaths.TEMPERATURE, f)
-            temperature_units = self.get_attribute(self.DataPaths.TEMPERATURE, self.Attributes.UNITS, f)
+            temperature_units = self.get_attribute(self.DataPaths.TEMPERATURE, self.Attributes.UNITS, f, string=True)
             field = self.get_value(self.DataPaths.FIELD, f)
-            field_units = self.get_attribute(self.DataPaths.FIELD, self.Attributes.UNITS, f)
+            field_units = self.get_attribute(self.DataPaths.FIELD, self.Attributes.UNITS, f, string=True)
+            t0_bin = self.get_attribute(self.DataPaths.HISTOGRAMS, self.Attributes.T0_BIN, f)
 
             first_good_bin = self.get_attribute(self.DataPaths.HISTOGRAMS, self.Attributes.FIRST_GOOD_BIN, f)
             last_good_bin = self.get_attribute(self.DataPaths.HISTOGRAMS, self.Attributes.LAST_GOOD_BIN, f)
-            t0_bin = self.get_attribute(self.DataPaths.HISTOGRAMS, self.Attributes.T0_BIN, f)
 
             try:
                 first_bkgd_bin = self.get_attribute(self.DataPaths.HISTOGRAMS, self.Attributes.FIRST_BKGD_BIN, f)
             except AttributeError:
-                first_bkgd_bin = 0
+                first_bkgd_bin = t0_bin // 4
 
             try:
                 last_bkgd_bin = self.get_attribute(self.DataPaths.HISTOGRAMS, self.Attributes.FIRST_BKGD_BIN, f)
             except AttributeError:
-                last_bkgd_bin = t0_bin
+                last_bkgd_bin = (t0_bin // 4) * 3
+                last_bkgd_bin = last_bkgd_bin if last_bkgd_bin < t0_bin else t0_bin
 
             data = self.get_value(self.DataPaths.HISTOGRAMS, f, True)
         except (AttributeError, KeyError):
@@ -386,8 +386,12 @@ class ISISMuonFile(ConvertibleFile):
 
         if self._combine_format:
             starts, ends, names = self._combine_format
-            histograms = [sum(data[0][start:end]) for start, end in zip(starts, ends)]
-
+            histograms = []
+            for start, end in zip(starts, ends):
+                if end < start:
+                    histograms.append(sum(data[0][0:end]) + sum(data[0][start:]))
+                else:
+                    histograms.append(sum(data[0][start:end]))
         else:
             names = [str(n) for n in range(self.get_number_of_histograms())]
             histograms = data[0]
@@ -395,11 +399,11 @@ class ISISMuonFile(ConvertibleFile):
         meta_string += '\n'.join([','.join([val if val else name for name in names]) for val in [None,
                                                                                                  str(first_bkgd_bin),
                                                                                                  str(last_bkgd_bin),
-                                                                                                 str(t0_bin),
                                                                                                  str(first_good_bin),
-                                                                                                 str(last_good_bin)]])
+                                                                                                 str(last_good_bin),
+                                                                                                 str(t0_bin)]])
         try:
-            np.savetxt(out_file, np.rot90(histograms), delimiter=',', header=meta_string, comments="", fmt="%-8i")
+            np.savetxt(out_file, np.rot90(histograms, 3), delimiter=',', header=meta_string, comments="", fmt="%-8i")
         except Exception:
             raise BeamsFileConversionError("An exception occurred writing ISIS data to {}".format(out_file))
 
