@@ -341,7 +341,11 @@ class ISISMuonFile(ConvertibleFile):
             lab = self.get_value(self.DataPaths.LAB, f, string=True)
             area = self.get_value(self.DataPaths.AREA, f, string=True)
             resolution = self.get_value(self.DataPaths.RESOLUTION, f)
-            resolution_units = str(self.get_attribute(self.DataPaths.RESOLUTION, self.Attributes.UNITS, f, string=True))
+
+            try:
+                resolution_units = str(self.get_attribute(self.DataPaths.RESOLUTION, self.Attributes.UNITS, f, string=True))
+            except AttributeError:
+                resolution_units = "ns"
 
             # We want the resolution (bin size) to be in nanoseconds.
             if 'p' in resolution_units:
