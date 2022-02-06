@@ -510,7 +510,10 @@ class MainConsolePanelPresenter(PanelPresenter):
         if len(isis_files) != 0:
             IsisHistogramCombinationDialog.launch(isis_files)
 
-        self.__file_service.convert_files(file_ids)
+        try:
+            self.__file_service.convert_files(file_ids)
+        except files.BeamsFileConversionError:
+            WarningMessageDialog.launch(["There was an error converting some or all of the selected files."])
 
     @QtCore.pyqtSlot()
     def _on_remove_file_clicked(self):
