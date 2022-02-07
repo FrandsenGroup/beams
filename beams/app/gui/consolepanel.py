@@ -70,7 +70,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         def __init__(self, view):
             super().__init__(view)
             self.__view = view
-            self.__logger = logging.getLogger("MainConsolePanelTreeManager")
+            self.__logger = logging.getLogger(__name__)
             self.__run_service = services.RunService()
             self.__fit_service = services.FitService()
             self.__file_service = services.FileService()
@@ -391,7 +391,7 @@ class MainConsolePanelPresenter(PanelPresenter):
         
         self.__file_service = services.FileService()
         self.__system_service = services.SystemService()
-        self.__logger = logging.getLogger("MainConsolePanelPresenter")
+        self.__logger = logging.getLogger(__name__)
         
         self._set_callbacks()
         

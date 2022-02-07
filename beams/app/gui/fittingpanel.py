@@ -119,7 +119,7 @@ class FittingPanel(Panel):
             def __init__(self, view):
                 super().__init__(view)
                 self.__view = view
-                self.__logger = logging.getLogger("FittingPanelTreeManager")
+                self.__logger = logging.getLogger(__name__)
                 self.__run_service = services.RunService()
                 self.__fit_service = services.FitService()
                 self.__file_service = services.FileService()
@@ -598,7 +598,7 @@ class FittingPanel(Panel):
 
     def __init__(self):
         super(FittingPanel, self).__init__()
-        self.__logger = logging.getLogger('QtFitting')
+        self.__logger = logging.getLogger(__name__)
 
         self.support_panel = FittingPanel.SupportPanel()
 
@@ -1286,7 +1286,7 @@ class FitTabPresenter(PanelPresenter):
         self.__update_if_table_changes = True
         self.__variable_groups = {}
         self.__expression = None
-        self.__logger = logging.getLogger('FittingPanelPresenter')
+        self.__logger = logging.getLogger(__name__)
 
     def _set_callbacks(self):
         self._view.parameter_table.config_table.itemChanged.connect(self._on_config_table_changed)

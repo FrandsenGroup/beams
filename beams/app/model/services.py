@@ -34,7 +34,7 @@ class FitService:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance.__dao = dao.FitDAO()
-            cls._instance.__logger = logging.getLogger("FitService")
+            cls._instance.__logger = logging.getLogger(__name__)
             cls._instance.signals = FitService.Signals()
         return cls._instance
 
@@ -70,7 +70,7 @@ class RunService:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance.__dao = dao.RunDAO()
-            cls._instance.__logger = logging.getLogger("RunService")
+            cls._instance.__logger = logging.getLogger(__name__)
             cls._instance.signals = RunService.Signals()
         return cls._instance
 
@@ -253,7 +253,7 @@ class StyleService:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance.__dao = dao.StyleDAO()
-            cls._instance.__logger = logging.getLogger("StyleService")
+            cls._instance.__logger = logging.getLogger(__name__)
             cls._instance.signals = StyleService.Signals()
         return cls._instance
 
@@ -431,7 +431,7 @@ class SystemService:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             cls._instance.__dao = dao.SystemDAO()
-            cls._instance.__logger = logging.getLogger("SystemService")
+            cls._instance.__logger = logging.getLogger(__name__)
             cls._instance.signals = SystemService.Signals()
         return cls._instance
 
@@ -518,7 +518,7 @@ class FileService:
             cls._instance = super().__new__(cls)
             cls._instance.__dao = dao.FileDAO()
             cls._instance.__system_dao = dao.SystemDAO()
-            cls._instance.__logger = logging.getLogger("FileService")
+            cls._instance.__logger = logging.getLogger(__name__)
             cls._instance.__run_service = RunService()
             cls._instance.__fit_service = FitService()
             cls._instance.__style_service = StyleService()
