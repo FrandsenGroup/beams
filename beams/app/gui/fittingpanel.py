@@ -1,5 +1,6 @@
 import logging
 import re
+import traceback
 from collections import OrderedDict
 from concurrent import futures
 from functools import partial
@@ -2144,6 +2145,7 @@ class FitWorker(QtCore.QRunnable):
         super(FitWorker, self).__init__()
         self.config = config
         self.signals = FitSignals()
+        self.__logger = logging.getLogger(__name__)
         self.__engine = fit.FitEngine()
         self.__pool = futures.ProcessPoolExecutor()
         self.__process = None
@@ -2163,6 +2165,7 @@ class FitWorker(QtCore.QRunnable):
                 fit_data.expression = fit.FitExpression(fit_data.string_expression)
 
         except Exception as e:
+            self.__logger.error(traceback.format_exc())
             self.signals.error.emit("Error Running Fit: ({})".format(str(e)))
         else:
             self.signals.result.emit(dataset)

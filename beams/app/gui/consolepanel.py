@@ -446,6 +446,7 @@ class MainConsolePanelPresenter(PanelPresenter):
                         self.__file_service.load_session(f.id)
                         return
                     except files.BeamsFileReadError as e:
+                        self.__logger.error(traceback.format_exc())
                         WarningMessageDialog.launch([str(e)])
 
         runs = []
@@ -492,7 +493,8 @@ class MainConsolePanelPresenter(PanelPresenter):
             try:
                 self.__file_service.load_files(file_ids)
             except files.BeamsFileReadError as e:
-                WarningMessageDialog.launch([e.message])
+                self.__logger.error(traceback.format_exc())
+                WarningMessageDialog.launch([str(e)])
                 return
 
             if unloaded_fit_files_present:
