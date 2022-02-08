@@ -1,5 +1,6 @@
 import logging
 import re
+import traceback
 from collections import OrderedDict
 from concurrent import futures
 from functools import partial
@@ -119,7 +120,7 @@ class FittingPanel(Panel):
             def __init__(self, view):
                 super().__init__(view)
                 self.__view = view
-                self.__logger = logging.getLogger("FittingPanelTreeManager")
+                self.__logger = logging.getLogger(__name__)
                 self.__run_service = services.RunService()
                 self.__fit_service = services.FitService()
                 self.__file_service = services.FileService()
@@ -598,7 +599,7 @@ class FittingPanel(Panel):
 
     def __init__(self):
         super(FittingPanel, self).__init__()
-        self.__logger = logging.getLogger('QtFitting')
+        self.__logger = logging.getLogger(__name__)
 
         self.support_panel = FittingPanel.SupportPanel()
 
@@ -1286,7 +1287,7 @@ class FitTabPresenter(PanelPresenter):
         self.__update_if_table_changes = True
         self.__variable_groups = {}
         self.__expression = None
-        self.__logger = logging.getLogger('FittingPanelPresenter')
+        self.__logger = logging.getLogger(__name__)
 
     def _set_callbacks(self):
         self._view.parameter_table.config_table.itemChanged.connect(self._on_config_table_changed)
@@ -2144,6 +2145,7 @@ class FitWorker(QtCore.QRunnable):
         super(FitWorker, self).__init__()
         self.config = config
         self.signals = FitSignals()
+        self.__logger = logging.getLogger(__name__)
         self.__engine = fit.FitEngine()
         self.__pool = futures.ProcessPoolExecutor()
         self.__process = None
@@ -2163,6 +2165,7 @@ class FitWorker(QtCore.QRunnable):
                 fit_data.expression = fit.FitExpression(fit_data.string_expression)
 
         except Exception as e:
+            self.__logger.error(traceback.format_exc())
             self.signals.error.emit("Error Running Fit: ({})".format(str(e)))
         else:
             self.signals.result.emit(dataset)

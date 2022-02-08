@@ -162,8 +162,8 @@ class BeamsSessionFile(ReadableFile):
         with open(self.file_path, 'rb') as session_file_object:
             try:
                 return pickle.load(session_file_object)
-            except Exception:
-                raise BeamsFileReadError("This session file is not supported by your current version of BEAMS.")
+            except Exception as e:
+                raise BeamsFileReadError("This session file is not supported by your current version of BEAMS.") from e
 
     def read_meta(self):
         return self.file_path
@@ -200,7 +200,7 @@ class TRIUMFMuonFile(ConvertibleFile):
             try:
                 subprocess.check_call(args, shell=shell)
             except subprocess.CalledProcessError as e:
-                raise e
+                raise BeamsFileConversionError("Error occurred running conversion executable.") from e
             else:
                 return MuonHistogramFile(out_file)
 
@@ -234,9 +234,8 @@ class PSIMuonFile(ConvertibleFile):
 
             try:
                 subprocess.check_call(args, shell=shell)
-            except subprocess.CalledProcessError:
-                track = traceback.format_exc()
-                raise BeamsFileConversionError(str(track))
+            except subprocess.CalledProcessError as e:
+                raise BeamsFileConversionError("Error occurred running conversion executable.") from e
             else:
                 return MuonHistogramFile(out_file)
 
@@ -277,8 +276,8 @@ class ISISMuonFile(ConvertibleFile):
             starts = [int(s) for s in starts]
             ends = [int(e) for e in ends]
             names = [str(n) for n in names]
-        except ValueError:
-            raise Exception("Format for combining histograms contains values of invalid types.")
+        except ValueError as e:
+            raise Exception("Format for combining histograms contains values of invalid types.") from e
 
         distinct_starts = set(starts)
         distinct_ends = set(ends)
@@ -325,8 +324,8 @@ class ISISMuonFile(ConvertibleFile):
         try:
             data = self.get_value(self.DataPaths.HISTOGRAMS, f, True)
             return data.shape[1]  # Expected shape is something like 1x64x2048
-        except (AttributeError, KeyError):
-            raise BeamsFileConversionError("Binary file is in an unknown format. May need to update executables.")
+        except (AttributeError, KeyError) as e:
+            raise BeamsFileConversionError("Binary file is in an unknown format.") from e
 
     def convert(self, out_file):
         if not check_ext(out_file, Extensions.HISTOGRAM):
@@ -374,8 +373,8 @@ class ISISMuonFile(ConvertibleFile):
                 last_bkgd_bin = last_bkgd_bin if last_bkgd_bin < t0_bin else t0_bin
 
             data = self.get_value(self.DataPaths.HISTOGRAMS, f, True)
-        except (AttributeError, KeyError):
-            raise BeamsFileConversionError("Binary file is in an unknown format. May need to update executables.")
+        except (AttributeError, KeyError) as e:
+            raise BeamsFileConversionError("Binary file is in an unknown format.") from e
 
         meta_string = ""
         meta_string += "BEAMS\n"
@@ -408,8 +407,8 @@ class ISISMuonFile(ConvertibleFile):
                                                                                                  str(t0_bin)]])
         try:
             np.savetxt(out_file, np.rot90(histograms, 3), delimiter=',', header=meta_string, comments="", fmt="%-8i")
-        except Exception:
-            raise BeamsFileConversionError("An exception occurred writing ISIS data to {}".format(out_file))
+        except Exception as e:
+            raise BeamsFileConversionError("An exception occurred writing ISIS data to {}".format(out_file)) from e
 
         return MuonHistogramFile(out_file)
 
@@ -420,7 +419,7 @@ class JPARCMuonFile(ConvertibleFile):
     DATA_TYPE = DataType.MUON
 
     def convert(self, out_file):
-        pass
+        raise NotImplementedError()
 
 
 class MuonHistogramFile(ReadableFile):
@@ -436,8 +435,8 @@ class MuonHistogramFile(ReadableFile):
             data = pd.read_csv(self.file_path, skiprows=self.HEADER_ROWS - 1)
             data.columns = meta[HIST_TITLES_KEY]
             return data
-        except Exception:
-            raise BeamsFileReadError("This histogram file is not supported by your current version of BEAMS")
+        except Exception as e:
+            raise BeamsFileReadError("This histogram file is not supported by your current version of BEAMS") from e
 
     def read_meta(self):
         try:
@@ -465,8 +464,8 @@ class MuonHistogramFile(ReadableFile):
             metadata[T0_KEY] = {k: v for k, v in zip(hist_titles, initial_time)}
 
             return metadata
-        except Exception:
-            raise BeamsFileReadError("This histogram file is not supported by your current version of BEAMS")
+        except Exception as e:
+            raise BeamsFileReadError("This histogram file is not supported by your current version of BEAMS") from e
 
 
 class MuonAsymmetryFile(ReadableFile):
@@ -480,8 +479,8 @@ class MuonAsymmetryFile(ReadableFile):
             data = pd.read_csv(self.file_path, skiprows=self.HEADER_ROWS - 1)
             data.columns = ['Time', 'Asymmetry', 'Uncertainty']
             return data
-        except Exception:
-            raise BeamsFileReadError("This asymmetry file is not supported by your current version of BEAMS")
+        except Exception as e:
+            raise BeamsFileReadError("This asymmetry file is not supported by your current version of BEAMS") from e
 
     def read_meta(self):
         try:
@@ -497,8 +496,8 @@ class MuonAsymmetryFile(ReadableFile):
             metadata[T0_KEY] = 0
 
             return metadata
-        except Exception:
-            raise BeamsFileReadError("This asymmetry file is not supported by your current version of BEAMS")
+        except Exception as e:
+            raise BeamsFileReadError("This asymmetry file is not supported by your current version of BEAMS") from e
 
 
 class FitDatasetExpressionFile(ReadableFile):
@@ -557,8 +556,8 @@ class FitDatasetExpressionFile(ReadableFile):
                     raise Exception("Expression not found in this fit file.")
 
                 return common_parameters, specific_parameters, expression
-            except Exception:
-                raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS")
+            except Exception as e:
+                raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS") from e
 
     def read_meta(self):
         return self.read_data()
@@ -575,8 +574,8 @@ class FitFile(ReadableFile):
             data = pd.read_csv(self.file_path, skiprows=self.HEADER_ROWS - 1)
             data.columns = ['Time', 'Asymmetry', 'Calculated', 'Uncertainty']
             return data
-        except Exception:
-            raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS")
+        except Exception as e:
+            raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS") from e
 
     def read_meta(self):
         try:
@@ -591,8 +590,8 @@ class FitFile(ReadableFile):
             metadata = {pair[0]: pair[1] for pair in metadata}
             metadata[T0_KEY] = 0
             return metadata
-        except Exception:
-            raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS")
+        except Exception as e:
+            raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS") from e
 
 
 def file(file_path: str) -> File:

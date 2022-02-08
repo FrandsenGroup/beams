@@ -1,5 +1,6 @@
 import logging
 import os
+import traceback
 
 from PyQt5 import QtWidgets, QtCore
 
@@ -69,7 +70,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         def __init__(self, view):
             super().__init__(view)
             self.__view = view
-            self.__logger = logging.getLogger("MainConsolePanelTreeManager")
+            self.__logger = logging.getLogger(__name__)
             self.__run_service = services.RunService()
             self.__fit_service = services.FitService()
             self.__file_service = services.FileService()
@@ -364,7 +365,6 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         hbox_one.addWidget(self.load_button)
         hbox_one.addWidget(self.write_button)
 
-
         self.tree_view.setHorizontalScrollBarPolicy(qt_constants.ScrollBarAsNeeded)
         self.tree_view.header().setMinimumSectionSize(600)
         self.tree_view.header().setDefaultSectionSize(900)
@@ -391,7 +391,7 @@ class MainConsolePanelPresenter(PanelPresenter):
         
         self.__file_service = services.FileService()
         self.__system_service = services.SystemService()
-        self.__logger = logging.getLogger("MainConsolePanelPresenter")
+        self.__logger = logging.getLogger(__name__)
         
         self._set_callbacks()
         
@@ -446,6 +446,7 @@ class MainConsolePanelPresenter(PanelPresenter):
                         self.__file_service.load_session(f.id)
                         return
                     except files.BeamsFileReadError as e:
+                        self.__logger.error(traceback.format_exc())
                         WarningMessageDialog.launch([str(e)])
 
         runs = []
@@ -492,7 +493,8 @@ class MainConsolePanelPresenter(PanelPresenter):
             try:
                 self.__file_service.load_files(file_ids)
             except files.BeamsFileReadError as e:
-                WarningMessageDialog.launch([e.message])
+                self.__logger.error(traceback.format_exc())
+                WarningMessageDialog.launch([str(e)])
                 return
 
             if unloaded_fit_files_present:
@@ -513,7 +515,11 @@ class MainConsolePanelPresenter(PanelPresenter):
             if code == IsisHistogramCombinationDialog.Codes.Cancel:
                 return
 
-        self.__file_service.convert_files(file_ids)
+        try:
+            self.__file_service.convert_files(file_ids)
+        except files.BeamsFileConversionError:
+            self.__logger.error(traceback.format_exc())
+            WarningMessageDialog.launch(["There was an error converting some or all of the selected files."])
 
     @QtCore.pyqtSlot()
     def _on_remove_file_clicked(self):
