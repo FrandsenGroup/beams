@@ -206,7 +206,7 @@ Functions - f(...) | sin | cos | tan | sinh | cosh | tanh | exp
 <br>
 
 #### Specifying your Fit Parameters
-When you provide a valid fit expression you will see the table of parameters and the plot display below the input box update as you type. Below is an example of valid input.
+When you provide a valid fit expression you will see the table of parameters, and the plot display below the input box update as you type. Below is an example of valid input.
 
 ![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/example_fit_expression.png)
 
@@ -274,13 +274,13 @@ The
 ## File Formats
 
 ### External Supported File Formats
-Note - Support for ISIS files is currently on the docket, but not yet supported.
 
 | File Extension | Description                |
 |----------------|----------------------------|
 | .msr           | Histogram data from TRIUMF |
 | .bin           | Histogram data from PSI    |
 | .mdu           | Histogram data from PSI    |
+| .nxs_v2        | Histogram data from ISIS   |
 
 ### BEAMS File Formats
 | File Extension | Description                                                                   |
