@@ -213,20 +213,19 @@ class FittingPanel(Panel):
                 dataset.fits = {i.model.id: i.model for i in items}
                 dataset.flags = items[0].parent().model.flags
 
+                expressions = set([i.model.string_expression for i in items])
+
+                if len(expressions) > 1:
+                    WarningMessageDialog.launch("Can not save collection of fits with more then one fit expression at "
+                                                "the same time.")
+                    return
+
+                dataset.expression = expressions.pop()
+
                 WriteFitDialog.launch(dataset=dataset)
 
         def __init__(self):
             super().__init__()
-            # TODO How to set it up?
-            #   we want to be able to save a set of fits using some meta attribute as a prefix.
-            #   just have two dialogs that come up when it is a single fit vs a set of fits.
-            #   When saving fit dataset they should have an option of four formats to save the set as
-            #   short, verbose, all to a directory with prefix, same but in a zip. Maybe we could have a
-            #   window which gives a preview.
-            # TODO We need to do a similar thing with everything else because the current write button doesn't
-            #   contextually make much sense so lets just have right-click save options for all items in the
-            #   support panels.
-
             self.tree = FittingPanel.SupportPanel.Tree()
             self.setTitleBarWidget(QtWidgets.QWidget())
             main_layout = QtWidgets.QVBoxLayout()
