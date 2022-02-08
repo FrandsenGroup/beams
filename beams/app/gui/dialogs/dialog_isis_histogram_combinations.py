@@ -10,6 +10,10 @@ from app.util import qt_constants
 
 
 class IsisHistogramCombinationDialog(QtWidgets.QDialog):
+    class Codes:
+        Done = 0
+        Cancel = 1
+
     def __init__(self, isis_files: Sequence['objects.FileDataset']):
         super().__init__()
         self.__rows = {}  # id : row_number
@@ -19,12 +23,13 @@ class IsisHistogramCombinationDialog(QtWidgets.QDialog):
         self.done_button = QtWidgets.QPushButton('Done')
         self.skip_button = QtWidgets.QPushButton('Don''t Combine')
         self.cancel_button = QtWidgets.QPushButton('Cancel')
+
         self.combination_table = QtWidgets.QTableWidget()
 
         num_histograms_ranges = set([f.file.get_number_of_histograms() for f in isis_files])
         if len(num_histograms_ranges) != 1:
             WarningMessageDialog.launch(["Selected files with different ranges of histograms."])
-            self.done(0)
+            self.done(self.Codes.Done)
 
         num_histograms = num_histograms_ranges.pop()
 
@@ -43,6 +48,9 @@ class IsisHistogramCombinationDialog(QtWidgets.QDialog):
         self._presenter = IsisHistogramCombinationDialogPresenter(isis_files, num_histograms, self)
 
     def _set_attributes(self):
+        self.cancel_button.released.connect(lambda: self.done(self.Codes.Cancel))
+        self.skip_button.released.connect(lambda: self.done(self.Codes.Done))
+
         self.combination_table.setColumnCount(4)
         self.combination_table.setHorizontalHeaderLabels(["Start #", "End #", "Title", ""])
         self.combination_table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
@@ -207,4 +215,4 @@ class IsisHistogramCombinationDialogPresenter(QtCore.QObject):
                 WarningMessageDialog.launch(["Invalid set of histogram ranges"])
                 return
 
-        self._view.done(0)
+        self._view.done(self._view.Codes.Done)

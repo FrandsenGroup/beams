@@ -508,7 +508,10 @@ class MainConsolePanelPresenter(PanelPresenter):
 
         isis_files = list(filter(lambda o: o.file.SOURCE == files.Source.ISIS, file_objects))
         if len(isis_files) != 0:
-            IsisHistogramCombinationDialog.launch(isis_files)
+            code = IsisHistogramCombinationDialog.launch(isis_files)
+
+            if code == IsisHistogramCombinationDialog.Codes.Cancel:
+                return
 
         self.__file_service.convert_files(file_ids)
 
