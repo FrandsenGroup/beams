@@ -317,8 +317,8 @@ Click on the file extension to see an example file (for non-binary file types).
 |----------------|-------------------------------------------------------------------------------|
 | [.dat](https://github.com/aPeter1/BEAMS/blob/assets/histogram_example.dat)            | Histogram data for a single run.                                              |
 | [.asy](https://github.com/aPeter1/BEAMS/blob/assets/asymmetry_example.asy)            | Experimental asymmetry, uncertainty and time for a single run.                |
-| [.fit](https://github.com/aPeter1/BEAMS/blob/assets/summary_example.fit)            | Experimental and calculated asymmetry, uncertainty and time for a single run. |
-| [.calc](https://github.com/aPeter1/BEAMS/blob/assets/fit_example.calc)         | A verbose summary of a fit                                                    |
+| [.fit](https://github.com/aPeter1/BEAMS/blob/assets/summary_example.fit)            | A verbose summary of a fit or range of fits. |
+| [.calc](https://github.com/aPeter1/BEAMS/blob/assets/fit_example.calc)         | Experimental and calculated asymmetry, uncertainty and time for a single run.|
 | .beams          | A saved beams session                                                         |
 
 ## Troubleshooting
