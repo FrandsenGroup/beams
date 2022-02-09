@@ -109,8 +109,18 @@ the alpha parameter for the asymmetry.
 ![choosing your histograms for asymmetry](https://github.com/aPeter1/BEAMS/blob/assets/plot_interaction.png)
 
 #### Saving Asymmetry Data
+To save an asymmetry or group of asymmetries, check the box next to the runs in the upper-left hand panel and click 
+the button that says 'Write'. The following prompt will appear (or a warning message indicating some problem with 
+your selection).
 
 ![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/dialog_write_data.png)
+
+You can save the data in a couple different ways. By checking 'Full Data' this will write the full time, asymmetry and
+uncertainty arrays to the file you specify, whereas choosing 'Binned Data' and providing a Bin Size (in nanoseconds)
+will first bin the arrays before writing. 
+
+Using the option box at the top of the prompt you can write different files in different ways and specific locations, or 
+you can write all selected files the same way (using the run number as the file name).
 
 <br>
 
