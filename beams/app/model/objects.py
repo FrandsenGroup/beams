@@ -759,7 +759,7 @@ class Fit:
         self.run_id = run_id  # "UNLINKED" -> run_id of the dataset you created
         self.meta = meta
         self.asymmetry = asymmetry  # Prompt with the plot prompt
-        self.goodness = float(goodness)
+        self.goodness = None if goodness is None else float(goodness)
 
         from app.model import fit
         self.expression = fit.FitExpression(expression)
