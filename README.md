@@ -285,11 +285,11 @@ The
 ### BEAMS File Formats
 | File Extension | Description                                                                   |
 |----------------|-------------------------------------------------------------------------------|
-| .dat           | Histogram data for a single run.                                              |
-| .asy           | Experimental asymmetry, uncertainty and time for a single run.                |
-| .fit           | Experimental and calculated asymmetry, uncertainty and time for a single run. |
-| .clc           | A verbose summary of a fit                                                    |
-| .beams         | A saved beams session                                                         |
+| [.dat](https://github.com/aPeter1/BEAMS/blob/assets/histogram_example.dat)            | Histogram data for a single run.                                              |
+| [.asy](https://github.com/aPeter1/BEAMS/blob/assets/asymmetry_example.asy)            | Experimental asymmetry, uncertainty and time for a single run.                |
+| [.fit](https://github.com/aPeter1/BEAMS/blob/assets/summary_example.fit)            | Experimental and calculated asymmetry, uncertainty and time for a single run. |
+| [.calc](https://github.com/aPeter1/BEAMS/blob/assets/fit_example.calc)         | A verbose summary of a fit                                                    |
+| .beams          | A saved beams session                                                         |
 
 ## Troubleshooting
 #### Can't install requirements on Mac (Apple Silicon)
