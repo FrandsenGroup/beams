@@ -102,6 +102,17 @@ class FittingPanel(Panel):
                     iterator += 1
                 return data
 
+            def get_parent_of_selected_data(self):
+                # noinspection PyTypeChecker
+                iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Selected)
+
+                data = set()
+                while iterator.value():
+                    if isinstance(iterator.value().model, objects.Fit):
+                        data.add(iterator.value().parent().model)
+                    iterator += 1
+                return data
+
             def set_colors(self, colors):
                 iterator = QtWidgets.QTreeWidgetItemIterator(self)
                 while iterator.value():
@@ -232,9 +243,11 @@ class FittingPanel(Panel):
 
             self.new_button = qt_widgets.StyleTwoButton("New Empty Fit")
             self.reset_button = qt_widgets.StyleOneButton("Reset")
+            self.save_button = qt_widgets.StyleOneButton("Save")
             self.button_lookup_folder = qt_widgets.StyleTwoButton("Folder")
 
             self.new_button.setToolTip('Create a new empty fit')
+            self.save_button.setToolTip("Save the currently highlighted fits")
             self.button_lookup_folder.setToolTip('Select folder')
 
             self.input_file_name = QtWidgets.QLineEdit()
@@ -246,6 +259,7 @@ class FittingPanel(Panel):
 
             hbox = QtWidgets.QHBoxLayout()
             hbox.addWidget(self.new_button)
+            hbox.addWidget(self.save_button)
             main_layout.addLayout(hbox)
 
             main_layout.addWidget(self.tree)
@@ -1307,6 +1321,7 @@ class FitTabPresenter(PanelPresenter):
         self._view.check_global_plus.stateChanged.connect(self._on_batch_options_changed)
 
         self._view.support_panel.tree.itemSelectionChanged.connect(self._on_fit_selection_changed)
+        self._view.support_panel.save_button.released.connect(self._on_save_clicked)
         self._view.input_fit_equation.textChanged.connect(self._on_function_input_changed)
         self._view.button_insert_preset_equation.released.connect(self._on_insert_pre_defined_function_clicked)
         self._view.button_insert_user_equation.released.connect(self._on_insert_user_defined_function_clicked)
@@ -1330,6 +1345,40 @@ class FitTabPresenter(PanelPresenter):
         self._view.button_fit.released.connect(self._on_fit_clicked)
         self._view.support_panel.new_button.released.connect(self._on_new_clicked)
         self._system_service.signals.theme_changed.connect(self._on_theme_changed)
+
+    @QtCore.pyqtSlot()
+    def _on_save_clicked(self):
+        items = self._view.support_panel.tree.get_selected_data()
+        if len(items) == 0:
+            WarningMessageDialog.launch(["No fits selected."])
+            return
+
+        types = set([type(i) for i in items])
+
+        if len(types) > 1:
+            WarningMessageDialog.launch(["Invalid selection, please select a parent node or group of children nodes."])
+            return
+
+        if types.pop() == objects.FitDataset:  # we won't check if multiple are selected, just save the first.
+            WriteFitDialog.launch(dataset=items[0])
+            return
+
+        parent = self._view.support_panel.tree.get_parent_of_selected_data().pop()
+
+        dataset = objects.FitDataset()
+        dataset.fits = {model.id: model for model in items}
+        dataset.flags = parent.flags
+
+        expressions = set([model.string_expression for model in items])
+
+        if len(expressions) > 1:
+            WarningMessageDialog.launch(["Can not save collection of fits with more then one fit expression at "
+                                        "the same time."])
+            return
+
+        dataset.expression = expressions.pop()
+
+        WriteFitDialog.launch(dataset=dataset)
 
     @QtCore.pyqtSlot()
     def _on_function_input_changed(self):
