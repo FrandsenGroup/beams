@@ -556,8 +556,8 @@ class Uncertainty(np.ndarray):
 
         if input_array is None:
             start_bin_one, start_bin_two, end_bin_one, end_bin_two, time_zero = histogram_one.intersect(histogram_two)
-            histogram_one_good = histogram_one[start_bin_one - 1: end_bin_one + 1]
-            histogram_two_good = histogram_two[start_bin_one - 1: end_bin_one + 1]
+            histogram_one_good = histogram_one[start_bin_one - 1: end_bin_one]
+            histogram_two_good = histogram_two[start_bin_one - 1: end_bin_one]
             d_histogram_one = np.sqrt(histogram_one_good)
             d_histogram_two = np.sqrt(histogram_two_good)
             np.nan_to_num(histogram_one_good)

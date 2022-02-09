@@ -8,3 +8,4 @@ matplotlib
 pytest
 qdarkstyle
 darkdetect
+h5py

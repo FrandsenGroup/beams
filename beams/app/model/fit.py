@@ -294,7 +294,7 @@ class FitConfig:
 
 class FitEngine:
     def __init__(self):
-        self.__logger = logging.getLogger('FitEngine')
+        self.__logger = logging.getLogger(__name__)
 
     def fit(self, config: FitConfig) -> objects.FitDataset:
         self.__logger.debug("Config passed to FitEngine: {}".format(str(config)))

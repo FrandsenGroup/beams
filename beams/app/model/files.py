@@ -9,6 +9,8 @@ import enum
 
 # Installed Packages
 import pandas as pd
+import numpy as np
+import h5py
 
 
 # File Extensions
@@ -21,6 +23,8 @@ class Extensions:
     TRIUMF = '.msr'
     PSI_BIN = '.bin'
     PSI_MDU = '.mdu'
+    ISIS_NXS = '.nxs'
+    ISIS_NXS_V2 = '.nxs_v2'
 
 
 # File Sources
@@ -68,6 +72,8 @@ RUN_NUMBER_KEY = 'RunNumber'
 T0_KEY = 'T0'
 CALC_HISTS_KEY = 'CalcHists'
 FILE_PATH_KEY = 'FilePath'
+LAB_KEY = "Lab"
+AREA_KEY = "Area"
 
 
 # TODO Maybe we should have these files inherit from the actual File object
@@ -156,8 +162,8 @@ class BeamsSessionFile(ReadableFile):
         with open(self.file_path, 'rb') as session_file_object:
             try:
                 return pickle.load(session_file_object)
-            except Exception:
-                raise BeamsFileReadError("This session file is not supported by your current version of BEAMS.")
+            except Exception as e:
+                raise BeamsFileReadError("This session file is not supported by your current version of BEAMS.") from e
 
     def read_meta(self):
         return self.file_path
@@ -194,7 +200,7 @@ class TRIUMFMuonFile(ConvertibleFile):
             try:
                 subprocess.check_call(args, shell=shell)
             except subprocess.CalledProcessError as e:
-                raise e
+                raise BeamsFileConversionError("Error occurred running conversion executable.") from e
             else:
                 return MuonHistogramFile(out_file)
 
@@ -228,9 +234,8 @@ class PSIMuonFile(ConvertibleFile):
 
             try:
                 subprocess.check_call(args, shell=shell)
-            except subprocess.CalledProcessError:
-                track = traceback.format_exc()
-                raise BeamsFileConversionError(str(track))
+            except subprocess.CalledProcessError as e:
+                raise BeamsFileConversionError("Error occurred running conversion executable.") from e
             else:
                 return MuonHistogramFile(out_file)
 
@@ -242,8 +247,170 @@ class ISISMuonFile(ConvertibleFile):
     DATA_FORMAT = Format.BINARY
     DATA_TYPE = DataType.MUON
 
+    class DataPaths:
+        TITLE = ['raw_data_1/title']
+        RUN_NUMBER = ['raw_data_1/run_number']
+        SAMPLE_NAME = ['raw_data_1/sample/name']
+        AREA = ['raw_data_1/beamline']
+        LAB = ['raw_data_1/instrument/source/name']
+        RESOLUTION = ['raw_data_1/selog/pulse_width/value']
+        TEMPERATURE = ['raw_data_1/sample/temperature', 'raw_data_1/selog/Temp_Sample/value']
+        FIELD = ['raw_data_1/sample/magnetic_field', 'raw_data_1/selog/Field_ZF_Magnitude/value']
+        HISTOGRAMS = ['raw_data_1/detector_1/counts']
+
+    class Attributes:
+        UNITS = ['units']
+        FIRST_GOOD_BIN = ['first_good_bin']
+        LAST_GOOD_BIN = ['last_good_bin']
+        FIRST_BKGD_BIN = ['null']
+        LAST_BKGD_BIN = ['null']
+        T0_BIN = ['t0_bin']
+
+    def __init__(self, file_path):
+        super().__init__(file_path)
+        self._combine_format = None
+
+    def set_combine_format(self, starts, ends, names):
+        # Check if the values provided are of a valid datatype. Doing this first prevents sneaky bugs.
+        try:
+            starts = [int(s) for s in starts]
+            ends = [int(e) for e in ends]
+            names = [str(n) for n in names]
+        except ValueError as e:
+            raise Exception("Format for combining histograms contains values of invalid types.") from e
+
+        distinct_starts = set(starts)
+        distinct_ends = set(ends)
+        distinct_names = set(names)
+
+        # Check if any values are repeated or if one set of values is larger then another
+        if len(distinct_starts) != len(distinct_ends) or len(distinct_starts) != (len(distinct_names)) \
+                or len(starts) != len(distinct_starts) or len(ends) != len(distinct_ends) \
+                or len(names) != len(distinct_names) or len(distinct_starts) == 0:
+            raise Exception("Invalid format for combining histograms.")
+
+        if max(ends) > self.get_number_of_histograms():
+            raise Exception("Invalid range of histograms to combine.")
+
+        self._combine_format = (starts, ends, names)
+
+    @staticmethod
+    def get_value(data_paths, hdf_file_object, full=None, string=False):
+        for path in data_paths:
+            if path in hdf_file_object:
+                if full:
+                    return hdf_file_object[path]
+                if string:
+                    return str(hdf_file_object[path][0]).strip('b').strip("'")
+                return hdf_file_object[path][0]
+            elif path == data_paths[-1]:
+                raise KeyError("Path not found in HDF file.")
+
+    @staticmethod
+    def get_attribute(data_paths, attribute, hdf_file_object, string=False):
+        dataset = ISISMuonFile.get_value(data_paths, hdf_file_object, True)
+
+        for att in attribute:
+            if att in dataset.attrs:
+                if string:
+                    return str(dataset.attrs[att]).strip('b').strip("'")
+                return dataset.attrs[att]
+            elif att == attribute[-1]:
+                raise AttributeError("Attribute not found on dataset.")
+
+    def get_number_of_histograms(self):
+        f = h5py.File(self.file_path, 'r+')
+
+        try:
+            data = self.get_value(self.DataPaths.HISTOGRAMS, f, True)
+            return data.shape[1]  # Expected shape is something like 1x64x2048
+        except (AttributeError, KeyError) as e:
+            raise BeamsFileConversionError("Binary file is in an unknown format.") from e
+
     def convert(self, out_file):
-        pass
+        if not check_ext(out_file, Extensions.HISTOGRAM):
+            raise Exception("Out file does not have a valid extension (.dat).")
+
+        f = h5py.File(self.file_path, 'r+')
+
+        try:
+            title = self.get_value(self.DataPaths.TITLE, f, string=True)
+            run_number = self.get_value(self.DataPaths.RUN_NUMBER, f)
+            sample = self.get_value(self.DataPaths.SAMPLE_NAME, f, string=True)
+            lab = self.get_value(self.DataPaths.LAB, f, string=True)
+            area = self.get_value(self.DataPaths.AREA, f, string=True)
+            resolution = self.get_value(self.DataPaths.RESOLUTION, f)
+
+            try:
+                resolution_units = str(self.get_attribute(self.DataPaths.RESOLUTION, self.Attributes.UNITS, f, string=True))
+            except AttributeError:
+                resolution_units = "ns"
+
+            # We want the resolution (bin size) to be in nanoseconds.
+            if 'p' in resolution_units:
+                resolution *= 1000
+            elif '\u00b5' in resolution_units or 'm' in resolution_units:
+                resolution /= 1000
+
+            temperature = self.get_value(self.DataPaths.TEMPERATURE, f)
+            temperature_units = self.get_attribute(self.DataPaths.TEMPERATURE, self.Attributes.UNITS, f, string=True)
+            field = self.get_value(self.DataPaths.FIELD, f)
+            field_units = self.get_attribute(self.DataPaths.FIELD, self.Attributes.UNITS, f, string=True)
+            t0_bin = self.get_attribute(self.DataPaths.HISTOGRAMS, self.Attributes.T0_BIN, f)
+
+            first_good_bin = self.get_attribute(self.DataPaths.HISTOGRAMS, self.Attributes.FIRST_GOOD_BIN, f)
+            last_good_bin = self.get_attribute(self.DataPaths.HISTOGRAMS, self.Attributes.LAST_GOOD_BIN, f)
+
+            try:
+                first_bkgd_bin = self.get_attribute(self.DataPaths.HISTOGRAMS, self.Attributes.FIRST_BKGD_BIN, f)
+            except AttributeError:
+                first_bkgd_bin = t0_bin // 4
+
+            try:
+                last_bkgd_bin = self.get_attribute(self.DataPaths.HISTOGRAMS, self.Attributes.FIRST_BKGD_BIN, f)
+            except AttributeError:
+                last_bkgd_bin = (t0_bin // 4) * 3
+                last_bkgd_bin = last_bkgd_bin if last_bkgd_bin < t0_bin else t0_bin
+
+            data = self.get_value(self.DataPaths.HISTOGRAMS, f, True)
+        except (AttributeError, KeyError) as e:
+            raise BeamsFileConversionError("Binary file is in an unknown format.") from e
+
+        meta_string = ""
+        meta_string += "BEAMS\n"
+        meta_string += "{}:{},".format(BIN_SIZE_KEY, resolution)
+        meta_string += "{}:{},".format(RUN_NUMBER_KEY, run_number)
+        meta_string += "{}:{},".format(TITLE_KEY, title)
+        meta_string += "{}:{},".format(LAB_KEY, lab)
+        meta_string += "{}:{},".format(AREA_KEY, area)
+        meta_string += "{}:{} {},".format(TEMPERATURE_KEY, temperature, temperature_units)
+        meta_string += "{}:{} {},".format(FIELD_KEY, field, field_units)
+        meta_string += "{}:{}\n".format("Sample", sample)
+
+        if self._combine_format:
+            starts, ends, names = self._combine_format
+            histograms = []
+            for start, end in zip(starts, ends):
+                if end < start:
+                    histograms.append(sum(data[0][0:end]) + sum(data[0][start:]))
+                else:
+                    histograms.append(sum(data[0][start:end]))
+        else:
+            names = [str(n) for n in range(self.get_number_of_histograms())]
+            histograms = data[0]
+
+        meta_string += '\n'.join([','.join([val if val else name for name in names]) for val in [None,
+                                                                                                 str(first_bkgd_bin),
+                                                                                                 str(last_bkgd_bin),
+                                                                                                 str(first_good_bin),
+                                                                                                 str(last_good_bin),
+                                                                                                 str(t0_bin)]])
+        try:
+            np.savetxt(out_file, np.rot90(histograms, 3), delimiter=',', header=meta_string, comments="", fmt="%-8i")
+        except Exception as e:
+            raise BeamsFileConversionError("An exception occurred writing ISIS data to {}".format(out_file)) from e
+
+        return MuonHistogramFile(out_file)
 
 
 class JPARCMuonFile(ConvertibleFile):
@@ -252,7 +419,7 @@ class JPARCMuonFile(ConvertibleFile):
     DATA_TYPE = DataType.MUON
 
     def convert(self, out_file):
-        pass
+        raise NotImplementedError()
 
 
 class MuonHistogramFile(ReadableFile):
@@ -268,8 +435,8 @@ class MuonHistogramFile(ReadableFile):
             data = pd.read_csv(self.file_path, skiprows=self.HEADER_ROWS - 1)
             data.columns = meta[HIST_TITLES_KEY]
             return data
-        except Exception:
-            raise BeamsFileReadError("This histogram file is not supported by your current version of BEAMS")
+        except Exception as e:
+            raise BeamsFileReadError("This histogram file is not supported by your current version of BEAMS") from e
 
     def read_meta(self):
         try:
@@ -297,8 +464,8 @@ class MuonHistogramFile(ReadableFile):
             metadata[T0_KEY] = {k: v for k, v in zip(hist_titles, initial_time)}
 
             return metadata
-        except Exception:
-            raise BeamsFileReadError("This histogram file is not supported by your current version of BEAMS")
+        except Exception as e:
+            raise BeamsFileReadError("This histogram file is not supported by your current version of BEAMS") from e
 
 
 class MuonAsymmetryFile(ReadableFile):
@@ -312,8 +479,8 @@ class MuonAsymmetryFile(ReadableFile):
             data = pd.read_csv(self.file_path, skiprows=self.HEADER_ROWS - 1)
             data.columns = ['Time', 'Asymmetry', 'Uncertainty']
             return data
-        except Exception:
-            raise BeamsFileReadError("This asymmetry file is not supported by your current version of BEAMS")
+        except Exception as e:
+            raise BeamsFileReadError("This asymmetry file is not supported by your current version of BEAMS") from e
 
     def read_meta(self):
         try:
@@ -329,8 +496,8 @@ class MuonAsymmetryFile(ReadableFile):
             metadata[T0_KEY] = 0
 
             return metadata
-        except Exception:
-            raise BeamsFileReadError("This asymmetry file is not supported by your current version of BEAMS")
+        except Exception as e:
+            raise BeamsFileReadError("This asymmetry file is not supported by your current version of BEAMS") from e
 
 
 class FitDatasetExpressionFile(ReadableFile):
@@ -389,8 +556,8 @@ class FitDatasetExpressionFile(ReadableFile):
                     raise Exception("Expression not found in this fit file.")
 
                 return common_parameters, specific_parameters, expression
-            except Exception:
-                raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS")
+            except Exception as e:
+                raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS") from e
 
     def read_meta(self):
         return self.read_data()
@@ -407,8 +574,8 @@ class FitFile(ReadableFile):
             data = pd.read_csv(self.file_path, skiprows=self.HEADER_ROWS - 1)
             data.columns = ['Time', 'Asymmetry', 'Calculated', 'Uncertainty']
             return data
-        except Exception:
-            raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS")
+        except Exception as e:
+            raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS") from e
 
     def read_meta(self):
         try:
@@ -423,8 +590,8 @@ class FitFile(ReadableFile):
             metadata = {pair[0]: pair[1] for pair in metadata}
             metadata[T0_KEY] = 0
             return metadata
-        except Exception:
-            raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS")
+        except Exception as e:
+            raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS") from e
 
 
 def file(file_path: str) -> File:
@@ -448,6 +615,9 @@ def file(file_path: str) -> File:
 
     elif check_ext(file_path, Extensions.PSI_BIN) or check_ext(file_path, Extensions.PSI_MDU):
         return PSIMuonFile(file_path)
+
+    elif check_ext(file_path, Extensions.ISIS_NXS_V2):
+        return ISISMuonFile(file_path)
 
     elif check_ext(file_path, Extensions.SESSION):
         return BeamsSessionFile(file_path)
@@ -530,3 +700,4 @@ class BeamsFileConversionError(Exception):
 
     def __init__(self, *args):
         super(BeamsFileConversionError, self).__init__(*args)
+
