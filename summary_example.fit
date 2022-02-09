@@ -1,0 +1,30 @@
+#BEAMS
+
+# Summary
+RunNumber	Temperature 	α       	β       	λ       	a       	
+6520    	1.511(0.020)K	0.73107 	0.39690 	1.14100 	0.08860 	
+6521    	2.001(0.004)K	0.73068 	0.42116 	0.76717 	0.08005 	
+
+# Fit Parameters
+
+# 	Name    Value     Uncertainty Lower   Upper   
+
+C:/Users/Alec/BEAMS/testdata/006520.dat
+# Specific parameters for run 6520 (Cu2IrO3 LF=200G T=1.5K NSR)
+
+	α       0.73107   0.01636     -inf    inf     
+	β       0.39690   0.17743     -inf    inf     
+	λ       1.14100   0.42329     -inf    inf     
+	a       0.08860   0.03421     -inf    inf     
+
+C:/Users/Alec/BEAMS/testdata/006521.dat
+# Specific parameters for run 6521 (Cu2IrO3 LF=200G T=2K NSR)
+
+	α       0.73068   0.01948     -inf    inf     
+	β       0.42116   0.18635     -inf    inf     
+	λ       0.76717   0.28421     -inf    inf     
+	a       0.08005   0.03036     -inf    inf     
+
+# Expression
+
+	A(t) = a*exp(-(λ*t)^β)
