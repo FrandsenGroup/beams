@@ -9,6 +9,7 @@ import sys
 # Installed Packages
 import darkdetect
 import qdarkstyle
+import sentry_sdk
 from PyQt5 import QtWidgets, QtGui
 
 # BEAMS Modules
@@ -25,6 +26,12 @@ class BEAMS(QtWidgets.QApplication):
 
     def __init__(self):
         super(BEAMS, self).__init__(sys.argv)
+        sentry_sdk.init(
+            "https://ff7cf26a5b3d4d2ab1ff98320448fa04@o1139782.ingest.sentry.io/6196236",
+            traces_sample_rate=1.0,
+            release="v1.2.3"
+        )
+
         self.__system_service = services.SystemService()
         self.__file_service = services.FileService()
         self.__system_service.load_configuration_file()
@@ -69,6 +76,10 @@ class BEAMS(QtWidgets.QApplication):
         sys.exit(self.exec_())
 
     def exec_(self) -> int:
-        i = super(BEAMS, self).exec_()
-        self.__system_service.write_configuration_file()
-        return i
+        try:
+            i = super(BEAMS, self).exec_()
+            return i
+        except Exception:
+            raise
+        finally:
+            self.__system_service.write_configuration_file()
