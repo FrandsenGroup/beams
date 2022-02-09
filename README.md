@@ -283,6 +283,8 @@ The
 | .nxs_v2        | Histogram data from ISIS   |
 
 ### BEAMS File Formats
+Click on the file extension to see an example file (for non-binary file types).
+
 | File Extension | Description                                                                   |
 |----------------|-------------------------------------------------------------------------------|
 | [.dat](https://github.com/aPeter1/BEAMS/blob/assets/histogram_example.dat)            | Histogram data for a single run.                                              |
