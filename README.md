@@ -110,7 +110,7 @@ the alpha parameter for the asymmetry.
 
 #### Saving Asymmetry Data
 
-![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/dialog_write_data.gif)
+![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/dialog_write_data.png)
 
 <br>
 
