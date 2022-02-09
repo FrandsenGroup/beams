@@ -268,7 +268,20 @@ If you right-click on a single fit, a range of fits or a parent node in the left
 
 ![dialog for writing fit data](https://github.com/aPeter1/BEAMS/blob/assets/write-fit-dialog.png)
 
-The 
+###### Summary
+An example of this file can be found [here](https://github.com/aPeter1/BEAMS/blob/assets/summary_example.fit). It is a 
+single file summary of all fits you selected which you can order in the file by either temperature, field or run number 
+if those values are available. It can be read back in to the program to display the fits if you have not moved your
+data files (you will need to adjust the file paths in the .fit file if you have).
+
+###### Directory
+This creates a list of files (example of a single file found [here](https://github.com/aPeter1/BEAMS/blob/assets/fit_example.calc))
+in the provided directory. The file contains the full time, asymmetry, uncertainty and calculated asymmetry arrays. It's
+name is determined by the meta value you select in the prompt (this will be used for each fit selected so make sure you
+choose a unique meta value like RunNumber).
+
+###### Zip
+Same as the format above except the list of files is compressed as a zip file.
 
 
 ## File Formats
