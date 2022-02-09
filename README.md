@@ -18,7 +18,7 @@
     - [Plotting the Asymmetry](#plotting-the-asymmetry)
     - [Interacting with the Asymmetry](#interacting-with-the-asymmetry)
     - [Integrating the Asymmetry](#integrating-the-asymmetry)
-    - [Exporting Data](#exporting-asymmetry-data)
+    - [Exporting Data](#saving-asymmetry-data)
   - [Fitting Asymmetries](#fitting-asymmetries)
     - [Choosing your Fit Expression](#choosing-your-fit-expression)
     - [Specifying your Fit Parameters](#specifying-your-fit-parameters)
@@ -26,7 +26,7 @@
       - [Config](#config)
       - [Batch](#batch)
       - [Output](#output)
-    - [Exporting Data](#exporting-fit-data)
+    - [Exporting Data](#saving-fit-results)
   - [Interacting with Histograms](#interacting-with-histograms)
     - [Navigation Bar](#navigation-bar)
     - [Adjusting Values](#adjusting-values)
@@ -107,6 +107,10 @@ areas. On the left side panel you will see the legend for the plots, as well as 
 the alpha parameter for the asymmetry.
 
 ![choosing your histograms for asymmetry](https://github.com/aPeter1/BEAMS/blob/assets/plot_interaction.png)
+
+#### Saving Asymmetry Data
+
+![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/dialog_write_data.gif)
 
 <br>
 
@@ -263,8 +267,8 @@ Every run currently being displayed will have the color in the display shown to 
 
 ![beams logo](https://github.com/aPeter1/BEAMS/blob/assets/fitting-runs-example.gif)
 
-##### Saving Results
-If you right-click on a single fit, a range of fits or a parent node in the left-side panel you will see the option to 'save' these fits. If you click it, you will see a prompt which will offer several choices.
+##### Saving Fit Results
+If you right-click on a single fit, a range of fits, or a parent node in the left-side panel you will see the option to 'save' these fits. If you click it, you will see a prompt which will offer several choices.
 
 ![dialog for writing fit data](https://github.com/aPeter1/BEAMS/blob/assets/write-fit-dialog.png)
 
