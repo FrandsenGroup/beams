@@ -97,7 +97,7 @@ class RunService:
         pass
 
     def recalculate_asymmetries(self, ids):
-        self.__logger.debug("Updated Asymmetry for Runs=({})".format(str(ids)))
+        report.log_debug("Updated Asymmetry for Runs=({})".format(str(ids)))
         for run in self.__dao.get_runs_by_ids(ids):
             if len(run.histograms_used) == 2:
                 run.asymmetries[objects.RunDataset.FULL_ASYMMETRY] = objects.Asymmetry(
@@ -124,26 +124,26 @@ class RunService:
         self.signals.added.emit()
 
     def remove_runs_by_ids(self, ids):
-        self.__logger.debug("Removing Run Datasets=({})".format(str(ids)))
+        report.log_debug("Removing Run Datasets=({})".format(str(ids)))
         self.__dao.remove_runs_by_ids(ids)
 
         self.signals.loaded.emit()
 
     def add_dataset(self, datasets, suppress_signal):
-        self.__logger.debug("Adding Run Datasets=({})".format(str(datasets)))
+        report.log_debug("Adding Run Datasets=({})".format(str(datasets)))
         self.__dao.add_runs(datasets)
 
         if not suppress_signal:
             self.signals.added.emit()
 
     def update_runs_by_ids(self, ids, asymmetries):
-        self.__logger.debug(
+        report.log_debug(
             "Updating Asymmetries for Runs=({}) with Asymmetries=({})".format(str(ids), str(asymmetries)))
         self.__dao.update_runs_by_id(ids, asymmetries)
         self.signals.changed.emit()
 
     def update_alphas(self, ids, alphas):
-        self.__logger.debug("Updating Alphas for Runs=({}) with Alphas=({})".format(str(ids), str(alphas)))
+        report.log_debug("Updating Alphas for Runs=({}) with Alphas=({})".format(str(ids), str(alphas)))
         if len(alphas) == 1:  # When we update alpha from plotting panel we send one alpha for multiple runs
             alpha = alphas[0]
             alphas = [alpha for _ in ids]
@@ -304,7 +304,7 @@ class StyleService:
         style[StyleService.Keys.FIT_COLOR] = 'Default'
         style[StyleService.Keys.FIT_LINESTYLE] = '-'
 
-        self.__logger.debug("Style Created for Run ({}) = {}".format(run.id, style))
+        report.log_debug("Style Created for Run ({}) = {}".format(run.id, style))
         self.__dao.add_style(run.id, style)
 
     def change_color_for_run(self, run_id, color, stop_signal=None):
@@ -444,7 +444,7 @@ class SystemService:
                 user_data = json.load(fp)
                 self._set_configuration(user_data)
             except json.JSONDecodeError:
-                self.__logger.error("Unable to load the configuration file.")
+                report.report_message("Unable to load the configuration file.")
                 self._set_default_configuration()
 
     def write_configuration_file(self):

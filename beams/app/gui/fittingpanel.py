@@ -1652,12 +1652,11 @@ class FitTabPresenter(PanelPresenter):
         config.parameters = variables
         config.titles = fit_titles
         config.set_flags(0)
-        self.__logger.info(str(config).encode("utf-8"))
+        report.log_info(str(config).encode("utf-8"))
 
         # Fit to spec
         worker = FitWorker(config)
         worker.signals.result.connect(self._update_fit_changes)
-        worker.signals.error.connect(lambda e: self.__logger.error(e))
         worker.signals.error.connect(lambda error_message: WarningMessageDialog.launch([error_message]))
         self._threadpool.start(worker)
 
