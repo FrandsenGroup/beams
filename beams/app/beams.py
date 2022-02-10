@@ -77,4 +77,5 @@ class BEAMS(QtWidgets.QApplication):
         except Exception as e:
             report.report_exception(e)
         finally:
+            report.close()
             self.__system_service.write_configuration_file()

@@ -35,6 +35,13 @@ def init_reporting():
     logger.addHandler(stream)
 
 
+def close():
+    client = sentry_sdk.Hub.current.client
+
+    if client is not None:
+        client.close(timeout=2.0)
+
+
 def log_debug(m):
     try:
         logging.getLogger(__name__).debug(m)
