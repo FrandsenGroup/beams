@@ -177,11 +177,11 @@ class TRIUMFMuonFile(ConvertibleFile):
         flags = ['-all']
         if is_found(self.file_path) and check_ext(self.file_path, Extensions.TRIUMF) and check_ext(out_file,
                                                                                                    Extensions.HISTOGRAM):
-            system_args = {'win32': ['beams\\app\\resources\\mud\\TRIUMF_WINDOWS', self.file_path, out_file],
+            system_args = {'win32': ['beams\\app\\resources\\binaries\\TRIUMF_WINDOWS', self.file_path, out_file],
                            # Windows Syntax
-                           'linux': ['./beams/app/resources/mud/TRIUMF_LINUX', self.file_path, out_file],
+                           'linux': ['./beams/app/resources/binaries/TRIUMF_LINUX', self.file_path, out_file],
                            # Linux Syntax
-                           'darwin': ['./beams/app/resources/mud/TRIUMF_MAC', self.file_path, out_file]}  # Mac Syntax
+                           'darwin': ['./beams/app/resources/binaries/TRIUMF_MAC', self.file_path, out_file]}  # Mac Syntax
 
             if sys.platform in system_args.keys():
                 args = system_args[sys.platform]
@@ -216,10 +216,10 @@ class PSIMuonFile(ConvertibleFile):
                 check_ext(self.file_path, Extensions.PSI_BIN) or check_ext(self.file_path, Extensions.PSI_MDU)) \
                 and check_ext(out_file, Extensions.HISTOGRAM):
 
-            system_args = {'win32': ['beams\\app\\resources\\mud\\PSI_WINDOWS', self.file_path, out_file],
+            system_args = {'win32': ['beams\\app\\resources\\binaries\\PSI_WINDOWS', self.file_path, out_file],
                            # Windows Syntax
-                           'linux': ['./beams/app/resources/mud/PSI_LINUX', self.file_path, out_file],  # Linux Syntax
-                           'darwin': ['./beams/app/resources/mud/PSI_MAC', self.file_path, out_file]}  # Mac Syntax
+                           'linux': ['./beams/app/resources/binaries/PSI_LINUX', self.file_path, out_file],  # Linux Syntax
+                           'darwin': ['./beams/app/resources/binaries/PSI_MAC', self.file_path, out_file]}  # Mac Syntax
 
             if sys.platform in system_args.keys():
                 args = system_args[sys.platform]
