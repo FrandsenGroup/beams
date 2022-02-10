@@ -12,6 +12,7 @@ import copy
 import traceback
 
 from app.model import objects
+from app.util import report
 
 INDEPENDENT_VARIABLE = "t"
 

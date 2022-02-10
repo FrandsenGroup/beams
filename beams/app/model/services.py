@@ -9,6 +9,7 @@ from PyQt5 import QtCore
 import app.model.data_access as dao
 from app.model import objects, files
 from app.resources import resources
+from app.util import report
 
 
 class Service:

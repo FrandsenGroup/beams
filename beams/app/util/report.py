@@ -22,17 +22,23 @@ def init_reporting():
     )
 
     logging.getLogger('matplotlib').setLevel(logging.ERROR)
+    logging.getLogger('scipy').setLevel(logging.ERROR)
+    logging.getLogger('sympy').setLevel(logging.ERROR)
 
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
+    for handler in logging.root.handlers[:]:
+        logging.root.removeHandler(handler)
 
-    file = logging.FileHandler(resources.LOG_FILE)
-    file.setLevel(logging.DEBUG)
-    logger.addHandler(file)
+    # Haven't been able to get logging to file to work with PyQt5 for some reason, honestly doesn't matter anymore.
+    # logging.basicConfig(level=logging.DEBUG,
+    #                     format='%(asctime)s %(message)s',
+    #                     datefmt='%a, %d %b %Y %H:%M:%S',
+    #                     filename=resources.LOG_FILE,
+    #                     filemode='w',
+    #                     force=True)
 
-    stream = logging.StreamHandler()
-    stream.setLevel(logging.INFO)
-    logger.addHandler(stream)
+    console = logging.StreamHandler()
+    console.setLevel(logging.ERROR)
+    logging.getLogger("BEAMS").addHandler(console)
 
 
 def close():
@@ -46,7 +52,7 @@ def close():
 
 def log_debug(m):
     try:
-        logging.getLogger(__name__).debug(m)
+        logging.getLogger("BEAMS").debug(m)
     except Exception as ie:
         print(get_exception_stack(ie))
         print(m)
@@ -54,7 +60,7 @@ def log_debug(m):
 
 def log_info(m):
     try:
-        logging.getLogger(__name__).info(m)
+        logging.getLogger("BEAMS").info(m)
     except Exception as ie:
         print(get_exception_stack(ie))
         print(m)
@@ -62,7 +68,7 @@ def log_info(m):
 
 def log_exception(e):
     try:
-        logging.getLogger(__name__).error(get_exception_stack(e))
+        logging.getLogger("BEAMS").error(get_exception_stack(e))
     except Exception as ie:
         print(get_exception_stack(ie))
         print(get_exception_stack(e))
