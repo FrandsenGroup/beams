@@ -13,7 +13,7 @@ from app.gui.dialogs.dialog_plot_file import PlotFileDialog
 from app.gui.dialogs.dialog_isis_histogram_combinations import IsisHistogramCombinationDialog
 from app.gui.gui import PanelPresenter
 from app.model import files, services, objects
-from app.util import qt_widgets, qt_constants
+from app.util import qt_widgets, qt_constants, report
 
 
 class MainConsolePanel(QtWidgets.QDockWidget):
@@ -174,6 +174,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
                     try:
                         self.__file_service.load_session(self.model.id)
                     except files.BeamsFileReadError as e:
+                        report.report_exception(e)
                         WarningMessageDialog.launch([str(e)])
 
     class FitNode(QtWidgets.QTreeWidgetItem):
@@ -446,7 +447,7 @@ class MainConsolePanelPresenter(PanelPresenter):
                         self.__file_service.load_session(f.id)
                         return
                     except files.BeamsFileReadError as e:
-                        self.__logger.error(traceback.format_exc())
+                        report.report_exception(e)
                         WarningMessageDialog.launch([str(e)])
 
         runs = []
@@ -493,7 +494,7 @@ class MainConsolePanelPresenter(PanelPresenter):
             try:
                 self.__file_service.load_files(file_ids)
             except files.BeamsFileReadError as e:
-                self.__logger.error(traceback.format_exc())
+                report.report_exception(e)
                 WarningMessageDialog.launch([str(e)])
                 return
 
@@ -517,8 +518,8 @@ class MainConsolePanelPresenter(PanelPresenter):
 
         try:
             self.__file_service.convert_files(file_ids)
-        except files.BeamsFileConversionError:
-            self.__logger.error(traceback.format_exc())
+        except files.BeamsFileConversionError as e:
+            report.report_exception(e)
             WarningMessageDialog.launch(["There was an error converting some or all of the selected files."])
 
     @QtCore.pyqtSlot()

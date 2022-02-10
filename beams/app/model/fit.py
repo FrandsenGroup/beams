@@ -12,6 +12,7 @@ import copy
 import traceback
 
 from app.model import objects
+from app.util import report
 
 INDEPENDENT_VARIABLE = "t"
 
@@ -297,7 +298,7 @@ class FitEngine:
         self.__logger = logging.getLogger(__name__)
 
     def fit(self, config: FitConfig) -> objects.FitDataset:
-        self.__logger.debug("Config passed to FitEngine: {}".format(str(config)))
+        report.log_debug("Config passed to FitEngine: {}".format(str(config)))
 
         if len(set([len(asymmetry) for asymmetry in config.data.values()])) != 1:
             raise ValueError("Must have one or more datasets all of equal length to fit")

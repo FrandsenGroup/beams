@@ -8,7 +8,7 @@ from datetime import datetime
 import requests
 from PyQt5 import QtWidgets, QtCore
 
-from app.util import qt_widgets, qt_constants
+from app.util import qt_widgets, qt_constants, report
 from app.model import services
 
 
@@ -452,7 +452,8 @@ class MusrDownloadDialogPresenter(QtCore.QObject):
 
             try:
                 response = requests.get(full_url)
-            except requests.exceptions.ConnectionError:
+            except requests.exceptions.ConnectionError as e:
+                report.report_exception(e)
                 self._view.log_message('Failed to download {}. Connection Error\n'.format(full_url))
                 continue
 

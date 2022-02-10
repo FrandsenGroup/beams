@@ -16,7 +16,7 @@ from PyQt5 import QtWidgets, QtGui
 from app.gui import mainwindow
 from app.model import services
 from app.resources import resources
-from app.util import qt_constants
+from app.util import qt_constants, report
 
 
 class BEAMS(QtWidgets.QApplication):
@@ -26,27 +26,11 @@ class BEAMS(QtWidgets.QApplication):
 
     def __init__(self):
         super(BEAMS, self).__init__(sys.argv)
-        sentry_sdk.init(
-            "https://ff7cf26a5b3d4d2ab1ff98320448fa04@o1139782.ingest.sentry.io/6196236",
-            traces_sample_rate=1.0,
-            release="v1.2.3"
-        )
+        report.init_reporting()
 
         self.__system_service = services.SystemService()
         self.__file_service = services.FileService()
         self.__system_service.load_configuration_file()
-        logging.getLogger('matplotlib').setLevel(logging.ERROR)
-
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.DEBUG)
-
-        file = logging.FileHandler(resources.QT_LOG_FILE)
-        file.setLevel(logging.DEBUG)
-        logger.addHandler(file)
-
-        stream = logging.StreamHandler()
-        stream.setLevel(logging.INFO)
-        logger.addHandler(stream)
 
         pix = QtGui.QPixmap(resources.SPLASH_IMAGE)
         self.splash = QtWidgets.QSplashScreen(pix.scaledToHeight(200, qt_constants.SmoothTransformation))
@@ -62,6 +46,7 @@ class BEAMS(QtWidgets.QApplication):
                 self.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette))
             else:
                 self.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
+
         db = QtGui.QFontDatabase()
         db.addApplicationFont(resources.LATO_BLACK_FONT)
         db.addApplicationFont(resources.LATO_BLACK_ITALIC_FONT)
@@ -89,7 +74,8 @@ class BEAMS(QtWidgets.QApplication):
         try:
             i = super(BEAMS, self).exec_()
             return i
-        except Exception:
-            raise
+        except Exception as e:
+            report.report_exception(e)
         finally:
+            report.close()
             self.__system_service.write_configuration_file()

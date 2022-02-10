@@ -52,9 +52,9 @@ try:
         with open(CONFIGURATION_FILE, 'w+') as f:
             pass
 
-    QT_LOG_FILE = str(Path('beams/app/resources/qt.log'))
+    LOG_FILE = str(Path('beams/app/resources/beams.log'))
 
-    with open(QT_LOG_FILE, 'w') as fp:
+    with open(LOG_FILE, 'w') as fp:
         fp.truncate(0)
 except FileNotFoundError:
     CONFIGURATION_FILE = str(Path('app.config'))
@@ -63,7 +63,7 @@ except FileNotFoundError:
         with open(CONFIGURATION_FILE, 'w+') as f:
             pass
 
-    QT_LOG_FILE = str(Path('qt.log'))
+    LOG_FILE = str(Path('beams.log'))
 
-    with open(QT_LOG_FILE, 'w') as fp:
+    with open(LOG_FILE, 'w') as fp:
         fp.truncate(0)
