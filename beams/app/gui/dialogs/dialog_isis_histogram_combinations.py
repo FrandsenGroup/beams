@@ -6,7 +6,7 @@ from PyQt5 import QtWidgets, QtCore
 
 from app.model import objects
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
-from app.util import qt_constants
+from app.util import qt_constants, report
 
 
 class IsisHistogramCombinationDialog(QtWidgets.QDialog):

@@ -3,7 +3,7 @@ import zipfile
 
 from PyQt5 import QtCore, QtWidgets
 
-from app.util import qt_widgets
+from app.util import qt_widgets, report
 from app.gui.dialogs import dialog_misc
 from app.model import objects, services, files
 
@@ -156,9 +156,9 @@ class WriteFitDialogPresenter(QtCore.QObject):
                 return
 
             try:
-
                 self._dataset.write(save_path, order_by_key)
             except Exception as e:
+                report.report_exception(e)
                 dialog_misc.WarningMessageDialog.launch(["Error writing dataset file: " + str(e)])
                 return
 
@@ -173,6 +173,7 @@ class WriteFitDialogPresenter(QtCore.QObject):
                     full_file_path = os.path.join(save_directory, str(fit.meta[prefix_key]) + files.Extensions.FIT)
                     fit.write(full_file_path)
             except Exception as e:
+                report.report_exception(e)
                 dialog_misc.WarningMessageDialog.launch(["Error writing dataset file: " + str(e)])
                 return
 
@@ -192,6 +193,7 @@ class WriteFitDialogPresenter(QtCore.QObject):
                     for f in fit_files:
                         z.write(f)
             except Exception as e:
+                report.report_exception(e)
                 dialog_misc.WarningMessageDialog.launch(["Error writing to zip file: " + str(e)])
                 return
             finally:

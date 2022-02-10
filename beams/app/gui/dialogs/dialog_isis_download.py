@@ -11,7 +11,7 @@ import requests
 from PyQt5 import QtWidgets, QtCore
 
 from app.model import services
-from app.util import qt_widgets, qt_constants
+from app.util import qt_widgets, qt_constants, report
 
 
 # noinspection PyArgumentList
@@ -290,7 +290,8 @@ class ISISDownloadDialogPresenter(QtCore.QObject):
         data = {'json': json.dumps({'plugin': 'anon', 'credentials': [{'username': ''}, {'password': ''}]})}
         try:
             response = requests.post(self._session_url, data=data)
-        except requests.ConnectionError:
+        except requests.ConnectionError as e:
+            report.report_exception(e)
             self._view.log_message('Couldn\'t get a session ID for ISIS. Connection Error.\n')
             self._session_id = None
             self._session_start = None
@@ -322,7 +323,8 @@ class ISISDownloadDialogPresenter(QtCore.QObject):
 
         try:
             response = requests.get(self._entity_url + query_string)
-        except requests.ConnectionError:
+        except requests.ConnectionError as e:
+            report.report_exception(e)
             self._view.log_message('Couldn\'t get a session ID for ISIS. Connection Error.\n')
             return
 
@@ -335,7 +337,8 @@ class ISISDownloadDialogPresenter(QtCore.QObject):
 
         try:
             response = requests.get(self._entity_url + query_string)
-        except requests.ConnectionError:
+        except requests.ConnectionError as e:
+            report.report_exception(e)
             self._view.log_message('Couldn\'t get a session ID for ISIS. Connection Error.\n')
             return
 
@@ -352,7 +355,8 @@ class ISISDownloadDialogPresenter(QtCore.QObject):
 
         try:
             response = requests.get(self._file_data_url + query_string)
-        except requests.ConnectionError:
+        except requests.ConnectionError as e:
+            report.report_exception(e)
             self._view.log_message('Couldn\'t get a session ID for ISIS. Connection Error.\n')
             return
 
@@ -378,7 +382,8 @@ class ISISDownloadDialogPresenter(QtCore.QObject):
 
         try:
             requests.post(self._cart_url, data=form_data)
-        except requests.ConnectionError:
+        except requests.ConnectionError as e:
+            report.report_exception(e)
             self._view.log_message('Couldn\'t get a session ID for ISIS. Connection Error.\n')
             return False
 
@@ -389,7 +394,8 @@ class ISISDownloadDialogPresenter(QtCore.QObject):
 
         try:
             response = requests.post(self._submit_url, data=form_data)
-        except requests.ConnectionError:
+        except requests.ConnectionError as e:
+            report.report_exception(e)
             self._view.log_message('Couldn\'t get a session ID for ISIS. Connection Error.\n')
             return
 
@@ -400,7 +406,8 @@ class ISISDownloadDialogPresenter(QtCore.QObject):
 
         try:
             response = requests.get(self._download_url + query_string)
-        except requests.ConnectionError:
+        except requests.ConnectionError as e:
+            report.report_exception(e)
             self._view.log_message('Couldn\'t get a session ID for ISIS. Connection Error.\n')
             return
 
@@ -422,7 +429,8 @@ class ISISDownloadDialogPresenter(QtCore.QObject):
 
         try:
             response = requests.get(self._data_url + query_string)
-        except requests.ConnectionError:
+        except requests.ConnectionError as e:
+            report.report_exception(e)
             self._view.log_message('Failed to download {}. Connection Error\n'.format(query_string))
             return
 

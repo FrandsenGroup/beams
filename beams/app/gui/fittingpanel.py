@@ -1,6 +1,5 @@
 import logging
 import re
-import traceback
 from collections import OrderedDict
 from concurrent import futures
 from functools import partial
@@ -14,7 +13,7 @@ import numpy as np
 from app.resources import resources
 from app.gui.dialogs.dialog_misc import WarningMessageDialog, LoadingDialog
 from app.gui.dialogs.dialog_write_fit import WriteFitDialog
-from app.util import qt_widgets, qt_constants
+from app.util import qt_widgets, qt_constants, report
 from app.model import objects, fit, files, services
 from app.gui.gui import PanelPresenter, Panel
 
@@ -2230,7 +2229,7 @@ class FitWorker(QtCore.QRunnable):
                 fit_data.expression = fit.FitExpression(fit_data.string_expression)
 
         except Exception as e:
-            self.__logger.error(traceback.format_exc())
+            report.report_exception(e)
             self.signals.error.emit("Error Running Fit: ({})".format(str(e)))
         else:
             self.signals.result.emit(dataset)

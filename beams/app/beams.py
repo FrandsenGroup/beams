@@ -16,7 +16,7 @@ from PyQt5 import QtWidgets, QtGui
 from app.gui import mainwindow
 from app.model import services
 from app.resources import resources
-from app.util import qt_constants
+from app.util import qt_constants, report
 
 
 class BEAMS(QtWidgets.QApplication):
@@ -28,8 +28,11 @@ class BEAMS(QtWidgets.QApplication):
         super(BEAMS, self).__init__(sys.argv)
         sentry_sdk.init(
             "https://ff7cf26a5b3d4d2ab1ff98320448fa04@o1139782.ingest.sentry.io/6196236",
+            max_breadcrumbs=50,
             traces_sample_rate=1.0,
-            release="v1.2.3"
+            attach_stacktrace=True,
+            release="beams@0.1.0",
+            environment="development"
         )
 
         self.__system_service = services.SystemService()
@@ -62,6 +65,7 @@ class BEAMS(QtWidgets.QApplication):
                 self.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette))
             else:
                 self.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
+
         db = QtGui.QFontDatabase()
         db.addApplicationFont(resources.LATO_BLACK_FONT)
         db.addApplicationFont(resources.LATO_BLACK_ITALIC_FONT)
@@ -89,7 +93,7 @@ class BEAMS(QtWidgets.QApplication):
         try:
             i = super(BEAMS, self).exec_()
             return i
-        except Exception:
-            raise
+        except Exception as e:
+            report.report_exception(e)
         finally:
             self.__system_service.write_configuration_file()
