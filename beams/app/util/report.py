@@ -36,6 +36,8 @@ def init_reporting():
 
 
 def close():
+    logging.shutdown()
+
     client = sentry_sdk.Hub.current.client
 
     if client is not None:
