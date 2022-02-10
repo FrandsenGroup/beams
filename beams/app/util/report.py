@@ -26,7 +26,7 @@ def init_reporting():
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
 
-    file = logging.FileHandler(resources.QT_LOG_FILE)
+    file = logging.FileHandler(resources.LOG_FILE)
     file.setLevel(logging.DEBUG)
     logger.addHandler(file)
 
@@ -67,16 +67,16 @@ def log_exception(e):
 
 
 def report_info(m):
+    log_info(m)
     try:
         sentry_sdk.capture_message(m)
     except Exception as ie:
-        log_info(m)
         log_exception(ie)
 
 
-def report_exception(e, prompt=False):
+def report_exception(e):
+    log_exception(e)
     try:
         sentry_sdk.capture_exception(e)
     except Exception as ie:
-        log_exception(e)
         log_exception(ie)
