@@ -3,8 +3,6 @@ import sentry_sdk
 import logging
 import traceback
 
-from app.resources import resources
-
 
 def get_exception_stack(e: Exception):
     return ''.join(traceback.format_exception(type(e), e, e.__traceback__))
@@ -29,6 +27,7 @@ def init_reporting():
         logging.root.removeHandler(handler)
 
     # Haven't been able to get logging to file to work with PyQt5 for some reason, honestly doesn't matter anymore.
+    # from app.resources import resources
     # logging.basicConfig(level=logging.DEBUG,
     #                     format='%(asctime)s %(message)s',
     #                     datefmt='%a, %d %b %Y %H:%M:%S',
