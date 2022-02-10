@@ -3,13 +3,36 @@ import sentry_sdk
 import logging
 import traceback
 
+from app.resources import resources
+
 
 def get_exception_stack(e: Exception):
     return ''.join(traceback.format_exception(type(e), e, e.__traceback__))
 
 
 def init_reporting():
-    pass
+    sentry_sdk.init(
+        "https://ff7cf26a5b3d4d2ab1ff98320448fa04@o1139782.ingest.sentry.io/6196236",
+        max_breadcrumbs=50,
+        traces_sample_rate=1.0,
+        attach_stacktrace=True,
+        release="beams@0.1.0",
+        environment="development",
+        send_default_pii=True
+    )
+
+    logging.getLogger('matplotlib').setLevel(logging.ERROR)
+
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
+
+    file = logging.FileHandler(resources.QT_LOG_FILE)
+    file.setLevel(logging.DEBUG)
+    logger.addHandler(file)
+
+    stream = logging.StreamHandler()
+    stream.setLevel(logging.INFO)
+    logger.addHandler(stream)
 
 
 def log_debug(m):

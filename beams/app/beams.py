@@ -26,30 +26,11 @@ class BEAMS(QtWidgets.QApplication):
 
     def __init__(self):
         super(BEAMS, self).__init__(sys.argv)
-        sentry_sdk.init(
-            "https://ff7cf26a5b3d4d2ab1ff98320448fa04@o1139782.ingest.sentry.io/6196236",
-            max_breadcrumbs=50,
-            traces_sample_rate=1.0,
-            attach_stacktrace=True,
-            release="beams@0.1.0",
-            environment="development"
-        )
+        report.init_reporting()
 
         self.__system_service = services.SystemService()
         self.__file_service = services.FileService()
         self.__system_service.load_configuration_file()
-        logging.getLogger('matplotlib').setLevel(logging.ERROR)
-
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.DEBUG)
-
-        file = logging.FileHandler(resources.QT_LOG_FILE)
-        file.setLevel(logging.DEBUG)
-        logger.addHandler(file)
-
-        stream = logging.StreamHandler()
-        stream.setLevel(logging.INFO)
-        logger.addHandler(stream)
 
         pix = QtGui.QPixmap(resources.SPLASH_IMAGE)
         self.splash = QtWidgets.QSplashScreen(pix.scaledToHeight(200, qt_constants.SmoothTransformation))
