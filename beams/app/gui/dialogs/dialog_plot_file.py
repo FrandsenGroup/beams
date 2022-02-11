@@ -2,7 +2,7 @@ import enum
 
 from PyQt5 import QtWidgets, QtCore
 
-from app.util import qt_widgets
+from app.util import qt_widgets, report
 from app.model import files, services, objects
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
 
@@ -51,7 +51,6 @@ class PlotFileDialog(QtWidgets.QDialog):
         col.addLayout(row_1)
         col.addLayout(row_2)
         col.addWidget(self.status_bar)
-
 
         self.setLayout(col)
         self._presenter = PlotFileDialogPresenter(self, args[0])

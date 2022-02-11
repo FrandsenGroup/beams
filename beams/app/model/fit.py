@@ -12,6 +12,7 @@ import copy
 import traceback
 
 from app.model import objects
+from app.util import report
 
 INDEPENDENT_VARIABLE = "t"
 
@@ -294,10 +295,10 @@ class FitConfig:
 
 class FitEngine:
     def __init__(self):
-        self.__logger = logging.getLogger('FitEngine')
+        self.__logger = logging.getLogger(__name__)
 
     def fit(self, config: FitConfig) -> objects.FitDataset:
-        self.__logger.debug("Config passed to FitEngine: {}".format(str(config)))
+        report.log_debug("Config passed to FitEngine: {}".format(str(config)))
 
         if len(set([len(asymmetry) for asymmetry in config.data.values()])) != 1:
             raise ValueError("Must have one or more datasets all of equal length to fit")
@@ -361,6 +362,7 @@ class FitEngine:
                 unc, chi_sq = get_std_unc(opt, asymmetry)
             except (np.linalg.LinAlgError, NameError):  # Fit did not converge
                 unc = [-1 for _ in opt.x]
+                chi_sq = 0.0
 
             # 7) Replace initial values with fitted values for unfixed variables
             for i, symbol in enumerate(config.get_symbols_for_run(run_id, is_fixed=False)):
@@ -372,7 +374,7 @@ class FitEngine:
                     config.set_outputs(o_run_id, symbol, value, 0)
 
             # 9) Fill in all values for our new fit object
-            new_fit = objects.Fit(copy.deepcopy(config.parameters[run_id]), config.expression, config.titles[run_id], run_id, meta, asymmetry)
+            new_fit = objects.Fit(copy.deepcopy(config.parameters[run_id]), config.expression, config.titles[run_id], run_id, meta, asymmetry, goodness=chi_sq)
 
             # 10) Add fit to our dataset
             dataset.fits[run_id] = new_fit
@@ -416,6 +418,7 @@ class FitEngine:
             unc, chi_sq = get_std_unc(opt, concatenated_asymmetry)
         except (np.linalg.LinAlgError, NameError):  # Fit did not converge
             unc = [-1 for _ in opt.x]
+            chi_sq = 0.0
 
         # Assemble the Fit object, first by updating the parameters in the config with the outputs from
         #   the fit, as well as adding a FitExpression object that can be called.
@@ -445,7 +448,7 @@ class FitEngine:
             for symbol, value in zip(fixed_symbols, fixed_values):
                 config.set_outputs(run_id, symbol, value, 0)
 
-            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id, meta, asymmetry)
+            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id, meta, asymmetry, goodness=chi_sq)
 
             dataset.fits[run_id] = new_fit
 
@@ -484,6 +487,7 @@ class FitEngine:
                 unc, chi_sq = get_std_unc(opt, asymmetry)
             except (np.linalg.LinAlgError, NameError):  # Fit did not converge
                 unc = [-1 for _ in opt.x]
+                chi_sq = 0.0
 
             # 7) Replace initial values with fitted values for unfixed variables
             for i, symbol in enumerate(config.get_symbols_for_run(run_id, is_fixed=False)):
@@ -493,7 +497,7 @@ class FitEngine:
                 config.set_outputs(run_id, symbol, value, 0)
 
             # 9) Fill in all values for our new fit object
-            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id, meta, asymmetry)
+            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id, meta, asymmetry, goodness=chi_sq)
 
             # 10) Add fit to our dataset
             dataset.fits[run_id] = new_fit
@@ -564,6 +568,10 @@ class FitEngine:
     def _residual(lambda_expression):
         def residual(pars, x, y_data, dy_data):
             y_calc = lambda_expression(x, *pars)
+
+            if np.isnan(y_calc).any():
+                y_calc = np.nan_to_num(y_calc)
+
             return np.divide(np.subtract(y_data, y_calc), dy_data)
 
         return residual

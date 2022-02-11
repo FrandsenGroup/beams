@@ -1,5 +1,6 @@
 import logging
 import os
+import traceback
 
 from PyQt5 import QtWidgets, QtCore
 
@@ -9,9 +10,10 @@ from app.gui.dialogs.dialog_musr_download import MusrDownloadDialog
 from app.gui.dialogs.dialog_psi_download import PSIDownloadDialog
 from app.gui.dialogs.dialog_write_data import WriteDataDialog
 from app.gui.dialogs.dialog_plot_file import PlotFileDialog
+from app.gui.dialogs.dialog_isis_histogram_combinations import IsisHistogramCombinationDialog
 from app.gui.gui import PanelPresenter
 from app.model import files, services, objects
-from app.util import qt_widgets, qt_constants
+from app.util import qt_widgets, qt_constants, report
 
 
 class MainConsolePanel(QtWidgets.QDockWidget):
@@ -68,7 +70,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         def __init__(self, view):
             super().__init__(view)
             self.__view = view
-            self.__logger = logging.getLogger("MainConsolePanelTreeManager")
+            self.__logger = logging.getLogger(__name__)
             self.__run_service = services.RunService()
             self.__fit_service = services.FitService()
             self.__file_service = services.FileService()
@@ -172,6 +174,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
                     try:
                         self.__file_service.load_session(self.model.id)
                     except files.BeamsFileReadError as e:
+                        report.report_exception(e)
                         WarningMessageDialog.launch([str(e)])
 
     class FitNode(QtWidgets.QTreeWidgetItem):
@@ -363,7 +366,6 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         hbox_one.addWidget(self.load_button)
         hbox_one.addWidget(self.write_button)
 
-
         self.tree_view.setHorizontalScrollBarPolicy(qt_constants.ScrollBarAsNeeded)
         self.tree_view.header().setMinimumSectionSize(600)
         self.tree_view.header().setDefaultSectionSize(900)
@@ -390,7 +392,7 @@ class MainConsolePanelPresenter(PanelPresenter):
         
         self.__file_service = services.FileService()
         self.__system_service = services.SystemService()
-        self.__logger = logging.getLogger("MainConsolePanelPresenter")
+        self.__logger = logging.getLogger(__name__)
         
         self._set_callbacks()
         
@@ -445,6 +447,7 @@ class MainConsolePanelPresenter(PanelPresenter):
                         self.__file_service.load_session(f.id)
                         return
                     except files.BeamsFileReadError as e:
+                        report.report_exception(e)
                         WarningMessageDialog.launch([str(e)])
 
         runs = []
@@ -491,6 +494,7 @@ class MainConsolePanelPresenter(PanelPresenter):
             try:
                 self.__file_service.load_files(file_ids)
             except files.BeamsFileReadError as e:
+                report.report_exception(e)
                 WarningMessageDialog.launch([str(e)])
                 return
 
@@ -502,7 +506,21 @@ class MainConsolePanelPresenter(PanelPresenter):
 
     @QtCore.pyqtSlot()
     def _on_convert_file_clicked(self):
-        self.__file_service.convert_files(self._view.tree_view.get_file_ids())
+        file_ids = self._view.tree_view.get_file_ids()
+        file_objects = self.__file_service.get_files(file_ids)
+
+        isis_files = list(filter(lambda o: o.file.SOURCE == files.Source.ISIS, file_objects))
+        if len(isis_files) != 0:
+            code = IsisHistogramCombinationDialog.launch(isis_files)
+
+            if code == IsisHistogramCombinationDialog.Codes.Cancel:
+                return
+
+        try:
+            self.__file_service.convert_files(file_ids)
+        except files.BeamsFileConversionError as e:
+            report.report_exception(e)
+            WarningMessageDialog.launch(["There was an error converting some or all of the selected files."])
 
     @QtCore.pyqtSlot()
     def _on_remove_file_clicked(self):

@@ -168,7 +168,7 @@ class HistogramPanel(Panel):
             def __init__(self, view):
                 super().__init__(view)
                 self.__view = view
-                self.__logger = logging.getLogger("HistogramPanelTreeManager")
+                self.__logger = logging.getLogger(__name__)
                 self.__run_service = services.RunService()
                 self.__fit_service = services.FitService()
                 self.__file_service = services.FileService()
@@ -650,7 +650,7 @@ class HistogramPanel(Panel):
 class HistogramPanelPresenter(PanelPresenter):
     def __init__(self, view: Panel):
         super().__init__(view)
-        self.__logger = logging.getLogger("HistogramPanelPresenter")
+        self.__logger = logging.getLogger(__name__)
         self.__run_service = services.RunService()
         self.__alterations = {}
         self.__current_histogram = None

@@ -8,3 +8,5 @@ matplotlib
 pytest
 qdarkstyle
 darkdetect
+h5py
+sentry_sdk

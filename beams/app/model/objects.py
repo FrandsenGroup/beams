@@ -93,21 +93,20 @@ class Histogram(np.ndarray):
 
     def __eq__(self, other):
         return self.time_zero == other.time_zero and \
-            self.good_bin_start == other.good_bin_start and \
-            self.good_bin_end == other.good_bin_end and \
-            self.background_start == other.background_start and \
-            self.background_end == other.background_end and \
-            self.bin_size == other.bin_size and \
-            self.title == other.title and \
-            np.array_equal(self, other)
+               self.good_bin_start == other.good_bin_start and \
+               self.good_bin_end == other.good_bin_end and \
+               self.background_start == other.background_start and \
+               self.background_end == other.background_end and \
+               self.bin_size == other.bin_size and \
+               self.title == other.title and \
+               np.array_equal(self, other)
 
     def __reduce__(self):
         pickled_state = super(Histogram, self).__reduce__()
 
         new_state = pickled_state[2] + (self.__dict__,)
 
-        # Parenthesis are not redundant, don't remove.
-        return (pickled_state[0], pickled_state[1], new_state)
+        return pickled_state[0], pickled_state[1], new_state
 
     def __setstate__(self, state, **kwargs):
         self.__dict__.update(state[-1])
@@ -385,19 +384,18 @@ class Asymmetry(np.ndarray):
 
     def __eq__(self, other):
         return self.bin_size == other.bin_size and \
-            self.time_zero == other.time_zero and \
-            self.alpha == other.alpha and \
-            np.array_equal(self, other) and \
-            np.array_equal(self.time, other.time) and \
-            np.array_equal(self.uncertainty, other.uncertainty)
+               self.time_zero == other.time_zero and \
+               self.alpha == other.alpha and \
+               np.array_equal(self, other) and \
+               np.array_equal(self.time, other.time) and \
+               np.array_equal(self.uncertainty, other.uncertainty)
 
     def __reduce__(self):
         pickled_state = super(Asymmetry, self).__reduce__()
 
         new_state = pickled_state[2] + (self.__dict__,)
 
-        # Parenthesis are not redundant, don't remove.
-        return (pickled_state[0], pickled_state[1], new_state)
+        return pickled_state[0], pickled_state[1], new_state
 
     def __setstate__(self, state, **kwargs):
         self.__dict__.update(state[-1])
@@ -577,7 +575,8 @@ class Asymmetry(np.ndarray):
 
         if min_time is not None:
             if max_time is not None and min_time >= max_time:
-                raise ValueError("Min_time and max_time create an invalid range of asymmetry ({} -> {})".format(min_time, max_time))
+                raise ValueError(
+                    "Min_time and max_time create an invalid range of asymmetry ({} -> {})".format(min_time, max_time))
             if min_time > self.time[-1]:
                 return Asymmetry(input_array=[], time_zero=self.time_zero, bin_size=self.bin_size, time=[],
                                  uncertainty=[], alpha=self.alpha, calculated=None if self.calculated is None else [])
@@ -618,8 +617,8 @@ class Uncertainty(np.ndarray):
 
         if input_array is None:
             start_bin_one, start_bin_two, end_bin_one, end_bin_two, time_zero = histogram_one.intersect(histogram_two)
-            histogram_one_good = histogram_one[start_bin_one - 1: end_bin_one + 1]
-            histogram_two_good = histogram_two[start_bin_one - 1: end_bin_one + 1]
+            histogram_one_good = histogram_one[start_bin_one - 1: end_bin_one]
+            histogram_two_good = histogram_two[start_bin_one - 1: end_bin_one]
             d_histogram_one = np.sqrt(histogram_one_good)
             d_histogram_two = np.sqrt(histogram_two_good)
             np.nan_to_num(histogram_one_good)
@@ -649,8 +648,7 @@ class Uncertainty(np.ndarray):
 
         new_state = pickled_state[2] + (self.__dict__,)
 
-        # Parenthesis are not redundant, don't remove.
-        return (pickled_state[0], pickled_state[1], new_state)
+        return pickled_state[0], pickled_state[1], new_state
 
     def __setstate__(self, state, **kwargs):
         self.__dict__.update(state[-1])
@@ -728,8 +726,7 @@ class Time(np.ndarray):
 
         new_state = pickled_state[2] + (self.__dict__,)
 
-        # Parenthesis are not redundant, don't remove.
-        return (pickled_state[0], pickled_state[1], new_state)
+        return pickled_state[0], pickled_state[1], new_state
 
     def __setstate__(self, state, **kwargs):
         self.__dict__.update(state[-1])
@@ -815,7 +812,7 @@ class FFT:
 
 
 class Fit:
-    def __init__(self, parameters, expression, title, run_id, meta, asymmetry: Asymmetry):
+    def __init__(self, parameters, expression, title, run_id, meta, asymmetry: Asymmetry, goodness: float = None):
         self.id = str(uuid.uuid4())
         self.parameters = parameters
         self.string_expression = expression
@@ -823,6 +820,7 @@ class Fit:
         self.run_id = run_id  # "UNLINKED" -> run_id of the dataset you created
         self.meta = meta
         self.asymmetry = asymmetry  # Prompt with the plot prompt
+        self.goodness = None if goodness is None else float(goodness)
 
         from app.model import fit
         self.expression = fit.FitExpression(expression)
@@ -954,7 +952,7 @@ class FitDataset:
             out_file_object.write("#BEAMS\n"
                                   + fit_parameters_string
                                   + "# Expression\n\n\t"
-                                  + "A(t) = " + self.expression)
+                                  + "A(t) = " + str(self.expression))
 
 
 class RunDataset:

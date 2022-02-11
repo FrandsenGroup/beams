@@ -3,7 +3,7 @@ import zipfile
 
 from PyQt5 import QtCore, QtWidgets
 
-from app.util import qt_widgets
+from app.util import qt_widgets, report
 from app.gui.dialogs import dialog_misc
 from app.model import objects, services, files
 
@@ -17,15 +17,15 @@ class WriteFitDialog(QtWidgets.QDialog):
         self.radio_summary = QtWidgets.QRadioButton("Summary")
         self.radio_directory = QtWidgets.QRadioButton("Directory")
         self.radio_zip = QtWidgets.QRadioButton("Zip")
-        self.button_save_as = qt_widgets.StyleOneButton("Save As")
-        self.button_done = qt_widgets.StyleOneButton("Done")
+        self.button_save_as = qt_widgets.StyleOneButton("Save")
+        self.button_done = qt_widgets.StyleOneButton("Cancel")
         self.option_prefix = QtWidgets.QComboBox()
         self.option_order_by = QtWidgets.QComboBox()
 
         self.summary_button_group = QtWidgets.QButtonGroup()
         self.individual_button_group = QtWidgets.QButtonGroup()
 
-        # TODO perhaps we should add ability to specify bin size and spectrum limits here.
+        # TODO we should add ability to specify bin size and spectrum limits here.
 
         self._set_attributes()
         self._set_layout()
@@ -33,15 +33,19 @@ class WriteFitDialog(QtWidgets.QDialog):
         self._presenter = WriteFitDialogPresenter(self, dataset)
 
     def _set_attributes(self):
-        magical_list = list(self._dataset.fits.values())[0].meta.keys()
+        metas = [f.meta for f in self._dataset.fits.values()]
 
-        self.option_prefix.addItems(magical_list)
-        self.option_prefix.setEnabled(False)
-
-        possible_values_list = [files.TEMPERATURE_KEY, files.FIELD_KEY, files.RUN_NUMBER_KEY]
-        order_by_list = [x for x in possible_values_list if x in magical_list]
+        meta_keys = metas[0].keys()
+        possible_order_by_list = [files.TEMPERATURE_KEY, files.FIELD_KEY, files.RUN_NUMBER_KEY]
+        order_by_list = [x for x in possible_order_by_list if x in meta_keys]
 
         self.option_order_by.addItems(order_by_list)
+
+        # We only want to use keys as filenames if there is a unique value for reach run
+        meta_keys = [k for k in meta_keys if len(set([str(m[k]) for m in metas])) == len(metas)]
+
+        self.option_prefix.addItems(meta_keys)
+        self.option_prefix.setEnabled(False)
 
         self.individual_button_group.addButton(self.radio_zip)
         self.individual_button_group.addButton(self.radio_directory)
@@ -59,9 +63,13 @@ class WriteFitDialog(QtWidgets.QDialog):
     def _set_layout(self):
         vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(self.radio_summary)
+        hbox = QtWidgets.QHBoxLayout()
+        hbox.addWidget(QtWidgets.QLabel("Order runs by:"))
+        hbox.addStretch()
+        vbox.addLayout(hbox)
         vbox.addWidget(self.option_order_by)
 
-        summary_group = QtWidgets.QGroupBox("Summary")
+        summary_group = QtWidgets.QGroupBox("Single File")
         summary_group.setLayout(vbox)
 
         vbox = QtWidgets.QVBoxLayout()
@@ -69,8 +77,12 @@ class WriteFitDialog(QtWidgets.QDialog):
         hbox.addWidget(self.radio_directory)
         hbox.addWidget(self.radio_zip)
         vbox.addLayout(hbox)
+        hbox = QtWidgets.QHBoxLayout()
+        hbox.addWidget(QtWidgets.QLabel("Name files by:"))
+        hbox.addStretch()
+        vbox.addLayout(hbox)
         vbox.addWidget(self.option_prefix)
-        individual_group = QtWidgets.QGroupBox("Individual")
+        individual_group = QtWidgets.QGroupBox("Collection of Files")
         individual_group.setLayout(vbox)
 
         hbox = QtWidgets.QHBoxLayout()
@@ -144,9 +156,9 @@ class WriteFitDialogPresenter(QtCore.QObject):
                 return
 
             try:
-
                 self._dataset.write(save_path, order_by_key)
             except Exception as e:
+                report.report_exception(e)
                 dialog_misc.WarningMessageDialog.launch(["Error writing dataset file: " + str(e)])
                 return
 
@@ -161,6 +173,7 @@ class WriteFitDialogPresenter(QtCore.QObject):
                     full_file_path = os.path.join(save_directory, str(fit.meta[prefix_key]) + files.Extensions.FIT)
                     fit.write(full_file_path)
             except Exception as e:
+                report.report_exception(e)
                 dialog_misc.WarningMessageDialog.launch(["Error writing dataset file: " + str(e)])
                 return
 
@@ -180,6 +193,7 @@ class WriteFitDialogPresenter(QtCore.QObject):
                     for f in fit_files:
                         z.write(f)
             except Exception as e:
+                report.report_exception(e)
                 dialog_misc.WarningMessageDialog.launch(["Error writing to zip file: " + str(e)])
                 return
             finally:

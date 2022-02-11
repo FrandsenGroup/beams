@@ -251,7 +251,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             def __init__(self, view):
                 super().__init__(view)
                 self.__view = view
-                self.__logger = logging.getLogger("PlottingPanelTreeManager")
+                self.__logger = logging.getLogger(__name__)
                 self.__run_service = services.RunService()
                 self.__fit_service = services.FitService()
                 self.__file_service = services.FileService()
@@ -517,9 +517,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_time.spines['top'].set_visible(False)
             self.axes_time.spines['left'].set_visible(False)
             self.axes_time.spines['bottom'].set_visible(False)
-            self.axes_time.set_xlabel("Load '.msr', '.dat' or '.asy' files and press 'Plot' to see data.",
-                                      fontsize=title_font_size)
-            self.axes_time.xaxis.label.set_color("#c0c0c0")
             self.axes_time.tick_params(axis='x', colors=tick_color)
             self.axes_time.tick_params(axis='y', colors=tick_color)
 
@@ -527,6 +524,9 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_freq.spines['top'].set_visible(False)
             self.axes_freq.spines['left'].set_visible(False)
             self.axes_freq.spines['bottom'].set_visible(False)
+            self.axes_freq.set_title("Load '.msr', '.dat' or '.asy' files and press 'Plot' to see data.",
+                                     fontsize=title_font_size)
+            self.axes_freq.title.set_color("#c0c0c0")
             self.axes_freq.tick_params(axis='x', colors=tick_color)
             self.axes_freq.tick_params(axis='y', colors=tick_color)
             self.axes_time.figure.canvas.draw()
@@ -900,7 +900,7 @@ class PlottingPanelPresenter(PanelPresenter):
         self.__run_service.signals.changed.connect(self.update_after_change)
         self.__populating_settings = False
         self.__update_alpha = True
-        self.__logger = logging.getLogger("PlottingPanelPresenter")
+        self.__logger = logging.getLogger(__name__)
         self.__system_service = services.SystemService()
         self._set_callbacks()
 
