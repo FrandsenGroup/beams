@@ -236,6 +236,7 @@ class HistogramPanel(Panel):
                         if meta_value != new_meta[meta_key]:
                             new_meta[meta_key] = 'n/a'
 
+                new_meta[files.TEMPERATURE_KEY] = ', '.join([run.model.meta[files.TEMPERATURE_KEY] for run in self.__selected_items])
                 combined_histograms = {}
                 for title, hist_list in histograms_to_combine.items():
                     combined_histograms[title] = objects.Histogram.combine(hist_list)
