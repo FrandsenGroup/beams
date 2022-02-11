@@ -983,31 +983,15 @@ class RunDataset:
 
     def write(self, out_file, format=None, bin_size=None):
         if format == files.Extensions.HISTOGRAM:
-            meta_string = ""
-            meta_string += "BEAMS\n"
-            meta_string += "{}:{},".format(files.BIN_SIZE_KEY, self.meta[files.BIN_SIZE_KEY])
-            meta_string += "{}:{},".format(files.RUN_NUMBER_KEY, self.meta[files.RUN_NUMBER_KEY])
-            meta_string += "{}:{},".format(files.TITLE_KEY, self.meta[files.TITLE_KEY])
-            meta_string += "{}:{},".format(files.LAB_KEY, self.meta[files.LAB_KEY])
-            meta_string += "{}:{},".format(files.AREA_KEY, self.meta[files.AREA_KEY])
-            meta_string += "{}:{},".format(files.TEMPERATURE_KEY, self.meta[files.TEMPERATURE_KEY])
-            meta_string += "{}:{}".format(files.FIELD_KEY, self.meta[files.FIELD_KEY])
+            meta_string = files.create_meta_string(self.meta)
 
             histograms = [hist for hist in self.histograms.values()]
             histograms = np.fliplr(np.rot90(histograms, 3))
-            titles = self.meta[files.HIST_TITLES_KEY]
-            meta_string += '\n' + ','.join(titles) + '\n' \
-                        + ','.join([str(self.meta[files.BACKGROUND_ONE_KEY][title]) for title in titles]) + '\n' \
-                        + ','.join([str(self.meta[files.BACKGROUND_TWO_KEY][title]) for title in titles]) + '\n' \
-                        + ','.join([str(self.meta[files.GOOD_BIN_ONE_KEY][title]) for title in titles]) + '\n' \
-                        + ','.join([str(self.meta[files.GOOD_BIN_TWO_KEY][title]) for title in titles]) + '\n' \
-                        + ','.join([str(self.meta[files.T0_KEY][title]) for title in titles])
-
             np.savetxt(out_file, histograms, delimiter=',', header=meta_string, comments="",
                        fmt="%-8i")
         elif self.asymmetries[self.FULL_ASYMMETRY] is not None:
             meta_string = files.TITLE_KEY + ":" + str(self.meta[files.TITLE_KEY]) + "," \
-                          + files.BIN_SIZE_KEY + ":" + str(bin_size) + "," \
+                          + files.BIN_SIZE_KEY + ":" + str(bin_size if bin_size else self.meta[files.BIN_SIZE_KEY]) + "," \
                           + files.RUN_NUMBER_KEY + ":" + str(self.meta[files.RUN_NUMBER_KEY]) + "," \
                           + files.TEMPERATURE_KEY + ":" + str(self.meta[files.TEMPERATURE_KEY]) + "," \
                           + files.FIELD_KEY + ":" + str(self.meta[files.FIELD_KEY]) + "," \
@@ -1018,7 +1002,7 @@ class RunDataset:
                 asymmetry = self.asymmetries[RunDataset.FULL_ASYMMETRY]
 
             np.savetxt(out_file, np.c_[asymmetry.time, asymmetry, asymmetry.uncertainty],
-                       fmt='%2.9f, %2.4f, %2.4f', header="BEAMS\n" + meta_string + "\nTime, Asymmetry, Uncertainty")
+                       fmt='%2.9f, %2.4f, %2.4f', header='BEAMS\n' + meta_string + "\nTime, Asymmetry, Uncertainty")
 
 
 class FileDataset:

@@ -491,7 +491,7 @@ class MainConsolePanelPresenter(PanelPresenter):
             try:
                 self.__file_service.load_files(file_ids)
             except files.BeamsFileReadError as e:
-                WarningMessageDialog.launch([e.message])
+                WarningMessageDialog.launch([str(e)])
                 return
 
             if unloaded_fit_files_present:
