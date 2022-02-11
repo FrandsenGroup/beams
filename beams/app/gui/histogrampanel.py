@@ -244,7 +244,7 @@ class HistogramPanel(Panel):
                     combined_histograms[title] = objects.Histogram.combine(hist_list)
 
                 new_meta[files.TITLE_KEY] = 'combined' + ''.join(['_' + num for num in run_numbers])
-                new_meta[files.RUN_NUMBER_KEY] = str(run_numbers)[1:-1]
+                new_meta[files.RUN_NUMBER_KEY] = -1  # We convert the run number to an int in multiple locations
 
                 bkgd_one, bkgd_two, good_bin_one, good_bin_two, time_zeroes = {}, {}, {}, {}, {}
 
