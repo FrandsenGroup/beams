@@ -67,6 +67,7 @@ GOOD_BIN_TWO_KEY = 'GoodBinTwo'
 RUN_NUMBER_KEY = 'RunNumber'
 T0_KEY = 'T0'
 CALC_HISTS_KEY = 'CalcHists'
+COMBINED_RUNS_KEY = 'CombinedRuns'
 FILE_PATH_KEY = 'FilePath'
 LAB_KEY = "Lab"
 AREA_KEY = "Area"
