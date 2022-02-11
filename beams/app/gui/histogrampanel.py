@@ -220,6 +220,7 @@ class HistogramPanel(Panel):
                 if len(self.__selected_items) == 1:
                     WarningMessageDialog.launch(["Must select 2 or more histograms to be combined"])
                     return
+
                 histograms_to_combine = {}
                 run_numbers = []
                 new_meta = self.__selected_items[0].model.meta.copy()
@@ -238,18 +239,22 @@ class HistogramPanel(Panel):
 
                 new_meta[files.TEMPERATURE_KEY] = ', '.join([run.model.meta[files.TEMPERATURE_KEY] for run in self.__selected_items])
                 combined_histograms = {}
+
                 for title, hist_list in histograms_to_combine.items():
                     combined_histograms[title] = objects.Histogram.combine(hist_list)
+
                 new_meta[files.TITLE_KEY] = 'combined' + ''.join(['_' + num for num in run_numbers])
                 new_meta[files.RUN_NUMBER_KEY] = str(run_numbers)[1:-1]
 
                 bkgd_one, bkgd_two, good_bin_one, good_bin_two, time_zeroes = {}, {}, {}, {}, {}
+
                 for title, histogram in combined_histograms.items():
                     bkgd_one[title] = histogram.background_start
                     bkgd_two[title] = histogram.background_end
                     good_bin_one[title] = histogram.good_bin_start
                     good_bin_two[title] = histogram.good_bin_end
                     time_zeroes[title] = histogram.time_zero
+
                 new_meta[files.BACKGROUND_ONE_KEY] = bkgd_one
                 new_meta[files.BACKGROUND_TWO_KEY] = bkgd_two
                 new_meta[files.GOOD_BIN_ONE_KEY] = good_bin_one
