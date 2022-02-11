@@ -68,6 +68,8 @@ RUN_NUMBER_KEY = 'RunNumber'
 T0_KEY = 'T0'
 CALC_HISTS_KEY = 'CalcHists'
 FILE_PATH_KEY = 'FilePath'
+LAB_KEY = "Lab"
+AREA_KEY = "Area"
 
 
 # TODO Maybe we should have these files inherit from the actual File object
