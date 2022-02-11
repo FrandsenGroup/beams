@@ -240,10 +240,9 @@ class HistogramPanel(Panel):
                 combined_histograms = {}
                 for title, hist_list in histograms_to_combine.items():
                     combined_histograms[title] = objects.Histogram.combine(hist_list)
-
                 new_meta[files.TITLE_KEY] = 'combined' + ''.join(['_' + num for num in run_numbers])
                 new_meta[files.RUN_NUMBER_KEY] = str(run_numbers)[1:-1]
-                # extract BkgdOne, BkgdTwo... from histograms and set up those dictionaries sic duhen
+
                 bkgd_one, bkgd_two, good_bin_one, good_bin_two, time_zeroes = {}, {}, {}, {}, {}
                 for title, histogram in combined_histograms.items():
                     bkgd_one[title] = histogram.background_start
@@ -256,7 +255,7 @@ class HistogramPanel(Panel):
                 new_meta[files.GOOD_BIN_ONE_KEY] = good_bin_one
                 new_meta[files.GOOD_BIN_TWO_KEY] = good_bin_two
                 new_meta[files.T0_KEY] = time_zeroes
-                # Now make new run
+
                 new_run = self.__run_service.add_run_from_histograms(combined_histograms, new_meta)
                 save_path = self._get_save_path(new_meta[files.TITLE_KEY])
                 new_run.write(save_path, files.Extensions.HISTOGRAM)
