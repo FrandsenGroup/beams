@@ -4,7 +4,7 @@ import os
 import logging
 import pickle
 
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtWidgets
 
 import app.model.data_access as dao
 from app.model import objects, files
@@ -73,6 +73,7 @@ class RunService:
             cls._instance.__dao = dao.RunDAO()
             cls._instance.__logger = logging.getLogger(__name__)
             cls._instance.signals = RunService.Signals()
+            cls._instance._system_service = SystemService()
         return cls._instance
 
     def get_runs(self):
@@ -167,6 +168,19 @@ class RunService:
 
     def changed(self):
         self.signals.changed.emit()
+
+    def add_run_from_histograms(self, histograms, meta):
+        run = objects.RunDataset()
+
+        for hist in histograms.values():
+            hist.id = run.id
+
+        run.histograms = histograms
+        run.meta = meta
+        run.isLoaded = True
+        self.__dao.add_runs([run])
+        self.signals.added.emit()
+        return run
 
 
 class StyleService:
@@ -549,21 +563,26 @@ class FileService:
 
         self.add_files(new_paths)
 
-    def add_files(self, paths):
+    def add_files(self, paths, loaded_data=None):
         if len(paths) == 0:
             return
+
         file_sets = []
         for path in paths:
             if self.__dao.get_files_by_path(path) is not None:
                 continue
 
             f = files.file(path)
-            data_set = objects.DataBuilder.build_minimal(f)
+            data_set = loaded_data if loaded_data else objects.DataBuilder.build_minimal(f)
             file_set = objects.FileDataset(f)
-            file_sets.append(file_set)
-            if data_set is not None:
-                file_set.dataset = data_set
+            file_set.dataset = data_set
 
+            if loaded_data:
+                file_set.title = loaded_data.meta[files.TITLE_KEY]
+                file_set.isLoaded = True
+
+            file_sets.append(file_set)
+            if data_set and loaded_data is None:
                 try:
                     file_set.title = data_set.meta[files.TITLE_KEY]
                 except AttributeError:
@@ -575,8 +594,8 @@ class FileService:
                     self.__fit_service.add_dataset([data_set])
 
             self.__dao.add_files([file_set])
-
         self.signals.changed.emit()
+
         return file_sets
 
     def load_files(self, ids):

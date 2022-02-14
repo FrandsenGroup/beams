@@ -71,6 +71,7 @@ GOOD_BIN_TWO_KEY = 'GoodBinTwo'
 RUN_NUMBER_KEY = 'RunNumber'
 T0_KEY = 'T0'
 CALC_HISTS_KEY = 'CalcHists'
+COMBINED_RUNS_KEY = 'CombinedRuns'
 FILE_PATH_KEY = 'FilePath'
 LAB_KEY = "Lab"
 AREA_KEY = "Area"
@@ -675,6 +676,26 @@ def is_beams(filename):
             return 'BEAMS' in f.readline().rstrip('\n')
 
 
+def create_meta_string(meta: dict) -> str:
+    hist_keys = [T0_KEY, BACKGROUND_TWO_KEY, BACKGROUND_ONE_KEY, GOOD_BIN_ONE_KEY, GOOD_BIN_TWO_KEY, HIST_TITLES_KEY]
+
+    final_string = 'BEAMS\n'
+    for i, (key, value) in enumerate(meta.items()):
+        if key not in hist_keys:
+            final_string += f"{key}:{str(value)}" + "," if i < len(meta) - 1 else ""
+    final_string += "\n"
+
+    final_string += '\n'.join([','.join([title if meta_list is None else str(meta_list[title])
+                                         for title in meta[HIST_TITLES_KEY]])
+                               for meta_list in [None,
+                                                 meta[BACKGROUND_ONE_KEY],
+                                                 meta[BACKGROUND_TWO_KEY],
+                                                 meta[GOOD_BIN_ONE_KEY],
+                                                 meta[GOOD_BIN_TWO_KEY],
+                                                 meta[T0_KEY]]])
+    return final_string
+
+
 class UnknownFileSource(Exception):
     """
     Raised when a user once a File object for an unknown file type, or type that the program is not
@@ -689,6 +710,7 @@ class BeamsFileReadError(Exception):
     """
     Raised when there is a problem reading data from a beams file.
     """
+
     def __init__(self, *args):
         super(BeamsFileReadError, self).__init__(*args)
 
