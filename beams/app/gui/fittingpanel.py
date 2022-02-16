@@ -1955,6 +1955,8 @@ class FitTabPresenter(PanelPresenter):
         if not self.__update_states:
             return
 
+        self.__parameter_table_states = {}
+
         # We are creating a dictionary in this loop to keep track of the table states (if the user wants a run specific
         #   parameter this means we need to keep track of the specified values as he clicks between runs).
 
