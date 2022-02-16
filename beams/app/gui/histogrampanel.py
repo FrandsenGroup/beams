@@ -1,4 +1,6 @@
 import logging
+import os
+import uuid
 
 import darkdetect
 from PyQt5 import QtWidgets, QtCore
@@ -166,7 +168,7 @@ class HistogramPanel(Panel):
             def __init__(self, view):
                 super().__init__(view)
                 self.__view = view
-                self.__logger = logging.getLogger("HistogramPanelTreeManager")
+                self.__logger = logging.getLogger(__name__)
                 self.__run_service = services.RunService()
                 self.__fit_service = services.FitService()
                 self.__file_service = services.FileService()
@@ -191,6 +193,9 @@ class HistogramPanel(Panel):
                 super(HistogramPanel.SupportPanel.RunNode, self).__init__([run_data.meta[files.TITLE_KEY]])
                 self.model = run_data
                 self.__selected_items = None
+                self.__run_service = services.RunService()
+                self._system_service = services.SystemService()
+                self.__file_service = services.FileService()
 
                 if isinstance(run_data, objects.RunDataset):
                     if run_data.isLoaded and run_data.histograms:
@@ -202,6 +207,7 @@ class HistogramPanel(Panel):
                 menu = QtWidgets.QMenu()
                 menu.addAction("Plot", self._action_plot)
                 menu.addAction("Save", self._action_save)
+                menu.addAction("Combine selected runs", self._action_combine)
                 return menu
 
             def _action_save(self):
@@ -209,6 +215,68 @@ class HistogramPanel(Panel):
 
             def _action_plot(self):
                 pass
+
+            def _action_combine(self):
+                if len(self.__selected_items) == 1:
+                    WarningMessageDialog.launch(["Must select 2 or more histograms to be combined"])
+                    return
+
+                histograms_to_combine = {}
+                run_numbers = []
+                new_meta = self.__selected_items[0].model.meta.copy()
+
+                for run in self.__selected_items:
+                    run_numbers.append(run.model.meta[files.RUN_NUMBER_KEY])
+                    original_histograms = run.model.histograms
+                    for histogram in original_histograms:
+                        if histogram not in histograms_to_combine:
+                            histograms_to_combine[histogram] = [original_histograms[histogram]]
+                        else:
+                            histograms_to_combine[histogram].append(original_histograms[histogram])
+                    for meta_key, meta_value in run.model.meta.items():
+                        if meta_value != new_meta[meta_key]:
+                            new_meta[meta_key] = 'n/a'
+
+                new_meta[files.TEMPERATURE_KEY] = ', '.join([run.model.meta[files.TEMPERATURE_KEY] for run in self.__selected_items])
+                combined_histograms = {}
+
+                for title, hist_list in histograms_to_combine.items():
+                    combined_histograms[title] = objects.Histogram.combine(hist_list)
+
+                new_meta[files.TITLE_KEY] = 'combined' + ''.join(['_' + num for num in run_numbers])
+                new_meta[files.COMBINED_RUNS_KEY] = str(run_numbers)[1:-1]
+                new_meta[files.RUN_NUMBER_KEY] = -1  # hopefully we don't depend on unique run numbers anywhere..
+
+                bkgd_one, bkgd_two, good_bin_one, good_bin_two, time_zeroes = {}, {}, {}, {}, {}
+
+                for title, histogram in combined_histograms.items():
+                    bkgd_one[title] = histogram.background_start
+                    bkgd_two[title] = histogram.background_end
+                    good_bin_one[title] = histogram.good_bin_start
+                    good_bin_two[title] = histogram.good_bin_end
+                    time_zeroes[title] = histogram.time_zero
+
+                new_meta[files.BACKGROUND_ONE_KEY] = bkgd_one
+                new_meta[files.BACKGROUND_TWO_KEY] = bkgd_two
+                new_meta[files.GOOD_BIN_ONE_KEY] = good_bin_one
+                new_meta[files.GOOD_BIN_TWO_KEY] = good_bin_two
+                new_meta[files.T0_KEY] = time_zeroes
+
+                new_run = self.__run_service.add_run_from_histograms(combined_histograms, new_meta)
+                save_path = self._get_save_path(new_meta[files.TITLE_KEY])
+                new_run.write(save_path, files.Extensions.HISTOGRAM)
+                file_dataset = self.__file_service.add_files([save_path], new_run)[0]
+                file_dataset.dataset = new_run
+
+            def _get_save_path(self, filename):
+                filter = "Histogram (*{})".format(files.Extensions.HISTOGRAM)
+                path = QtWidgets.QFileDialog.getSaveFileName(caption="Save Combined Run", filter=filter,
+                                                             directory=self._system_service.get_last_used_directory() +
+                                                             '/' + filename + files.Extensions.HISTOGRAM)[0]
+                if path:
+                    split_path = os.path.split(path)
+                    self._system_service.set_last_used_directory(split_path[0])
+                    return path
 
         class HistogramNode(QtWidgets.QTreeWidgetItem):
             def __init__(self, histogram):
@@ -582,7 +650,7 @@ class HistogramPanel(Panel):
 class HistogramPanelPresenter(PanelPresenter):
     def __init__(self, view: Panel):
         super().__init__(view)
-        self.__logger = logging.getLogger("HistogramPanelPresenter")
+        self.__logger = logging.getLogger(__name__)
         self.__run_service = services.RunService()
         self.__alterations = {}
         self.__current_histogram = None

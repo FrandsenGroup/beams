@@ -9,13 +9,14 @@ import sys
 # Installed Packages
 import darkdetect
 import qdarkstyle
+import sentry_sdk
 from PyQt5 import QtWidgets, QtGui
 
 # BEAMS Modules
 from app.gui import mainwindow
 from app.model import services
 from app.resources import resources
-from app.util import qt_constants
+from app.util import qt_constants, report
 
 
 class BEAMS(QtWidgets.QApplication):
@@ -25,11 +26,11 @@ class BEAMS(QtWidgets.QApplication):
 
     def __init__(self):
         super(BEAMS, self).__init__(sys.argv)
+        report.init_reporting()
+
         self.__system_service = services.SystemService()
         self.__file_service = services.FileService()
         self.__system_service.load_configuration_file()
-        logging.basicConfig(filename=resources.QT_LOG_FILE, level=logging.DEBUG)
-        logging.getLogger('matplotlib').setLevel(logging.ERROR)
 
         pix = QtGui.QPixmap(resources.SPLASH_IMAGE)
         self.splash = QtWidgets.QSplashScreen(pix.scaledToHeight(200, qt_constants.SmoothTransformation))
@@ -45,6 +46,7 @@ class BEAMS(QtWidgets.QApplication):
                 self.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette))
             else:
                 self.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
+
         db = QtGui.QFontDatabase()
         db.addApplicationFont(resources.LATO_BLACK_FONT)
         db.addApplicationFont(resources.LATO_BLACK_ITALIC_FONT)
@@ -69,6 +71,11 @@ class BEAMS(QtWidgets.QApplication):
         sys.exit(self.exec_())
 
     def exec_(self) -> int:
-        i = super(BEAMS, self).exec_()
-        self.__system_service.write_configuration_file()
-        return i
+        try:
+            i = super(BEAMS, self).exec_()
+            return i
+        except Exception as e:
+            report.report_exception(e)
+        finally:
+            report.close()
+            self.__system_service.write_configuration_file()

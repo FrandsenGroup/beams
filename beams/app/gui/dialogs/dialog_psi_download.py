@@ -7,7 +7,7 @@ from datetime import datetime
 import requests
 from PyQt5 import QtWidgets, QtCore
 
-from app.util import qt_widgets, qt_constants
+from app.util import qt_widgets, qt_constants, report
 from app.model import services
 
 
@@ -251,7 +251,8 @@ class PSIDownloadDialogPresenter(QtCore.QObject):
 
         try:
             response = requests.post(self._search_url, data=form_data)
-        except requests.exceptions.ConnectionError:
+        except requests.exceptions.ConnectionError as e:
+            report.report_exception(e)
             self._view.log_message("Error: Check your internet connection.\n")
             return
 
@@ -454,7 +455,8 @@ class PSIDownloadDialogPresenter(QtCore.QObject):
     def _download(self, form_data):
         try:
             response = requests.post(self._data_url, data=form_data, stream=True)
-        except requests.ConnectionError:
+        except requests.ConnectionError as e:
+            report.report_exception(e)
             self._view.log_message('Failed to download {}. Connection Error\n'.format(form_data))
             return
 

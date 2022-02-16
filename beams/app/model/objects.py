@@ -1,7 +1,7 @@
-import enum
 import os
 import time
 import re
+from typing import Sequence
 
 import numpy as np
 import uuid
@@ -93,13 +93,13 @@ class Histogram(np.ndarray):
 
     def __eq__(self, other):
         return self.time_zero == other.time_zero and \
-            self.good_bin_start == other.good_bin_start and \
-            self.good_bin_end == other.good_bin_end and \
-            self.background_start == other.background_start and \
-            self.background_end == other.background_end and \
-            self.bin_size == other.bin_size and \
-            self.title == other.title and \
-            np.array_equal(self, other)
+               self.good_bin_start == other.good_bin_start and \
+               self.good_bin_end == other.good_bin_end and \
+               self.background_start == other.background_start and \
+               self.background_end == other.background_end and \
+               self.bin_size == other.bin_size and \
+               self.title == other.title and \
+               np.array_equal(self, other)
 
     def __reduce__(self):
         pickled_state = super(Histogram, self).__reduce__()
@@ -205,21 +205,82 @@ class Histogram(np.ndarray):
                                                                                                   self.background_end))
         return float(np.mean(self[int(self.background_start):int(self.background_end) + 1]))
 
-    def combine(self, *other):
+    @staticmethod
+    def combine(histograms: Sequence['Histogram']) -> 'Histogram':
         """ Combines two or more histograms and returns the resulting Histogram.
 
         Does not alter the histogram objects being combined.
 
         Parameters
         ----------
-        other : *Histogram
-            The histgram(s) to be combined with this one.
+        histograms : *Histograms
+            The histgram(s) to be combined.
 
         Returns
         -------
         Histogram : The resulting combined histogram.
+
+        for histogram in other:
+            histogram.time_zero
+
+        take the later background-starts, earlier background_end
+
+        np_array1 + np_array2
+        hist1 + hist2
+
+        new_histogram = Histogram
+
         """
-        raise NotImplementedError("Combining histograms is not currently implemented.")
+        if len(histograms) < 2:
+            raise ValueError("At least 2 histograms must be provided to be combined.")
+
+        h1 = histograms[0]
+        for i in range(1, len(histograms)):
+            h = histograms[i]
+            if h1.bin_size != h.bin_size:
+                raise ValueError("Bin sizes must be the same on all histograms to be combined")
+            if h1.title != h.title:
+                raise ValueError("Histogram titles must match to be combined")
+
+        time_zeroes = [h.time_zero for h in histograms]
+        time_zero_shortest = min(time_zeroes)
+        time_zero_furthest = max(time_zeroes)
+
+        final_hist = None
+        good_bins_start = []
+        good_bins_end = []
+        background_bins_start = []
+        background_bins_end = []
+
+        for histogram in histograms:
+            our_time_zero = histogram.time_zero
+            time_zero_difference_front = our_time_zero - time_zero_shortest
+            time_zero_difference_back = our_time_zero - time_zero_furthest
+
+            if final_hist is None:
+                final_hist = np.array(histogram[time_zero_difference_front:time_zero_difference_back]) if \
+                    time_zero_difference_back else histogram[time_zero_difference_front:]
+            else:
+                final_hist += histogram[time_zero_difference_front:time_zero_difference_back] if \
+                    time_zero_difference_back else histogram[time_zero_difference_front:]
+
+            good_bins_start.append(histogram.good_bin_start - time_zero_difference_front)
+            good_bins_end.append(histogram.good_bin_end - time_zero_difference_front)
+            background_bins_start.append(histogram.background_start - time_zero_difference_front)
+            background_bins_end.append(histogram.background_end - time_zero_difference_front)
+
+        new_t0 = time_zero_shortest
+        new_good_bin_start = max(good_bins_start)
+        new_good_bin_end = min(good_bins_end)
+        new_bkgd_start = max(background_bins_start)
+        new_bkgd_end = min(background_bins_end)
+
+        new_bin_size = histograms[0].bin_size
+        new_title = histograms[0].title
+
+        new_histogram = Histogram(final_hist, new_t0, new_good_bin_start, new_good_bin_end,
+                                  new_bkgd_start, new_bkgd_end, new_title, "none", new_bin_size)
+        return new_histogram
 
 
 class Asymmetry(np.ndarray):
@@ -323,11 +384,11 @@ class Asymmetry(np.ndarray):
 
     def __eq__(self, other):
         return self.bin_size == other.bin_size and \
-            self.time_zero == other.time_zero and \
-            self.alpha == other.alpha and \
-            np.array_equal(self, other) and \
-            np.array_equal(self.time, other.time) and \
-            np.array_equal(self.uncertainty, other.uncertainty)
+               self.time_zero == other.time_zero and \
+               self.alpha == other.alpha and \
+               np.array_equal(self, other) and \
+               np.array_equal(self.time, other.time) and \
+               np.array_equal(self.uncertainty, other.uncertainty)
 
     def __reduce__(self):
         pickled_state = super(Asymmetry, self).__reduce__()
@@ -514,7 +575,8 @@ class Asymmetry(np.ndarray):
 
         if min_time is not None:
             if max_time is not None and min_time >= max_time:
-                raise ValueError("Min_time and max_time create an invalid range of asymmetry ({} -> {})".format(min_time, max_time))
+                raise ValueError(
+                    "Min_time and max_time create an invalid range of asymmetry ({} -> {})".format(min_time, max_time))
             if min_time > self.time[-1]:
                 return Asymmetry(input_array=[], time_zero=self.time_zero, bin_size=self.bin_size, time=[],
                                  uncertainty=[], alpha=self.alpha, calculated=None if self.calculated is None else [])
@@ -555,8 +617,8 @@ class Uncertainty(np.ndarray):
 
         if input_array is None:
             start_bin_one, start_bin_two, end_bin_one, end_bin_two, time_zero = histogram_one.intersect(histogram_two)
-            histogram_one_good = histogram_one[start_bin_one - 1: end_bin_one + 1]
-            histogram_two_good = histogram_two[start_bin_one - 1: end_bin_one + 1]
+            histogram_one_good = histogram_one[start_bin_one - 1: end_bin_one]
+            histogram_two_good = histogram_two[start_bin_one - 1: end_bin_one]
             d_histogram_one = np.sqrt(histogram_one_good)
             d_histogram_two = np.sqrt(histogram_two_good)
             np.nan_to_num(histogram_one_good)
@@ -750,7 +812,7 @@ class FFT:
 
 
 class Fit:
-    def __init__(self, parameters, expression, title, run_id, meta, asymmetry: Asymmetry):
+    def __init__(self, parameters, expression, title, run_id, meta, asymmetry: Asymmetry, goodness: float = None):
         self.id = str(uuid.uuid4())
         self.parameters = parameters
         self.string_expression = expression
@@ -758,6 +820,7 @@ class Fit:
         self.run_id = run_id  # "UNLINKED" -> run_id of the dataset you created
         self.meta = meta
         self.asymmetry = asymmetry  # Prompt with the plot prompt
+        self.goodness = None if goodness is None else float(goodness)
 
         from app.model import fit
         self.expression = fit.FitExpression(expression)
@@ -889,7 +952,7 @@ class FitDataset:
             out_file_object.write("#BEAMS\n"
                                   + fit_parameters_string
                                   + "# Expression\n\n\t"
-                                  + "A(t) = " + self.expression)
+                                  + "A(t) = " + str(self.expression))
 
 
 class RunDataset:
@@ -916,22 +979,28 @@ class RunDataset:
     def __eq__(self, other):
         return isinstance(other, self.__class__) and other.id == self.id
 
-    def write(self, out_file, bin_size=None):
-        if self.asymmetries[self.FULL_ASYMMETRY] is not None:
+    def write(self, out_file, format=None, bin_size=None):
+        if format == files.Extensions.HISTOGRAM:
+            meta_string = files.create_meta_string(self.meta)
+
+            histograms = [hist for hist in self.histograms.values()]
+            histograms = np.fliplr(np.rot90(histograms, 3))
+            np.savetxt(out_file, histograms, delimiter=',', header=meta_string, comments="",
+                       fmt="%-8i")
+        elif self.asymmetries[self.FULL_ASYMMETRY] is not None:
             meta_string = files.TITLE_KEY + ":" + str(self.meta[files.TITLE_KEY]) + "," \
-                          + files.BIN_SIZE_KEY + ":" + str(bin_size) + "," \
+                          + files.BIN_SIZE_KEY + ":" + str(bin_size if bin_size else self.meta[files.BIN_SIZE_KEY]) + "," \
                           + files.RUN_NUMBER_KEY + ":" + str(self.meta[files.RUN_NUMBER_KEY]) + "," \
                           + files.TEMPERATURE_KEY + ":" + str(self.meta[files.TEMPERATURE_KEY]) + "," \
                           + files.FIELD_KEY + ":" + str(self.meta[files.FIELD_KEY]) + "," \
                           + files.T0_KEY + ":" + str(self.asymmetries[self.FULL_ASYMMETRY].time.time_zero)
-
             if bin_size:
                 asymmetry = self.asymmetries[RunDataset.FULL_ASYMMETRY].bin(bin_size)
             else:
                 asymmetry = self.asymmetries[RunDataset.FULL_ASYMMETRY]
 
             np.savetxt(out_file, np.c_[asymmetry.time, asymmetry, asymmetry.uncertainty],
-                       fmt='%2.9f, %2.4f, %2.4f', header="BEAMS\n" + meta_string + "\nTime, Asymmetry, Uncertainty")
+                       fmt='%2.9f, %2.4f, %2.4f', header='BEAMS\n' + meta_string + "\nTime, Asymmetry, Uncertainty")
 
 
 class FileDataset:

@@ -13,7 +13,7 @@ import numpy as np
 from app.resources import resources
 from app.gui.dialogs.dialog_misc import WarningMessageDialog, LoadingDialog
 from app.gui.dialogs.dialog_write_fit import WriteFitDialog
-from app.util import qt_widgets, qt_constants
+from app.util import qt_widgets, qt_constants, report
 from app.model import objects, fit, files, services
 from app.gui.gui import PanelPresenter, Panel
 
@@ -102,6 +102,17 @@ class FittingPanel(Panel):
                     iterator += 1
                 return data
 
+            def get_parent_of_selected_data(self):
+                # noinspection PyTypeChecker
+                iterator = QtWidgets.QTreeWidgetItemIterator(self, QtWidgets.QTreeWidgetItemIterator.Selected)
+
+                data = set()
+                while iterator.value():
+                    if isinstance(iterator.value().model, objects.Fit):
+                        data.add(iterator.value().parent().model)
+                    iterator += 1
+                return data
+
             def set_colors(self, colors):
                 iterator = QtWidgets.QTreeWidgetItemIterator(self)
                 while iterator.value():
@@ -119,7 +130,7 @@ class FittingPanel(Panel):
             def __init__(self, view):
                 super().__init__(view)
                 self.__view = view
-                self.__logger = logging.getLogger("FittingPanelTreeManager")
+                self.__logger = logging.getLogger(__name__)
                 self.__run_service = services.RunService()
                 self.__fit_service = services.FitService()
                 self.__file_service = services.FileService()
@@ -213,29 +224,30 @@ class FittingPanel(Panel):
                 dataset.fits = {i.model.id: i.model for i in items}
                 dataset.flags = items[0].parent().model.flags
 
+                expressions = set([i.model.string_expression for i in items])
+
+                if len(expressions) > 1:
+                    WarningMessageDialog.launch("Can not save collection of fits with more then one fit expression at "
+                                                "the same time.")
+                    return
+
+                dataset.expression = expressions.pop()
+
                 WriteFitDialog.launch(dataset=dataset)
 
         def __init__(self):
             super().__init__()
-            # TODO How to set it up?
-            #   we want to be able to save a set of fits using some meta attribute as a prefix.
-            #   just have two dialogs that come up when it is a single fit vs a set of fits.
-            #   When saving fit dataset they should have an option of four formats to save the set as
-            #   short, verbose, all to a directory with prefix, same but in a zip. Maybe we could have a
-            #   window which gives a preview.
-            # TODO We need to do a similar thing with everything else because the current write button doesn't
-            #   contextually make much sense so lets just have right-click save options for all items in the
-            #   support panels.
-
             self.tree = FittingPanel.SupportPanel.Tree()
             self.setTitleBarWidget(QtWidgets.QWidget())
             main_layout = QtWidgets.QVBoxLayout()
 
             self.new_button = qt_widgets.StyleTwoButton("New Empty Fit")
             self.reset_button = qt_widgets.StyleOneButton("Reset")
+            self.save_button = qt_widgets.StyleOneButton("Save")
             self.button_lookup_folder = qt_widgets.StyleTwoButton("Folder")
 
             self.new_button.setToolTip('Create a new empty fit')
+            self.save_button.setToolTip("Save the currently highlighted fits")
             self.button_lookup_folder.setToolTip('Select folder')
 
             self.input_file_name = QtWidgets.QLineEdit()
@@ -247,6 +259,7 @@ class FittingPanel(Panel):
 
             hbox = QtWidgets.QHBoxLayout()
             hbox.addWidget(self.new_button)
+            hbox.addWidget(self.save_button)
             main_layout.addLayout(hbox)
 
             main_layout.addWidget(self.tree)
@@ -562,10 +575,20 @@ class FittingPanel(Panel):
             self.config_table = QtWidgets.QTableWidget()
             self.batch_table = QtWidgets.QTableWidget()
             self.output_table = QtWidgets.QTableWidget()
+            self.goodness_display = QtWidgets.QLineEdit()
 
             self.addTab(self.config_table, "Config")
             self.addTab(self.batch_table, "Batch")
-            self.addTab(self.output_table, "Output")
+
+            output_widget = QtWidgets.QWidget()
+            layout = QtWidgets.QVBoxLayout()
+            layout.addWidget(self.output_table)
+            goodness_row = QtWidgets.QHBoxLayout()
+            goodness_row.addWidget(QtWidgets.QLabel("Goodness-Of-Fit"))
+            goodness_row.addWidget(self.goodness_display)
+            layout.addLayout(goodness_row)
+            output_widget.setLayout(layout)
+            self.addTab(output_widget, "Output")
 
             self._set_attributes()
 
@@ -596,9 +619,11 @@ class FittingPanel(Panel):
                                                                       QtWidgets.QHeaderView.Stretch)
             self.output_table.setEditTriggers(qt_constants.NoEditTriggers)
 
+            self.goodness_display.setEnabled(False)
+
     def __init__(self):
         super(FittingPanel, self).__init__()
-        self.__logger = logging.getLogger('QtFitting')
+        self.__logger = logging.getLogger(__name__)
 
         self.support_panel = FittingPanel.SupportPanel()
 
@@ -1286,7 +1311,7 @@ class FitTabPresenter(PanelPresenter):
         self.__update_if_table_changes = True
         self.__variable_groups = {}
         self.__expression = None
-        self.__logger = logging.getLogger('FittingPanelPresenter')
+        self.__logger = logging.getLogger(__name__)
 
     def _set_callbacks(self):
         self._view.parameter_table.config_table.itemChanged.connect(self._on_config_table_changed)
@@ -1296,6 +1321,7 @@ class FitTabPresenter(PanelPresenter):
         self._view.check_global_plus.stateChanged.connect(self._on_batch_options_changed)
 
         self._view.support_panel.tree.itemSelectionChanged.connect(self._on_fit_selection_changed)
+        self._view.support_panel.save_button.released.connect(self._on_save_clicked)
         self._view.input_fit_equation.textChanged.connect(self._on_function_input_changed)
         self._view.button_insert_preset_equation.released.connect(self._on_insert_pre_defined_function_clicked)
         self._view.button_insert_user_equation.released.connect(self._on_insert_user_defined_function_clicked)
@@ -1321,6 +1347,40 @@ class FitTabPresenter(PanelPresenter):
         self._system_service.signals.theme_changed.connect(self._on_theme_changed)
 
     @QtCore.pyqtSlot()
+    def _on_save_clicked(self):
+        items = self._view.support_panel.tree.get_selected_data()
+        if len(items) == 0:
+            WarningMessageDialog.launch(["No fits selected."])
+            return
+
+        types = set([type(i) for i in items])
+
+        if len(types) > 1:
+            WarningMessageDialog.launch(["Invalid selection, please select a parent node or group of children nodes."])
+            return
+
+        if types.pop() == objects.FitDataset:  # we won't check if multiple are selected, just save the first.
+            WriteFitDialog.launch(dataset=items[0])
+            return
+
+        parent = self._view.support_panel.tree.get_parent_of_selected_data().pop()
+
+        dataset = objects.FitDataset()
+        dataset.fits = {model.id: model for model in items}
+        dataset.flags = parent.flags
+
+        expressions = set([model.string_expression for model in items])
+
+        if len(expressions) > 1:
+            WarningMessageDialog.launch(["Can not save collection of fits with more then one fit expression at "
+                                        "the same time."])
+            return
+
+        dataset.expression = expressions.pop()
+
+        WriteFitDialog.launch(dataset=dataset)
+
+    @QtCore.pyqtSlot()
     def _on_function_input_changed(self):
         if not self.__update_if_table_changes:
             return
@@ -1344,10 +1404,11 @@ class FitTabPresenter(PanelPresenter):
 
             self.__update_states = True
             self.update_parameter_table_states()
+            self.__update_if_table_changes = True
             self._plot_fit()
         else:
+            self.__update_if_table_changes = True
             self._view.highlight_input_red(self._view.input_fit_equation, True)
-        self.__update_if_table_changes = True
 
     @QtCore.pyqtSlot()
     def _on_save_user_defined_function_clicked(self):
@@ -1381,7 +1442,7 @@ class FitTabPresenter(PanelPresenter):
 
     @QtCore.pyqtSlot()
     def _on_plot_clicked(self):
-        self._update_display()
+        self._plot_fit(force_update=True)
 
     @QtCore.pyqtSlot()
     def _on_new_clicked(self):
@@ -1405,11 +1466,8 @@ class FitTabPresenter(PanelPresenter):
         new_table_state = {}
         self.__expression = None
         self.__variable_groups = {}
+        goodness = None
 
-        # TODO we will want to disregard any fits that are in different sets
-        # TODO we need to update the backend with regards to other types of fits probably, mainly global.
-        # TODO we need to have 'unchecking' run-specific do something. Really just update the state so all runs get the
-        #   current state of the table.
         outputs = dict()
         for data in selected_data:
             if type(data) == objects.Fit:
@@ -1417,11 +1475,17 @@ class FitTabPresenter(PanelPresenter):
                 if self.__expression and self.__expression != data.expression:
                     self.__expression = None
                     self.__variable_groups = {}
+                    self._view.parameter_table.goodness_display.setText('*')
                     return
                 else:
                     # We want to keep track of expression and variable groups for updating the display
                     self.__variable_groups[data.run_id] = data.parameters
                     self.__expression = data.expression
+
+                    if goodness:
+                        goodness = 'Multiple Selected'
+                    else:
+                        goodness = data.goodness
 
                 # Check the box next to the run for this fit
                 for i in range(self._view.run_list.count()):
@@ -1459,6 +1523,7 @@ class FitTabPresenter(PanelPresenter):
         # We will need to get parameters to add to table. Clear old table. Same for expression and variable groups
         self.set_parameter_table_states(new_table_state)
         self._view.input_fit_equation.setText(str(self.__expression))
+        self._view.parameter_table.goodness_display.setText(str(goodness) if goodness else '')
 
         # Set the output and uncertainties in the output table
         for symbol, out_sets in outputs.items():
@@ -1587,12 +1652,11 @@ class FitTabPresenter(PanelPresenter):
         config.parameters = variables
         config.titles = fit_titles
         config.set_flags(0)
-        self.__logger.info(str(config).encode("utf-8"))
+        report.log_info(str(config).encode("utf-8"))
 
         # Fit to spec
         worker = FitWorker(config)
         worker.signals.result.connect(self._update_fit_changes)
-        worker.signals.error.connect(lambda e: self.__logger.error(e))
         worker.signals.error.connect(lambda error_message: WarningMessageDialog.launch([error_message]))
         self._threadpool.start(worker)
 
@@ -1746,13 +1810,13 @@ class FitTabPresenter(PanelPresenter):
     def _update_tree_colors(self, ids_to_colors):
         self._view.support_panel.tree.set_colors(ids_to_colors)
 
-    def _plot_fit(self):
+    def _plot_fit(self, force_update=False):
         if not self.__update_if_table_changes:
             return
 
         expression, parameters = self._get_expression_and_values(get_default=True)
 
-        if expression == self.__expression and self.__variable_groups == parameters:
+        if expression == self.__expression and self.__variable_groups == parameters and not force_update:
             return
 
         if len(parameters) == 0:
@@ -1890,6 +1954,8 @@ class FitTabPresenter(PanelPresenter):
 
         if not self.__update_states:
             return
+
+        self.__parameter_table_states = {}
 
         # We are creating a dictionary in this loop to keep track of the table states (if the user wants a run specific
         #   parameter this means we need to keep track of the specified values as he clicks between runs).
@@ -2144,6 +2210,7 @@ class FitWorker(QtCore.QRunnable):
         super(FitWorker, self).__init__()
         self.config = config
         self.signals = FitSignals()
+        self.__logger = logging.getLogger(__name__)
         self.__engine = fit.FitEngine()
         self.__pool = futures.ProcessPoolExecutor()
         self.__process = None
@@ -2163,6 +2230,7 @@ class FitWorker(QtCore.QRunnable):
                 fit_data.expression = fit.FitExpression(fit_data.string_expression)
 
         except Exception as e:
+            report.report_exception(e)
             self.signals.error.emit("Error Running Fit: ({})".format(str(e)))
         else:
             self.signals.result.emit(dataset)

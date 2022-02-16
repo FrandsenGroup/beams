@@ -111,9 +111,55 @@ class TestHistograms:
         histogram_unpickled = pickle.loads(pickle.dumps(hist))
         assert hist == histogram_unpickled
 
-    @pytest.mark.skip
-    def test_combine(self):
-        pass
+    @pytest.mark.parametrize("hists, correct_combined_hist",
+                             [((objects.Histogram(range(27648),
+                                                 980, 680, 25000, 600, 1000, "Front", "3412", 0.2),
+                               objects.Histogram(range(27648),
+                                                 980, 1030, 27648, 500, 900, "Front", "3413", 0.2)),
+                              (objects.Histogram(range(0, 55296, 2),
+                                                 980, 1030, 25000, 600, 900, "Front", "3412, 3413", 0.2))),
+                              ((objects.Histogram(range(27648),
+                                                  1000, 680, 25000, 600, 1000, "Front", "3412", 0.2),
+                                objects.Histogram(range(27648),
+                                                  980, 1030, 27648, 500, 900, "Front", "3413", 0.2)),
+                               (objects.Histogram(range(20, 55276, 2),
+                                                  980, 1030, 24980, 580, 900, "Front", "3412, 3413", 0.2))),
+                              ((objects.Histogram(range(30000),
+                                                  600, 1000, 23400, 120, 480, "Back", "1612", 0.2),
+                                objects.Histogram(range(30000),
+                                                  568, 1200, 26000, 122, 464, "Back", "1613", 0.2)),
+                               (objects.Histogram(range(32, 59968, 2),
+                                                  568, 1200, 23368, 122, 448, "Back", "1612, 1613", 0.2))),
+                              ((objects.Histogram(range(21000),
+                                                  500, 550, 20000, 65, 420, "Forw", "19232", 0.3),
+                                objects.Histogram(range(21000),
+                                                  600, 613, 20380, 50, 553, "Forw", "19233", 0.3),
+                                objects.Histogram(range(21000),
+                                                  300, 334, 19670, 66, 120, "Forw", "19234", 0.3)
+                                ),
+                               (objects.Histogram(range(500, 62600, 3),
+                                                  300, 350, 19670, 66, 120, "Forw", "doesn't matter", 0.3)))
+
+                              ])
+    def test_combine(self, hists, correct_combined_hist):
+        combined = objects.Histogram.combine(hists)
+        assert combined == correct_combined_hist
+
+    @pytest.mark.parametrize("hists",
+                             [(objects.Histogram(range(27648),
+                                                  980, 680, 25000, 600, 1000, "Front", "3412", 0.2),
+                              objects.Histogram(range(27648),
+                                                  980, 1030, 27648, 500, 900, "Front", "3413", 0.3)),
+                              (objects.Histogram(range(27648),
+                                                 980, 680, 25000, 600, 1000, "Front", "3412", 0.2),
+                               objects.Histogram(range(27648),
+                                                 980, 1030, 27648, 500, 900, "Back", "3413", 0.3)),
+                              [objects.Histogram(range(27648),
+                                                 980, 680, 25000, 600, 1000, "Front", "3412", 0.2)]
+                              ])
+    def test_combine_exception(self, hists):
+        with pytest.raises(ValueError):
+            objects.Histogram.combine(hists)
 
 
 @pytest.mark.Asymmetry

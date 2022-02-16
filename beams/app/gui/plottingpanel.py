@@ -251,7 +251,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             def __init__(self, view):
                 super().__init__(view)
                 self.__view = view
-                self.__logger = logging.getLogger("PlottingPanelTreeManager")
+                self.__logger = logging.getLogger(__name__)
                 self.__run_service = services.RunService()
                 self.__fit_service = services.FitService()
                 self.__file_service = services.FileService()
@@ -900,7 +900,7 @@ class PlottingPanelPresenter(PanelPresenter):
         self.__run_service.signals.changed.connect(self.update_after_change)
         self.__populating_settings = False
         self.__update_alpha = True
-        self.__logger = logging.getLogger("PlottingPanelPresenter")
+        self.__logger = logging.getLogger(__name__)
         self.__system_service = services.SystemService()
         self._set_callbacks()
 
