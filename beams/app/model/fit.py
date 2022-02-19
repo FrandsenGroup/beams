@@ -509,7 +509,8 @@ class FitEngine:
         dataset.expression = config.expression
         return dataset
 
-    def _lambdify_global(self, config: FitConfig):
+    @staticmethod
+    def _lambdify_global(config: FitConfig):
         """ Creates a single lambda expression for a global fit.
 
             In a global fit we will have some parameters that are fit locally, for a single run, and some that are fit
@@ -627,7 +628,7 @@ def parse(s):
     bad_char_set = {'i'}
     key_1_char_set = {PI}
     key_2_char_set = {'pi'}
-    key_3_char_set = {'sin', 'cos', 'tan', 'exp'}
+    key_3_char_set = {'sin', 'cos', 'tan', 'exp', 'pow'}
     key_4_char_set = {'sinh', 'cosh', 'tanh'}
 
     free_set = set()
