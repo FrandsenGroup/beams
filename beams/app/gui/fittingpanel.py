@@ -1952,7 +1952,7 @@ class FitTabPresenter(PanelPresenter):
         This method is called when the content of the config table is changed.
         """
 
-        if not self.__update_states :
+        if not self.__update_states:
             return
 
         # We are creating a dictionary in this loop to keep track of the table states (if the user wants a run specific
