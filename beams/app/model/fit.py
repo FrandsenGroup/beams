@@ -125,7 +125,10 @@ class FitExpression:
         if not self.safe:
             return self.__expression(*args, **{replace_symbols(k): v for k, v in kwargs.items()})
 
-        time_array = args[0]
+        # We need to cast it to a complex type in order to avoid errors where we are raising a negative
+        # number to a fractional power (which would result in an array of Nan's usually). We do the calculation
+        # and then take the real component below.
+        time_array = np.array(args[0], dtype=complex)
 
         pars = {}
         unnamed_pars = []
@@ -145,11 +148,11 @@ class FitExpression:
             pars[replace_symbols(symbol)] = value
 
         try:
-            return self.__expression(time_array, *unnamed_pars, **pars)
+            return self.__expression(time_array, *unnamed_pars, **pars).real
         except TypeError:
             if ALPHA in pars.keys():
                 pars.pop(ALPHA)
-                return self.__expression(time_array, *unnamed_pars, **pars)
+                return self.__expression(time_array, *unnamed_pars, **pars).real
             raise
 
     def set_fixed(self, parameters):
@@ -506,7 +509,8 @@ class FitEngine:
         dataset.expression = config.expression
         return dataset
 
-    def _lambdify_global(self, config: FitConfig):
+    @staticmethod
+    def _lambdify_global(config: FitConfig):
         """ Creates a single lambda expression for a global fit.
 
             In a global fit we will have some parameters that are fit locally, for a single run, and some that are fit
@@ -567,11 +571,7 @@ class FitEngine:
     @staticmethod
     def _residual(lambda_expression):
         def residual(pars, x, y_data, dy_data):
-            y_calc = lambda_expression(x, *pars)
-
-            if np.isnan(y_calc).any():
-                y_calc = np.nan_to_num(y_calc)
-
+            y_calc = lambda_expression(np.array(x, dtype=complex), *pars).real
             return np.divide(np.subtract(y_data, y_calc), dy_data)
 
         return residual
@@ -628,7 +628,7 @@ def parse(s):
     bad_char_set = {'i'}
     key_1_char_set = {PI}
     key_2_char_set = {'pi'}
-    key_3_char_set = {'sin', 'cos', 'tan', 'exp'}
+    key_3_char_set = {'sin', 'cos', 'tan', 'exp', 'pow'}
     key_4_char_set = {'sinh', 'cosh', 'tanh'}
 
     free_set = set()
