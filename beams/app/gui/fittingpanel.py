@@ -1692,9 +1692,13 @@ class FitTabPresenter(PanelPresenter):
 
         max_asymmetry = -1
         min_asymmetry = 1
-        min_time = self._view.fit_spectrum_settings.get_min_time()
-        max_time = self._view.fit_spectrum_settings.get_max_time()
-        bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
+
+        try:
+            min_time = self._view.fit_spectrum_settings.get_min_time()
+            max_time = self._view.fit_spectrum_settings.get_max_time()
+            bin_size = self._view.fit_spectrum_settings.get_bin_from_input()
+        except ValueError:
+            WarningMessageDialog.launch(["Invalid values specified for spectrum limits or bin size."])
 
         styles = self._style_service.get_styles()
         unavailable_colors = [styles[run.id][self._style_service.Keys.DEFAULT_COLOR] for run in runs]
