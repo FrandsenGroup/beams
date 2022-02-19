@@ -844,7 +844,7 @@ class FittingPanel(Panel):
 
         self.setLayout(main_layout)
 
-    def _get_row(self, j):
+    def get_row(self, j):
         item_symbol = self.parameter_table.config_table.verticalHeaderItem(j)
         if item_symbol is None:
             return None
@@ -1941,7 +1941,7 @@ class FitTabPresenter(PanelPresenter):
             item_global.findChild(QtWidgets.QCheckBox).setEnabled(not is_run_specific)
 
             if not is_run_specific:
-                row_values = self._view._get_row(j)
+                row_values = self._view.get_row(j)
                 if row_values is None:
                     continue
                 for run_id in self.__parameter_table_states[row_values[0]].keys():
@@ -1962,7 +1962,7 @@ class FitTabPresenter(PanelPresenter):
         #   like we keep the state of a row in the config table for each run.
         current_symbols = set()
         for j in range(self._view.parameter_table.config_table.rowCount()):  # Iterate over all symbols (rows)
-            row_values = self._view._get_row(j)
+            row_values = self._view.get_row(j)
             if row_values is None:
                 continue
             symbol, value, min_value, max_value, is_fixed = row_values
