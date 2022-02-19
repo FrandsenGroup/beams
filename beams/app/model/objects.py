@@ -91,6 +91,10 @@ class Histogram(np.ndarray):
 
         return self
 
+    def __repr__(self):
+        return f'Histogram({repr(super)}, {self.title}, {self.time_zero}, {self.good_bin_start}, ' \
+               f'{self.good_bin_end}, {self.background_start}, {self.background_end}, {self.bin_size}, {self.id})'
+
     def __eq__(self, other):
         return self.time_zero == other.time_zero and \
                self.good_bin_start == other.good_bin_start and \
@@ -390,6 +394,10 @@ class Asymmetry(np.ndarray):
                np.array_equal(self.time, other.time) and \
                np.array_equal(self.uncertainty, other.uncertainty)
 
+    def __repr__(self):
+        return f'Asymmetry({repr(super)}, {repr(self.calculated)}, {repr(self.uncertainty)}, {repr(self.time)}' \
+               f'{self.bin_size}, {self.time_zero}, {self.alpha})'
+
     def __reduce__(self):
         pickled_state = super(Asymmetry, self).__reduce__()
 
@@ -643,6 +651,9 @@ class Uncertainty(np.ndarray):
     def __eq__(self, other):
         return self.bin_size == other.bin_size and np.array_equal(self, other)
 
+    def __repr__(self):
+        return f'Uncertainty({repr(super)}, {self.bin_size})'
+
     def __reduce__(self):
         pickled_state = super(Uncertainty, self).__reduce__()
 
@@ -721,6 +732,9 @@ class Time(np.ndarray):
 
         return self
 
+    def __repr__(self):
+        return f'Time({repr(super)}, {self.bin_size}, {self.time_zero}, {self.id})'
+
     def __reduce__(self):
         pickled_state = super(Time, self).__reduce__()
 
@@ -757,7 +771,6 @@ class Time(np.ndarray):
         return (np.arange(binned_indices_total) * time_per_binned) + (t0 * bin_full) + (time_per_binned / 2)
 
 
-# min, max
 class FFT:
     def __init__(self, asymmetry, time, f_min, f_max):
         f_step = (f_max - f_min) / 200
@@ -825,6 +838,10 @@ class Fit:
         from app.model import fit
         self.expression = fit.FitExpression(expression)
 
+    def __repr__(self):
+        return f'Fit({self.id}, {self.parameters}, {self.string_expression}, {self.title} ,{self.run_id}, {self.meta}' \
+               f', {self.asymmetry}, {self.goodness}, {repr(self.expression)})'
+
     def write(self, out_file, bin_size=None, x_min=None, x_max=None):
         meta_string = files.TITLE_KEY + ":" + str(self.title) + "," \
                       + files.BIN_SIZE_KEY + ":" + str(bin_size if bin_size else self.meta[files.BIN_SIZE_KEY]) + "," \
@@ -877,6 +894,9 @@ class FitDataset:
         self.flags = 0
         self.expression = None
         self.is_loaded = False
+
+    def __repr__(self):
+        return f'FitDataset({self.title}, {self.flags}, {self.expression}, {self.is_loaded}, {self.id}, {self.fits})'
 
     def write(self, out_file, order_by_key):
         # Writing the Summary Block
@@ -979,6 +999,10 @@ class RunDataset:
     def __eq__(self, other):
         return isinstance(other, self.__class__) and other.id == self.id
 
+    def __repr__(self):
+        return f'RunDataset({self.id}, {self.file}, {self.meta}, {self.histograms}, {self.histograms_used}, ' \
+               f'{self.asymmetries})'
+
     def write(self, out_file, format=None, bin_size=None):
         if format == files.Extensions.HISTOGRAM:
             meta_string = files.create_meta_string(self.meta)
@@ -1015,6 +1039,9 @@ class FileDataset:
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and other.id == self.id
+
+    def __repr__(self):
+        return f'FileDataset({self.title}, {self.file}, {self.file_path}, {self.id}, {self.isLoaded}, {self.dataset})'
 
 
 class DataBuilder:

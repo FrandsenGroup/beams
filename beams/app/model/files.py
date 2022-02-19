@@ -118,9 +118,8 @@ class ReadableFile(File, abc.ABC):
         """
         raise NotImplemented()
 
-    def __str__(self):
-        return '[ReadableFile: file_path={}, source={}, format={}, type={}]'.format(self.file_path, self.SOURCE,
-                                                                                    self.DATA_FORMAT, self.DATA_TYPE)
+    def __repr__(self):
+        return f'ReadableFile({self.file_path}, {self.SOURCE}, {self.DATA_FORMAT}, {self.DATA_TYPE})'
 
 
 class ConvertibleFile(File, abc.ABC):
@@ -141,9 +140,8 @@ class ConvertibleFile(File, abc.ABC):
         """
         raise NotImplemented()
 
-    def __str__(self):
-        return '[ConvertibleFile: file_path={}, source={}, format={}, type={}]'.format(self.file_path, self.SOURCE,
-                                                                                       self.DATA_FORMAT, self.DATA_TYPE)
+    def __repr__(self):
+        return f'ConvertibleFile({self.file_path}, {self.SOURCE}, {self.DATA_FORMAT}, {self.DATA_TYPE})'
 
 
 class UnknownFile(File):
@@ -151,8 +149,8 @@ class UnknownFile(File):
     DATA_FORMAT = Format.UNKNOWN
     SOURCE = Source.UNKNOWN
 
-    def __str__(self):
-        return '[UnknownFile: file_path={}]'.format(self.file_path)
+    def __repr__(self):
+        return f'UnknownFile({self.file_path}, {self.SOURCE}, {self.DATA_FORMAT}, {self.DATA_TYPE})'
 
 
 class BeamsSessionFile(ReadableFile):

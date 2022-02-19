@@ -84,8 +84,8 @@ class FitParameter:
         return '{}={}'.format(self.symbol, self.value)
 
     def __repr__(self):
-        return 'FitParameter ({})=({},{},{},{},{},{})'.format(self.symbol, self.value, self.lower, self.upper,
-                                                              self.is_global, self.is_fixed, self.is_run_specific)
+        return 'FitParameter({}, {}, {}, {}, {}, {}, {})'.format(self.symbol, self.value, self.lower, self.upper,
+                                                                 self.is_global, self.is_fixed, self.is_run_specific)
 
     def get_value(self):
         return float(self.value)
@@ -119,6 +119,9 @@ class FitExpression:
 
     def __str__(self):
         return self.__expression_string
+
+    def __repr__(self):
+        return f'FitExpression({self.__expression_string}, {self.__expression}, {self.__fixed}, {self.safe})'
 
     def __call__(self, *args, **kwargs):
         # The length of this function is due to the fact I have trust issues.
@@ -176,8 +179,8 @@ class FitConfig:
         self.batch = True
         self.flags = 0
 
-    def __str__(self):
-        return "FitConfig ({})=({}, {})".format(self.expression, self.flags, self.parameters)
+    def __repr__(self):
+        return f"FitConfig({self.expression}, {self.parameters}, {self.titles}, {self.batch}, {self.flags}, {self.data})"
 
     def set_flags(self, *flags):
         self.flags = 0
