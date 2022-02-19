@@ -2016,6 +2016,7 @@ class FitTabPresenter(PanelPresenter):
         """
 
         # Don't want to update the states needlessly since we are the ones updating the table (from the state info)
+        self.update_parameter_table_states()
         self.__update_states = False
 
         selected_run_ids = self._view.get_selected_run_ids()
