@@ -1407,6 +1407,7 @@ class FitTabPresenter(PanelPresenter):
             self.__update_if_table_changes = True
             self._plot_fit()
         else:
+            self.update_parameter_table_states()
             self.__update_if_table_changes = True
             self._view.highlight_input_red(self._view.input_fit_equation, True)
 
@@ -1543,6 +1544,7 @@ class FitTabPresenter(PanelPresenter):
 
     @QtCore.pyqtSlot()
     def _on_parameter_table_changed(self):
+        self.update_parameter_table_states()
         self._plot_fit()
 
     @QtCore.pyqtSlot()
@@ -2188,8 +2190,6 @@ class FitTabPresenter(PanelPresenter):
 
         run_ids = self._view.get_all_run_ids()
         final_parameters = {run_id: [] for run_id in run_ids}
-
-        self.update_parameter_table_states()
 
         for symbol, states in self.__parameter_table_states.items():
             for run_id in run_ids:
