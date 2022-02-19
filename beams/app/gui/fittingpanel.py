@@ -1960,11 +1960,13 @@ class FitTabPresenter(PanelPresenter):
 
         # State dictionary looks like: {symbol : {run_id : (symbol, value, min, max, fixed)}} so you can think of it
         #   like we keep the state of a row in the config table for each run.
+        current_symbols = set()
         for j in range(self._view.parameter_table.config_table.rowCount()):  # Iterate over all symbols (rows)
             row_values = self._view._get_row(j)
             if row_values is None:
                 continue
             symbol, value, min_value, max_value, is_fixed = row_values
+            current_symbols.add(symbol)
 
             # Get the boolean indicating whether the parameter is run specific
             item_run_specific = self._view.parameter_table.batch_table.cellWidget(j,
@@ -2003,6 +2005,10 @@ class FitTabPresenter(PanelPresenter):
                 # Otherwise, we will want to set the state of all runs to the current state of the table.
                 self.__parameter_table_states[symbol] = {run_id: (symbol, value, min_value, max_value, is_fixed)
                                                          for run_id in self._view.get_all_run_ids()}
+
+        for symbol in current_symbols.symmetric_difference(self.__parameter_table_states.keys()):
+            if symbol not in current_symbols:
+                self.__parameter_table_states.pop(symbol)
 
     def _update_parameter_table(self):
         """
@@ -2181,6 +2187,8 @@ class FitTabPresenter(PanelPresenter):
 
         run_ids = self._view.get_all_run_ids()
         final_parameters = {run_id: [] for run_id in run_ids}
+
+        self.update_parameter_table_states()
 
         for symbol, states in self.__parameter_table_states.items():
             for run_id in run_ids:
