@@ -515,7 +515,10 @@ class FittingPanel(Panel):
             if slider_is_most_accurate:
                 self.input_bin.setText(str(self.slider_bin.value()))
             else:
-                self.slider_bin.setValue(int(float(self.input_bin.text())))
+                try:
+                    self.slider_bin.setValue(int(float(self.input_bin.text())))
+                except ValueError:
+                    pass
 
         def get_max_time(self):
             return float(self.input_time_xmax.text())
