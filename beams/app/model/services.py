@@ -459,7 +459,7 @@ class SystemService:
                 user_data = json.load(fp)
                 self._set_configuration(user_data)
             except json.JSONDecodeError:
-                report.report_message("Unable to load the configuration file.")
+                report.log_info("Unable to load the configuration file.")
                 self._set_default_configuration()
 
     def write_configuration_file(self):
