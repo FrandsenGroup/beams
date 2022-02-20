@@ -1,14 +1,14 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 block_cipher = None
-
-a = Analysis(['beams/__main__.py'],
+a = Analysis(['__main__.py'],
              pathex=[],
-             binaries=[],
+             binaries=[
+                ('app/resources/binaries/*', 'resources/binaries')
+             ],
              datas=[
-                ('beams/app/resources/icons/*', 'resources/icons'),
-                ('beams/app/resources/fonts/*', 'resources/fonts'),
-                ('beams/app/resources/binaries/*', 'resources/binaries'),
+                ('app/resources/icons/*', 'resources/icons'),
+                ('app/resources/fonts/*', 'resources/fonts'),
              ],
              hiddenimports=[],
              hookspath=[],
