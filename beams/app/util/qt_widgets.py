@@ -7,10 +7,10 @@ import os
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
-from app.resources import resources
-from app.util import qt_constants
-from app.gui.dialogs.dialog_misc import PermissionsMessageDialog
-from app.model import services
+from beams.app.resources import resources
+from beams.app.util import qt_constants
+from beams.app.gui.dialogs.dialog_misc import PermissionsMessageDialog
+from beams.app.model import services
 
 
 class StyleOneButton(QtWidgets.QPushButton):

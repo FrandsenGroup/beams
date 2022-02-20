@@ -10,12 +10,12 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
 
-from app.resources import resources
-from app.gui.dialogs.dialog_misc import WarningMessageDialog, LoadingDialog
-from app.gui.dialogs.dialog_write_fit import WriteFitDialog
-from app.util import qt_widgets, qt_constants, report
-from app.model import objects, fit, files, services
-from app.gui.gui import PanelPresenter, Panel
+from beams.app.resources import resources
+from beams.app.gui.dialogs.dialog_misc import WarningMessageDialog, LoadingDialog
+from beams.app.gui.dialogs.dialog_write_fit import WriteFitDialog
+from beams.app.util import qt_widgets, qt_constants, report
+from beams.app.model import objects, fit, files, services
+from beams.app.gui.gui import PanelPresenter, Panel
 
 
 class FittingPanel(Panel):

@@ -2,9 +2,9 @@ import enum
 
 from PyQt5 import QtWidgets, QtCore
 
-from app.util import qt_widgets, report
-from app.model import files, services, objects
-from app.gui.dialogs.dialog_misc import WarningMessageDialog
+from beams.app.util import qt_widgets
+from beams.app.model import files, services, objects
+from beams.app.gui.dialogs.dialog_misc import WarningMessageDialog
 
 
 # noinspection PyArgumentList

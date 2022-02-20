@@ -3,9 +3,9 @@ import zipfile
 
 from PyQt5 import QtCore, QtWidgets
 
-from app.util import qt_widgets, report
-from app.gui.dialogs import dialog_misc
-from app.model import objects, services, files
+from beams.app.util import qt_widgets, report
+from beams.app.gui.dialogs import dialog_misc
+from beams.app.model import objects, services, files
 
 
 class WriteFitDialog(QtWidgets.QDialog):

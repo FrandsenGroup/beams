@@ -6,8 +6,8 @@ from typing import Sequence
 import numpy as np
 import uuid
 
-from app.model import files, services
-from app.model.files import File
+from beams.app.model import files, services
+from beams.app.model.files import File
 
 
 class Histogram(np.ndarray):
@@ -835,7 +835,7 @@ class Fit:
         self.asymmetry = asymmetry  # Prompt with the plot prompt
         self.goodness = None if goodness is None else float(goodness)
 
-        from app.model import fit
+        from beams.app.model import fit
         self.expression = fit.FitExpression(expression)
 
     def __repr__(self):
@@ -1059,7 +1059,7 @@ class DataBuilder:
             return run
 
         elif f.DATA_FORMAT == files.Format.FIT_SET_VERBOSE:
-            from app.model import fit
+            from beams.app.model import fit
 
             common, specific, expression = f.read_data()
             fit_dataset = FitDataset()

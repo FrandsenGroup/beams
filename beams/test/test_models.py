@@ -2,7 +2,7 @@ import pytest
 import pickle
 import numpy as np
 
-from app.model import objects
+from beams.app.model import objects
 
 
 @pytest.mark.Histogram

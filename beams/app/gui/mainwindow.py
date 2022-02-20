@@ -4,14 +4,14 @@ import qdarkstyle
 import darkdetect
 from PyQt5 import QtWidgets, QtCore, QtGui
 
-from app.gui.consolepanel import MainConsolePanel
-from app.gui.histogrampanel import HistogramPanel
-from app.gui.plottingpanel import PlottingPanel
-from app.resources import resources
-from app.gui.fittingpanel import FittingPanel
-from app.util import qt_constants
-from app.gui.dialogs.dialog_misc import PermissionsMessageDialog
-from app.model import services
+from beams.app.gui.consolepanel import MainConsolePanel
+from beams.app.gui.histogrampanel import HistogramPanel
+from beams.app.gui.plottingpanel import PlottingPanel
+from beams.app.resources import resources
+from beams.app.gui.fittingpanel import FittingPanel
+from beams.app.util import qt_constants
+from beams.app.gui.dialogs.dialog_misc import PermissionsMessageDialog
+from beams.app.model import services
 
 
 # noinspection PyArgumentList
