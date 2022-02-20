@@ -847,7 +847,7 @@ class FittingPanel(Panel):
 
         self.setLayout(main_layout)
 
-    def _get_row(self, j):
+    def get_row(self, j):
         item_symbol = self.parameter_table.config_table.verticalHeaderItem(j)
         if item_symbol is None:
             return None
@@ -1410,6 +1410,7 @@ class FitTabPresenter(PanelPresenter):
             self.__update_if_table_changes = True
             self._plot_fit()
         else:
+            self.update_parameter_table_states()
             self.__update_if_table_changes = True
             self._view.highlight_input_red(self._view.input_fit_equation, True)
 
@@ -1546,6 +1547,7 @@ class FitTabPresenter(PanelPresenter):
 
     @QtCore.pyqtSlot()
     def _on_parameter_table_changed(self):
+        self.update_parameter_table_states()
         self._plot_fit()
 
     @QtCore.pyqtSlot()
@@ -1948,7 +1950,7 @@ class FitTabPresenter(PanelPresenter):
             item_global.findChild(QtWidgets.QCheckBox).setEnabled(not is_run_specific)
 
             if not is_run_specific:
-                row_values = self._view._get_row(j)
+                row_values = self._view.get_row(j)
                 if row_values is None:
                     continue
                 for run_id in self.__parameter_table_states[row_values[0]].keys():
@@ -1959,7 +1961,7 @@ class FitTabPresenter(PanelPresenter):
         This method is called when the content of the config table is changed.
         """
 
-        if not self.__update_states :
+        if not self.__update_states:
             return
 
         # We are creating a dictionary in this loop to keep track of the table states (if the user wants a run specific
@@ -1967,11 +1969,13 @@ class FitTabPresenter(PanelPresenter):
 
         # State dictionary looks like: {symbol : {run_id : (symbol, value, min, max, fixed)}} so you can think of it
         #   like we keep the state of a row in the config table for each run.
+        current_symbols = set()
         for j in range(self._view.parameter_table.config_table.rowCount()):  # Iterate over all symbols (rows)
-            row_values = self._view._get_row(j)
+            row_values = self._view.get_row(j)
             if row_values is None:
                 continue
             symbol, value, min_value, max_value, is_fixed = row_values
+            current_symbols.add(symbol)
 
             # Get the boolean indicating whether the parameter is run specific
             item_run_specific = self._view.parameter_table.batch_table.cellWidget(j,
@@ -2011,12 +2015,17 @@ class FitTabPresenter(PanelPresenter):
                 self.__parameter_table_states[symbol] = {run_id: (symbol, value, min_value, max_value, is_fixed)
                                                          for run_id in self._view.get_all_run_ids()}
 
+        for symbol in current_symbols.symmetric_difference(self.__parameter_table_states.keys()):
+            if symbol not in current_symbols:
+                self.__parameter_table_states.pop(symbol)
+
     def _update_parameter_table(self):
         """
         This method is called when the run selection of the user is changed.
         """
 
         # Don't want to update the states needlessly since we are the ones updating the table (from the state info)
+        self.update_parameter_table_states()
         self.__update_states = False
 
         selected_run_ids = self._view.get_selected_run_ids()
