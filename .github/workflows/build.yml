@@ -20,7 +20,8 @@ jobs:
         tag_name: ${{ github.ref }}
         release_name: Release ${{ github.ref }}
         draft: false
-        prerelease: false
+        prerelease: true
+        generateReleaseNotes: true
     - name: Output Release URL File
       run: echo "${{ steps.create_release.outputs.upload_url }}" > release_url.txt
     - name: Save Release URL File for publish
@@ -36,6 +37,14 @@ jobs:
     strategy:
       matrix:
         include:
+          - os: macos-latest
+            TARGET: macos
+            CMD_BUILD: >
+              pyinstaller beams/beams.spec &&
+              cd dist/ &&
+              zip -r9 beams beams.app/
+            OUT_FILE_NAME: beams.zip
+            ASSET_MIME: application/zip
           - os: windows-latest
             TARGET: windows
             CMD_BUILD: pyinstaller beams/beams.spec
