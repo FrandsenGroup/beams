@@ -40,7 +40,7 @@ jobs:
           - os: macos-latest
             TARGET: macos
             CMD_BUILD: >
-              pyinstaller -F -w -n beams -i beams/app/resources/icons/icon.icns beams/__main__.py &&
+              pyinstaller beams/beams.spec &&
               cd dist/ &&
               zip -r9 beams beams.app/
             OUT_FILE_NAME: beams.zip
