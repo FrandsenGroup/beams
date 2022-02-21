@@ -39,7 +39,7 @@ jobs:
           - os: windows-latest
             TARGET: windows
             CMD_BUILD: pyinstaller beams/beams.spec
-            OUT_FILE_NAME: clipster.exe
+            OUT_FILE_NAME: beams.exe
             ASSET_MIME: application/vnd.microsoft.portable-executable
     steps:
     - uses: actions/checkout@v1
