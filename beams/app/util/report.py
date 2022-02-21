@@ -27,7 +27,7 @@ def init_reporting():
         logging.root.removeHandler(handler)
 
     # Haven't been able to get logging to file to work with PyQt5 for some reason, honestly doesn't matter anymore.
-    # from app.resources import resources
+    # from beams.app.resources import resources
     # logging.basicConfig(level=logging.DEBUG,
     #                     format='%(asctime)s %(message)s',
     #                     datefmt='%a, %d %b %Y %H:%M:%S',

@@ -9,10 +9,9 @@ from collections import OrderedDict
 import re
 import logging
 import copy
-import traceback
 
-from app.model import objects
-from app.util import report
+from beams.app.model import objects
+from beams.app.util import report
 
 INDEPENDENT_VARIABLE = "t"
 

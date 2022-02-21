@@ -6,8 +6,8 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
 
-from app.util import qt_widgets, qt_constants, report
-from app.resources import resources
+from beams.app.util import qt_widgets, qt_constants, report
+from beams.app.resources import resources
 
 
 # noinspection PyArgumentList

@@ -12,6 +12,8 @@ import pandas as pd
 import numpy as np
 import h5py
 
+from beams.app.resources import resources
+
 
 # File Extensions
 class Extensions:
@@ -177,11 +179,9 @@ class TRIUMFMuonFile(ConvertibleFile):
         flags = ['-all']
         if is_found(self.file_path) and check_ext(self.file_path, Extensions.TRIUMF) and check_ext(out_file,
                                                                                                    Extensions.HISTOGRAM):
-            system_args = {'win32': ['beams\\app\\resources\\mud\\TRIUMF_WINDOWS', self.file_path, out_file],
-                           # Windows Syntax
-                           'linux': ['./beams/app/resources/mud/TRIUMF_LINUX', self.file_path, out_file],
-                           # Linux Syntax
-                           'darwin': ['./beams/app/resources/mud/TRIUMF_MAC', self.file_path, out_file]}  # Mac Syntax
+            system_args = {'win32': [resources.TRIUMF_WINDOWS_CONVERSION, self.file_path, out_file],
+                           'linux': ['./' + resources.TRIUMF_LINUX_CONVERSION, self.file_path, out_file],
+                           'darwin': ['./' + resources.TRIUMF_MAC_CONVERSION, self.file_path, out_file]}
 
             if sys.platform in system_args.keys():
                 args = system_args[sys.platform]
@@ -216,10 +216,9 @@ class PSIMuonFile(ConvertibleFile):
                 check_ext(self.file_path, Extensions.PSI_BIN) or check_ext(self.file_path, Extensions.PSI_MDU)) \
                 and check_ext(out_file, Extensions.HISTOGRAM):
 
-            system_args = {'win32': ['beams\\app\\resources\\mud\\PSI_WINDOWS', self.file_path, out_file],
-                           # Windows Syntax
-                           'linux': ['./beams/app/resources/mud/PSI_LINUX', self.file_path, out_file],  # Linux Syntax
-                           'darwin': ['./beams/app/resources/mud/PSI_MAC', self.file_path, out_file]}  # Mac Syntax
+            system_args = {'win32': [resources.PSI_WINDOWS_CONVERSION, self.file_path, out_file],
+                           'linux': ['./' + resources.PSI_LINUX_CONVERSION, self.file_path, out_file],
+                           'darwin': ['./' + resources.PSI_LINUX_CONVERSION, self.file_path, out_file]}
 
             if sys.platform in system_args.keys():
                 args = system_args[sys.platform]

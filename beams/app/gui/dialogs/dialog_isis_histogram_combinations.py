@@ -4,9 +4,9 @@ from typing import Sequence
 
 from PyQt5 import QtWidgets, QtCore
 
-from app.model import objects
-from app.gui.dialogs.dialog_misc import WarningMessageDialog
-from app.util import qt_constants, report
+from beams.app.model import objects
+from beams.app.gui.dialogs.dialog_misc import WarningMessageDialog
+from beams.app.util import qt_constants, report
 
 
 class IsisHistogramCombinationDialog(QtWidgets.QDialog):

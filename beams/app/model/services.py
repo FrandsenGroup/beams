@@ -6,10 +6,10 @@ import pickle
 
 from PyQt5 import QtCore, QtWidgets
 
-import app.model.data_access as dao
-from app.model import objects, files
-from app.resources import resources
-from app.util import report
+import beams.app.model.data_access as dao
+from beams.app.model import objects, files
+from beams.app.resources import resources
+from beams.app.util import report
 
 
 class Service:
@@ -459,7 +459,7 @@ class SystemService:
                 user_data = json.load(fp)
                 self._set_configuration(user_data)
             except json.JSONDecodeError:
-                report.report_message("Unable to load the configuration file.")
+                report.log_info("Unable to load the configuration file.")
                 self._set_default_configuration()
 
     def write_configuration_file(self):
