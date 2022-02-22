@@ -30,8 +30,8 @@ jobs:
         name: release_url
         path: release_url.txt
 
-  build:
-    name: Build packages
+  buildmac:
+    name: Build package for Mac
     needs: createrelease
     runs-on: ${{ matrix.os }}
     strategy:
@@ -78,8 +78,8 @@ jobs:
         asset_name: ${{ matrix.OUT_FILE_NAME}}
         asset_content_type: ${{ matrix.ASSET_MIME}}
 
-  build:
-    name: Build packages
+  buildwindows:
+    name: Build package for Windows
     needs: createrelease
     runs-on: ${{ matrix.os }}
     strategy:
