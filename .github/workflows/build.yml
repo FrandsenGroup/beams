@@ -80,7 +80,7 @@ jobs:
 
   buildwindows:
     name: Build package for Windows
-    needs: createrelease
+    needs: buildmac
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
