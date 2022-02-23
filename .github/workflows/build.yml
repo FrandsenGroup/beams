@@ -80,7 +80,7 @@ jobs:
 
   buildubuntu:
     name: Build package for Ubuntu
-    needs: createrelease
+    needs: buildmac
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -126,7 +126,7 @@ jobs:
 
   buildwindows:
     name: Build package for Windows
-    needs: buildmac
+    needs: buildubuntu
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
