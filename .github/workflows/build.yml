@@ -30,6 +30,11 @@ jobs:
         name: release_url
         path: release_url.txt
 
+  # You may be asking, "Why not just include all these os options in the strategy section of a single build job?
+  # WELL, I kept getting timeout errors when I did that because it would try to run them concurrently. So instead I just
+  # made a separate job for each and specified in the 'needs' property that the previous build needs to complete before
+  # the current one is started. Except in the first, that just 'needs' the createrelease job to finish.
+
   buildmac:
     name: Build package for Mac
     needs: createrelease
