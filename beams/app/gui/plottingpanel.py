@@ -9,12 +9,12 @@ from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import numpy as np
 
-from beams.app.resources import resources
-from beams.app.gui.dialogs.dialog_misc import WarningMessageDialog
-from beams.app.gui.dialogs.dialog_plot_file import PlotFileDialog
-from beams.app.gui.gui import Panel, PanelPresenter
-from beams.app.model import files, objects, services
-from beams.app.util import qt_widgets, qt_constants
+from app.resources import resources
+from app.gui.dialogs.dialog_misc import WarningMessageDialog
+from app.gui.dialogs.dialog_plot_file import PlotFileDialog
+from app.gui.gui import Panel, PanelPresenter
+from app.model import files, objects, services
+from app.util import qt_widgets, qt_constants
 
 
 class PlottingPanel(Panel, QtWidgets.QWidget):

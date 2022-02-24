@@ -7,11 +7,11 @@ from PyQt5 import QtWidgets, QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
 
-from beams.app.resources import resources
-from beams.app.gui.dialogs.dialog_misc import FileDisplayDialog, WarningMessageDialog
-from beams.app.gui.gui import Panel, PanelPresenter
-from beams.app.model import files, services, objects
-from beams.app.util import qt_widgets, qt_constants
+from app.resources import resources
+from app.gui.dialogs.dialog_misc import FileDisplayDialog, WarningMessageDialog
+from app.gui.gui import Panel, PanelPresenter
+from app.model import files, services, objects
+from app.util import qt_widgets, qt_constants
 
 
 class HistogramPanel(Panel):

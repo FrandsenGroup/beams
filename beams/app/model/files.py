@@ -12,7 +12,7 @@ import pandas as pd
 import numpy as np
 import h5py
 
-from beams.app.resources import resources
+from app.resources import resources
 
 
 # File Extensions

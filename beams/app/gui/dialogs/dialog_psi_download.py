@@ -7,8 +7,8 @@ from datetime import datetime
 import requests
 from PyQt5 import QtWidgets, QtCore
 
-from beams.app.util import qt_widgets, qt_constants, report
-from beams.app.model import services
+from app.util import qt_widgets, qt_constants, report
+from app.model import services
 
 
 # noinspection PyArgumentList

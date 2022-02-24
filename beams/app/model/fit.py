@@ -10,8 +10,8 @@ import re
 import logging
 import copy
 
-from beams.app.model import objects
-from beams.app.util import report
+from app.model import objects
+from app.util import report
 
 INDEPENDENT_VARIABLE = "t"
 

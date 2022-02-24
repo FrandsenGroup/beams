@@ -3,9 +3,9 @@ import os
 
 from PyQt5 import QtWidgets, QtCore
 
-from beams.app.util import qt_widgets, qt_constants
-from beams.app.model import files, objects, services
-from beams.app.gui.dialogs.dialog_misc import WarningMessageDialog
+from app.util import qt_widgets, qt_constants
+from app.model import files, objects, services
+from app.gui.dialogs.dialog_misc import WarningMessageDialog
 
 
 # noinspection PyArgumentList

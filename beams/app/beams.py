@@ -12,10 +12,10 @@ import qdarkstyle
 from PyQt5 import QtWidgets, QtGui
 
 # BEAMS Modules
-from beams.app.gui import mainwindow
-from beams.app.model import services
-from beams.app.resources import resources
-from beams.app.util import qt_constants, report
+from app.gui import mainwindow
+from app.model import services
+from app.resources import resources
+from app.util import qt_constants, report
 
 
 class BEAMS(QtWidgets.QApplication):

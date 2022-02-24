@@ -4,16 +4,16 @@ import traceback
 
 from PyQt5 import QtWidgets, QtCore
 
-from beams.app.gui.dialogs.dialog_isis_download import ISISDownloadDialog
-from beams.app.gui.dialogs.dialog_misc import AddFileDialog, PermissionsMessageDialog, WarningMessageDialog
-from beams.app.gui.dialogs.dialog_musr_download import MusrDownloadDialog
-from beams.app.gui.dialogs.dialog_psi_download import PSIDownloadDialog
-from beams.app.gui.dialogs.dialog_write_data import WriteDataDialog
-from beams.app.gui.dialogs.dialog_plot_file import PlotFileDialog
-from beams.app.gui.dialogs.dialog_isis_histogram_combinations import IsisHistogramCombinationDialog
-from beams.app.gui.gui import PanelPresenter
-from beams.app.model import files, services, objects
-from beams.app.util import qt_widgets, qt_constants, report
+from app.gui.dialogs.dialog_isis_download import ISISDownloadDialog
+from app.gui.dialogs.dialog_misc import AddFileDialog, PermissionsMessageDialog, WarningMessageDialog
+from app.gui.dialogs.dialog_musr_download import MusrDownloadDialog
+from app.gui.dialogs.dialog_psi_download import PSIDownloadDialog
+from app.gui.dialogs.dialog_write_data import WriteDataDialog
+from app.gui.dialogs.dialog_plot_file import PlotFileDialog
+from app.gui.dialogs.dialog_isis_histogram_combinations import IsisHistogramCombinationDialog
+from app.gui.gui import PanelPresenter
+from app.model import files, services, objects
+from app.util import qt_widgets, qt_constants, report
 
 
 class MainConsolePanel(QtWidgets.QDockWidget):
