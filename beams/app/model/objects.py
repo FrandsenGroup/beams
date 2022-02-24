@@ -611,6 +611,19 @@ class Asymmetry(np.ndarray):
                          alpha=self.alpha,
                          calculated=None if self.calculated is None else self.calculated[start_index: end_index])
 
+    def integrate(self):
+        """ Returns the integration of the current array.
+
+        Currently uses the composite trapezoidal rule as provided by numpy.
+
+        Returns
+        -------
+        integration : float
+            The integration of this asymmetry
+
+        """
+        return np.trapz(self, self.time)
+
 
 class Uncertainty(np.ndarray):
     """
