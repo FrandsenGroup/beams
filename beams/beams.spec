@@ -2,7 +2,7 @@
 
 block_cipher = None
 a = Analysis(['__main__.py'],
-             pathex=[r'C:\Users\Alec\BEAMS\beams'],
+             pathex=['beams'],
              binaries=[
                 ('app/resources/binaries/*', 'app/resources/binaries')
              ],
