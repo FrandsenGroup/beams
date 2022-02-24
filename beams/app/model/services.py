@@ -3,6 +3,7 @@ import json
 import os
 import logging
 import pickle
+from collections.abc import Sequence
 
 from PyQt5 import QtCore, QtWidgets
 
@@ -76,29 +77,23 @@ class RunService:
             cls._instance._system_service = SystemService()
         return cls._instance
 
-    def get_runs(self):
+    def get_runs(self) -> Sequence[objects.RunDataset]:
         return self.__dao.get_runs()
 
-    def get_runs_by_ids(self, ids):
+    def get_runs_by_ids(self, ids: Sequence) -> Sequence[objects.RunDataset]:
         return self.__dao.get_runs_by_ids(ids)
 
-    def get_runs_by_numbers(self, numbers):
+    def get_runs_by_numbers(self, numbers: Sequence) -> Sequence[objects.RunDataset]:
         return self.__dao.get_runs_by_numbers(numbers)
 
-    def get_loaded_runs(self):
+    def get_loaded_runs(self) -> Sequence[objects.RunDataset]:
         loaded_runs = []
         for run in self.__dao.get_runs():
             if run.isLoaded:
                 loaded_runs.append(run)
         return loaded_runs
 
-    def load_runs(self, ids):
-        pass
-
-    def combine_histograms(self, ids, titles):
-        pass
-
-    def recalculate_asymmetries(self, ids):
+    def recalculate_asymmetries(self, ids: Sequence):
         report.log_debug("Updated Asymmetry for Runs=({})".format(str(ids)))
         for run in self.__dao.get_runs_by_ids(ids):
             if len(run.histograms_used) == 2:
@@ -117,7 +112,26 @@ class RunService:
 
         self.signals.changed.emit()
 
-    def add_runs(self, paths):
+    def integrate_asymmetries(self, ids: Sequence) -> dict[Sequence[float]]:
+        runs = self.get_runs_by_ids(ids)
+
+        left_integrations = []
+        right_integrations = []
+
+        for run in runs:
+            if run.asymmetries[run.LEFT_BINNED_ASYMMETRY] is None or \
+                    run.asymmetries[run.RIGHT_BINNED_ASYMMETRY] is None:
+                raise Exception("Asymmetries have not been calculated for runs selected to integrate.")
+
+            left_integrations.append(run.asymmetries[run.LEFT_BINNED_ASYMMETRY].integrate())
+            right_integrations.append(run.asymmetries[run.RIGHT_BINNED_ASYMMETRY].integrate())
+
+        return {
+            objects.RunDataset.LEFT_BINNED_ASYMMETRY: left_integrations,
+            objects.RunDataset.RIGHT_BINNED_ASYMMETRY: right_integrations
+        }
+
+    def add_runs(self, paths: Sequence):
         builder = objects.DataBuilder()
         for path in paths:
             run = builder.build_minimal(path)
@@ -125,26 +139,20 @@ class RunService:
 
         self.signals.added.emit()
 
-    def remove_runs_by_ids(self, ids):
+    def remove_runs_by_ids(self, ids: Sequence):
         report.log_debug("Removing Run Datasets=({})".format(str(ids)))
         self.__dao.remove_runs_by_ids(ids)
 
         self.signals.loaded.emit()
 
-    def add_dataset(self, datasets, suppress_signal):
+    def add_dataset(self, datasets: Sequence[objects.RunDataset], suppress_signal: bool):
         report.log_debug("Adding Run Datasets=({})".format(str(datasets)))
         self.__dao.add_runs(datasets)
 
         if not suppress_signal:
             self.signals.added.emit()
 
-    def update_runs_by_ids(self, ids, asymmetries):
-        report.log_debug(
-            "Updating Asymmetries for Runs=({}) with Asymmetries=({})".format(str(ids), str(asymmetries)))
-        self.__dao.update_runs_by_id(ids, asymmetries)
-        self.signals.changed.emit()
-
-    def update_alphas(self, ids, alphas):
+    def update_alphas(self, ids: Sequence, alphas: Sequence[float]):
         report.log_debug("Updating Alphas for Runs=({}) with Alphas=({})".format(str(ids), str(alphas)))
         if len(alphas) == 1:  # When we update alpha from plotting panel we send one alpha for multiple runs
             alpha = alphas[0]
@@ -168,19 +176,6 @@ class RunService:
 
     def changed(self):
         self.signals.changed.emit()
-
-    def add_run_from_histograms(self, histograms, meta):
-        run = objects.RunDataset()
-
-        for hist in histograms.values():
-            hist.id = run.id
-
-        run.histograms = histograms
-        run.meta = meta
-        run.isLoaded = True
-        self.__dao.add_runs([run])
-        self.signals.added.emit()
-        return run
 
 
 class StyleService:
