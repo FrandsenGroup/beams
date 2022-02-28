@@ -904,7 +904,6 @@ class FitDataset:
 
         f = list(self.fits.values())[0]
 
-        # helpful code
         fit_parameters_string += "{:<8}\t".format(files.RUN_NUMBER_KEY)
         if order_by_key != files.RUN_NUMBER_KEY:
             fit_parameters_string += "{:<12}\t".format(order_by_key)
