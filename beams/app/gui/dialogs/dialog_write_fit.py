@@ -52,6 +52,9 @@ class WriteFitDialog(QtWidgets.QDialog):
         parameter_set = set([parameter for fit in self._dataset.fits.values() for parameter in fit.parameters.keys()])
         self.option_parameter.addItems(parameter_set)
 
+        self.option_ind_var.setEnabled(False)
+        self.option_parameter.setEnabled(False)
+
         # We only want to use keys as filenames if there is a unique value for reach run
         meta_keys = [k for k in meta_keys if len(set([str(m[k]) for m in metas])) == len(metas)]
 
@@ -182,6 +185,8 @@ class WriteFitDialogPresenter(QtCore.QObject):
     def _on_save_as_clicked(self):
         prefix_key = self._view.option_prefix.currentText()
         order_by_key = self._view.option_order_by.currentText()
+        ind_var_key = self._view.option_ind_var.currentText()
+        parameter_key = self._view.option_parameter.currentText()
 
         if self._view.radio_summary.isChecked():
             save_path = self._get_save_path("Fit (*{})".format(files.Extensions.FIT_SUMMARY_VERBOSE))
@@ -191,6 +196,17 @@ class WriteFitDialogPresenter(QtCore.QObject):
 
             try:
                 self._dataset.write(save_path, order_by_key)
+            except Exception as e:
+                report.report_exception(e)
+                dialog_misc.WarningMessageDialog.launch(["Error writing dataset file: " + str(e)])
+                return
+        elif self._view.radio_parameter.isChecked():
+            save_path = self._get_save_path("prm (*{})".format(files.Extensions.PARAMETER))
+            if not save_path:
+                return
+
+            try:
+                self._dataset.write(save_path, ind_var_key, parameter_key)
             except Exception as e:
                 report.report_exception(e)
                 dialog_misc.WarningMessageDialog.launch(["Error writing dataset file: " + str(e)])

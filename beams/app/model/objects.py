@@ -898,7 +898,20 @@ class FitDataset:
     def __repr__(self):
         return f'FitDataset({self.title}, {self.flags}, {self.expression}, {self.is_loaded}, {self.id}, {self.fits})'
 
-    def write(self, out_file, order_by_key):
+    def write(self, out_file, order_by_key, parameter=None):
+        if parameter:
+            fit_parameters_string = self.__write_parameter(order_by_key, parameter)
+        else:
+            fit_parameters_string = self.__write_summary(order_by_key)
+
+        # Write out our string
+        with open(out_file, 'w', encoding="utf-8") as out_file_object:
+            out_file_object.write("#BEAMS\n"
+                                  + fit_parameters_string
+                                  + "# Expression\n\n\t"
+                                  + "A(t) = " + str(self.expression))
+
+    def __write_summary(self, order_by_key):
         # Writing the Summary Block
         fit_parameters_string = "\n# Summary\n"
 
@@ -912,15 +925,17 @@ class FitDataset:
             fit_parameters_string += "{:<8}\t".format(name)
         fit_parameters_string += "\n"
 
-        # Make a list from the fit dictionary so that we can then sort it by the meta value
-        fit_list = list(self.fits.values())
+        # # Make a list from the fit dictionary so that we can then sort it by the meta value
+        # fit_list = list(self.fits.values())
+        #
+        # # Sorting the fit list by the user-selected meta value
+        # try:
+        #     fit_list.sort(
+        #         key=lambda fit: float(re.search("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?", fit.meta[order_by_key])[0]))
+        # except IndexError:
+        #     pass
 
-        # Sorting the fit list by the user-selected meta value
-        try:
-            fit_list.sort(
-                key=lambda fit: float(re.search("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?", fit.meta[order_by_key])[0]))
-        except IndexError:
-            pass
+        fit_list = self.__sort_fit_list(list(self.fits.values()), order_by_key)
 
         for f in fit_list:  # adding values for each run
             fit_parameters_string += "{:<8}\t".format(f.meta[files.RUN_NUMBER_KEY])
@@ -965,13 +980,31 @@ class FitDataset:
                                                                                                      v.upper) + "\n"
 
             fit_parameters_string += "\n"
+            return fit_parameters_string
 
-        # Write out our string
-        with open(out_file, 'w', encoding="utf-8") as out_file_object:
-            out_file_object.write("#BEAMS\n"
-                                  + fit_parameters_string
-                                  + "# Expression\n\n\t"
-                                  + "A(t) = " + str(self.expression))
+    def __write_parameter(self, ind_var, parameter):
+        fit_parameters_string = "\n# Parameter Export\n\n"
+        fit_parameters_string += "{:<12}\t".format(ind_var)
+        fit_parameters_string += "{:<8}\t".format(parameter)
+        fit_parameters_string += "{:<12}\t\n".format("Uncertainty")
+
+        fit_list = self.__sort_fit_list(list(self.fits.values()), ind_var)
+        for f in fit_list:
+            fit_parameters_string += "{:<12}\t".format(f.meta[ind_var])
+            fit_parameters_string += "{:<8.5f}\t".format(f.parameters[parameter].fixed_value)
+            fit_parameters_string += "{:<12.5f}\t\n".format(f.parameters[parameter].uncertainty)
+
+        fit_parameters_string += "\n"
+        return fit_parameters_string
+
+    def __sort_fit_list(self, fit_list, order_by_key):
+        try:
+            fit_list.sort(
+                key=lambda fit: float(re.search("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?", fit.meta[order_by_key])[0]))
+        except IndexError:
+            pass
+
+        return fit_list
 
 
 class RunDataset:
