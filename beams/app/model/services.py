@@ -112,7 +112,17 @@ class RunService:
 
         self.signals.changed.emit()
 
-    def integrate_asymmetries(self, ids: Sequence) -> dict[Sequence[float]]:
+    def integrate_asymmetries(self, ids: Sequence) -> dict[str, Sequence[float]]:
+        """ Gets the runs with the given ids and integrates the asymmetries as they are currently binned on the left
+        and right.
+
+        RETURNS
+        -------
+        integrations : dict[str, Sequence[float]]
+            Two arrays of floats, one for the asymmetries binned on the left, on for the ones on the right.
+
+        """
+
         runs = self.get_runs_by_ids(ids)
 
         left_integrations = []
