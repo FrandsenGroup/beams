@@ -81,10 +81,10 @@ class RunService:
     def get_runs(self):
         return self.__dao.get_runs()
 
-    def get_runs_by_ids(self, ids: Sequence):
+    def get_runs_by_ids(self, ids):
         return self.__dao.get_runs_by_ids(ids)
 
-    def get_runs_by_numbers(self, numbers: Sequence):
+    def get_runs_by_numbers(self, numbers):
         return self.__dao.get_runs_by_numbers(numbers)
 
     def get_loaded_runs(self):
@@ -94,7 +94,7 @@ class RunService:
                 loaded_runs.append(run)
         return loaded_runs
 
-    def recalculate_asymmetries(self, ids: Sequence):
+    def recalculate_asymmetries(self, ids):
         report.log_debug("Updated Asymmetry for Runs=({})".format(str(ids)))
         for run in self.__dao.get_runs_by_ids(ids):
             if len(run.histograms_used) == 2:
@@ -113,7 +113,7 @@ class RunService:
 
         self.signals.changed.emit()
 
-    def integrate_asymmetries(self, ids: Sequence, independent_variable_key: str):
+    def integrate_asymmetries(self, ids, independent_variable_key):
         """ Gets the runs with the given ids and integrates the asymmetries as they are currently binned on the left
         and right.
 
@@ -150,7 +150,7 @@ class RunService:
             objects.RunDataset.RIGHT_BINNED_ASYMMETRY: right_integrations
         }
 
-    def add_runs(self, paths: Sequence):
+    def add_runs(self, paths):
         builder = objects.DataBuilder()
         for path in paths:
             run = builder.build_minimal(path)
@@ -158,20 +158,20 @@ class RunService:
 
         self.signals.added.emit()
 
-    def remove_runs_by_ids(self, ids: Sequence):
+    def remove_runs_by_ids(self, ids):
         report.log_debug("Removing Run Datasets=({})".format(str(ids)))
         self.__dao.remove_runs_by_ids(ids)
 
         self.signals.loaded.emit()
 
-    def add_dataset(self, datasets: Sequence, suppress_signal: bool):
+    def add_dataset(self, datasets, suppress_signal):
         report.log_debug("Adding Run Datasets=({})".format(str(datasets)))
         self.__dao.add_runs(datasets)
 
         if not suppress_signal:
             self.signals.added.emit()
 
-    def update_alphas(self, ids: Sequence, alphas: Sequence[float]):
+    def update_alphas(self, ids, alphas):
         report.log_debug("Updating Alphas for Runs=({}) with Alphas=({})".format(str(ids), str(alphas)))
         if len(alphas) == 1:  # When we update alpha from plotting panel we send one alpha for multiple runs
             alpha = alphas[0]
