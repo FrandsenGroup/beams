@@ -977,6 +977,8 @@ class FitDataset:
         if ind_var == files.TEMPERATURE_KEY:
             fit_parameters_string += "# {:<12}(K)\t".format(ind_var)
             fit_parameters_string += "{:<12}\t".format("Uncertainty")
+        elif ind_var == files.FIELD_KEY:
+            fit_parameters_string += "# {:<12}\t".format(ind_var + ' (G)')
         else:
             fit_parameters_string += "# {:<12}\t".format(ind_var)
         fit_parameters_string += "{:<8}\t".format(parameter)
@@ -988,6 +990,9 @@ class FitDataset:
                 temp, uncertainty = re.findall("[-+]?[0-9]*\\.[0-9]+", f.meta[ind_var])
                 fit_parameters_string += "{:<17}\t".format(temp)
                 fit_parameters_string += "{:<12}\t".format(uncertainty)
+            elif ind_var == files.FIELD_KEY:
+                field = re.search("[-+]?[0-9]*\\.[0-9]+", f.meta[ind_var])[0]
+                fit_parameters_string += "{:<12}\t".format(field)
             else:
                 fit_parameters_string += "{:<14}\t".format(f.meta[ind_var])
             fit_parameters_string += "{:<8.5f}\t".format(f.parameters[parameter].fixed_value)
