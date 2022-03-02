@@ -1,17 +1,18 @@
 import threading
 import warnings
 import logging
+import functools
 
 import darkdetect
 from PyQt5 import QtGui, QtWidgets, QtCore
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
-from matplotlib.figure import Figure
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 import numpy as np
 
 from app.resources import resources
 from app.gui.dialogs.dialog_misc import WarningMessageDialog
 from app.gui.dialogs.dialog_plot_file import PlotFileDialog
+from app.gui.dialogs.dialog_integrations import IntegrationDialog
 from app.gui.gui import Panel, PanelPresenter
 from app.model import files, objects, services
 from app.util import qt_widgets, qt_constants
@@ -165,7 +166,13 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                     return
 
                 item = self.itemAt(point)
-                menu = item.menu(self.selectedItems())
+
+                actions = item.get_actions()
+                menu = QtWidgets.QMenu()
+
+                for action in actions:
+                    menu.addAction(action[0], functools.partial(action[1], self.selectedItems(), self))
+
                 menu.exec_(self.mapToGlobal(point))
 
             def set_tree(self, tree):
@@ -285,9 +292,29 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             def menu(self, items):
                 self.__selected_items = items
                 menu = QtWidgets.QMenu()
-                menu.addAction("Plot", self._action_plot)
-                menu.addAction("Save", self._action_save)
+                # menu.addAction("Plot", self._action_plot)
+                # menu.addAction("Save", self._action_save)
+                menu.addAction("Integrate", self._action_integrate)
                 return menu
+
+            def get_actions(self):
+                actions = [
+                    ("Integrate", self._action_integrate)
+                ]
+
+                return actions
+
+            def _action_integrate(self, items, parent):
+                ids = [i.model.id for i in items]
+
+                if not len(ids):  # This shouldn't happen but may as well check. PyQt5 can have glitches.
+                    WarningMessageDialog.launch(["No runs were selected to integrate."])
+                    return
+
+                integrations = services.RunService().integrate_asymmetries(ids)
+                integration_left = integrations[objects.RunDataset.LEFT_BINNED_ASYMMETRY]
+                integration_right = integrations[objects.RunDataset.RIGHT_BINNED_ASYMMETRY]
+                IntegrationDialog.launch([integration_left, integration_right])
 
             def _action_save(self):
                 pass
