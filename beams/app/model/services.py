@@ -78,16 +78,16 @@ class RunService:
             cls._instance._system_service = SystemService()
         return cls._instance
 
-    def get_runs(self) -> Sequence[objects.RunDataset]:
+    def get_runs(self):
         return self.__dao.get_runs()
 
-    def get_runs_by_ids(self, ids: Sequence) -> list[objects.RunDataset]:
+    def get_runs_by_ids(self, ids: Sequence):
         return self.__dao.get_runs_by_ids(ids)
 
-    def get_runs_by_numbers(self, numbers: Sequence) -> Sequence[objects.RunDataset]:
+    def get_runs_by_numbers(self, numbers: Sequence):
         return self.__dao.get_runs_by_numbers(numbers)
 
-    def get_loaded_runs(self) -> Sequence[objects.RunDataset]:
+    def get_loaded_runs(self):
         loaded_runs = []
         for run in self.__dao.get_runs():
             if run.isLoaded:
@@ -113,7 +113,7 @@ class RunService:
 
         self.signals.changed.emit()
 
-    def integrate_asymmetries(self, ids: Sequence, independent_variable_key: str) -> dict[str, list[float]]:
+    def integrate_asymmetries(self, ids: Sequence, independent_variable_key: str):
         """ Gets the runs with the given ids and integrates the asymmetries as they are currently binned on the left
         and right.
 
