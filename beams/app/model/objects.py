@@ -908,8 +908,8 @@ class FitDataset:
         with open(out_file, 'w', encoding="utf-8") as out_file_object:
             out_file_object.write("#BEAMS\n"
                                   + fit_parameters_string
-                                  + "# Expression\n\n\t"
-                                  + "A(t) = " + str(self.expression))
+                                  + "# Fitting equation\n\n\t"
+                                  + "# A(t) = " + str(self.expression))
 
     def __write_summary(self, order_by_key):
         # Writing the Summary Block
@@ -924,16 +924,6 @@ class FitDataset:
         for name, v in f.parameters.items():  # getting the column headers
             fit_parameters_string += "{:<8}\t".format(name)
         fit_parameters_string += "\n"
-
-        # # Make a list from the fit dictionary so that we can then sort it by the meta value
-        # fit_list = list(self.fits.values())
-        #
-        # # Sorting the fit list by the user-selected meta value
-        # try:
-        #     fit_list.sort(
-        #         key=lambda fit: float(re.search("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?", fit.meta[order_by_key])[0]))
-        # except IndexError:
-        #     pass
 
         fit_list = self.__sort_fit_list(list(self.fits.values()), order_by_key)
 
@@ -984,13 +974,22 @@ class FitDataset:
 
     def __write_parameter(self, ind_var, parameter):
         fit_parameters_string = "\n# Parameter Export\n\n"
-        fit_parameters_string += "{:<12}\t".format(ind_var)
+        if ind_var == files.TEMPERATURE_KEY:
+            fit_parameters_string += "# {:<12}(K)\t".format(ind_var)
+            fit_parameters_string += "{:<12}\t".format("Uncertainty")
+        else:
+            fit_parameters_string += "# {:<12}\t".format(ind_var)
         fit_parameters_string += "{:<8}\t".format(parameter)
         fit_parameters_string += "{:<12}\t\n".format("Uncertainty")
 
         fit_list = self.__sort_fit_list(list(self.fits.values()), ind_var)
         for f in fit_list:
-            fit_parameters_string += "{:<12}\t".format(f.meta[ind_var])
+            if ind_var == files.TEMPERATURE_KEY:
+                temp, uncertainty = re.findall("[-+]?[0-9]*\\.[0-9]+", f.meta[ind_var])
+                fit_parameters_string += "{:<17}\t".format(temp)
+                fit_parameters_string += "{:<12}\t".format(uncertainty)
+            else:
+                fit_parameters_string += "{:<14}\t".format(f.meta[ind_var])
             fit_parameters_string += "{:<8.5f}\t".format(f.parameters[parameter].fixed_value)
             fit_parameters_string += "{:<12.5f}\t\n".format(f.parameters[parameter].uncertainty)
 
