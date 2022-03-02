@@ -164,7 +164,7 @@ class RunService:
 
         self.signals.loaded.emit()
 
-    def add_dataset(self, datasets: Sequence[objects.RunDataset], suppress_signal: bool):
+    def add_dataset(self, datasets: Sequence, suppress_signal: bool):
         report.log_debug("Adding Run Datasets=({})".format(str(datasets)))
         self.__dao.add_runs(datasets)
 
