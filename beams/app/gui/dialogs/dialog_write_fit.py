@@ -15,14 +15,17 @@ class WriteFitDialog(QtWidgets.QDialog):
         self._ignore_radio_button = False
 
         self.radio_summary = QtWidgets.QRadioButton("Summary")
+        self.radio_parameter = QtWidgets.QRadioButton("Parameter")
         self.radio_directory = QtWidgets.QRadioButton("Directory")
         self.radio_zip = QtWidgets.QRadioButton("Zip")
         self.button_save_as = qt_widgets.StyleOneButton("Save")
         self.button_done = qt_widgets.StyleOneButton("Cancel")
         self.option_prefix = QtWidgets.QComboBox()
         self.option_order_by = QtWidgets.QComboBox()
+        self.option_ind_var = QtWidgets.QComboBox()
+        self.option_parameter = QtWidgets.QComboBox()
 
-        self.summary_button_group = QtWidgets.QButtonGroup()
+        self.single_file_button_group = QtWidgets.QButtonGroup()
         self.individual_button_group = QtWidgets.QButtonGroup()
 
         # TODO we should add ability to specify bin size and spectrum limits here.
@@ -41,36 +44,66 @@ class WriteFitDialog(QtWidgets.QDialog):
 
         self.option_order_by.addItems(order_by_list)
 
+        # populate independent variable combo
+        ind_var_list = order_by_list
+        self.option_ind_var.addItems(ind_var_list)
+
+        # populate parameter combo
+        parameter_set = {parameter for fit in self._dataset.fits.values() for parameter in fit.parameters.keys()}
+        self.option_parameter.addItems(parameter_set)
+
+        self.option_ind_var.setEnabled(False)
+        self.option_parameter.setEnabled(False)
+
         # We only want to use keys as filenames if there is a unique value for reach run
-        meta_keys = [k for k in meta_keys if len(set([str(m[k]) for m in metas])) == len(metas)]
+        meta_keys = [k for k in meta_keys if len({str(m[k]) for m in metas}) == len(metas)]
 
         self.option_prefix.addItems(meta_keys)
         self.option_prefix.setEnabled(False)
 
         self.individual_button_group.addButton(self.radio_zip)
         self.individual_button_group.addButton(self.radio_directory)
-        self.summary_button_group.addButton(self.radio_summary)
+        self.single_file_button_group.addButton(self.radio_summary)
+        self.single_file_button_group.addButton(self.radio_parameter)
 
-        self.summary_button_group.setExclusive(False)
+        self.single_file_button_group.setExclusive(False)
         self.individual_button_group.setExclusive(False)
 
         self.radio_summary.setChecked(True)
 
         self.radio_zip.toggled.connect(lambda: self._radio_button_clicked(self.radio_zip.text()))
         self.radio_summary.toggled.connect(lambda: self._radio_button_clicked(self.radio_summary.text()))
+        self.radio_parameter.toggled.connect(lambda: self._radio_button_clicked(self.radio_parameter.text()))
         self.radio_directory.toggled.connect(lambda: self._radio_button_clicked(self.radio_directory.text()))
 
     def _set_layout(self):
-        vbox = QtWidgets.QVBoxLayout()
-        vbox.addWidget(self.radio_summary)
-        hbox = QtWidgets.QHBoxLayout()
-        hbox.addWidget(QtWidgets.QLabel("Order runs by:"))
-        hbox.addStretch()
-        vbox.addLayout(hbox)
-        vbox.addWidget(self.option_order_by)
+        summary_vbox = QtWidgets.QVBoxLayout()
+        summary_vbox.addWidget(self.radio_summary)
+        # order_hbox = QtWidgets.QHBoxLayout()
+        summary_vbox.addWidget(QtWidgets.QLabel("Order runs by:"))
+        # order_hbox.addStretch()
+        # summary_vbox.addLayout(order_hbox)
+        summary_vbox.addWidget(self.option_order_by)
+        summary_vbox.addStretch()
 
-        summary_group = QtWidgets.QGroupBox("Single File")
-        summary_group.setLayout(vbox)
+        line = QtWidgets.QFrame()
+        line.setFrameShape(QtWidgets.QFrame.VLine)
+        line.setFrameShadow(QtWidgets.QFrame.Sunken)
+
+        parameter_vbox = QtWidgets.QVBoxLayout()
+        parameter_vbox.addWidget(self.radio_parameter)
+        parameter_vbox.addWidget(QtWidgets.QLabel("Independent variable:"))
+        parameter_vbox.addWidget(self.option_ind_var)
+        parameter_vbox.addWidget(QtWidgets.QLabel("Parameter:"))
+        parameter_vbox.addWidget(self.option_parameter)
+
+        single_file_hbox = QtWidgets.QHBoxLayout()
+        single_file_hbox.addLayout(summary_vbox)
+        single_file_hbox.addWidget(line)
+        single_file_hbox.addLayout(parameter_vbox)
+
+        single_file_group = QtWidgets.QGroupBox("Single File")
+        single_file_group.setLayout(single_file_hbox)
 
         vbox = QtWidgets.QVBoxLayout()
         hbox = QtWidgets.QHBoxLayout()
@@ -82,11 +115,12 @@ class WriteFitDialog(QtWidgets.QDialog):
         hbox.addStretch()
         vbox.addLayout(hbox)
         vbox.addWidget(self.option_prefix)
+        vbox.addStretch()
         individual_group = QtWidgets.QGroupBox("Collection of Files")
         individual_group.setLayout(vbox)
 
         hbox = QtWidgets.QHBoxLayout()
-        hbox.addWidget(summary_group)
+        hbox.addWidget(single_file_group)
         hbox.addWidget(individual_group)
 
         main_layout = QtWidgets.QVBoxLayout()
@@ -108,6 +142,7 @@ class WriteFitDialog(QtWidgets.QDialog):
         self._ignore_radio_button = True
 
         self.radio_summary.setChecked(self.radio_summary.text() == text)
+        self.radio_parameter.setChecked(self.radio_parameter.text() == text)
         self.radio_zip.setChecked(self.radio_zip.text() == text)
         self.radio_directory.setChecked(self.radio_directory.text() == text)
 
@@ -115,6 +150,8 @@ class WriteFitDialog(QtWidgets.QDialog):
 
         self.option_prefix.setEnabled(self.radio_directory.text() == text or self.radio_zip.text() == text)
         self.option_order_by.setEnabled(self.radio_summary.text() == text)
+        self.option_ind_var.setEnabled(self.radio_parameter.text() == text)
+        self.option_parameter.setEnabled(self.radio_parameter.text() == text)
 
     def set_status_message(self, message):
         self.status_bar.showMessage(message)
@@ -148,6 +185,8 @@ class WriteFitDialogPresenter(QtCore.QObject):
     def _on_save_as_clicked(self):
         prefix_key = self._view.option_prefix.currentText()
         order_by_key = self._view.option_order_by.currentText()
+        ind_var_key = self._view.option_ind_var.currentText()
+        parameter_key = self._view.option_parameter.currentText()
 
         if self._view.radio_summary.isChecked():
             save_path = self._get_save_path("Fit (*{})".format(files.Extensions.FIT_SUMMARY_VERBOSE))
@@ -157,6 +196,17 @@ class WriteFitDialogPresenter(QtCore.QObject):
 
             try:
                 self._dataset.write(save_path, order_by_key)
+            except Exception as e:
+                report.report_exception(e)
+                dialog_misc.WarningMessageDialog.launch(["Error writing dataset file: " + str(e)])
+                return
+        elif self._view.radio_parameter.isChecked():
+            save_path = self._get_save_path("prm (*{})".format(files.Extensions.PARAMETER))
+            if not save_path:
+                return
+
+            try:
+                self._dataset.write(save_path, ind_var_key, parameter_key)
             except Exception as e:
                 report.report_exception(e)
                 dialog_misc.WarningMessageDialog.launch(["Error writing dataset file: " + str(e)])
