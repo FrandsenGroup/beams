@@ -4,7 +4,6 @@ import os
 import pickle
 import sys
 import subprocess
-import traceback
 import enum
 
 # Installed Packages
