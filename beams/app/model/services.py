@@ -3,7 +3,8 @@ import json
 import os
 import logging
 import pickle
-from collections.abc import Sequence
+import re
+from collections.abc import Sequence, Iterable
 
 from PyQt5 import QtCore, QtWidgets
 
@@ -80,7 +81,7 @@ class RunService:
     def get_runs(self) -> Sequence[objects.RunDataset]:
         return self.__dao.get_runs()
 
-    def get_runs_by_ids(self, ids: Sequence) -> Sequence[objects.RunDataset]:
+    def get_runs_by_ids(self, ids: Sequence) -> list[objects.RunDataset]:
         return self.__dao.get_runs_by_ids(ids)
 
     def get_runs_by_numbers(self, numbers: Sequence) -> Sequence[objects.RunDataset]:
@@ -112,7 +113,7 @@ class RunService:
 
         self.signals.changed.emit()
 
-    def integrate_asymmetries(self, ids: Sequence) -> dict[str, Sequence[float]]:
+    def integrate_asymmetries(self, ids: Sequence, independent_variable_key: str) -> dict[str, list[float]]:
         """ Gets the runs with the given ids and integrates the asymmetries as they are currently binned on the left
         and right.
 
@@ -123,12 +124,19 @@ class RunService:
 
         """
 
-        runs = self.get_runs_by_ids(ids)
+        runs = [(r, float(re.search("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?",
+                                    r.meta[independent_variable_key])[0]))
+                for r in self.get_runs_by_ids(ids)]
+
+        runs.sort(key=lambda r: r[1])
+
+        if independent_variable_key == files.RUN_NUMBER_KEY:
+            runs = [(r, int(f)) for r, f in runs]
 
         left_integrations = []
         right_integrations = []
 
-        for run in runs:
+        for run, _ in runs:
             if run.asymmetries[run.LEFT_BINNED_ASYMMETRY] is None or \
                     run.asymmetries[run.RIGHT_BINNED_ASYMMETRY] is None:
                 raise Exception("Asymmetries have not been calculated for runs selected to integrate.")
@@ -137,6 +145,7 @@ class RunService:
             right_integrations.append(run.asymmetries[run.RIGHT_BINNED_ASYMMETRY].integrate())
 
         return {
+            independent_variable_key: [i for _, i in runs],
             objects.RunDataset.LEFT_BINNED_ASYMMETRY: left_integrations,
             objects.RunDataset.RIGHT_BINNED_ASYMMETRY: right_integrations
         }
