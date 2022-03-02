@@ -970,7 +970,7 @@ class FitDataset:
                                                                                                      v.upper) + "\n"
 
             fit_parameters_string += "\n"
-            return fit_parameters_string
+        return fit_parameters_string
 
     def __write_parameter(self, ind_var, parameter):
         fit_parameters_string = "\n# Parameter Export\n\n"
