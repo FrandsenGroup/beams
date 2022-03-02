@@ -49,14 +49,14 @@ class WriteFitDialog(QtWidgets.QDialog):
         self.option_ind_var.addItems(ind_var_list)
 
         # populate parameter combo
-        parameter_set = set([parameter for fit in self._dataset.fits.values() for parameter in fit.parameters.keys()])
+        parameter_set = {parameter for fit in self._dataset.fits.values() for parameter in fit.parameters.keys()}
         self.option_parameter.addItems(parameter_set)
 
         self.option_ind_var.setEnabled(False)
         self.option_parameter.setEnabled(False)
 
         # We only want to use keys as filenames if there is a unique value for reach run
-        meta_keys = [k for k in meta_keys if len(set([str(m[k]) for m in metas])) == len(metas)]
+        meta_keys = [k for k in meta_keys if len({str(m[k]) for m in metas}) == len(metas)]
 
         self.option_prefix.addItems(meta_keys)
         self.option_prefix.setEnabled(False)
