@@ -1106,7 +1106,6 @@ class DataBuilder:
         if f.DATA_FORMAT == files.Format.HISTOGRAM:
             data = f.read_data()
             for histogram_title in d.meta[files.HIST_TITLES_KEY]:
-                values = np.array(data[histogram_title].values)
                 histogram = Histogram(time_zero=d.meta[files.T0_KEY][histogram_title],
                                       good_bin_start=d.meta[files.GOOD_BIN_ONE_KEY][histogram_title],
                                       good_bin_end=d.meta[files.GOOD_BIN_TWO_KEY][histogram_title],
@@ -1115,20 +1114,17 @@ class DataBuilder:
                                       title=histogram_title,
                                       run_id=d.id,
                                       bin_size=d.meta[files.BIN_SIZE_KEY],
-                                      input_array=values)
+                                      input_array=data[histogram_title])
                 d.histograms[histogram_title] = histogram
             d.isLoaded = True
 
         elif f.DATA_FORMAT == files.Format.ASYMMETRY:
             data = f.read_data()
-            asymmetry_values = np.array(data['Asymmetry'].values)
-            uncertainty_values = np.array(data['Uncertainty'].values)
-            time_values = np.array(data['Time'].values)
 
-            uncertainty = Uncertainty(uncertainty_values, bin_size=d.meta[files.BIN_SIZE_KEY])
-            times = Time(time_values, time_zero=d.meta[files.T0_KEY], bin_size=d.meta[files.BIN_SIZE_KEY])
+            uncertainty = Uncertainty(data["Uncertainty"], bin_size=d.meta[files.BIN_SIZE_KEY])
+            times = Time(data["Time"], time_zero=d.meta[files.T0_KEY], bin_size=d.meta[files.BIN_SIZE_KEY])
 
-            asymmetry = Asymmetry(input_array=asymmetry_values,
+            asymmetry = Asymmetry(input_array=data["Asymmetry"],
                                   time_zero=d.meta[files.T0_KEY],
                                   bin_size=d.meta[files.BIN_SIZE_KEY],
                                   uncertainty=uncertainty,
@@ -1140,20 +1136,16 @@ class DataBuilder:
 
         elif f.DATA_FORMAT == files.Format.FIT:
             data = f.read_data()
-            asymmetry_values = np.array(data['Asymmetry'].values)
-            uncertainty_values = np.array(data['Uncertainty'].values)
-            time_values = np.array(data['Time'].values)
-            calculated_values = np.array(data['Calculated'].values)
 
-            uncertainty = Uncertainty(uncertainty_values, bin_size=d.meta[files.BIN_SIZE_KEY])
-            times = Time(time_values, time_zero=d.meta[files.T0_KEY], bin_size=d.meta[files.BIN_SIZE_KEY])
+            uncertainty = Uncertainty(data["Uncertainty"], bin_size=d.meta[files.BIN_SIZE_KEY])
+            times = Time(data["Time"], time_zero=d.meta[files.T0_KEY], bin_size=d.meta[files.BIN_SIZE_KEY])
 
-            asymmetry = Asymmetry(input_array=asymmetry_values,
+            asymmetry = Asymmetry(input_array=data["Asymmetry"],
                                   time_zero=d.meta[files.T0_KEY],
                                   bin_size=d.meta[files.BIN_SIZE_KEY],
                                   uncertainty=uncertainty,
                                   time=times,
-                                  calculated=calculated_values)
+                                  calculated=data["Calculated"])
 
             d.asymmetries[d.FULL_ASYMMETRY] = asymmetry
             d.histograms = None
