@@ -8,7 +8,6 @@ import traceback
 import enum
 
 # Installed Packages
-import pandas as pd
 import numpy as np
 import h5py
 
@@ -427,12 +426,9 @@ class MuonHistogramFile(ReadableFile):
     HEADER_ROWS = 8
 
     def read_data(self):
-        meta = self.read_meta()
-
         try:
-            data = pd.read_csv(self.file_path, skiprows=self.HEADER_ROWS - 1)
-            data.columns = meta[HIST_TITLES_KEY]
-            return data
+            return read_columnated_data(file_path=self.file_path, data_row=self.HEADER_ROWS, d_type=int,
+                                        titles=self.read_meta()[HIST_TITLES_KEY])
         except Exception as e:
             raise BeamsFileReadError("This histogram file is not supported by your current version of BEAMS") from e
 
@@ -474,9 +470,8 @@ class MuonAsymmetryFile(ReadableFile):
 
     def read_data(self):
         try:
-            data = pd.read_csv(self.file_path, skiprows=self.HEADER_ROWS - 1)
-            data.columns = ['Time', 'Asymmetry', 'Uncertainty']
-            return data
+            return read_columnated_data(file_path=self.file_path, data_row=self.HEADER_ROWS, d_type=float,
+                                        titles=["Time", "Asymmetry", "Uncertainty"])
         except Exception as e:
             raise BeamsFileReadError("This asymmetry file is not supported by your current version of BEAMS") from e
 
@@ -569,9 +564,8 @@ class FitFile(ReadableFile):
 
     def read_data(self):
         try:
-            data = pd.read_csv(self.file_path, skiprows=self.HEADER_ROWS - 1)
-            data.columns = ['Time', 'Asymmetry', 'Calculated', 'Uncertainty']
-            return data
+            return read_columnated_data(file_path=self.file_path, data_row=self.HEADER_ROWS, d_type=float,
+                                        titles=['Time', 'Asymmetry', 'Calculated', 'Uncertainty'])
         except Exception as e:
             raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS") from e
 
@@ -671,6 +665,23 @@ def is_beams(filename):
     if is_found(filename):
         with open(filename) as f:
             return 'BEAMS' in f.readline().rstrip('\n')
+
+
+def read_columnated_data(file_path, data_row, d_type, titles=None, title_row=None):
+    try:
+        if not titles and title_row:
+            with open(file_path, 'r') as f:
+                for i in range(title_row):
+                    f.readline()
+                titles = [s.strip().strip('#') for s in f.readline().split(',')]
+
+        if titles:
+            return np.genfromtxt(file_path, dtype=d_type, delimiter=',', names=titles, skip_header=data_row)
+        else:
+            return np.genfromtxt(file_path, dtype=d_type, delimiter=',', skip_header=data_row)
+
+    except Exception as e:
+        raise BeamsFileReadError("Error occurred reading in data.") from e
 
 
 def create_meta_string(meta: dict) -> str:
