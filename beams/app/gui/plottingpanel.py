@@ -2,6 +2,7 @@ import threading
 import warnings
 import logging
 import functools
+import re
 
 import darkdetect
 from PyQt5 import QtGui, QtWidgets, QtCore
@@ -10,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from app.resources import resources
-from app.gui.dialogs.dialog_misc import WarningMessageDialog
+from app.gui.dialogs.dialog_misc import WarningMessageDialog, PromptWithOptionsDialog
 from app.gui.dialogs.dialog_plot_file import PlotFileDialog
 from app.gui.dialogs.dialog_integrations import IntegrationDialog
 from app.gui.gui import Panel, PanelPresenter
@@ -310,11 +311,43 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 if not len(ids):  # This shouldn't happen but may as well check. PyQt5 can have glitches.
                     WarningMessageDialog.launch(["No runs were selected to integrate."])
                     return
+                else:
+                    example_meta = items[0].model.meta
 
-                integrations = services.RunService().integrate_asymmetries(ids)
+                sort_keys = [files.TEMPERATURE_KEY, files.FIELD_KEY, files.RUN_NUMBER_KEY]
+                sort_key_index = PromptWithOptionsDialog.launch(message="Choose the independent variable for the integration",
+                                                                options=sort_keys)
+
+                if 0 > sort_key_index >= len(sort_keys):  # Cancelled the prompt.
+                    return
+                else:
+                    sort_key = sort_keys[sort_key_index]
+
+                    if sort_key != files.RUN_NUMBER_KEY:
+                        try:
+                            unit = re.search(r'[a-zA-Z]+\b', example_meta[sort_key])[0]
+                        except (IndexError, TypeError):
+                            unit = ""
+
+                try:
+                    integrations = services.RunService().integrate_asymmetries(ids, sort_key)
+                except Exception as e:
+                    WarningMessageDialog.launch([str(e)])
+                    return
+                else:
+                    bin_sizes = [
+                        items[0].model.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY].bin_size,
+                        items[0].model.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size
+                    ]
+
                 integration_left = integrations[objects.RunDataset.LEFT_BINNED_ASYMMETRY]
                 integration_right = integrations[objects.RunDataset.RIGHT_BINNED_ASYMMETRY]
-                IntegrationDialog.launch([integration_left, integration_right])
+                independent_variable = integrations[sort_key]
+
+                IntegrationDialog.launch(x_axis=independent_variable,
+                                         x_axis_label='Run Number' if sort_key == files.RUN_NUMBER_KEY else f'{sort_key} ({unit})',
+                                         integrations=[integration_left, integration_right],
+                                         titles=[f'For Binned Asymmetries ({b}ns)' for b in bin_sizes])
 
             def _action_save(self):
                 pass

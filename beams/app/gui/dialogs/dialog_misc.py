@@ -116,6 +116,39 @@ class WarningMessageDialog(QtWidgets.QDialog):
 
 
 # noinspection PyArgumentList
+class PromptWithOptionsDialog(QtWidgets.QDialog):
+    def __init__(self, message, options):
+        super().__init__()
+
+        self.setWindowTitle('Choose an option')
+        message = QtWidgets.QLabel(message)
+        pos_button = qt_widgets.StyleOneButton('Okay')
+        options_box = QtWidgets.QComboBox()
+
+        options_box.addItems(options)
+        self.setMinimumWidth(300)
+        self.setMinimumHeight(80)
+        pos_button.setFixedWidth(80)
+
+        pos_button.released.connect(lambda: self.done(options_box.currentIndex()))
+
+        col = QtWidgets.QVBoxLayout()
+
+        col.addWidget(message)
+        col.addWidget(options_box)
+        col.addWidget(pos_button)
+        col.setAlignment(options_box, qt_constants.AlignCenter)
+        col.setAlignment(message, qt_constants.AlignCenter)
+        col.setAlignment(pos_button, qt_constants.AlignCenter)
+        self.setLayout(col)
+
+    @staticmethod
+    def launch(message, options):
+        dialog = PromptWithOptionsDialog(message, options)
+        return dialog.exec()
+
+
+# noinspection PyArgumentList
 class PermissionsMessageDialog(QtWidgets.QDialog):
     class Codes(enum.IntEnum):
         OKAY = 0
