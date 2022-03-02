@@ -2,7 +2,7 @@ import logging
 import re
 from collections import OrderedDict
 from concurrent import futures
-from functools import partial
+import functools
 
 import darkdetect
 from PyQt5 import QtWidgets, QtCore, QtGui
@@ -54,7 +54,7 @@ class FittingPanel(Panel):
                 menu = QtWidgets.QMenu()
 
                 for action in actions:
-                    menu.addAction(action[0], partial(action[1], self.selectedItems(), self))
+                    menu.addAction(action[0], functools.partial(action[1], self.selectedItems(), self))
 
                 menu.exec_(self.mapToGlobal(point))
 
