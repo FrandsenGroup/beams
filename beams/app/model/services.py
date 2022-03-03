@@ -4,7 +4,7 @@ import os
 import logging
 import pickle
 
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore
 
 import app.model.data_access as dao
 from app.model import objects, files
@@ -645,20 +645,26 @@ class FileService:
         self.add_files([save_path])
 
     def load_session(self, file_id):
+        from app.gui.dialogs.dialog_misc import WarningMessageDialog
+
         file_dataset = self.__dao.get_files_by_ids([file_id])
 
         if len(file_dataset) == 0:
             raise RuntimeError("No file dataset exists for id.")
 
         file_dataset = file_dataset[0]
-
+        user_error = "The BEAMS file you loaded is incompatible with the current version."
         if file_dataset.file.DATA_FORMAT != files.Format.PICKLED:
+            error = "File was not of correct format for session file (should be a pickle file)."
+            WarningMessageDialog.launch([f"{user_error}\n({error})"])
             raise RuntimeError("File was not of correct format for session file (should be a pickle file).")
 
         database = file_dataset.file.read_data()
 
         if not isinstance(database, dao.Database):
-            raise RuntimeError("Unpickling file did not result in a Database object.")
+            error = "Unpickling file did not result in a Database object."
+            WarningMessageDialog.launch([f"{user_error}\n({error})"])
+            raise RuntimeError(error)
 
         self.__system_dao.set_database(database)
 
