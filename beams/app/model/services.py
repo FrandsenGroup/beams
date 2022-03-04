@@ -572,8 +572,12 @@ class FileService:
             if self.__dao.get_files_by_path(path) is not None:
                 continue
 
-            f = files.file(path)
-            data_set = loaded_data if loaded_data else objects.DataBuilder.build_minimal(f)
+            try:
+                f = files.file(path)
+                data_set = loaded_data if loaded_data else objects.DataBuilder.build_minimal(f)
+            except files.BeamsFileReadError:
+                f = files.UnknownFile(file_path=path)
+                data_set = None
             file_set = objects.FileDataset(f)
             file_set.dataset = data_set
 
@@ -645,7 +649,6 @@ class FileService:
         self.add_files([save_path])
 
     def load_session(self, file_id):
-        from app.gui.dialogs.dialog_misc import WarningMessageDialog
 
         file_dataset = self.__dao.get_files_by_ids([file_id])
 
@@ -653,18 +656,14 @@ class FileService:
             raise RuntimeError("No file dataset exists for id.")
 
         file_dataset = file_dataset[0]
-        user_error = "The BEAMS file you loaded is incompatible with the current version."
         if file_dataset.file.DATA_FORMAT != files.Format.PICKLED:
-            error = "File was not of correct format for session file (should be a pickle file)."
-            WarningMessageDialog.launch([f"{user_error}\n({error})"])
-            raise RuntimeError("File was not of correct format for session file (should be a pickle file).")
+            raise files.BeamsFileReadError("File was not of correct format for session file (should be a pickle file).")
 
         database = file_dataset.file.read_data()
 
         if not isinstance(database, dao.Database):
             error = "Unpickling file did not result in a Database object."
-            WarningMessageDialog.launch([f"{user_error}\n({error})"])
-            raise RuntimeError(error)
+            raise files.BeamsFileReadError(error)
 
         self.__system_dao.set_database(database)
 
