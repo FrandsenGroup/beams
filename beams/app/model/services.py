@@ -470,10 +470,15 @@ class SystemService:
             json.dump(self.__dao.get_configuration(), f, indent=2)
 
     def get_user_defined_functions(self):
-        functions = self.__dao.get_configuration(self.ConfigKeys.USER_FUNCTIONS)
+        try:
+            functions = self.__dao.get_configuration(self.ConfigKeys.USER_FUNCTIONS)
+        except dao.BeamsRequestedDataNotInDatabaseError:
+            functions = None
+
         if functions is not None:
             return functions
         else:
+            self.__dao.set_configuration(self.ConfigKeys.USER_FUNCTIONS, {})
             return {}
 
     def add_user_defined_function(self, name, function):
@@ -483,7 +488,10 @@ class SystemService:
         self.__dao.set_configuration(self.ConfigKeys.USER_FUNCTIONS, functions)
 
     def get_last_used_directory(self):
-        last_directory = self.__dao.get_configuration(self.ConfigKeys.LAST_DIRECTORY)
+        try:
+            last_directory = self.__dao.get_configuration(self.ConfigKeys.LAST_DIRECTORY)
+        except dao.BeamsRequestedDataNotInDatabaseError:
+            last_directory = None
 
         if last_directory is not None:
             return last_directory
@@ -497,7 +505,11 @@ class SystemService:
             self.__logger.warning("Tried to set last used directory to invalid path: {}".format(directory))
 
     def get_theme_preference(self):
-        preference = self.__dao.get_configuration(self.ConfigKeys.THEME_PREFERENCE)
+        try:
+            preference = self.__dao.get_configuration(self.ConfigKeys.THEME_PREFERENCE)
+        except dao.BeamsRequestedDataNotInDatabaseError:
+            preference = None
+
         if preference is None:
             preference = self.Themes.DEFAULT
             self.set_theme_preference(preference)
