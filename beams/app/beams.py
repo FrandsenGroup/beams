@@ -13,6 +13,7 @@ from PyQt5 import QtWidgets, QtGui
 
 # BEAMS Modules
 from app.gui import mainwindow
+from app.gui.dialogs.dialog_misc import NotificationDialog
 from app.model import services
 from app.resources import resources
 from app.util import qt_constants, report
@@ -67,7 +68,20 @@ class BEAMS(QtWidgets.QApplication):
         self.main_program_window = mainwindow.MainWindow()
         self.main_program_window.show()
         self.splash.finish(self.main_program_window)
+        self._check_version()
         sys.exit(self.exec_())
+
+    def _check_version(self):
+        notify = self.__system_service.get_notify_user_of_update()
+        current_version = self.__system_service.get_current_version()
+        _, latest_version = self.__system_service.get_latest_version()
+
+        report.log_info(f"Running beams@{current_version}")
+
+        if notify and latest_version != "unknown":
+            NotificationDialog.launch(f"New version available! Currently {current_version} is installed, {latest_version} is available.",
+                                      "Do not show again (until next release).",
+                                      lambda user_checked: self.__system_service.set_notify_user_of_update(not user_checked))
 
     def exec_(self) -> int:
         try:

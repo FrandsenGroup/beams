@@ -156,6 +156,42 @@ class PermissionsMessageDialog(QtWidgets.QDialog):
         return dialog.exec()
 
 
+class NotificationDialog(QtWidgets.QDialog):
+    def __init__(self, message, silence_message, okay_function):
+        super(NotificationDialog, self).__init__()
+        self.setWindowTitle('Notification')
+        message = QtWidgets.QLabel(message)
+        notify_box = QtWidgets.QCheckBox()
+        silence_label = QtWidgets.QLabel("Do not show again." if silence_message is None else silence_message)
+        pos_button = qt_widgets.StyleOneButton('Okay')
+        self.setMinimumWidth(300)
+        self.setMinimumHeight(80)
+        pos_button.setFixedWidth(80)
+
+        if okay_function:
+            pos_button.released.connect(lambda: okay_function(notify_box.isChecked()))
+
+        pos_button.released.connect(self.close)
+
+        col = QtWidgets.QVBoxLayout()
+
+        col.addWidget(message)
+        row = QtWidgets.QHBoxLayout()
+        row.addStretch()
+        row.addWidget(notify_box)
+        row.addWidget(silence_label)
+        row.addStretch()
+        col.addLayout(row)
+        col.addWidget(pos_button)
+        col.setAlignment(message, qt_constants.AlignCenter)
+        col.setAlignment(pos_button, qt_constants.AlignCenter)
+        self.setLayout(col)
+
+    @staticmethod
+    def launch(message, silence_message=None, okay_function=None):
+        dialog = NotificationDialog(message, silence_message, okay_function)
+        return dialog.exec()
+
 # noinspection PyArgumentList
 class IntegrationDisplayDialog(QtWidgets.QDialog):
     class IntegrationCanvas(FigureCanvas):

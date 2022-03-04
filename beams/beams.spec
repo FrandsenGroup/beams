@@ -9,6 +9,7 @@ a = Analysis(['__main__.py'],
              datas=[
                 ('app/resources/icons/*', 'app/resources/icons'),
                 ('app/resources/fonts/*', 'app/resources/fonts'),
+                ('app/app.config', 'app/app.config),
              ],
              hiddenimports=[],
              hookspath=[],

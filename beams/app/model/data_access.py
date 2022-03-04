@@ -140,10 +140,12 @@ class SystemDAO:
 
     def get_configuration(self, key=None):
         if key:
-            if key in self.__database.system_table.keys():
-                return self.__database.system_table[key]
+            value = self._recursive_search(self.__database.system_table, key)
+
+            if value is not None:
+                return value
             else:
-                return None
+                raise BeamsRequestedDataNotInDatabaseError("Config value not in the configuration.")
         else:
             return self.__database.system_table
 
@@ -152,3 +154,21 @@ class SystemDAO:
 
     def get_database(self):
         return self.__database
+
+    def _recursive_search(self, dictionary, key):
+        for k, v in dictionary.items():
+            if k == key:
+                return dictionary[k]
+
+            elif isinstance(v, dict):
+                value = self._recursive_search(v, key)
+
+                if value:
+                    return value
+
+        return None
+
+
+class BeamsRequestedDataNotInDatabaseError(Exception):
+    def __init__(self, *args, **kwargs):
+        super(BeamsRequestedDataNotInDatabaseError, self).__init__(args, kwargs)
