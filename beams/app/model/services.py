@@ -7,7 +7,7 @@ import pickle
 from PyQt5 import QtCore, QtWidgets
 
 import app.model.data_access as dao
-from app.model import objects, files
+from app.model import objects, files, api
 from app.resources import resources
 from app.util import report
 
@@ -430,6 +430,9 @@ class SystemService:
         LAST_DIRECTORY = "LAST_DIRECTORY"
         USER_FUNCTIONS = "USER-DEFINED_FUNCTIONS"
         THEME_PREFERENCE = "THEME_PREFERENCE"
+        VERSION = "VERSION"
+        LATEST = "LATEST"
+        NOTIFY_OF_UPDATE = "NOTIFY_OF_UPDATE"
 
     class Themes:
         DARK = "DARK"
@@ -464,7 +467,7 @@ class SystemService:
 
     def write_configuration_file(self):
         with open(resources.CONFIGURATION_FILE, 'w+') as f:
-            json.dump(self.__dao.get_configuration(), f)
+            json.dump(self.__dao.get_configuration(), f, indent=2)
 
     def get_user_defined_functions(self):
         functions = self.__dao.get_configuration(self.ConfigKeys.USER_FUNCTIONS)
@@ -504,15 +507,61 @@ class SystemService:
         self.__dao.set_configuration(self.ConfigKeys.THEME_PREFERENCE, preference)
         self.signals.theme_changed.emit()
 
+    def get_current_version(self):
+        try:
+            return self.__dao.get_configuration(self.ConfigKeys.VERSION)
+        except dao.BeamsRequestedDataNotInDatabaseError:
+            self.__dao.set_configuration(self.ConfigKeys.VERSION, "unknown")
+            return "unknown"
+
+    def get_latest_version(self):
+        try:
+            latest_old = self.__dao.get_configuration(self.ConfigKeys.LATEST)
+        except dao.BeamsRequestedDataNotInDatabaseError:
+            latest_old = "unknown"
+
+        try:
+            latest_version = api.get_latest_release_version()
+            latest_version = latest_version if latest_version else "unknown"
+        except api.BeamsNetworkError:
+            latest_version = "unknown"
+
+        if latest_old != latest_version:
+            self.__dao.set_configuration(self.ConfigKeys.LATEST, latest_version)
+
+        return latest_old, latest_version
+
+    def get_notify_user_of_update(self):
+        try:
+            notify = self.__dao.get_configuration(self.ConfigKeys.NOTIFY_OF_UPDATE)
+        except dao.BeamsRequestedDataNotInDatabaseError:
+            notify = True
+
+        version = self.get_current_version()
+        latest_old, latest = self.get_latest_version()
+
+        # We want to notify if the latest version of beams does not match the current version AND the user
+        # wants to be notified of this OR a new release has been made since they last silenced the notification
+        notify = latest != version and (notify or latest_old != latest)
+
+        self.__dao.set_configuration(self.ConfigKeys.NOTIFY_OF_UPDATE, notify)
+        return notify
+
+    def set_notify_user_of_update(self, notify):
+        self.__dao.set_configuration(self.ConfigKeys.NOTIFY_OF_UPDATE, notify)
+
     def _set_default_configuration(self):
         user_data = {
             self.ConfigKeys.LAST_DIRECTORY: os.getcwd(),
             self.ConfigKeys.USER_FUNCTIONS: {},
-            self.ConfigKeys.THEME_PREFERENCE: self.Themes.DEFAULT
+            self.ConfigKeys.THEME_PREFERENCE: self.Themes.DEFAULT,
+            self.ConfigKeys.VERSION: "unknown",
+            self.ConfigKeys.LATEST: "unknown",
+            self.ConfigKeys.NOTIFY_OF_UPDATE: True
         }
 
         with open(resources.CONFIGURATION_FILE, 'w+') as f:
-            json.dump(user_data, f)
+            json.dump(user_data, f, indent=2)
 
         for key, value in user_data.items():
             self.__dao.set_configuration(key, value)
@@ -572,8 +621,13 @@ class FileService:
             if self.__dao.get_files_by_path(path) is not None:
                 continue
 
-            f = files.file(path)
-            data_set = loaded_data if loaded_data else objects.DataBuilder.build_minimal(f)
+            try:
+                f = files.file(path)
+                data_set = loaded_data if loaded_data else objects.DataBuilder.build_minimal(f)
+            except files.BeamsFileReadError:
+                f = files.UnknownFile(file_path=path)
+                data_set = None
+
             file_set = objects.FileDataset(f)
             file_set.dataset = data_set
 
