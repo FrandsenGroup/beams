@@ -70,11 +70,11 @@ class BEAMS(QtWidgets.QApplication):
         sys.exit(self.exec_())
 
     def exec_(self) -> int:
-        # try:
-        i = super(BEAMS, self).exec_()
-        return i
-        # except Exception as e:
-        #     report.report_exception(e)
-        # finally:
-        #     report.close()
-        #     self.__system_service.write_configuration_file()
+        try:
+            i = super(BEAMS, self).exec_()
+            return i
+        except Exception as e:
+            report.report_exception(e)
+        finally:
+            report.close()
+            self.__system_service.write_configuration_file()
