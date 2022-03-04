@@ -58,25 +58,8 @@ TRIUMF_WINDOWS_CONVERSION = resource_path(str(Path('app/resources/binaries/TRIUM
 DARK_COLOR = '#19232D'
 LIGHT_COLOR = '#FAFAFA'
 
-try:
-    CONFIGURATION_FILE = resource_path(str(Path('app/resources/app.config')))
+CONFIGURATION_FILE = resource_path(str(Path('app/app.config')))
 
-    if not os.path.exists(CONFIGURATION_FILE):
-        with open(CONFIGURATION_FILE, 'w+') as f:
-            pass
-
-    LOG_FILE = resource_path(str(Path('app/resources/beams.log')))
-
-    with open(LOG_FILE, 'w') as fp:
-        fp.truncate(0)
-except FileNotFoundError:
-    CONFIGURATION_FILE = str(Path('app.config'))
-
-    if not os.path.exists(CONFIGURATION_FILE):
-        with open(CONFIGURATION_FILE, 'w+') as f:
-            pass
-
-    LOG_FILE = str(Path('beams.log'))
-
-    with open(LOG_FILE, 'w') as fp:
-        fp.truncate(0)
+if not os.path.exists(CONFIGURATION_FILE):
+    with open(CONFIGURATION_FILE, 'w+') as f:
+        pass
