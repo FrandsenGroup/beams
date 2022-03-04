@@ -58,8 +58,16 @@ TRIUMF_WINDOWS_CONVERSION = resource_path(str(Path('app/resources/binaries/TRIUM
 DARK_COLOR = '#19232D'
 LIGHT_COLOR = '#FAFAFA'
 
-CONFIGURATION_FILE = resource_path(str(Path('app/app.config')))
+try:
+    CONFIGURATION_FILE = resource_path(str(Path('app/app.config')))
 
-if not os.path.exists(CONFIGURATION_FILE):
-    with open(CONFIGURATION_FILE, 'w+') as f:
-        pass
+    if not os.path.exists(CONFIGURATION_FILE):
+        with open(CONFIGURATION_FILE, 'w+') as f:
+            pass
+
+except FileNotFoundError:
+    CONFIGURATION_FILE = resource_path(str(Path('app.config')))
+
+    if not os.path.exists(CONFIGURATION_FILE):
+        with open(CONFIGURATION_FILE, 'w+') as f:
+            pass
