@@ -21,6 +21,9 @@ def resource_path(relative_path):
     if not os.path.exists(path):
         path = os.path.join(os.getcwd(), relative_path)
 
+    if not os.path.exists(path):
+        path = os.path.join(os.getcwd(), "beams", relative_path)
+
     return path
 
 
