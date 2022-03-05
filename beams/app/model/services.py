@@ -88,7 +88,7 @@ class RunService:
     def get_loaded_runs(self):
         loaded_runs = []
         for run in self.__dao.get_runs():
-            if run.isLoaded:
+            if run.is_loaded:
                 loaded_runs.append(run)
         return loaded_runs
 
@@ -177,7 +177,7 @@ class RunService:
 
         run.histograms = histograms
         run.meta = meta
-        run.isLoaded = True
+        run.is_loaded = True
         self.__dao.add_runs([run])
         self.signals.added.emit()
         return run
@@ -645,7 +645,7 @@ class FileService:
 
             if loaded_data:
                 file_set.title = loaded_data.meta[files.TITLE_KEY]
-                file_set.isLoaded = True
+                file_set.is_loaded = True
 
             file_sets.append(file_set)
             if data_set and loaded_data is None:
@@ -668,10 +668,10 @@ class FileService:
         is_changed = False
 
         for file_dataset in self.__dao.get_files_by_ids(ids):
-            if not file_dataset.isLoaded:
+            if not file_dataset.is_loaded:
                 is_changed = True
                 objects.DataBuilder.build_full(file_dataset.file, file_dataset.dataset)
-                file_dataset.isLoaded = True
+                file_dataset.is_loaded = True
 
         if is_changed:
             self.signals.changed.emit()
