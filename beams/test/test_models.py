@@ -689,7 +689,7 @@ class TestFileDatasets:
         
         from app.model import files
         import os
-        print(os.getcwd())
+        print("HERE###", os.getcwd(), "###")
         file_dataset = objects.FileDataset(files.file(resources.resource_path(r"test\examples\histogram_data.dat")))
         file_dataset.dataset = dataset
 
