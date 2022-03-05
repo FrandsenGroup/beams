@@ -686,11 +686,10 @@ class TestFileDatasets:
             "m2": 2
         }
         dataset.histograms_used = ["h1", "h2"]
-        
+
         from app.model import files
         import os
-        print("HERE###", os.getcwd(), "###")
-        file_dataset = objects.FileDataset(files.file("/home/runner/work/beams/beams/beams/test/examples/histogram_data.dat"))
+        file_dataset = objects.FileDataset(files.file(os.path.join(os.getcwd(), "test/examples/histogram_data.dat")))
         file_dataset.dataset = dataset
 
         file_dataset_unpickled = pickle.loads(pickle.dumps(file_dataset))
@@ -713,7 +712,8 @@ class TestFileDatasets:
         dataset.histograms_used = ["h1", "h2"]
 
         from app.model import files
-        file_dataset = objects.FileDataset(files.file("/home/runner/work/beams/beams/beams/beams/test/examples/histogram_data.dat"))
+        import os
+        file_dataset = objects.FileDataset(files.file(os.path.join(os.getcwd(), "test/examples/histogram_data.dat")))
         file_dataset.dataset = dataset
 
         file_dataset_minimized = file_dataset.get_persistent_data()
