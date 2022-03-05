@@ -16,7 +16,12 @@ def resource_path(relative_path):
     except AttributeError:
         base_path = os.path.abspath("./beams")
 
-    return os.path.join(base_path, relative_path)
+    path = os.path.join(base_path, relative_path)
+
+    if not os.path.exists(path):
+        path = os.path.join(os.getcwd(), relative_path)
+
+    return path
 
 
 # Using Path from pathlib is an easy way to fix the slash direction issue when switch between windows and unix systems.
