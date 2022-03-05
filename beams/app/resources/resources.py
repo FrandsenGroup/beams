@@ -24,7 +24,6 @@ def resource_path(relative_path):
     if not os.path.exists(path):
         path = os.path.join(os.getcwd(), "beams", relative_path)
 
-    print("FME###", os.getcwd(), relative_path, path, str(Path(path)), "###")
     return str(Path(path))
 
 
