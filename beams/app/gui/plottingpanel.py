@@ -939,7 +939,7 @@ class PlottingPanelPresenter(PanelPresenter):
         self._view.right_settings.input_freq_xmax.returnPressed.connect(
             lambda: self._on_spectrum_settings_changed('right'))
         self._view.right_settings.check_freq_xauto.stateChanged.connect(
-            lambda: self._on_check_parameter_changed('left'))
+            lambda: self._on_check_parameter_changed('right'))
         self._view.right_settings.slider_bin.sliderMoved.connect(lambda: self._on_bin_parameter_changed('right', True))
         self._view.right_settings.slider_bin.sliderReleased.connect(
             lambda: self._on_bin_parameter_changed('right', False))
