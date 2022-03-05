@@ -2,6 +2,7 @@ import os
 import time
 import re
 from typing import Sequence
+import abc
 
 import numpy as np
 import uuid
@@ -10,7 +11,43 @@ from app.model import files, services
 from app.model.files import File
 
 
-class Histogram(np.ndarray):
+class PersistentObject(abc.ABC):
+    class MinimalObject(dict):
+        def __init__(self, object_type, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.type = object_type
+
+    @abc.abstractmethod
+    def get_persistent_data(self) -> MinimalObject:
+        pass
+
+    @staticmethod
+    @abc.abstractmethod
+    def build_from_persistent_data(data: MinimalObject):
+        pass
+
+    def _recursive_build(self, **kwargs):  # FIXME make this actually recursive. Then make a builder :evil smile:
+        minimal_dictionary = {}
+
+        for constructor_name, attribute in kwargs.items():
+            if isinstance(attribute, PersistentObject):
+                minimal_dictionary[constructor_name] = attribute.get_persistent_data()
+            elif isinstance(attribute, list):
+                minimal_dictionary[constructor_name] = [
+                    a if not isinstance(a, PersistentObject) else a.get_persistent_data() for a in attribute
+                ]
+            elif isinstance(attribute, dict):
+                minimal_dictionary[constructor_name] = {
+                    k: a if not isinstance(a, PersistentObject) else a.get_persistent_data() for k, a in
+                    attribute.items()
+                }
+            else:
+                minimal_dictionary[constructor_name] = attribute
+
+        return self.MinimalObject(str(type(self)), minimal_dictionary)
+
+
+class Histogram(np.ndarray, PersistentObject):
     """
     A class to represent a histogram. Inherits a numpy array so we can perform numpy
     operations on it along with storing custom methods and attributes.
@@ -90,6 +127,23 @@ class Histogram(np.ndarray):
         self.title = title
 
         return self
+
+    def get_persistent_data(self):
+        return self._recursive_build(
+            input_array=list(self),
+            run_id=self.id,
+            time_zero=self.time_zero,
+            good_bin_start=self.good_bin_start,
+            good_bin_end=self.good_bin_end,
+            background_start=self.background_start,
+            background_end=self.background_end,
+            bin_size=self.bin_size,
+            title=self.title
+        )
+
+    @staticmethod
+    def build_from_persistent_data(data):
+        return Histogram(**data)
 
     def __repr__(self):
         return f'Histogram({repr(super)}, {self.title}, {self.time_zero}, {self.good_bin_start}, ' \
@@ -287,7 +341,7 @@ class Histogram(np.ndarray):
         return new_histogram
 
 
-class Asymmetry(np.ndarray):
+class Asymmetry(np.ndarray, PersistentObject):
     """
     A class to represent an asymmetry of two histograms with the corresponding attributes. Inherits from numpy.ndarray
     so we can perform numpy calculations on it with casting it to an numpy array.
@@ -318,6 +372,21 @@ class Asymmetry(np.ndarray):
     cut(min_time, max_time)
         Returns a new asymmetry between the specified times.
     """
+
+    def get_persistent_data(self):
+        return self._recursive_build(
+            input_array=list(self),
+            time_zero=self.time_zero,
+            bin_size=self.bin_size,
+            uncertainty=list(self.uncertainty),
+            time=list(self.time),
+            alpha=self.alpha,
+            calculated=self.calculated
+        )
+
+    @staticmethod
+    def build_from_persistent_data(data):
+        return Asymmetry(**data)
 
     def __new__(cls, input_array=None, time_zero=None, bin_size=None, histogram_one=None, histogram_two=None,
                 uncertainty=None, time=None, alpha=None, calculated=None, **kwargs):
@@ -372,9 +441,9 @@ class Asymmetry(np.ndarray):
             uncertainty = Uncertainty(input_array=uncertainty, bin_size=bin_size)
 
         if time is None:
-            time = Time(bin_size=bin_size, length=len(input_array), time_zero=time_zero)
+            time = Time(bin_size_ns=bin_size, length=len(input_array), time_zero_bin=time_zero)
         else:
-            time = Time(input_array=time, bin_size=bin_size, length=len(input_array), time_zero=time_zero)
+            time = Time(input_array=time, bin_size_ns=bin_size, length=len(input_array), time_zero_bin=time_zero)
 
         self = np.asarray(input_array).view(cls)
         self.calculated = calculated
@@ -455,7 +524,9 @@ class Asymmetry(np.ndarray):
         num_bins = len(self)
 
         if bin_binned <= bin_full:
-            return self
+            return Asymmetry(input_array=self, time_zero=self.time_zero, bin_size=self.bin_size,
+                             time=self.time.bin(packing), uncertainty=self.uncertainty.bin(packing), alpha=self.alpha,
+                             calculated=self.calculated)
 
         binned_indices_per_bin = int(np.round(bin_binned / bin_full))
         binned_indices_total = int(np.floor(num_bins / binned_indices_per_bin))
@@ -611,13 +682,72 @@ class Asymmetry(np.ndarray):
                          alpha=self.alpha,
                          calculated=None if self.calculated is None else self.calculated[start_index: end_index])
 
+    @staticmethod
+    def fft(asymmetry, time, f_min, f_max):
+        f_step = (f_max - f_min) / 200
+        z_min = 2 * np.pi * f_min
+        z_max = 2 * np.pi * f_max
+        z_step = 2 * np.pi * f_step
 
-class Uncertainty(np.ndarray):
+        low_step = int(np.ceil((z_min - 1e-8) / z_step))
+        high_step = int(np.floor((z_max + 1e-8) / z_step)) + 1
+        z = np.arange(low_step, high_step) * z_step
+
+        try:
+            x_step = time[1] - time[0]
+        except IndexError:
+            return [0], [0]
+
+        if (time[0] - 0.01 * x_step) > 0:
+            nn = int(np.round(time[0] / x_step))
+            add_me = np.linspace(0.0, time[0] - x_step, nn)
+            time = np.concatenate((add_me, time))
+            asymmetry = np.concatenate((0.0 * add_me, asymmetry))
+
+        x_max_z_step = np.pi / z_step
+        nin = len(time)
+        n_base = max([nin, high_step, x_max_z_step / x_step])
+        n_log_2 = int(np.ceil(np.log2(n_base)))
+        n_out = 2 ** n_log_2
+        x_max_db = 2 * n_out * x_step
+        y_in_db = np.concatenate((asymmetry, np.zeros(2 * n_out - nin)))
+        cy_out_db = np.fft.fft(y_in_db) * x_max_db
+        fz_db = cy_out_db
+        z_step_fine = 2 * np.pi / x_max_db
+        z_fine = np.arange(n_out) * z_step_fine
+        fz_fine = fz_db[:n_out]
+        fzr = np.interp(z, z_fine, np.real(fz_fine))
+        fzi = np.interp(z, z_fine, np.imag(fz_fine))
+
+        if z[0] + 0.0001 * z_step < 0:
+            nn = int(np.round(-z[0] / z_step))
+            fzr[:nn] = 1.0 * fzr[2 * nn:nn:-1]
+            fzi[:nn] = -1.0 * fzi[2 * nn:nn:-1]
+
+        fz = fzr + 1j * fzi
+
+        z = z / (2 * np.pi)
+        fft = np.real(fz * np.conj(fz))
+
+        return z, fft
+
+
+class Uncertainty(np.ndarray, PersistentObject):
     """
         Represents the calculated uncertainty from taking the asymmetry of two histograms with the corresponding
         attributes. Inherits from numpy.ndarray so we can perform numpy calculations on it with casting it to an
         numpy array.
         """
+
+    def get_persistent_data(self):
+        return self._recursive_build(
+            input_array=list(self),
+            bin_size=self.bin_size
+        )
+
+    @staticmethod
+    def build_from_persistent_data(data):
+        return Uncertainty(**data)
 
     def __new__(cls, input_array=None, bin_size=None, histogram_one=None, histogram_two=None, **kwargs):
         if (input_array is None or bin_size is None) and (histogram_one is None or histogram_two is None):
@@ -685,7 +815,7 @@ class Uncertainty(np.ndarray):
         num_bins = len(self)
 
         if bin_binned <= bin_full:
-            return self
+            return Uncertainty(self, self.bin_size)
 
         binned_indices_per_bin = int(np.round(bin_binned / bin_full))
         binned_indices_total = int(np.floor(num_bins / binned_indices_per_bin))
@@ -706,31 +836,50 @@ class Uncertainty(np.ndarray):
         return Uncertainty(binned_uncertainty, packing)
 
 
-class Time(np.ndarray):
+class Time(np.ndarray, PersistentObject):
     """
         Represents the calculated uncertainty from taking the asymmetry of two histograms with the corresponding
         attributes. Inherits from numpy.ndarray so we can perform numpy calculations on it with casting it to an
         numpy array.
         """
 
-    def __new__(cls, input_array=None, bin_size=None, length=None, time_zero=None, run_id=None, time_zero_exact=None,
+    def get_persistent_data(self):
+        return self._recursive_build(
+            input_array=list(self),
+            bin_size_ns=self.bin_size,
+            length=self.length,
+            time_zero_bin=self.time_zero,
+            run_id=self.id
+        )
+
+    @staticmethod
+    def build_from_persistent_data(data):
+        return Time(**data)
+
+    def __new__(cls, input_array=None, bin_size_ns=None, length=None, time_zero_bin=None, run_id=None,
+                time_zero_ns=None,
                 **kwargs):
         if (input_array is None) and (
-                bin_size is None or length is None or (time_zero is None and time_zero_exact is None)):
-            raise ValueError("No parameters for time constructor may be None")
-        if input_array is None and time_zero_exact is not None:
-            input_array = (np.arange(length) * float(bin_size) / 1000) + time_zero_exact
+                bin_size_ns is None or length is None or (time_zero_bin is None and time_zero_ns is None)):
+            raise ValueError("Invalid combination of constructor parameters provided.")
+        if input_array is None and time_zero_ns is not None:
+            input_array = (np.arange(length) * float(bin_size_ns) / 1000) + time_zero_ns
         elif input_array is None:
-            input_array = (np.arange(length) * float(bin_size) / 1000) + \
-                          (time_zero * float(bin_size) / 1000)
+            input_array = (np.arange(length) * float(bin_size_ns) / 1000) + \
+                          (time_zero_bin * float(bin_size_ns) / 1000)
 
         self = np.asarray(input_array).view(cls)
-        self.bin_size = float(bin_size)
+        self.bin_size = float(bin_size_ns)
         self.length = len(input_array) if length is None else float(length)
-        self.time_zero = 0 if time_zero is None else float(time_zero)
+        self.time_zero = 0 if time_zero_bin is None else float(time_zero_bin)
         self.id = run_id
 
         return self
+
+    def __eq__(self, other):
+        return self.bin_size == other.bin_size \
+               and np.array_equal(self, other) \
+               and self.time_zero == other.time_zero
 
     def __repr__(self):
         return f'Time({repr(super)}, {self.bin_size}, {self.time_zero}, {self.id})'
@@ -762,71 +911,37 @@ class Time(np.ndarray):
         t0 = self.time_zero
 
         if bin_binned <= bin_full:
-            return self
+            return Time(self, bin_size_ns=self.bin_size, time_zero_bin=self.time_zero, run_id=self.id)
 
         binned_indices_per_bin = int(np.round(bin_binned / bin_full))
         binned_indices_total = int(np.floor(num_bins / binned_indices_per_bin))
         time_per_binned = binned_indices_per_bin * bin_full
 
-        return (np.arange(binned_indices_total) * time_per_binned) + (t0 * bin_full) + (time_per_binned / 2)
+        return Time((np.arange(binned_indices_total) * time_per_binned) + (t0 * bin_full) + (time_per_binned / 2),
+                    bin_size_ns=packing, time_zero_bin=self.time_zero)
 
 
-class FFT:
-    def __init__(self, asymmetry, time, f_min, f_max):
-        f_step = (f_max - f_min) / 200
-        z_min = 2 * np.pi * f_min
-        z_max = 2 * np.pi * f_max
-        z_step = 2 * np.pi * f_step
+class Fit(PersistentObject):
+    def get_persistent_data(self):
+        return self._recursive_build(
+            fit_id=self.id,
+            parameters=self.parameters,
+            expression=self.string_expression,
+            title=self.title,
+            run_id=self.run_id,
+            meta=self.meta,
+            asymmetry=self.asymmetry,
+            goodness=self.goodness
+        )
 
-        low_step = int(np.ceil((z_min - 1e-8) / z_step))
-        high_step = int(np.floor((z_max + 1e-8) / z_step)) + 1
-        z = np.arange(low_step, high_step) * z_step
+    @staticmethod
+    def build_from_persistent_data(data):
+        data["asymmetry"] = Asymmetry.build_from_persistent_data(data.pop("asymmetry"))
+        return Fit(**data)
 
-        try:
-            x_step = time[1] - time[0]
-        except IndexError:
-            self.z = [0]
-            self.fft = [0]
-            return
-
-        if (time[0] - 0.01 * x_step) > 0:
-            nn = int(np.round(time[0] / x_step))
-            add_me = np.linspace(0.0, time[0] - x_step, nn)
-            time = np.concatenate((add_me, time))
-            asymmetry = np.concatenate((0.0 * add_me, asymmetry))
-
-        x_max_z_step = np.pi / z_step
-        nin = len(time)
-        n_base = max([nin, high_step, x_max_z_step / x_step])
-        n_log_2 = int(np.ceil(np.log2(n_base)))
-        n_out = 2 ** n_log_2
-        x_max_db = 2 * n_out * x_step
-        y_in_db = np.concatenate((asymmetry, np.zeros(2 * n_out - nin)))
-        cy_out_db = np.fft.fft(y_in_db) * x_max_db
-        fz_db = cy_out_db
-        z_step_fine = 2 * np.pi / x_max_db
-        z_fine = np.arange(n_out) * z_step_fine
-        fz_fine = fz_db[:n_out]
-        fzr = np.interp(z, z_fine, np.real(fz_fine))
-        fzi = np.interp(z, z_fine, np.imag(fz_fine))
-
-        if z[0] + 0.0001 * z_step < 0:
-            nn = int(np.round(-z[0] / z_step))
-            fzr[:nn] = 1.0 * fzr[2 * nn:nn:-1]
-            fzi[:nn] = -1.0 * fzi[2 * nn:nn:-1]
-
-        fz = fzr + 1j * fzi
-
-        z = z / (2 * np.pi)
-        fft = np.real(fz * np.conj(fz))
-
-        self.z = z
-        self.fft = fft
-
-
-class Fit:
-    def __init__(self, parameters, expression, title, run_id, meta, asymmetry: Asymmetry, goodness: float = None):
-        self.id = str(uuid.uuid4())
+    def __init__(self, parameters, expression, title, run_id, meta, asymmetry: Asymmetry,
+                 goodness: float = None, fit_id=None):
+        self.id = str(uuid.uuid4()) if fit_id is None else fit_id
         self.parameters = parameters
         self.string_expression = expression
         self.title = title
@@ -837,6 +952,9 @@ class Fit:
 
         from app.model import fit
         self.expression = fit.FitExpression(expression)
+
+    def __eq__(self, other):
+        return self.parameters == other.parameters and self.string_expression == other.string_expression
 
     def __repr__(self):
         return f'Fit({self.id}, {self.parameters}, {self.string_expression}, {self.title} ,{self.run_id}, {self.meta}' \
@@ -878,25 +996,50 @@ class Fit:
                    header="BEAMS\n" + meta_string + "\nTime, Asymmetry, Calculated, Uncertainty")
 
 
-class FitDataset:
+class FitDataset(PersistentObject):
     class Flags:
         GLOBAL = 1
         GLOBAL_PLUS = 2
         BATCH = 3
 
-    def __init__(self):
+    def get_persistent_data(self):
+        return self._recursive_build(
+            dataset_id=self.id,
+            title=self.title,
+            fits=self.fits,
+            flags=self.flags,
+            expression=self.expression,
+            is_loaded=self.is_loaded
+        )
+
+    @staticmethod
+    def build_from_persistent_data(data):
+        data["fits"] = {k: Fit.build_from_persistent_data(v) for k, v in data.pop("fits").items()}
+        return FitDataset(**data)
+
+    def __init__(self, dataset_id=None, title=None, fits=None, flags=None, expression=None, is_loaded=None):
         t = time.localtime()
         current_time = time.strftime("%d-%m-%YT%H:%M:%S", t)
 
-        self.id = str(uuid.uuid4())
-        self.title = str(current_time)
-        self.fits = {}  # run_id : fit object
-        self.flags = 0
-        self.expression = None
-        self.is_loaded = False
+        self.id = dataset_id if dataset_id is not None else str(uuid.uuid4())
+        self.title = title if title is not None else str(current_time)
+        self.fits = fits if fits is not None else {}  # run_id : fit object
+        self.flags = flags if flags is not None else 0
+        self.expression = expression if expression is not None else None
+        self.is_loaded = is_loaded if is_loaded is not None else False
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) \
+               and other.id == self.id
 
     def __repr__(self):
         return f'FitDataset({self.title}, {self.flags}, {self.expression}, {self.is_loaded}, {self.id}, {self.fits})'
+
+    def equals(self, other):
+        return self == other and self.title == other.title \
+               and self.fits == other.fits and self.flags == other.flags \
+               and self.expression == other.expression and self.is_loaded == other.is_loaded
+
 
     def write(self, out_file, order_by_key, parameter=None):
         if parameter:
@@ -1011,10 +1154,33 @@ class FitDataset:
         return fit_list
 
 
-class RunDataset:
+class RunDataset(PersistentObject):
     FULL_ASYMMETRY = 1
     LEFT_BINNED_ASYMMETRY = 2
     RIGHT_BINNED_ASYMMETRY = 3
+
+    def get_persistent_data(self):
+        return self._recursive_build(
+            id=self.id,
+            histograms=self.histograms,
+            asymmetries=self.asymmetries,
+            meta=self.meta,
+            file=self.file,
+            histograms_used=self.histograms_used,
+            is_loaded=self.is_loaded
+        )
+
+    @staticmethod
+    def build_from_persistent_data(data):
+        dataset = RunDataset()
+        dataset.id = data["id"]
+        dataset.histograms = {k: Histogram.build_from_persistent_data(v) for k, v in data["histograms"].items()}
+        dataset.asymmetries = {k: Asymmetry.build_from_persistent_data(v) for k, v in data["asymmetries"].items()}
+        dataset.meta = data["meta"]
+        dataset.file = data["file"]
+        dataset.histograms_used = data["histograms_used"]
+        dataset.is_loaded = data["is_loaded"]
+        return dataset
 
     def __init__(self):
         self.id = str(uuid.uuid4())
@@ -1030,14 +1196,22 @@ class RunDataset:
         self.meta = None
         self.file = None
         self.histograms_used = []
-        self.isLoaded = False
+        self.is_loaded = False
 
     def __eq__(self, other):
-        return isinstance(other, self.__class__) and other.id == self.id
+        return isinstance(other, self.__class__) \
+               and other.id == self.id
 
     def __repr__(self):
         return f'RunDataset({self.id}, {self.file}, {self.meta}, {self.histograms}, {self.histograms_used}, ' \
                f'{self.asymmetries})'
+
+    def equals(self, other):
+        return self == other \
+               and other.meta == self.meta \
+               and other.histograms_used == self.histograms_used \
+               and other.histograms == self.histograms \
+               and other.asymmetries == self.asymmetries
 
     def write(self, out_file, format=None, bin_size=None):
         if format == files.Extensions.HISTOGRAM:
@@ -1049,7 +1223,8 @@ class RunDataset:
                        fmt="%-8i")
         elif self.asymmetries[self.FULL_ASYMMETRY] is not None:
             meta_string = files.TITLE_KEY + ":" + str(self.meta[files.TITLE_KEY]) + "," \
-                          + files.BIN_SIZE_KEY + ":" + str(bin_size if bin_size else self.meta[files.BIN_SIZE_KEY]) + "," \
+                          + files.BIN_SIZE_KEY + ":" + str(
+                bin_size if bin_size else self.meta[files.BIN_SIZE_KEY]) + "," \
                           + files.RUN_NUMBER_KEY + ":" + str(self.meta[files.RUN_NUMBER_KEY]) + "," \
                           + files.TEMPERATURE_KEY + ":" + str(self.meta[files.TEMPERATURE_KEY]) + "," \
                           + files.FIELD_KEY + ":" + str(self.meta[files.FIELD_KEY]) + "," \
@@ -1063,21 +1238,49 @@ class RunDataset:
                        fmt='%2.9f, %2.4f, %2.4f', header='BEAMS\n' + meta_string + "\nTime, Asymmetry, Uncertainty")
 
 
-class FileDataset:
+class FileDataset(PersistentObject):
+    def get_persistent_data(self):
+        return self._recursive_build(
+            id=self.id,
+            file_path=self.file_path,
+            title=self.title,
+            is_loaded=self.is_loaded,
+            dataset=self.dataset.get_persistent_data()
+        )
+
+    @staticmethod
+    def build_from_persistent_data(data):
+        file = files.file(data["file_path"])
+        file_dataset = FileDataset(file)
+        file_dataset.title = data["title"]
+        file_dataset.is_loaded = data["is_loaded"]
+        file_dataset.id = data["id"]
+
+        dataset = data["dataset"]
+        file_dataset.dataset = None if dataset is None else RunDataset.build_from_persistent_data(dataset)
+
+        return file_dataset
+
     def __init__(self, file):
         self.id = str(uuid.uuid4())
 
         self.file = file
         self.file_path = file.file_path
         self.title = os.path.split(file.file_path)[1]
-        self.isLoaded = False
+        self.is_loaded = False
         self.dataset = None
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and other.id == self.id
 
     def __repr__(self):
-        return f'FileDataset({self.title}, {self.file}, {self.file_path}, {self.id}, {self.isLoaded}, {self.dataset})'
+        return f'FileDataset({self.title}, {self.file}, {self.file_path}, {self.id}, {self.is_loaded}, {self.dataset})'
+
+    def equals(self, other):
+        return self == other \
+               and other.file_path == self.file_path \
+               and str(other.title) == str(self.title) \
+               and other.dataset.equals(self.dataset)
 
 
 class DataBuilder:
@@ -1152,13 +1355,13 @@ class DataBuilder:
                                       bin_size=d.meta[files.BIN_SIZE_KEY],
                                       input_array=data[histogram_title])
                 d.histograms[histogram_title] = histogram
-            d.isLoaded = True
+            d.is_loaded = True
 
         elif f.DATA_FORMAT == files.Format.ASYMMETRY:
             data = f.read_data()
 
             uncertainty = Uncertainty(data["Uncertainty"], bin_size=d.meta[files.BIN_SIZE_KEY])
-            times = Time(data["Time"], time_zero=d.meta[files.T0_KEY], bin_size=d.meta[files.BIN_SIZE_KEY])
+            times = Time(data["Time"], time_zero_bin=d.meta[files.T0_KEY], bin_size_ns=d.meta[files.BIN_SIZE_KEY])
 
             asymmetry = Asymmetry(input_array=data["Asymmetry"],
                                   time_zero=d.meta[files.T0_KEY],
@@ -1168,13 +1371,13 @@ class DataBuilder:
 
             d.asymmetries[d.FULL_ASYMMETRY] = asymmetry
             d.histograms = None
-            d.isLoaded = True
+            d.is_loaded = True
 
         elif f.DATA_FORMAT == files.Format.FIT:
             data = f.read_data()
 
             uncertainty = Uncertainty(data["Uncertainty"], bin_size=d.meta[files.BIN_SIZE_KEY])
-            times = Time(data["Time"], time_zero=d.meta[files.T0_KEY], bin_size=d.meta[files.BIN_SIZE_KEY])
+            times = Time(data["Time"], time_zero_bin=d.meta[files.T0_KEY], bin_size_ns=d.meta[files.BIN_SIZE_KEY])
 
             asymmetry = Asymmetry(input_array=data["Asymmetry"],
                                   time_zero=d.meta[files.T0_KEY],
@@ -1185,6 +1388,6 @@ class DataBuilder:
 
             d.asymmetries[d.FULL_ASYMMETRY] = asymmetry
             d.histograms = None
-            d.isLoaded = True
+            d.is_loaded = True
 
         return d
