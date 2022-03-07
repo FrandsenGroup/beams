@@ -124,6 +124,15 @@ class TestHistograms:
 
         assert hist == histogram_maximized
 
+    @pytest.mark.parametrize("hist",
+                             [(objects.Histogram(range(27648), 980, 1030, 27648, 70, 900, "Front", "RANDOM_ID", 0.2))])
+    def test_persistent_with_pickling(self, hist):
+        histogram_minimized = hist.get_persistent_data()
+        histogram_minimized_unpickled = pickle.loads(pickle.dumps(histogram_minimized))
+        histogram_maximized = hist.build_from_persistent_data(histogram_minimized_unpickled)
+
+        assert hist == histogram_maximized
+
     @pytest.mark.parametrize("hists, correct_combined_hist",
                              [((objects.Histogram(range(27648),
                                                   980, 680, 25000, 600, 1000, "Front", "3412", 0.2),
@@ -223,6 +232,22 @@ class TestAsymmetries:
     def test_persistent_object(self, asymmetry: objects.Asymmetry):
         asymmetry_minimized = asymmetry.get_persistent_data()
         asymmetry_maximized = asymmetry.build_from_persistent_data(asymmetry_minimized)
+
+        assert asymmetry == asymmetry_maximized
+
+    @pytest.mark.parametrize("asymmetry",
+                             [(objects.Asymmetry(input_array=range(27648), time_zero=980, bin_size=0.2,
+                                                 uncertainty=range(27648), time=range(27648))),
+                              (objects.Asymmetry(histogram_one=objects.Histogram(range(27648),
+                                                                                 980, 1030, 27648, 70, 900, "Front",
+                                                                                 "RANDOM_ID", 0.2),
+                                                 histogram_two=objects.Histogram(range(27648),
+                                                                                 980, 1030, 27648, 70, 900, "Back",
+                                                                                 "RANDOM_ID", 0.2)))])
+    def test_persistent_with_pickling(self, asymmetry: objects.Asymmetry):
+        asymmetry_minimized = asymmetry.get_persistent_data()
+        asymmetry_minimized_unpickled = pickle.loads(pickle.dumps(asymmetry_minimized))
+        asymmetry_maximized = asymmetry.build_from_persistent_data(asymmetry_minimized_unpickled)
 
         assert asymmetry == asymmetry_maximized
 
@@ -496,6 +521,15 @@ class TestUncertainties:
 
         assert uncertainty_maximized == uncertainty
 
+    @pytest.mark.parametrize("uncertainty",
+                             [(objects.Uncertainty([1, 2, 3, 4, 5, 6, 7], 0.2))])
+    def test_persistent_with_pickling(self, uncertainty: objects.Uncertainty):
+        uncertainty_minimized = uncertainty.get_persistent_data()
+        uncertainty_minimized_unpickled = pickle.loads(pickle.dumps(uncertainty_minimized))
+        uncertainty_maximized = uncertainty.build_from_persistent_data(uncertainty_minimized_unpickled)
+
+        assert uncertainty_maximized == uncertainty
+
     @pytest.mark.parametrize("uncertainty, expected_uncertainty, packing",
                              [
                                  (objects.Uncertainty(range(100), 1),
@@ -563,6 +597,15 @@ class TestTimes:
 
         assert time_maximized == time
 
+    @pytest.mark.parametrize("time",
+                             [(objects.Time([1, 2, 3, 4, 5, 6, 7], 0.2))])
+    def test_persistent_with_pickling(self, time: objects.Time):
+        time_minimized = time.get_persistent_data()
+        time_minimized_unpickled = pickle.loads(pickle.dumps(time_minimized))
+        time_maximized = time.build_from_persistent_data(time_minimized_unpickled)
+
+        assert time_maximized == time
+
     @pytest.mark.parametrize("time, expected_time, packing",
                              [
                                  (objects.Time(range(100), 1),
@@ -603,6 +646,19 @@ class TestFits:  # Just the object
         assert fit_maximized == fit
         assert fit_maximized.asymmetry == fit.asymmetry
 
+    @pytest.mark.parametrize("fit",
+                             [(objects.Fit({}, "x", "a title", "a run id", None,
+                                           objects.Asymmetry(input_array=range(27648),
+                                                             time_zero=980, bin_size=0.2,
+                                                             uncertainty=range(27648), time=range(27648))))])
+    def test_persistent_with_pickling(self, fit: objects.Fit):
+        fit_minimized = fit.get_persistent_data()
+        fit_minimized_unpickled = pickle.loads(pickle.dumps(fit_minimized))
+        fit_maximized = fit.build_from_persistent_data(fit_minimized_unpickled)
+
+        assert fit_maximized == fit
+        assert fit_maximized.asymmetry == fit.asymmetry
+
 
 @pytest.mark.FitDataset
 class TestFitDatasets:
@@ -622,6 +678,20 @@ class TestFitDatasets:
     def test_persistent_object(self, dataset: objects.FitDataset):
         dataset_minimized = dataset.get_persistent_data()
         dataset_maximized = dataset.build_from_persistent_data(dataset_minimized)
+
+        assert dataset_maximized == dataset
+
+    @pytest.mark.parametrize("dataset",
+                             [(objects.FitDataset(fits={
+                                 "fit1": objects.Fit({}, "x", "a title", "a run id", None,
+                                                     objects.Asymmetry(input_array=range(27648),
+                                                                       time_zero=980, bin_size=0.2,
+                                                                       uncertainty=range(27648), time=range(27648)))
+                             }))])
+    def test_persistent_with_pickling(self, dataset: objects.FitDataset):
+        dataset_minimized = dataset.get_persistent_data()
+        dataset_minimized_unpickled = pickle.loads(pickle.dumps(dataset_minimized))
+        dataset_maximized = dataset.build_from_persistent_data(dataset_minimized_unpickled)
 
         assert dataset_maximized == dataset
 
@@ -665,6 +735,28 @@ class TestRunDatasets:
 
         dataset_minimized = dataset.get_persistent_data()
         dataset_maximized = dataset.build_from_persistent_data(dataset_minimized)
+
+        assert dataset_maximized.equals(dataset)
+
+    def test_persistent_with_pickling(self):
+        dataset = objects.RunDataset()
+        dataset.histograms = {
+            "h1": objects.Histogram(range(27648), 980, 1030, 27648, 70, 900, "Front", "RANDOM_ID", 0.2),
+            "h2": objects.Histogram(range(27648), 980, 1030, 27648, 70, 900, "Back", "RANDOM_ID", 0.2)
+        }
+        dataset.asymmetries = {
+            "a1": objects.Asymmetry(input_array=range(27648), time_zero=980, bin_size=0.2,
+                                    uncertainty=range(27648), time=range(27648))
+        }
+        dataset.meta = {
+            "m1": "someting",
+            "m2": 2
+        }
+        dataset.histograms_used = ["h1", "h2"]
+
+        dataset_minimized = dataset.get_persistent_data()
+        dataset_minimized_unpickled = pickle.loads(pickle.dumps(dataset_minimized))
+        dataset_maximized = dataset.build_from_persistent_data(dataset_minimized_unpickled)
 
         assert dataset_maximized.equals(dataset)
         
@@ -716,5 +808,31 @@ class TestFileDatasets:
 
         file_dataset_minimized = file_dataset.get_persistent_data()
         file_dataset_maximized = file_dataset.build_from_persistent_data(file_dataset_minimized)
+
+        assert file_dataset_maximized.equals(file_dataset)
+
+    def test_persistent_with_pickling(self):
+        dataset = objects.RunDataset()
+        dataset.histograms = {
+            "h1": objects.Histogram(range(27648), 980, 1030, 27648, 70, 900, "Front", "RANDOM_ID", 0.2),
+            "h2": objects.Histogram(range(27648), 980, 1030, 27648, 70, 900, "Back", "RANDOM_ID", 0.2)
+        }
+        dataset.asymmetries = {
+            "a1": objects.Asymmetry(input_array=range(27648), time_zero=980, bin_size=0.2,
+                                    uncertainty=range(27648), time=range(27648))
+        }
+        dataset.meta = {
+            "m1": "someting",
+            "m2": 2
+        }
+        dataset.histograms_used = ["h1", "h2"]
+
+        from app.model import files
+        file_dataset = objects.FileDataset(files.file(resources.resource_path(r"test/examples/histogram_data.dat")))
+        file_dataset.dataset = dataset
+
+        file_dataset_minimized = file_dataset.get_persistent_data()
+        file_dataset_minimized_unpickled = pickle.loads(pickle.dumps(file_dataset_minimized))
+        file_dataset_maximized = file_dataset.build_from_persistent_data(file_dataset_minimized_unpickled)
 
         assert file_dataset_maximized.equals(file_dataset)
