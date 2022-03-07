@@ -51,6 +51,15 @@ class RunDAO:
     def clear(self):
         self.__database.run_table = {}
 
+    def minimize(self):
+        return {run_id: run.get_persistent_data() for run_id, run in self.__database.run_table.items()}
+
+    def maximize(self, data):
+        from app.model import objects
+        self.__database.run_table = {
+            run_id: objects.RunDataset.build_from_persistent_data(run) for run_id, run in data.items()
+        }
+
 
 class FitDAO:
     """
@@ -74,6 +83,12 @@ class FitDAO:
 
     def clear(self):
         self.__database.fit_table = {}
+
+    def minimize(self):
+        return {fit_id: fit.get_persistent_data() for fit_id, fit in self.__database.fit_table.items()}
+
+    def maximize(self, data):
+        self.__database.fit_table = {fit_id: fit.build_from_persistent_data() for fit_id, fit in data}
 
 
 class FileDAO:
