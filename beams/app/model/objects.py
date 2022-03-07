@@ -143,7 +143,7 @@ class Histogram(np.ndarray, PersistentObject):
 
     @staticmethod
     def build_from_persistent_data(data):
-        return Histogram(**data)
+        return None if data is None else Histogram(**data)
 
     def __repr__(self):
         return f'Histogram({repr(super)}, {self.title}, {self.time_zero}, {self.good_bin_start}, ' \
@@ -386,7 +386,7 @@ class Asymmetry(np.ndarray, PersistentObject):
 
     @staticmethod
     def build_from_persistent_data(data):
-        return Asymmetry(**data)
+        return None if data is None else Asymmetry(**data)
 
     def __new__(cls, input_array=None, time_zero=None, bin_size=None, histogram_one=None, histogram_two=None,
                 uncertainty=None, time=None, alpha=None, calculated=None, **kwargs):
@@ -747,7 +747,7 @@ class Uncertainty(np.ndarray, PersistentObject):
 
     @staticmethod
     def build_from_persistent_data(data):
-        return Uncertainty(**data)
+        return None if data is None else Uncertainty(**data)
 
     def __new__(cls, input_array=None, bin_size=None, histogram_one=None, histogram_two=None, **kwargs):
         if (input_array is None or bin_size is None) and (histogram_one is None or histogram_two is None):
@@ -854,7 +854,7 @@ class Time(np.ndarray, PersistentObject):
 
     @staticmethod
     def build_from_persistent_data(data):
-        return Time(**data)
+        return None if data is None else Time(**data)
 
     def __new__(cls, input_array=None, bin_size_ns=None, length=None, time_zero_bin=None, run_id=None,
                 time_zero_ns=None,
@@ -936,6 +936,9 @@ class Fit(PersistentObject):
 
     @staticmethod
     def build_from_persistent_data(data):
+        if data is None:
+            return
+
         data["asymmetry"] = Asymmetry.build_from_persistent_data(data.pop("asymmetry"))
         return Fit(**data)
 
@@ -1034,6 +1037,9 @@ class FitDataset(PersistentObject):
 
     def __repr__(self):
         return f'FitDataset({self.title}, {self.flags}, {self.expression}, {self.is_loaded}, {self.id}, {self.fits})'
+
+    def __hash__(self):
+        return hash(self.id)
 
     def equals(self, other):
         return self == other and self.title == other.title \
@@ -1206,6 +1212,9 @@ class RunDataset(PersistentObject):
         return f'RunDataset({self.id}, {self.file}, {self.meta}, {self.histograms}, {self.histograms_used}, ' \
                f'{self.asymmetries})'
 
+    def __hash__(self):
+        return hash(self.id)
+
     def equals(self, other):
         return self == other \
                and other.meta == self.meta \
@@ -1275,6 +1284,9 @@ class FileDataset(PersistentObject):
 
     def __repr__(self):
         return f'FileDataset({self.title}, {self.file}, {self.file_path}, {self.id}, {self.is_loaded}, {self.dataset})'
+
+    def __hash__(self):
+        return hash(self.id)
 
     def equals(self, other):
         return self == other \
