@@ -2,6 +2,7 @@ import pytest
 import pickle
 
 from app.model import data_access, objects, files
+from resources import resources
 
 
 @pytest.mark.RunDao
@@ -103,8 +104,9 @@ class TestRunDao:
 
         minimal = dao.minimize()
         dao.clear()
-        dao.maximize(minimal)
+        assert len(db.run_table) == 0
 
+        dao.maximize(minimal)
         assert db.run_table == original_run_table
 
     def test_persist_with_pickle(self):
@@ -130,28 +132,131 @@ class TestRunDao:
 @pytest.mark.FileDao
 class TestFileDao:
     def test_get_files(self):
-        pass
+        f1, f2, f3 = (objects.FileDataset(files.file(resources.resource_path(rf"test/examples/histogram_data_{i}.dat")))
+                      for i in range(3))
+        db = data_access.Database()
+        db.file_table = {f1.id: f1, f2.id: f2, f3.id: f3}
+
+        dao = data_access.FileDAO()
+
+        file_datasets = dao.get_files()
+
+        assert f1 in file_datasets and f2 in file_datasets and f3 in file_datasets
+        assert len(file_datasets) == 3
 
     def test_get_files_by_ids(self):
-        pass
+        f1, f2, f3 = (objects.FileDataset(files.file(resources.resource_path(rf"test/examples/histogram_data_{i}.dat")))
+                      for i in range(3))
+        db = data_access.Database()
+        db.file_table = {f1.id: f1, f2.id: f2, f3.id: f3}
+
+        dao = data_access.FileDAO()
+
+        file_datasets = dao.get_files_by_ids([f1.id, f3.id])
+
+        assert f1 in file_datasets and f3 in file_datasets
+        assert f2 not in file_datasets
+        assert len(file_datasets) == 2
 
     def test_get_files_by_path(self):
-        pass
+        f1, f2, f3 = (objects.FileDataset(files.file(resources.resource_path(rf"test/examples/histogram_data_{i}.dat")))
+                      for i in range(3))
+        db = data_access.Database()
+        db.file_table = {f1.id: f1, f2.id: f2, f3.id: f3}
+
+        dao = data_access.FileDAO()
+
+        file_datasets = dao.get_files_by_path(resources.resource_path(r"test/examples/histogram_data_1.dat"))
+
+        assert f2 == file_datasets
 
     def test_add_files(self):
-        pass
+        f1, f2 = (objects.FileDataset(files.file(resources.resource_path(rf"test/examples/histogram_data_{i}.dat")))
+                      for i in range(2))
+        db = data_access.Database()
+        db.file_table = {f1.id: f1, f2.id: f2}
+
+        dao = data_access.FileDAO()
+
+        dao.add_files([(objects.FileDataset(files.file(resources.resource_path(rf"test/examples/histogram_data_2.dat"))))])
+
+        assert len(db.file_table) == 3
 
     def test_remove_files_by_paths(self):
-        pass
+        f1, f2, f3 = (objects.FileDataset(files.file(resources.resource_path(rf"test/examples/histogram_data_{i}.dat")))
+                      for i in range(3))
+        db = data_access.Database()
+        db.file_table = {f1.id: f1, f2.id: f2, f3.id: f3}
+
+        dao = data_access.FileDAO()
+
+        files_removed = dao.remove_files_by_paths([resources.resource_path(r"test/examples/histogram_data_1.dat"),
+                                   resources.resource_path(r"test/examples/histogram_data_0.dat")])
+
+        assert files_removed == 2
+        assert len(db.file_table) == 1
+        assert f3.id in db.file_table
 
     def test_remove_files_by_id(self):
-        pass
+        f1, f2, f3 = (objects.FileDataset(files.file(resources.resource_path(rf"test/examples/histogram_data_{i}.dat")))
+                      for i in range(3))
+        db = data_access.Database()
+        db.file_table = {f1.id: f1, f2.id: f2, f3.id: f3}
+
+        dao = data_access.FileDAO()
+
+        dao.remove_files_by_id([f1.id, f3.id])
+
+        assert len(db.file_table) == 1
+        assert f2.id in db.file_table
+
+        dao.remove_files_by_id(f2.id)
+
+        assert len(db.file_table) == 0
 
     def test_clear(self):
-        pass
+        f1, f2, f3 = (objects.FileDataset(files.file(resources.resource_path(rf"test/examples/histogram_data_{i}.dat")))
+                      for i in range(3))
+        db = data_access.Database()
+        db.file_table = {f1.id: f1, f2.id: f2, f3.id: f3}
+
+        dao = data_access.FileDAO()
+
+        dao.clear()
+
+        assert len(db.file_table) == 0
 
     def test_persist(self):
-        pass
+        f1, f2, f3 = (objects.FileDataset(files.file(resources.resource_path(rf"test/examples/histogram_data_{i}.dat")))
+                      for i in range(3))
+        db = data_access.Database()
+        original_file_table = {f1.id: f1, f2.id: f2, f3.id: f3}
+        db.file_table = original_file_table
+
+        dao = data_access.FileDAO()
+
+        minimal = dao.minimize()
+        dao.clear()
+        assert len(db.file_table) == 0
+
+        dao.maximize(minimal)
+        assert db.file_table == original_file_table
 
     def test_persist_with_pickle(self):
-        pass
+        f1, f2, f3 = (objects.FileDataset(files.file(resources.resource_path(rf"test/examples/histogram_data_{i}.dat")))
+                      for i in range(3))
+        db = data_access.Database()
+        original_file_table = {f1.id: f1, f2.id: f2, f3.id: f3}
+        db.file_table = original_file_table
+
+        dao = data_access.FileDAO()
+
+        minimal = dao.minimize()
+        dao.clear()
+        assert len(db.file_table) == 0
+
+        minimal_unpickled = pickle.loads(pickle.dumps(minimal))
+        assert minimal_unpickled == minimal
+
+        dao.maximize(minimal)
+        assert db.file_table == original_file_table

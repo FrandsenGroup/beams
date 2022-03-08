@@ -1254,7 +1254,7 @@ class FileDataset(PersistentObject):
             file_path=self.file_path,
             title=self.title,
             is_loaded=self.is_loaded,
-            dataset=self.dataset.get_persistent_data()
+            dataset=None if self.dataset is None else self.dataset.get_persistent_data()
         )
 
     @staticmethod
