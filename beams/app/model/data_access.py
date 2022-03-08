@@ -112,15 +112,37 @@ class FileDAO:
         for dataset in file_datasets:
             self.__database.file_table[dataset.id] = dataset
 
-    def remove_files_by_paths(self, paths):
-        for path in paths:
-            self.__database.file_table.pop(path)
+        return len(file_datasets)
 
-    def remove_files_by_id(self, fid):
-        self.__database.file_table.pop(fid)
+    def remove_files_by_paths(self, paths):
+        remove_ids = []
+        for file_id, file_dataset in self.__database.file_table.items():
+
+            if file_dataset.file_path in paths:
+                remove_ids.append(file_id)
+
+        for file_id in remove_ids:
+            self.__database.file_table.pop(file_id)
+
+        return len(remove_ids)
+
+    def remove_files_by_id(self, fids):
+        if not isinstance(fids, list):
+            fids = [fids]
+
+        for file_id in fids:
+            self.__database.file_table.pop(file_id)
 
     def clear(self):
         self.__database.file_table = {}
+
+    def minimize(self):
+        return {file_id: file.get_persistent_data() for file_id, file in self.__database.file_table.items()}
+
+    def maximize(self, data):
+        from app.model import objects
+        self.__database.file_table = {file_id: objects.FileDataset.build_from_persistent_data(file)
+                                      for file_id, file in data.items()}
 
 
 class StyleDAO:
