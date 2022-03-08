@@ -2,7 +2,7 @@ import pytest
 import pickle
 
 from app.model import data_access, objects, files
-from resources import resources
+from app.resources import resources
 
 
 @pytest.mark.RunDao
