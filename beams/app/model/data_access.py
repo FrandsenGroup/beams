@@ -220,7 +220,11 @@ class SystemDAO:
             return self.__database.system_table
 
     def set_database(self, database: Database):
+        config_table = self.__database.system_table.copy()
         self.__database._instance = database
+
+        # We don't want the users configuration settings to change
+        self.__database.system_table = config_table
 
     def get_database(self):
         return self.__database

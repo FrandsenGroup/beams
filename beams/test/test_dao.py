@@ -437,3 +437,37 @@ class TestStyleDao:
 
         dao.maximize(minimal_unpickled)
         assert db.style_table == original_style_table
+
+
+@pytest.mark.SystemDao
+class TestSystemDao:
+    def test_set_configuration(self):
+        db = data_access.Database()
+        dao = data_access.SystemDAO()
+
+        dao.set_configuration("config1", "setting1")
+        assert db.system_table["config1"] == "setting1"
+
+        dao.set_configuration("config1", "setting2")
+        assert db.system_table["config1"] == "setting2"
+
+        dao.set_configuration("config2", "setting1")
+        assert len(db.system_table) == 2
+
+    def test_get_configuration(self):
+        db = data_access.Database()
+        db.system_table = {
+            "config1": "setting1",
+            "config2": {
+                "config3": "setting3"
+            }
+        }
+        dao = data_access.SystemDAO()
+
+        setting = dao.get_configuration("config1")
+        assert setting == "setting1"
+
+        setting = dao.get_configuration("config3")
+        assert setting == "setting3"
+
+        # Haven't handled duplicate config names nested under different configs. Honestly not going to be used.
