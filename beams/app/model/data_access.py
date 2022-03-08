@@ -179,12 +179,23 @@ class StyleDAO:
 
     def get_styles(self, identifiers=None):
         if identifiers is not None:
+            if not isinstance(identifiers, list):
+                identifiers = [identifiers]
             return [self.__database.style_table[i] for i in identifiers]
         else:
-            return self.__database.style_table
+            return self.__database.style_table.copy()
 
     def update_style(self, identifier, key, value):
         self.__database.style_table[identifier][key] = value
+
+    def clear(self):
+        self.__database.style_table = {}
+
+    def minimize(self):
+        return self.__database.style_table.copy()
+
+    def maximize(self, data):
+        self.__database.style_table = data.copy()
 
 
 class SystemDAO:

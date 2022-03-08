@@ -352,3 +352,88 @@ class TestFitDao:
 
         dao.maximize(minimal_unpickled)
         assert db.fit_table == original_fit_table
+
+
+@pytest.mark.StyleDao
+class TestStyleDao:
+    def test_add_style(self):
+        s1, s2, s3 = {}, {}, {}
+        db = data_access.Database()
+        db.style_table = {"1": s1, "2": s2, "3": s3}
+
+        dao = data_access.StyleDAO()
+
+        dao.add_style("4", {})
+        assert len(db.style_table) == 4
+
+    def test_get_styles(self):
+        s1, s2, s3 = {}, {}, {}
+        db = data_access.Database()
+        db.style_table = {"1": s1, "2": s2, "3": s3}
+
+        dao = data_access.StyleDAO()
+
+        styles = dao.get_styles()
+        assert styles == db.style_table
+
+        styles = dao.get_styles(["1", "2"])
+        assert len(styles) == 2
+
+        styles = dao.get_styles("1")
+        assert len(styles) == 1
+
+    def test_update_style(self):
+        s1, s2, s3 = {}, {}, {}
+        db = data_access.Database()
+        db.style_table = {"1": s1, "2": s2, "3": s3}
+
+        dao = data_access.StyleDAO()
+
+        dao.update_style("1", "akey", "avalue")
+        assert db.style_table["1"]["akey"] == "avalue"
+
+        dao.update_style("1", "akey", "bvalue")
+        assert db.style_table["1"]["akey"] == "bvalue"
+
+    def test_clear(self):
+        s1, s2, s3 = {}, {}, {}
+        db = data_access.Database()
+        db.style_table = {"1": s1, "2": s2, "3": s3}
+
+        dao = data_access.StyleDAO()
+
+        dao.clear()
+        assert len(db.style_table) == 0
+
+    def test_minimize(self):
+        s1, s2, s3 = {}, {}, {}
+        db = data_access.Database()
+        original_style_table = {"1": s1, "2": s2, "3": s3}
+        db.style_table = original_style_table
+
+        dao = data_access.StyleDAO()
+
+        minimal = dao.minimize()
+        dao.clear()
+        assert len(db.style_table) == 0
+
+        dao.maximize(minimal)
+        assert db.style_table == original_style_table
+
+    def test_maximize(self):
+        s1, s2, s3 = {}, {}, {}
+        db = data_access.Database()
+        original_style_table = {"1": s1, "2": s2, "3": s3}
+        db.style_table = original_style_table
+
+        dao = data_access.StyleDAO()
+
+        minimal = dao.minimize()
+        dao.clear()
+        assert len(db.style_table) == 0
+
+        minimal_unpickled = pickle.loads(pickle.dumps(minimal))
+        assert minimal_unpickled == minimal
+
+        dao.maximize(minimal_unpickled)
+        assert db.style_table == original_style_table
