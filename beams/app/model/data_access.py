@@ -1,6 +1,7 @@
 """
 Acts as the main data storage for the application and abstracts away data-access operations.
 """
+import abc
 
 
 class Database:
@@ -19,6 +20,22 @@ class Database:
             cls._instance.style_table = {}
             cls._instance.system_table = {}
         return cls._instance
+
+
+class Dao(abc.ABCMeta):
+    __database = Database()
+
+    def get_all(cls):
+        pass
+
+    def get_by_id(cls):
+        pass
+
+    def clear(cls):
+        pass
+
+    def remove_by_id(cls):
+        pass
 
 
 class RunDAO:
@@ -78,6 +95,9 @@ class FitDAO:
             self.__database.fit_table[fit.id] = fit
 
     def remove_fits_by_ids(self, ids):
+        if not isinstance(ids, list):
+            ids = [ids]
+
         for fid in ids:
             self.__database.fit_table.pop(fid)
 
@@ -88,7 +108,9 @@ class FitDAO:
         return {fit_id: fit.get_persistent_data() for fit_id, fit in self.__database.fit_table.items()}
 
     def maximize(self, data):
-        self.__database.fit_table = {fit_id: fit.build_from_persistent_data() for fit_id, fit in data}
+        from app.model import objects
+        self.__database.fit_table = {fit_id: objects.FitDataset.build_from_persistent_data(fit)
+                                     for fit_id, fit in data.items()}
 
 
 class FileDAO:

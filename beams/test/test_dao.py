@@ -260,3 +260,95 @@ class TestFileDao:
 
         dao.maximize(minimal)
         assert db.file_table == original_file_table
+
+
+@pytest.mark.FitDao
+class TestFitDao:
+    def test_get_fits(self):
+        f1, f2, f3 = objects.FitDataset(), objects.FitDataset(), objects.FitDataset()
+        db = data_access.Database()
+        db.fit_table = {f1.id: f1, f2.id: f2, f3.id: f3}
+
+        dao = data_access.FitDAO()
+
+        fits = dao.get_fits()
+        assert f1 in fits and f2 in fits and f3 in fits
+        assert len(fits) == 3
+
+    def test_get_fits_by_ids(self):
+        f1, f2, f3 = objects.FitDataset(), objects.FitDataset(), objects.FitDataset()
+        db = data_access.Database()
+        db.fit_table = {f1.id: f1, f2.id: f2, f3.id: f3}
+
+        dao = data_access.FitDAO()
+
+        fits = dao.get_fits_by_ids([f1.id, f2.id])
+        assert f1 in fits and f2 in fits
+        assert f3 not in fits
+        assert len(fits) == 2
+
+    def test_add_fits(self):
+        f1, f2, f3 = objects.FitDataset(), objects.FitDataset(), objects.FitDataset()
+        db = data_access.Database()
+        db.fit_table = {f1.id: f1, f2.id: f2, f3.id: f3}
+
+        dao = data_access.FitDAO()
+
+        dao.add_fits([objects.FitDataset()])
+        assert len(db.fit_table) == 4
+
+    def test_remove_fits_by_ids(self):
+        f1, f2, f3 = objects.FitDataset(), objects.FitDataset(), objects.FitDataset()
+        db = data_access.Database()
+        db.fit_table = {f1.id: f1, f2.id: f2, f3.id: f3}
+
+        dao = data_access.FitDAO()
+
+        dao.remove_fits_by_ids([f1.id, f3.id])
+        assert len(db.fit_table) == 1
+
+        dao.remove_fits_by_ids(f2.id)
+        assert len(db.fit_table) == 0
+
+    def test_clear(self):
+        f1, f2, f3 = objects.FitDataset(), objects.FitDataset(), objects.FitDataset()
+        db = data_access.Database()
+        db.fit_table = {f1.id: f1, f2.id: f2, f3.id: f3}
+
+        dao = data_access.FitDAO()
+
+        dao.clear()
+        assert len(db.fit_table) == 0
+
+    def test_minimize(self):
+        f1, f2, f3 = objects.FitDataset(), objects.FitDataset(), objects.FitDataset()
+        db = data_access.Database()
+        original_fit_table = {f1.id: f1, f2.id: f2, f3.id: f3}
+        db.fit_table = original_fit_table
+
+        dao = data_access.FitDAO()
+
+        minimal = dao.minimize()
+        dao.clear()
+        assert len(db.fit_table) == 0
+
+        dao.maximize(minimal)
+        assert db.fit_table == original_fit_table
+
+    def test_maximize(self):
+        f1, f2, f3 = objects.FitDataset(), objects.FitDataset(), objects.FitDataset()
+        db = data_access.Database()
+        original_fit_table = {f1.id: f1, f2.id: f2, f3.id: f3}
+        db.fit_table = original_fit_table
+
+        dao = data_access.FitDAO()
+
+        minimal = dao.minimize()
+        dao.clear()
+        assert len(db.fit_table) == 0
+
+        minimal_unpickled = pickle.loads(pickle.dumps(minimal))
+        assert minimal_unpickled == minimal
+
+        dao.maximize(minimal_unpickled)
+        assert db.fit_table == original_fit_table
