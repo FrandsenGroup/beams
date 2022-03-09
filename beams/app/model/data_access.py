@@ -219,15 +219,19 @@ class SystemDAO:
         else:
             return self.__database.system_table
 
-    def set_database(self, database: Database):
-        config_table = self.__database.system_table.copy()
-        self.__database._instance = database
-
-        # We don't want the users configuration settings to change
-        self.__database.system_table = config_table
+    def set_database(self, data):
+        RunDAO().maximize(data["runs"])
+        FileDAO().maximize(data["files"])
+        FitDAO().maximize(data["fits"])
+        StyleDAO().maximize(data["styles"])
 
     def get_database(self):
-        return self.__database
+        return {
+            "runs": RunDAO().minimize(),
+            "files": FileDAO().minimize(),
+            "fits": FitDAO().minimize(),
+            "styles": StyleDAO().minimize()
+        }
 
     def _recursive_search(self, dictionary, key):
         for k, v in dictionary.items():
