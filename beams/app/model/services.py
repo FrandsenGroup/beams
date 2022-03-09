@@ -723,9 +723,6 @@ class FileService:
 
         database = file_dataset.file.read_data()
 
-        if not isinstance(database, dao.Database):
-            raise RuntimeError("Unpickling file did not result in a Database object.")
-
         self.__system_dao.set_database(database)
 
         self.signals.changed.emit()
