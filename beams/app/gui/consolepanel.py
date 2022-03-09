@@ -127,7 +127,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
             data_object = file_data.dataset
 
             if isinstance(data_object, objects.RunDataset):
-                if data_object.isLoaded:
+                if data_object.is_loaded:
                     histogram_node = MainConsolePanel.HeadingNode("Histograms")
                     if data_object.histograms:
                         for histogram in data_object.histograms.values():
