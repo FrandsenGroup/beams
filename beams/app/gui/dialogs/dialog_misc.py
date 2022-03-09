@@ -5,9 +5,11 @@ import enum
 from PyQt5 import QtWidgets, QtCore, QtGui
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
+import darkdetect
 
 from app.util import qt_widgets, qt_constants, report
 from app.resources import resources
+from app.model import services
 
 
 # noinspection PyArgumentList
@@ -304,11 +306,23 @@ class LoadingDialog(QtWidgets.QDialog):
         self.message.setFont(font)
 
         self.label = QtWidgets.QLabel()
-        self.label.setGeometry(QtCore.QRect(25, 25, 200, 200))
-        self.label.setMinimumSize(QtCore.QSize(250, 250))
-        self.label.setMaximumSize(QtCore.QSize(250, 250))
+        self.label.setGeometry(QtCore.QRect(25, 25, 225, 225))
+        self.label.setMinimumSize(QtCore.QSize(200, 200))
+        self.label.setMaximumSize(QtCore.QSize(200, 200))
 
-        self.movie = QtGui.QMovie(resources.LOADING_GIF)
+        system_service = services.SystemService()
+        style = system_service.get_theme_preference()
+        if style == system_service.Themes.DEFAULT:
+            if darkdetect.isDark():
+                style = system_service.Themes.DARK
+            else:
+                style = system_service.Themes.LIGHT
+
+        if style == system_service.Themes.DARK:
+            self.movie = QtGui.QMovie(resources.DARK_LOADING_GIF)
+        elif style == system_service.Themes.LIGHT:
+            self.movie = QtGui.QMovie(resources.LIGHT_LOADING_GIF)
+
         self.label.setMovie(self.movie)
 
         layout = QtWidgets.QVBoxLayout()

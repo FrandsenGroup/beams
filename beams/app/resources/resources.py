@@ -45,7 +45,8 @@ FITTING_CLICKED_IMAGE = resource_path('app/resources/icons/fitting_icon_clicked.
 DOWNLOAD_CLICKED_IMAGE = resource_path('app/resources/icons/download_icon_clicked.png')
 QUESTION_CLICKED_IMAGE = resource_path('app/resources/icons/question_icon_clicked.png')
 MENU_IMAGE = resource_path('app/resources/icons/menu_icon.png')
-LOADING_GIF = resource_path('app/resources/icons/loading.gif')
+LIGHT_LOADING_GIF = resource_path('app/resources/icons/light_loading.gif')
+DARK_LOADING_GIF = resource_path('app/resources/icons/dark_loading.gif')
 
 LATO_BLACK_FONT = resource_path('app/resources/fonts/fonts-Black.ttf')
 LATO_BLACK_ITALIC_FONT = resource_path('app/resources/fonts/fonts-BlackItalic.ttf')
