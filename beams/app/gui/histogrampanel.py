@@ -198,7 +198,7 @@ class HistogramPanel(Panel):
                 self.__file_service = services.FileService()
 
                 if isinstance(run_data, objects.RunDataset):
-                    if run_data.isLoaded and run_data.histograms:
+                    if run_data.is_loaded and run_data.histograms:
                         for histogram in run_data.histograms.values():
                             self.addChild(HistogramPanel.SupportPanel.HistogramNode(histogram))
 

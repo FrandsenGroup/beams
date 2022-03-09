@@ -7,7 +7,7 @@ import pickle
 from PyQt5 import QtCore
 
 import app.model.data_access as dao
-from app.model import objects, files
+from app.model import objects, files, api
 from app.resources import resources
 from app.util import report
 
@@ -88,7 +88,7 @@ class RunService:
     def get_loaded_runs(self):
         loaded_runs = []
         for run in self.__dao.get_runs():
-            if run.isLoaded:
+            if run.is_loaded:
                 loaded_runs.append(run)
         return loaded_runs
 
@@ -177,7 +177,7 @@ class RunService:
 
         run.histograms = histograms
         run.meta = meta
-        run.isLoaded = True
+        run.is_loaded = True
         self.__dao.add_runs([run])
         self.signals.added.emit()
         return run
@@ -430,6 +430,9 @@ class SystemService:
         LAST_DIRECTORY = "LAST_DIRECTORY"
         USER_FUNCTIONS = "USER-DEFINED_FUNCTIONS"
         THEME_PREFERENCE = "THEME_PREFERENCE"
+        VERSION = "VERSION"
+        LATEST = "LATEST"
+        NOTIFY_OF_UPDATE = "NOTIFY_OF_UPDATE"
 
     class Themes:
         DARK = "DARK"
@@ -464,13 +467,18 @@ class SystemService:
 
     def write_configuration_file(self):
         with open(resources.CONFIGURATION_FILE, 'w+') as f:
-            json.dump(self.__dao.get_configuration(), f)
+            json.dump(self.__dao.get_configuration(), f, indent=2)
 
     def get_user_defined_functions(self):
-        functions = self.__dao.get_configuration(self.ConfigKeys.USER_FUNCTIONS)
+        try:
+            functions = self.__dao.get_configuration(self.ConfigKeys.USER_FUNCTIONS)
+        except dao.BeamsRequestedDataNotInDatabaseError:
+            functions = None
+
         if functions is not None:
             return functions
         else:
+            self.__dao.set_configuration(self.ConfigKeys.USER_FUNCTIONS, {})
             return {}
 
     def add_user_defined_function(self, name, function):
@@ -480,7 +488,10 @@ class SystemService:
         self.__dao.set_configuration(self.ConfigKeys.USER_FUNCTIONS, functions)
 
     def get_last_used_directory(self):
-        last_directory = self.__dao.get_configuration(self.ConfigKeys.LAST_DIRECTORY)
+        try:
+            last_directory = self.__dao.get_configuration(self.ConfigKeys.LAST_DIRECTORY)
+        except dao.BeamsRequestedDataNotInDatabaseError:
+            last_directory = None
 
         if last_directory is not None:
             return last_directory
@@ -494,7 +505,11 @@ class SystemService:
             self.__logger.warning("Tried to set last used directory to invalid path: {}".format(directory))
 
     def get_theme_preference(self):
-        preference = self.__dao.get_configuration(self.ConfigKeys.THEME_PREFERENCE)
+        try:
+            preference = self.__dao.get_configuration(self.ConfigKeys.THEME_PREFERENCE)
+        except dao.BeamsRequestedDataNotInDatabaseError:
+            preference = None
+
         if preference is None:
             preference = self.Themes.DEFAULT
             self.set_theme_preference(preference)
@@ -504,15 +519,61 @@ class SystemService:
         self.__dao.set_configuration(self.ConfigKeys.THEME_PREFERENCE, preference)
         self.signals.theme_changed.emit()
 
+    def get_current_version(self):
+        try:
+            return self.__dao.get_configuration(self.ConfigKeys.VERSION)
+        except dao.BeamsRequestedDataNotInDatabaseError:
+            self.__dao.set_configuration(self.ConfigKeys.VERSION, "unknown")
+            return "unknown"
+
+    def get_latest_version(self):
+        try:
+            latest_old = self.__dao.get_configuration(self.ConfigKeys.LATEST)
+        except dao.BeamsRequestedDataNotInDatabaseError:
+            latest_old = "unknown"
+
+        try:
+            latest_version = api.get_latest_release_version()
+            latest_version = latest_version if latest_version else "unknown"
+        except api.BeamsNetworkError:
+            latest_version = "unknown"
+
+        if latest_old != latest_version:
+            self.__dao.set_configuration(self.ConfigKeys.LATEST, latest_version)
+
+        return latest_old, latest_version
+
+    def get_notify_user_of_update(self):
+        try:
+            notify = self.__dao.get_configuration(self.ConfigKeys.NOTIFY_OF_UPDATE)
+        except dao.BeamsRequestedDataNotInDatabaseError:
+            notify = True
+
+        version = self.get_current_version()
+        latest_old, latest = self.get_latest_version()
+
+        # We want to notify if the latest version of beams does not match the current version AND the user
+        # wants to be notified of this OR a new release has been made since they last silenced the notification
+        notify = latest != version and (notify or latest_old != latest)
+
+        self.__dao.set_configuration(self.ConfigKeys.NOTIFY_OF_UPDATE, notify)
+        return notify
+
+    def set_notify_user_of_update(self, notify):
+        self.__dao.set_configuration(self.ConfigKeys.NOTIFY_OF_UPDATE, notify)
+
     def _set_default_configuration(self):
         user_data = {
             self.ConfigKeys.LAST_DIRECTORY: os.getcwd(),
             self.ConfigKeys.USER_FUNCTIONS: {},
-            self.ConfigKeys.THEME_PREFERENCE: self.Themes.DEFAULT
+            self.ConfigKeys.THEME_PREFERENCE: self.Themes.DEFAULT,
+            self.ConfigKeys.VERSION: "unknown",
+            self.ConfigKeys.LATEST: "unknown",
+            self.ConfigKeys.NOTIFY_OF_UPDATE: True
         }
 
         with open(resources.CONFIGURATION_FILE, 'w+') as f:
-            json.dump(user_data, f)
+            json.dump(user_data, f, indent=2)
 
         for key, value in user_data.items():
             self.__dao.set_configuration(key, value)
@@ -578,12 +639,13 @@ class FileService:
             except files.BeamsFileReadError:
                 f = files.UnknownFile(file_path=path)
                 data_set = None
+
             file_set = objects.FileDataset(f)
             file_set.dataset = data_set
 
             if loaded_data:
                 file_set.title = loaded_data.meta[files.TITLE_KEY]
-                file_set.isLoaded = True
+                file_set.is_loaded = True
 
             file_sets.append(file_set)
             if data_set and loaded_data is None:
@@ -606,10 +668,10 @@ class FileService:
         is_changed = False
 
         for file_dataset in self.__dao.get_files_by_ids(ids):
-            if not file_dataset.isLoaded:
+            if not file_dataset.is_loaded:
                 is_changed = True
                 objects.DataBuilder.build_full(file_dataset.file, file_dataset.dataset)
-                file_dataset.isLoaded = True
+                file_dataset.is_loaded = True
 
         if is_changed:
             self.signals.changed.emit()
@@ -661,9 +723,10 @@ class FileService:
 
         database = file_dataset.file.read_data()
 
-        if not isinstance(database, dao.Database):
-            error = "Unpickling file did not result in a Database object."
-            raise files.BeamsFileReadError(error)
+# We will add this back after we merge, but a little different. Right now this check no longer makes sense with my recent changes.
+#         if not isinstance(database, dao.Database):
+#             error = "Unpickling file did not result in a Database object."
+#             raise files.BeamsFileReadError(error)
 
         self.__system_dao.set_database(database)
 
