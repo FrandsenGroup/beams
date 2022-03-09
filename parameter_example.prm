@@ -1,0 +1,14 @@
+#BEAMS
+
+# Parameter Export
+
+# Temperature (K)	Uncertainty 	β       	Uncertainty 	
+20.308           	0.006       	0.08139 	0.01977     	
+20.308           	0.004       	0.08494 	0.01439     	
+20.310           	0.009       	0.08475 	0.01783     	
+20.311           	0.003       	0.08666 	0.01425     	
+20.312           	0.005       	0.08732 	0.01529     	
+
+# Fitting equation
+
+	# A(t) = exp(-(λ*t)^β)
