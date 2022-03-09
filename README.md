@@ -22,6 +22,7 @@
   - [Interacting with Histograms](#interacting-with-histograms)
     - [Navigation Bar](#navigation-bar)
     - [Adjusting Values](#adjusting-values)
+    - [Combining Runs](#combining-runs)
   - [Fitting Asymmetries](#fitting-asymmetries)
     - [Choosing your Fit Expression](#choosing-your-fit-expression)
     - [Specifying your Fit Parameters](#specifying-your-fit-parameters)
@@ -190,6 +191,11 @@ This value defines the start time of the run.
 
 ###### Good Bin Start/End
 These values define the section of the histogram which will be used to calculate the asymmetry.
+
+### Combining Runs
+![Combining runs menu](https://github.com/FrandsenGroup/beams/blob/assets/combine_runs_option.png)
+
+There is an option to create a new combined run from individual runs in the histogram panel. Shift-click or ctrl-click multiple runs to select them in the left panel, then right click on those runs and select "Combine selected runs" to create the new combined run. The program will prompt you to name and save your new combined run as a .dat file, and then automatically load the new combined run into the program.
 
 <br>
 
