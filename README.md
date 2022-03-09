@@ -281,13 +281,16 @@ Every run currently being displayed will have the color in the display shown to 
 ##### Saving Fit Results
 If you right-click on a single fit, a range of fits, or a parent node in the left-side panel you will see the option to 'save' these fits. If you click it, you will see a prompt which will offer several choices.
 
-![dialog for writing fit data](https://github.com/aPeter1/BEAMS/blob/assets/write-fit-dialog.png)
+![dialog for writing fit data](https://github.com/aPeter1/BEAMS/blob/assets/write_fit_dialog.png)
 
 ###### Summary
 An example of this file can be found [here](https://github.com/aPeter1/BEAMS/blob/assets/summary_example.fit). It is a 
 single file summary of all fits you selected which you can order in the file by either temperature, field or run number 
 if those values are available. It can be read back in to the program to display the fits if you have not moved your
 data files (you will need to adjust the file paths in the .fit file if you have).
+
+###### Parameter
+An example of this file can be found [here](https://github.com/FrandsenGroup/beams/blob/assets/parameter_example.prm). It is a single file which allows you to select one parameter and one independent variable from a set of runs for a given fit. The data is formatted as pure numerical data (for easily reading into other programs), with comments delimited by # containing information on the column headers and fitting equation.
 
 ###### Directory
 This creates a list of files (example of a single file found [here](https://github.com/aPeter1/BEAMS/blob/assets/fit_example.calc))
