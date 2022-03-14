@@ -284,8 +284,7 @@ class ISISMuonFile(ConvertibleFile):
         if len(distinct_starts) != len(distinct_ends) or len(distinct_starts) != (len(distinct_names)) \
                 or len(starts) != len(distinct_starts) or len(ends) != len(distinct_ends) \
                 or len(names) != len(distinct_names) or len(distinct_starts) == 0:
-            error = "Invalid format for combining histograms."
-            raise Exception(error)
+            raise Exception("Invalid format for combining histograms.")
 
         if max(ends) > self.get_number_of_histograms():
             raise Exception("Invalid range of histograms to combine.")

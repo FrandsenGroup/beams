@@ -711,7 +711,6 @@ class FileService:
         self.add_files([save_path])
 
     def load_session(self, file_id):
-
         file_dataset = self.__dao.get_files_by_ids([file_id])
 
         if len(file_dataset) == 0:
