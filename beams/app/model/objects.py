@@ -1401,7 +1401,7 @@ class DataBuilder:
             d.asymmetries[d.FULL_ASYMMETRY] = asymmetry
             d.histograms = None
             d.isLoaded = True
-        else:
+        elif f.DATA_FORMAT != files.Format.FIT_SET_VERBOSE:
             raise files.BeamsFileReadError(f"BEAMS could not recognize format of file {f.file_path}")
 
         return d
