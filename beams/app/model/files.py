@@ -285,13 +285,10 @@ class ISISMuonFile(ConvertibleFile):
                 or len(starts) != len(distinct_starts) or len(ends) != len(distinct_ends) \
                 or len(names) != len(distinct_names) or len(distinct_starts) == 0:
             error = "Invalid format for combining histograms."
-            warn_user(error)
             raise Exception(error)
 
         if max(ends) > self.get_number_of_histograms():
-            error = "Invalid range of histograms to combine."
-            warn_user(error)
-            raise Exception(error)
+            raise Exception("Invalid range of histograms to combine.")
 
         self._combine_format = (starts, ends, names)
 
@@ -326,15 +323,11 @@ class ISISMuonFile(ConvertibleFile):
             data = self.get_value(self.DataPaths.HISTOGRAMS, f, True)
             return data.shape[1]  # Expected shape is something like 1x64x2048
         except (AttributeError, KeyError) as e:
-            error = "Binary file is in an unknown format."
-            warn_user(error)
-            raise BeamsFileConversionError(error) from e
+            raise BeamsFileConversionError("Binary file is in an unknown format.") from e
 
     def convert(self, out_file):
         if not check_ext(out_file, Extensions.HISTOGRAM):
-            error = "Out file does not have a valid extension (.dat)."
-            warn_user(error)
-            raise Exception(error)
+            raise Exception("Out file does not have a valid extension (.dat).")
 
         f = h5py.File(self.file_path, 'r+')
 
@@ -379,9 +372,7 @@ class ISISMuonFile(ConvertibleFile):
 
             data = self.get_value(self.DataPaths.HISTOGRAMS, f, True)
         except (AttributeError, KeyError) as e:
-            error = "Binary file is in an unknown format."
-            warn_user(error)
-            raise BeamsFileConversionError(error) from e
+            raise BeamsFileConversionError("Binary file is in an unknown format.") from e
 
         meta_string = ""
         meta_string += "BEAMS\n"
@@ -415,9 +406,7 @@ class ISISMuonFile(ConvertibleFile):
         try:
             np.savetxt(out_file, np.rot90(histograms, 3), delimiter=',', header=meta_string, comments="", fmt="%-8i")
         except Exception as e:
-            error = "An exception occurred writing ISIS data to {}".format(out_file)
-            warn_user(error)
-            raise BeamsFileConversionError(error) from e
+            raise BeamsFileConversionError("An exception occurred writing ISIS data to {}".format(out_file)) from e
 
         return MuonHistogramFile(out_file)
 
@@ -442,9 +431,7 @@ class MuonHistogramFile(ReadableFile):
             return read_columnated_data(file_path=self.file_path, data_row=self.HEADER_ROWS, d_type=int,
                                         titles=self.read_meta()[HIST_TITLES_KEY])
         except Exception as e:
-            error = "This histogram file is not supported by your current version of BEAMS"
-            warn_user(error)
-            raise BeamsFileReadError(error) from e
+            raise BeamsFileReadError("This histogram file is not supported by your current version of BEAMS") from e
 
     def read_meta(self):
         try:
@@ -473,9 +460,7 @@ class MuonHistogramFile(ReadableFile):
 
             return metadata
         except Exception as e:
-            error = "This histogram file is not supported by your current version of BEAMS"
-            warn_user(error)
-            raise BeamsFileReadError() from e
+            raise BeamsFileReadError("This histogram file is not supported by your current version of BEAMS") from e
 
 
 class MuonAsymmetryFile(ReadableFile):
@@ -489,9 +474,7 @@ class MuonAsymmetryFile(ReadableFile):
             return read_columnated_data(file_path=self.file_path, data_row=self.HEADER_ROWS, d_type=float,
                                         titles=["Time", "Asymmetry", "Uncertainty"])
         except Exception as e:
-            error = "This asymmetry file is not supported by your current version of BEAMS"
-            warn_user(error)
-            raise BeamsFileReadError(error) from e
+            raise BeamsFileReadError("This asymmetry file is not supported by your current version of BEAMS") from e
 
     def read_meta(self):
         try:
@@ -508,8 +491,6 @@ class MuonAsymmetryFile(ReadableFile):
 
             return metadata
         except Exception as e:
-            error = "This asymmetry file is not supported by your current version of BEAMS"
-            warn_user(error)
             raise BeamsFileReadError("This asymmetry file is not supported by your current version of BEAMS") from e
 
 
@@ -564,19 +545,13 @@ class FitDatasetExpressionFile(ReadableFile):
                             expression = ''.join(e_line_split[i + 1:])
                             break
                     else:
-                        error = 'Expression not formatted correctly in this fit file.'
-                        warn_user(error)
-                        raise Exception(error)
+                        raise Exception('Expression not formatted correctly in this fit file.')
                 else:
-                    error = "Expression not found in this fit file."
-                    warn_user(error)
-                    raise Exception(error)
+                    raise Exception("Expression not found in this fit file.")
 
                 return common_parameters, specific_parameters, expression
             except Exception as e:
-                error = "This fit file is not supported by your current version of BEAMS"
-                warn_user(error)
-                raise BeamsFileReadError(error) from e
+                raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS") from e
 
     def read_meta(self):
         return self.read_data()
@@ -593,9 +568,7 @@ class FitFile(ReadableFile):
             return read_columnated_data(file_path=self.file_path, data_row=self.HEADER_ROWS, d_type=float,
                                         titles=['Time', 'Asymmetry', 'Calculated', 'Uncertainty'])
         except Exception as e:
-            error = "This fit file is not supported by your current version of BEAMS"
-            warn_user(error)
-            raise BeamsFileReadError(error) from e
+            raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS") from e
 
     def read_meta(self):
         try:
@@ -611,9 +584,7 @@ class FitFile(ReadableFile):
             metadata[T0_KEY] = 0
             return metadata
         except Exception as e:
-            error = "This fit file is not supported by your current version of BEAMS"
-            warn_user(error)
-            raise BeamsFileReadError(error) from e
+            raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS") from e
 
 
 def file(file_path: str) -> File:
@@ -761,7 +732,3 @@ class BeamsFileConversionError(Exception):
     def __init__(self, *args):
         super(BeamsFileConversionError, self).__init__(*args)
 
-
-def warn_user(error):
-    from app.gui.dialogs.dialog_misc import WarningMessageDialog
-    WarningMessageDialog.launch([error])
