@@ -718,7 +718,7 @@ class FileService:
 
         file_dataset = file_dataset[0]
         if file_dataset.file.DATA_FORMAT != files.Format.PICKLED:
-            raise files.BeamsFileReadError("File was not of correct format for session file (should be a pickle file).")
+            raise files.BeamsFileReadError("File was not of correct format for session file.")
 
         database = file_dataset.file.read_data()
 
