@@ -510,7 +510,7 @@ class FitDatasetExpressionFile(ReadableFile):
                     s_lines.append(i)
                 elif 'Common' in l:
                     c_line = i
-                elif 'Expression' in l:
+                elif 'Fitting equation' in l:
                     e_line = i
 
             try:

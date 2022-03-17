@@ -4,7 +4,7 @@ import os
 import logging
 import pickle
 
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore
 
 import app.model.data_access as dao
 from app.model import objects, files, api
@@ -717,11 +717,15 @@ class FileService:
             raise RuntimeError("No file dataset exists for id.")
 
         file_dataset = file_dataset[0]
-
         if file_dataset.file.DATA_FORMAT != files.Format.PICKLED:
-            raise RuntimeError("File was not of correct format for session file (should be a pickle file).")
+            raise files.BeamsFileReadError("File was not of correct format for session file.")
 
         database = file_dataset.file.read_data()
+
+# We will add this back after we merge, but a little different. Right now this check no longer makes sense with my recent changes.
+#         if not isinstance(database, dao.Database):
+#             error = "Unpickling file did not result in a Database object."
+#             raise files.BeamsFileReadError(error)
 
         self.__system_dao.set_database(database)
 
