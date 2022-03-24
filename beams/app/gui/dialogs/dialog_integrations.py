@@ -96,7 +96,6 @@ class IntegrationDialog(QtWidgets.QDialog):
             axes.figure.canvas.draw()
 
     def _export_button_clicked(self, integration_index):
-        # get_save_path, call write_integration
         save_path = self._get_save_path("Integration (*{})".format(files.Extensions.INTEGRATION))
         if not save_path:
             return
@@ -115,7 +114,6 @@ class IntegrationDialog(QtWidgets.QDialog):
             self.__system_service.set_last_used_directory(split_path[0])
             return path
 
-    # This is definitely in the wrong place but idk where to put it yet
     def write_integration(self, save_path, integration_index):
         integration_string = "# Integration\n\n"
         integration_string += "{:<12}\t".format(self._ind_var_label)
