@@ -58,8 +58,6 @@ class IntegrationDialog(QtWidgets.QDialog):
         self.set_stylesheet()
         self._main.setCentralWidget(self.canvas)
         layout.addWidget(self._main)
-        self.button_left_export = qt_widgets.StyleOneButton("Export Left Integration")
-        self.button_right_export = qt_widgets.StyleOneButton("Export Right Integration")
 
         self.export_buttons = [qt_widgets.StyleOneButton(f"Export Integration {i+1}") for i in range(len(integrations))]
         hbox = QtWidgets.QHBoxLayout()
@@ -67,14 +65,10 @@ class IntegrationDialog(QtWidgets.QDialog):
         for i, button in enumerate(self.export_buttons):
             hbox.addWidget(button)
             hbox.addStretch()
-            button.released.connect(lambda: self._export_button_clicked(i))
+            button.released.connect(lambda integration_index=i: self._export_button_clicked(integration_index))
         layout.addLayout(hbox)
 
         self.setLayout(layout)
-        self._set_attributes()
-
-    def _set_attributes(self):
-        self.button_left_export.released.connect(lambda: self._export_button_clicked())
 
     def set_stylesheet(self):
         style = self.__system_service.get_theme_preference()
