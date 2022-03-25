@@ -1,11 +1,14 @@
+import os
 
 from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
 import darkdetect
 
+from app.gui.dialogs import dialog_misc
 from app.resources import resources
-from app.model import services
+from app.model import services, files
+from app.util import qt_widgets, report
 
 
 class IntegrationDialog(QtWidgets.QDialog):
@@ -34,9 +37,12 @@ class IntegrationDialog(QtWidgets.QDialog):
         super().__init__()
         self.setWindowTitle("Integration")
         self.__system_service = services.SystemService()
+        self._integrations = integrations
         self._main = QtWidgets.QMainWindow()
         self.canvas = IntegrationDialog.IntegrationCanvas(len(integrations))
         self._main.addToolBar(IntegrationDialog.IntegrationToolbar(self.canvas, self._main))
+        self._ind_var_label = x_axis_label
+        self._ind_var_array = x_axis
 
         layout = QtWidgets.QVBoxLayout()
 
@@ -52,6 +58,16 @@ class IntegrationDialog(QtWidgets.QDialog):
         self.set_stylesheet()
         self._main.setCentralWidget(self.canvas)
         layout.addWidget(self._main)
+
+        self.export_buttons = [qt_widgets.StyleOneButton(f"Export Integration {i+1}") for i in range(len(integrations))]
+        hbox = QtWidgets.QHBoxLayout()
+        hbox.addSpacing(80)
+        for i, button in enumerate(self.export_buttons):
+            hbox.addWidget(button)
+            hbox.addStretch()
+            button.released.connect(lambda integration_index=i: self._export_button_clicked(integration_index))
+        layout.addLayout(hbox)
+
         self.setLayout(layout)
 
     def set_stylesheet(self):
@@ -78,6 +94,43 @@ class IntegrationDialog(QtWidgets.QDialog):
             axes.xaxis.label.set_color(tick_color)
             axes.yaxis.label.set_color(tick_color)
             axes.figure.canvas.draw()
+
+    def _export_button_clicked(self, integration_index):
+        save_path = self._get_save_path("Integration (*{})".format(files.Extensions.INTEGRATION))
+        if not save_path:
+            return
+        try:
+            self.write_integration(save_path, integration_index)
+        except Exception as e:
+            report.report_exception(e)
+            dialog_misc.WarningMessageDialog.launch(["Error writing integration file: " + str(e)])
+
+    # this is duplicated code, we should break this into a Dialog superclass
+    def _get_save_path(self, filter):
+        path = QtWidgets.QFileDialog.getSaveFileName(caption="Save", filter=filter,
+                                                     directory=self.__system_service.get_last_used_directory())[0]
+        if path:
+            split_path = os.path.split(path)
+            self.__system_service.set_last_used_directory(split_path[0])
+            return path
+
+    def write_integration(self, save_path, integration_index):
+        integration_string = "# Integration\n\n"
+        integration_string += "{:<12}\t".format(self._ind_var_label)
+        integration_string += "{:<21}\t".format("Integrated Asymmetry")
+        integration_string += "{:<12}\t\n".format("Uncertainty")
+
+        integration = self._integrations[integration_index]
+        for i, integrated_asymmetry in enumerate(integration):
+            integration_string += "{:<12}\t".format(self._ind_var_array[i])
+            integration_string += "{:<21.5f}\t".format(float(integrated_asymmetry))
+            # TODO: Replace with real asymmetry
+            integration_string += "{:<12}\t\n".format(0)
+
+        with open(save_path, 'w', encoding="utf-8") as out_file_object:
+            out_file_object.write("#BEAMS\n"
+                                  + integration_string)
+
 
     @staticmethod
     def launch(x_axis, x_axis_label, integrations, titles):
