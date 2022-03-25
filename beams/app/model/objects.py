@@ -618,11 +618,13 @@ class Asymmetry(np.ndarray):
 
         Returns
         -------
-        integration : float
+        (integration, uncertainty) : tuple(float, float)
             The integration of this asymmetry
+            The uncertainty of the integration
+
 
         """
-        return np.trapz(self, self.time)
+        return np.trapz(self, self.time), np.sqrt(np.sum(np.power(self.uncertainty, 2)) * self.bin_size)
 
 
 class Uncertainty(np.ndarray):
@@ -1026,7 +1028,8 @@ class RunDataset:
                        fmt="%-8i")
         elif self.asymmetries[self.FULL_ASYMMETRY] is not None:
             meta_string = files.TITLE_KEY + ":" + str(self.meta[files.TITLE_KEY]) + "," \
-                          + files.BIN_SIZE_KEY + ":" + str(bin_size if bin_size else self.meta[files.BIN_SIZE_KEY]) + "," \
+                          + files.BIN_SIZE_KEY + ":" + str(
+                bin_size if bin_size else self.meta[files.BIN_SIZE_KEY]) + "," \
                           + files.RUN_NUMBER_KEY + ":" + str(self.meta[files.RUN_NUMBER_KEY]) + "," \
                           + files.TEMPERATURE_KEY + ":" + str(self.meta[files.TEMPERATURE_KEY]) + "," \
                           + files.FIELD_KEY + ":" + str(self.meta[files.FIELD_KEY]) + "," \
