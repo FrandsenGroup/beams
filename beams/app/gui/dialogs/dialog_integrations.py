@@ -121,11 +121,11 @@ class IntegrationDialog(QtWidgets.QDialog):
         integration_string += "{:<12}\t\n".format("Uncertainty")
 
         integration = self._integrations[integration_index]
-        for i, integrated_asymmetry in enumerate(integration):
+        for i, integration_tuple in enumerate(integration):
             integration_string += "{:<12}\t".format(self._ind_var_array[i])
-            integration_string += "{:<21.5f}\t".format(float(integrated_asymmetry))
+            integration_string += "{:<21.5f}\t".format(float(integration_tuple[0]))
             # TODO: Replace with real asymmetry
-            integration_string += "{:<12}\t\n".format(0)
+            integration_string += "{:<12.5f}\t\n".format(float(integration_tuple[1]))
 
         with open(save_path, 'w', encoding="utf-8") as out_file_object:
             out_file_object.write("#BEAMS\n"
