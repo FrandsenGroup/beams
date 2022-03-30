@@ -5,9 +5,11 @@ import enum
 from PyQt5 import QtWidgets, QtCore, QtGui
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
 from matplotlib.figure import Figure
+import darkdetect
 
 from app.util import qt_widgets, qt_constants, report
 from app.resources import resources
+from app.model import services
 
 
 # noinspection PyArgumentList
@@ -189,6 +191,42 @@ class PermissionsMessageDialog(QtWidgets.QDialog):
         return dialog.exec()
 
 
+class NotificationDialog(QtWidgets.QDialog):
+    def __init__(self, message, silence_message, okay_function):
+        super(NotificationDialog, self).__init__()
+        self.setWindowTitle('Notification')
+        message = QtWidgets.QLabel(message)
+        notify_box = QtWidgets.QCheckBox()
+        silence_label = QtWidgets.QLabel("Do not show again." if silence_message is None else silence_message)
+        pos_button = qt_widgets.StyleOneButton('Okay')
+        self.setMinimumWidth(300)
+        self.setMinimumHeight(80)
+        pos_button.setFixedWidth(80)
+
+        if okay_function:
+            pos_button.released.connect(lambda: okay_function(notify_box.isChecked()))
+
+        pos_button.released.connect(self.close)
+
+        col = QtWidgets.QVBoxLayout()
+
+        col.addWidget(message)
+        row = QtWidgets.QHBoxLayout()
+        row.addStretch()
+        row.addWidget(notify_box)
+        row.addWidget(silence_label)
+        row.addStretch()
+        col.addLayout(row)
+        col.addWidget(pos_button)
+        col.setAlignment(message, qt_constants.AlignCenter)
+        col.setAlignment(pos_button, qt_constants.AlignCenter)
+        self.setLayout(col)
+
+    @staticmethod
+    def launch(message, silence_message=None, okay_function=None):
+        dialog = NotificationDialog(message, silence_message, okay_function)
+        return dialog.exec()
+
 # noinspection PyArgumentList
 class IntegrationDisplayDialog(QtWidgets.QDialog):
     class IntegrationCanvas(FigureCanvas):
@@ -301,11 +339,23 @@ class LoadingDialog(QtWidgets.QDialog):
         self.message.setFont(font)
 
         self.label = QtWidgets.QLabel()
-        self.label.setGeometry(QtCore.QRect(25, 25, 200, 200))
-        self.label.setMinimumSize(QtCore.QSize(250, 250))
-        self.label.setMaximumSize(QtCore.QSize(250, 250))
+        self.label.setGeometry(QtCore.QRect(25, 25, 225, 225))
+        self.label.setMinimumSize(QtCore.QSize(200, 200))
+        self.label.setMaximumSize(QtCore.QSize(200, 200))
 
-        self.movie = QtGui.QMovie(resources.LOADING_GIF)
+        system_service = services.SystemService()
+        style = system_service.get_theme_preference()
+        if style == system_service.Themes.DEFAULT:
+            if darkdetect.isDark():
+                style = system_service.Themes.DARK
+            else:
+                style = system_service.Themes.LIGHT
+
+        if style == system_service.Themes.DARK:
+            self.movie = QtGui.QMovie(resources.DARK_LOADING_GIF)
+        elif style == system_service.Themes.LIGHT:
+            self.movie = QtGui.QMovie(resources.LIGHT_LOADING_GIF)
+
         self.label.setMovie(self.movie)
 
         layout = QtWidgets.QVBoxLayout()

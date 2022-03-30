@@ -3,12 +3,11 @@
 block_cipher = None
 a = Analysis(['__main__.py'],
              pathex=['beams'],
-             binaries=[
-                ('app/resources/binaries/*', 'app/resources/binaries')
-             ],
              datas=[
                 ('app/resources/icons/*', 'app/resources/icons'),
                 ('app/resources/fonts/*', 'app/resources/fonts'),
+                ('app/resources/app.config', 'app/app.config'),
+                ('app/resources/binaries/*', 'app/resources/binaries')
              ],
              hiddenimports=[],
              hookspath=[],
@@ -39,3 +38,14 @@ exe = EXE(pyz,
           console=True,
           uac_admin=True,
           icon="app/resources/icons/icon.ico")
+
+coll = COLLECT(exe,
+                a.binaries,
+                a.zipfiles,
+                a.datas,
+                strip=False,
+                upx=True,
+                upx_exclude=[],
+                name='beams')
+
+app = BUNDLE(coll, name='beams.app', icon=None, bundle_identifier=None)

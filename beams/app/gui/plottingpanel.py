@@ -999,7 +999,7 @@ class PlottingPanelPresenter(PanelPresenter):
         self._view.right_settings.input_freq_xmax.returnPressed.connect(
             lambda: self._on_spectrum_settings_changed('right'))
         self._view.right_settings.check_freq_xauto.stateChanged.connect(
-            lambda: self._on_check_parameter_changed('left'))
+            lambda: self._on_check_parameter_changed('right'))
         self._view.right_settings.slider_bin.sliderMoved.connect(lambda: self._on_bin_parameter_changed('right', True))
         self._view.right_settings.slider_bin.sliderReleased.connect(
             lambda: self._on_bin_parameter_changed('right', False))
@@ -1285,8 +1285,8 @@ class PlottingPanelPresenter(PanelPresenter):
     def get_fft_data(self, time, asymmetry, x_min, x_max, bin_size, f_min, f_max):
         num_bins = int((float(x_max) - float(x_min)) / (float(bin_size) / 1000))
         start_bin = int(float(x_min) / (float(bin_size) / 1000))
-        fft = objects.FFT(asymmetry[start_bin:start_bin + num_bins], time[start_bin:start_bin + num_bins], f_min, f_max)
-        return fft.z, np.divide(fft.fft, max(fft.fft))
+        z, fft = objects.Asymmetry.fft(asymmetry[start_bin:start_bin + num_bins], time[start_bin:start_bin + num_bins], f_min, f_max)
+        return z, np.divide(fft, max(fft))
 
     def _start_update(self, side):
         if side == 'left' or side == 'both':

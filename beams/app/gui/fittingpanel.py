@@ -1719,8 +1719,8 @@ class FitTabPresenter(PanelPresenter):
 
             parameters = self.__variable_groups[run_id]
             alphas[run_id] = parameters[fit.ALPHA].value
-            time = objects.Time(input_array=None, bin_size=(max_time - min_time) * 1000 / 200, length=200,
-                                time_zero=min_time)
+            time = objects.Time(input_array=None, bin_size_ns=(max_time - min_time) * 1000 / 200, length=200,
+                                time_zero_bin=min_time)
 
             try:
                 fit_asymmetry = self.__expression(time,

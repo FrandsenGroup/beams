@@ -22,6 +22,7 @@
   - [Interacting with Histograms](#interacting-with-histograms)
     - [Navigation Bar](#navigation-bar)
     - [Adjusting Values](#adjusting-values)
+    - [Combining Runs](#combining-runs)
   - [Fitting Asymmetries](#fitting-asymmetries)
     - [Choosing your Fit Expression](#choosing-your-fit-expression)
     - [Specifying your Fit Parameters](#specifying-your-fit-parameters)
@@ -191,6 +192,11 @@ This value defines the start time of the run.
 ###### Good Bin Start/End
 These values define the section of the histogram which will be used to calculate the asymmetry.
 
+### Combining Runs
+![Combining runs menu](https://github.com/FrandsenGroup/beams/blob/assets/combine_runs_option.png)
+
+There is an option to create a new combined run from individual runs in the histogram panel. Shift-click or ctrl-click multiple runs to select them in the left panel, then right click on those runs and select "Combine selected runs" to create the new combined run. The program will prompt you to name and save your new combined run as a .dat file, and then automatically load the new combined run into the program.
+
 <br>
 
 ### Fitting Asymmetries
@@ -281,13 +287,16 @@ Every run currently being displayed will have the color in the display shown to 
 ##### Saving Fit Results
 If you right-click on a single fit, a range of fits, or a parent node in the left-side panel you will see the option to 'save' these fits. If you click it, you will see a prompt which will offer several choices.
 
-![dialog for writing fit data](https://github.com/aPeter1/BEAMS/blob/assets/write-fit-dialog.png)
+![dialog for writing fit data](https://github.com/aPeter1/BEAMS/blob/assets/write_fit_dialog.png)
 
 ###### Summary
 An example of this file can be found [here](https://github.com/aPeter1/BEAMS/blob/assets/summary_example.fit). It is a 
 single file summary of all fits you selected which you can order in the file by either temperature, field or run number 
 if those values are available. It can be read back in to the program to display the fits if you have not moved your
 data files (you will need to adjust the file paths in the .fit file if you have).
+
+###### Parameter
+An example of this file can be found [here](https://github.com/FrandsenGroup/beams/blob/assets/parameter_example.prm). It is a single file which allows you to select one parameter and one independent variable from a set of runs for a given fit. The data is formatted as pure numerical data (for easily reading into other programs), with comments delimited by # containing information on the column headers and fitting equation.
 
 ###### Directory
 This creates a list of files (example of a single file found [here](https://github.com/aPeter1/BEAMS/blob/assets/fit_example.calc))

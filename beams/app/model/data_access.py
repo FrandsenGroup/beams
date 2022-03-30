@@ -1,6 +1,7 @@
 """
 Acts as the main data storage for the application and abstracts away data-access operations.
 """
+import abc
 
 
 class Database:
@@ -19,6 +20,22 @@ class Database:
             cls._instance.style_table = {}
             cls._instance.system_table = {}
         return cls._instance
+
+
+class Dao(abc.ABCMeta):
+    __database = Database()
+
+    def get_all(cls):
+        pass
+
+    def get_by_id(cls):
+        pass
+
+    def clear(cls):
+        pass
+
+    def remove_by_id(cls):
+        pass
 
 
 class RunDAO:
@@ -51,6 +68,15 @@ class RunDAO:
     def clear(self):
         self.__database.run_table = {}
 
+    def minimize(self):
+        return {run_id: run.get_persistent_data() for run_id, run in self.__database.run_table.items()}
+
+    def maximize(self, data):
+        from app.model import objects
+        self.__database.run_table = {
+            run_id: objects.RunDataset.build_from_persistent_data(run) for run_id, run in data.items()
+        }
+
 
 class FitDAO:
     """
@@ -69,11 +95,22 @@ class FitDAO:
             self.__database.fit_table[fit.id] = fit
 
     def remove_fits_by_ids(self, ids):
+        if not isinstance(ids, list):
+            ids = [ids]
+
         for fid in ids:
             self.__database.fit_table.pop(fid)
 
     def clear(self):
         self.__database.fit_table = {}
+
+    def minimize(self):
+        return {fit_id: fit.get_persistent_data() for fit_id, fit in self.__database.fit_table.items()}
+
+    def maximize(self, data):
+        from app.model import objects
+        self.__database.fit_table = {fit_id: objects.FitDataset.build_from_persistent_data(fit)
+                                     for fit_id, fit in data.items()}
 
 
 class FileDAO:
@@ -97,15 +134,37 @@ class FileDAO:
         for dataset in file_datasets:
             self.__database.file_table[dataset.id] = dataset
 
-    def remove_files_by_paths(self, paths):
-        for path in paths:
-            self.__database.file_table.pop(path)
+        return len(file_datasets)
 
-    def remove_files_by_id(self, fid):
-        self.__database.file_table.pop(fid)
+    def remove_files_by_paths(self, paths):
+        remove_ids = []
+        for file_id, file_dataset in self.__database.file_table.items():
+
+            if file_dataset.file_path in paths:
+                remove_ids.append(file_id)
+
+        for file_id in remove_ids:
+            self.__database.file_table.pop(file_id)
+
+        return len(remove_ids)
+
+    def remove_files_by_id(self, fids):
+        if not isinstance(fids, list):
+            fids = [fids]
+
+        for file_id in fids:
+            self.__database.file_table.pop(file_id)
 
     def clear(self):
         self.__database.file_table = {}
+
+    def minimize(self):
+        return {file_id: file.get_persistent_data() for file_id, file in self.__database.file_table.items()}
+
+    def maximize(self, data):
+        from app.model import objects
+        self.__database.file_table = {file_id: objects.FileDataset.build_from_persistent_data(file)
+                                      for file_id, file in data.items()}
 
 
 class StyleDAO:
@@ -120,12 +179,23 @@ class StyleDAO:
 
     def get_styles(self, identifiers=None):
         if identifiers is not None:
+            if not isinstance(identifiers, list):
+                identifiers = [identifiers]
             return [self.__database.style_table[i] for i in identifiers]
         else:
-            return self.__database.style_table
+            return self.__database.style_table.copy()
 
     def update_style(self, identifier, key, value):
         self.__database.style_table[identifier][key] = value
+
+    def clear(self):
+        self.__database.style_table = {}
+
+    def minimize(self):
+        return self.__database.style_table.copy()
+
+    def maximize(self, data):
+        self.__database.style_table = data.copy()
 
 
 class SystemDAO:
@@ -140,15 +210,43 @@ class SystemDAO:
 
     def get_configuration(self, key=None):
         if key:
-            if key in self.__database.system_table.keys():
-                return self.__database.system_table[key]
+            value = self._recursive_search(self.__database.system_table, key)
+
+            if value is not None:
+                return value
             else:
-                return None
+                raise BeamsRequestedDataNotInDatabaseError("Config value not in the configuration.")
         else:
             return self.__database.system_table
 
-    def set_database(self, database: Database):
-        self.__database._instance = database
+    def set_database(self, data):
+        RunDAO().maximize(data["runs"])
+        FileDAO().maximize(data["files"])
+        FitDAO().maximize(data["fits"])
+        StyleDAO().maximize(data["styles"])
 
     def get_database(self):
-        return self.__database
+        return {
+            "runs": RunDAO().minimize(),
+            "files": FileDAO().minimize(),
+            "fits": FitDAO().minimize(),
+            "styles": StyleDAO().minimize()
+        }
+
+    def _recursive_search(self, dictionary, key):
+        for k, v in dictionary.items():
+            if k == key:
+                return dictionary[k]
+
+            elif isinstance(v, dict):
+                value = self._recursive_search(v, key)
+
+                if value:
+                    return value
+
+        return None
+
+
+class BeamsRequestedDataNotInDatabaseError(Exception):
+    def __init__(self, *args, **kwargs):
+        super(BeamsRequestedDataNotInDatabaseError, self).__init__(args, kwargs)
