@@ -40,3 +40,5 @@ exe = EXE(pyz,
           console=True,
           uac_admin=True,
           icon="app/resources/icons/icon.ico")
+
+app = BUNDLE(exe, name='beams.app', icon=None, bundle_identifier=None)
