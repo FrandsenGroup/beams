@@ -695,7 +695,7 @@ class Asymmetry(np.ndarray, PersistentObject):
 
 
         """
-        return np.trapz(self, self.time), np.sqrt(np.sum(np.power(self.uncertainty, 2)) * self.bin_size)
+        return np.trapz(self, self.time), np.sqrt(np.sum(np.power(self.uncertainty, 2))) * self.bin_size / 1000
 
     @staticmethod
     def fft(asymmetry, time, f_min, f_max):
