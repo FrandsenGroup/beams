@@ -157,6 +157,7 @@ class MainWindow(QtWidgets.QMainWindow):
         fileMenu = self.menuBar().addMenu(self.tr("&File"))
         fileMenu.addAction("&Save Session", self._action_save)
         fileMenu.addAction("&Open Session", self._action_open)
+        fileMenu.addSeparator()
         fileMenu.addAction("&Quit BEAMS", self._action_quit)
 
         viewMenu = self.menuBar().addMenu(self.tr("&View"))
