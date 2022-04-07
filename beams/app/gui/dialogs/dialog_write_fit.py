@@ -102,7 +102,7 @@ class WriteFitDialog(QtWidgets.QDialog):
         single_file_hbox.addWidget(line)
         single_file_hbox.addLayout(parameter_vbox)
 
-        single_file_group = QtWidgets.QGroupBox("Single File")
+        single_file_group = QtWidgets.QGroupBox("Fitting Parameters")
         single_file_group.setLayout(single_file_hbox)
 
         vbox = QtWidgets.QVBoxLayout()
