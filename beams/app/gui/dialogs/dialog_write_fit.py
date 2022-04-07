@@ -15,7 +15,7 @@ class WriteFitDialog(QtWidgets.QDialog):
         self._ignore_radio_button = False
 
         self.radio_summary = QtWidgets.QRadioButton("Summary")
-        self.radio_parameter = QtWidgets.QRadioButton("Parameter")
+        self.radio_parameter = QtWidgets.QRadioButton("Single Parameter")
         self.radio_directory = QtWidgets.QRadioButton("Directory")
         self.radio_zip = QtWidgets.QRadioButton("Zip")
         self.button_save_as = qt_widgets.StyleOneButton("Save")
