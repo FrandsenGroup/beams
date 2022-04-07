@@ -1,4 +1,5 @@
 import os
+import sys
 
 import qdarkstyle
 import darkdetect
@@ -156,6 +157,7 @@ class MainWindow(QtWidgets.QMainWindow):
         fileMenu = self.menuBar().addMenu(self.tr("&File"))
         fileMenu.addAction("&Save Session", self._action_save)
         fileMenu.addAction("&Open Session", self._action_open)
+        fileMenu.addAction(" &Quit BEAMS", self._action_quit)
 
         viewMenu = self.menuBar().addMenu(self.tr("&View"))
         theme_menu = viewMenu.addMenu(self.tr("&Change application theme"))
@@ -219,6 +221,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 instance.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
             self.__system_service.set_theme_preference(self.__system_service.Themes.DEFAULT)
 
+
+    def _action_quit(self):
+        sys.exit()
 
 # noinspection PyArgumentList
 class StyleFile:
