@@ -56,7 +56,7 @@ $ python -m pip install -r python_requirements.txt
 #### Anaconda
 - Run the following command in the anaconda prompt to install requirements.
 ```shell
-$ conda install -c anaconda --file conda_requirements.txt
+$ conda install -c anaconda -c conda-forge --file conda_requirements.txt
 ```
 
 Start BEAMS for either, once you have navigated to the directory with the following
