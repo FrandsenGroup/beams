@@ -1527,7 +1527,7 @@ class FitTabPresenter(PanelPresenter):
         # We will need to get parameters to add to table. Clear old table. Same for expression and variable groups
         self.set_parameter_table_states(new_table_state)
         self._view.input_fit_equation.setText(str(self.__expression))
-        self._view.parameter_table.goodness_display.setText(str(goodness) if goodness else '')
+        self._view.parameter_table.goodness_display.setText("{:.4f}".format(goodness) if goodness else '')
 
         # Set the output and uncertainties in the output table
         for symbol, out_sets in outputs.items():
