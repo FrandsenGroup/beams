@@ -667,7 +667,7 @@ class FittingPanel(Panel):
         self.label_global_plus = QtWidgets.QLabel("Global+")
         self.label_ordering = QtWidgets.QLabel("Order by")
         self.label_use_previous = QtWidgets.QLabel("Use Previous Run")
-        self.label_batch = QtWidgets.QLabel("Batch")
+        self.label_batch = QtWidgets.QLabel("Sequential")
 
         self.check_batch_fit = QtWidgets.QCheckBox()
         self.check_global_plus = QtWidgets.QCheckBox()
