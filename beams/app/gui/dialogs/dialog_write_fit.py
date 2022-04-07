@@ -116,7 +116,7 @@ class WriteFitDialog(QtWidgets.QDialog):
         vbox.addLayout(hbox)
         vbox.addWidget(self.option_prefix)
         vbox.addStretch()
-        individual_group = QtWidgets.QGroupBox("Collection of Files")
+        individual_group = QtWidgets.QGroupBox("Calculated Asymmetries")
         individual_group.setLayout(vbox)
 
         hbox = QtWidgets.QHBoxLayout()
