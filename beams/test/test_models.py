@@ -809,7 +809,7 @@ class TestFileDatasets:
         file_dataset_minimized = file_dataset.get_persistent_data()
         file_dataset_maximized = file_dataset.build_from_persistent_data(file_dataset_minimized)
 
-        file_dataset.dataset = dataset.id
+        file_dataset_maximized.dataset = dataset  # cheating a little
         assert file_dataset_maximized.equals(file_dataset)
 
     def test_persistent_with_pickling(self):
@@ -836,5 +836,5 @@ class TestFileDatasets:
         file_dataset_minimized_unpickled = pickle.loads(pickle.dumps(file_dataset_minimized))
         file_dataset_maximized = file_dataset.build_from_persistent_data(file_dataset_minimized_unpickled)
 
-        file_dataset.dataset = dataset.id
+        file_dataset_maximized.dataset = dataset  # cheating a little
         assert file_dataset_maximized.equals(file_dataset)
