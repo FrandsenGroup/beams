@@ -1254,7 +1254,7 @@ class FileDataset(PersistentObject):
             file_path=self.file_path,
             title=self.title,
             is_loaded=self.is_loaded,
-            dataset=None if self.dataset is None else self.dataset.get_persistent_data()
+            dataset=None if self.dataset is None else self.dataset.id
         )
 
     @staticmethod
@@ -1264,9 +1264,7 @@ class FileDataset(PersistentObject):
         file_dataset.title = data["title"]
         file_dataset.is_loaded = data["is_loaded"]
         file_dataset.id = data["id"]
-
-        dataset = data["dataset"]
-        file_dataset.dataset = None if dataset is None else RunDataset.build_from_persistent_data(dataset)
+        file_dataset.dataset = data["dataset"]
 
         return file_dataset
 

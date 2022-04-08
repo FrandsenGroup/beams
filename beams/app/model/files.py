@@ -1,5 +1,6 @@
 # Standard Library Packages
 import abc
+import gzip
 import os
 import pickle
 import sys
@@ -159,7 +160,7 @@ class BeamsSessionFile(ReadableFile):
     DATA_FORMAT = Format.PICKLED
 
     def read_data(self):
-        with open(self.file_path, 'rb') as session_file_object:
+        with gzip.GzipFile(self.file_path, 'rb') as session_file_object:
             try:
                 return pickle.load(session_file_object)
             except Exception as e:
