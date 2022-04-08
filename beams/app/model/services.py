@@ -3,6 +3,7 @@ import json
 import os
 import logging
 import pickle
+import gzip
 
 from PyQt5 import QtCore
 
@@ -705,7 +706,7 @@ class FileService:
         if not os.path.splitext(save_path)[-1] == '.beams':
             raise RuntimeError("Session file needs to have a .beams extension.")
 
-        with open(save_path, 'wb') as session_file_object:
+        with gzip.GzipFile(save_path, 'wb') as session_file_object:
             pickle.dump(self.__system_dao.get_database(), session_file_object)
 
         self.add_files([save_path])
