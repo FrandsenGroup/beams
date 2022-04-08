@@ -28,15 +28,17 @@ def database_with_runs():
 
 
 @pytest.fixture
-def database_with_files():
+def database_with_files(database_with_runs):
     f1, f2, f3 = (objects.FileDataset(files.file(resources.resource_path(rf"test/examples/histogram_data_{i}.dat")))
                   for i in range(3))
     f1.id = "1"
+    f1.dataset = database_with_runs.run_table["1"]
     f2.id = "2"
+    f2.dataset = database_with_runs.run_table["2"]
     f3.id = "3"
-    db = data_access.Database()
-    db.file_table = {f1.id: f1, f2.id: f2, f3.id: f3}
-    return db
+    f3.dataset = database_with_runs.run_table["3"]
+    database_with_runs.file_table = {f1.id: f1, f2.id: f2, f3.id: f3}
+    return database_with_runs
 
 
 @pytest.fixture
