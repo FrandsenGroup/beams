@@ -8,15 +8,15 @@ from app.model import fit
 class TestHelperMethods:
     @pytest.mark.parametrize("expression, expected_variables",
                              [
-                                 ('x', {'x'}),
-                                 ('x+1', {'x'}),
-                                 (f'x*{fit.INDEPENDENT_VARIABLE}', {'x'}),
-                                 ('x*y', {'x', 'y'}),
-                                 (f'x*sin(y*{fit.INDEPENDENT_VARIABLE})', {'x', 'y'}),
-                                 ('jn(0,x*x*y*y-3)', {'x', 'y'}),  # known function
-                                 ('jklol(x)*3', {'x'}),  # unknown function
-                                 ('exp(I*x)', {'x'}),
-                                 (f'I*pi*{fit.INDEPENDENT_VARIABLE}', set())
+                                 ('x', ['x']),
+                                 ('x+1', ['x']),
+                                 (f'x*{fit.INDEPENDENT_VARIABLE}', ['x']),
+                                 ('x*y', ['x', 'y']),
+                                 (f'x*sin(y*{fit.INDEPENDENT_VARIABLE})', ['x', 'y']),
+                                 ('jn(0,x*x*y*y-3)', ['x', 'y']),  # known function
+                                 ('jklol(x)*3', ['x']),  # unknown function
+                                 ('exp(I*x)', ['x']),
+                                 (f'I*pi*{fit.INDEPENDENT_VARIABLE}', [])
                              ])
     def test_parse_valid(self, expression, expected_variables):
         parsed_variables = fit.parse(expression)
@@ -65,7 +65,7 @@ class TestHelperMethods:
 
     def test_alpha_correct_parse(self):
         parsed_variables = fit.parse(fit.alpha_correction('x'))
-        assert parsed_variables == {fit.ALPHA, 'x'}
+        assert parsed_variables == ['x', fit.ALPHA]
 
     def test_alpha_correct_exact(self):
         assert fit.alpha_correction('x+1') == '((1-\u03B1)+((1+\u03B1)*(x+1)))/((1+\u03B1)+((1-\u03B1)*(x+1)))'
@@ -94,7 +94,7 @@ class TestPreDefinedEquations:
                              list((f, set(fit.DEFAULT_VALUES[n].keys())) for n, f in fit.EQUATION_DICTIONARY.items()))
     def test_equation_valid(self, expression, expected_variables):
         parsed_variables = fit.parse(expression)
-        assert parsed_variables == expected_variables
+        assert set(parsed_variables) == expected_variables
 
 
 
