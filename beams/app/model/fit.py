@@ -662,63 +662,24 @@ def parse(s: str) -> set:
         raise InvalidExpressionError(f'Expression invalid due to "{str(e)}".')
 
 
-def is_valid_expression(expression):
+def is_accepted_expression(expression):
+    """ Checks if the provided expression is properly formatted and valid.
+
+    PARAMETERS
+    ----------
+        expression : str
+            The string form of the expression we are to check.
+
+    RETURNS
+    -------
+        accepted : bool
+            A boolean indicating if the expression is properly formatted and valid
+    """
     try:
-        parse(split_expression(expression)[1])
-    except (ValueError, TypeError):
+        parse(expression)
+        return True
+    except (ImproperlyFormattedExpressionError, InvalidExpressionError):
         return False
-
-    if "=" not in expression:
-        return False
-
-    independent_variable = ""
-    open_paren = False
-    for i, c in enumerate(expression):
-        if open_paren:
-            if c == "=":
-                return False
-            elif c == ")":
-                if len(independent_variable) == 0:
-                    return False
-                for j, k in enumerate(expression):
-                    if k == "=":
-                        try:
-                            sp.sympify(expression[j+1:])
-                            return True
-                        except Exception:
-                            return False
-            else:
-                independent_variable += c
-
-        if c == "(":
-            open_paren = True
-    else:
-        return False
-
-
-def split_expression(expression):
-    independent_variable = ""
-    open_paren = False
-    for i, c in enumerate(expression):
-        if open_paren:
-            if c == "=":
-                return None
-            elif c == ")":
-                if len(independent_variable) == 0:
-                    return None
-                for j, k in enumerate(expression):
-                    if k == "=":
-                        try:
-                            sp.sympify(expression[j + 1:])
-                            return independent_variable, expression[j + 1:]
-                        except Exception:
-                            return None
-            else:
-                independent_variable += c
-        if c == "(":
-            open_paren = True
-    else:
-        return None
 
 
 def replace_symbols(expression, pretty=False):

@@ -1389,13 +1389,13 @@ class FitTabPresenter(PanelPresenter):
             return
         self.__update_if_table_changes = False
 
-        expression = "A(t) = " + self._view.get_expression()
+        expression = self._view.get_expression()
 
-        if fit.is_valid_expression(expression):
+        if fit.is_accepted_expression(expression):
             self.__update_states = False
             self._view.highlight_input_red(self._view.input_fit_equation, False)
 
-            variables = fit.parse(fit.split_expression(expression)[1])
+            variables = fit.parse(expression)
             variables.discard(fit.INDEPENDENT_VARIABLE)
             variables.add(fit.ALPHA)
 
@@ -1427,9 +1427,9 @@ class FitTabPresenter(PanelPresenter):
         else:
             self._view.highlight_input_red(self._view.input_user_equation_name, False)
 
-        function = "A(t) = " + self._view.input_user_equation.text()
+        function = self._view.input_user_equation.text()
 
-        if fit.is_valid_expression(function):
+        if fit.is_accepted_expression(function):
             self._view.highlight_input_red(self._view.input_user_equation, False)
         else:
             self._view.highlight_input_red(self._view.input_user_equation, True)
@@ -1576,7 +1576,7 @@ class FitTabPresenter(PanelPresenter):
 
         # Check user input on fit equation and update config
         expression = self._view.get_expression()
-        if not fit.is_valid_expression("A(t) = " + expression):
+        if not fit.is_accepted_expression(expression):
             WarningMessageDialog.launch(["Fit equation is invalid."])
             self._view.highlight_input_red(self._view.input_fit_equation, True)
             self.__update_if_table_changes = True
@@ -1874,7 +1874,7 @@ class FitTabPresenter(PanelPresenter):
                                                           is_fixed=is_fixed, is_global=is_global)
             final_parameters['default'] = run_parameters
 
-        if fit.is_valid_expression("A(t) = " + expression) and greater_than_one:
+        if fit.is_accepted_expression(expression) and greater_than_one:
             lambda_expression = fit.FitExpression(expression)
             return lambda_expression, final_parameters
         else:

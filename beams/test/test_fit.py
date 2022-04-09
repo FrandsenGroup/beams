@@ -3,7 +3,7 @@ import pytest
 from app.model import fit
 
 
-class TestParse:
+class TestHelperMethods:
     @pytest.mark.parametrize("expression, expected_variables",
                              [
                                  ('x', {'x'}),
@@ -29,6 +29,26 @@ class TestParse:
     def test_parse_invalid(self, expression, error):
         with pytest.raises(error):
             fit.parse(expression)
+
+    @pytest.mark.parametrize("expression, expected",
+                             [
+                                 ('x', True),
+                                 ('x+1', True),
+                                 (f'x*{fit.INDEPENDENT_VARIABLE}', True),
+                                 ('x*y', True),
+                                 (f'x*sin(y*{fit.INDEPENDENT_VARIABLE})', True),
+                                 ('jn(0,x*x*y*y-3)', True),
+                                 ('jklol(x)*3', True),
+                                 ('exp(I*x)', True),
+                                 (f'I*pi*{fit.INDEPENDENT_VARIABLE}', True),
+                                 ('jn(x)', False),
+                                 ('x=3+y', False),
+                                 ('x*', False)
+                             ])
+    def test_accepted_expression(self, expression, expected):
+        # Yep, this is essentially identical to tests for parse and is in fact implemented with parse BUT
+        # that could always change, right? ;)
+        assert fit.is_accepted_expression(expression) == expected
 
 
 class TestPreDefinedEquations:
