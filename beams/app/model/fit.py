@@ -643,77 +643,14 @@ def get_std_unc(result, data, error=None, num_constraints=0):
 
 def parse(s):
     """ Takes in an expression as a string and returns a set of the free variables. """
-
-    # Add to these sets any keywords you want to be recognized as not variables.
-    # Keep keywords lowercase, user input will be cast to lowercase for comparison.
-    operator_set = {'+', '-', '/', '*', '(', ')', '[', ']', '{', '}', '^', '!'}
-    operating_set = {'+', '-', '/', '*', '^'}
-    bad_char_set = {'i'}
-    key_1_char_set = {PI}
-    key_2_char_set = {'pi'}
-    key_3_char_set = {'sin', 'cos', 'tan', 'exp', 'pow'}
-    key_4_char_set = {'sinh', 'cosh', 'tanh'}
-
-    free_set = set()
-    free_variable = []
-    skip_chars = 0
-    last_was_operator = False
-    for i, character in enumerate(s):
-        if skip_chars > 0:
-            skip_chars -= 1
-            continue
-
-        if character.isspace() or character in operator_set:
-            if last_was_operator and character in operating_set and character != '-':
-                raise ValueError('Bad expression')
-            last_was_operator = character in operating_set
-
-            free_variable_joined = "".join(free_variable)
-            free_set.add(free_variable_joined)
-            free_variable = []
-
-        elif character.isalpha():
-            last_was_operator = False
-            if s[i:i + 4].lower() in key_4_char_set:
-                if len(free_variable) > 0:
-                    raise ValueError('Bad expression')
-                skip_chars = 3
-                continue
-            elif s[i:i + 3].lower() in key_3_char_set:
-                if len(free_variable) > 0:
-                    raise ValueError('Bad expression')
-                skip_chars = 2
-                continue
-            elif s[i:i + 2].lower() in key_2_char_set:
-                if len(free_variable) > 0:
-                    raise ValueError('Bad expression')
-                skip_chars = 1
-                continue
-            elif len(free_variable) == 0 and (s[i] in key_1_char_set or s[i].lower() in key_1_char_set) and \
-                    (i == len(s) - 1 or s[i + 1] in operator_set or s[i + 1].isspace()):
-                if len(free_variable) > 0:
-                    raise ValueError('Bad expression')
-                continue
-            else:
-                free_variable.append(character)
-
-        elif character.isdigit():
-            last_was_operator = False
-            if free_variable:
-                free_variable.append(character)
-
-    free_variable_joined = "".join(free_variable)
-    free_set.add(free_variable_joined)
-
     try:
-        free_set.remove('')
-    except KeyError:
-        pass
-
-    if len(free_set.intersection(bad_char_set)) > 0:
-        raise ValueError('Bad expression')  # Bad because these chars will cause sympify issues
-
-    return free_set
+        symbols = {str(v) for v in sp.sympify(s).atoms(sp.Symbol)}
+        symbols.discard(INDEPENDENT_VARIABLE)
+        return symbols
+    except TypeError as e:
+        raise InvalidExpressionError(f"The expression is invalid. See inner exception.") from e
+    except (SyntaxError, ValueError):
+        raise ImproperlyFormattedExpressionError(f"The expression '{s}' is not properly formatted.")
 
 
 def is_valid_expression(expression):
@@ -836,3 +773,20 @@ def _residual(lambda_expression):
         y_calc = lambda_expression(x, *pars)
         return (y_data - y_calc) / dy_data
     return residual
+
+
+class ImproperlyFormattedExpressionError(Exception):
+    """
+    The expression is not properly formatted (e.g. 'x=3*y' or 'x*')
+    """
+    def __init__(self, *args):
+        super(ImproperlyFormattedExpressionError, self).__init__(*args)
+
+
+class InvalidExpressionError(Exception):
+    """
+    The expression is properly formatted but logically incorrect (e.g. a function that takes
+    two args was only given one).
+    """
+    def __init__(self, *args):
+        super(InvalidExpressionError, self).__init__(*args)

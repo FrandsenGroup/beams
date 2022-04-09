@@ -1,57 +1,31 @@
 import pytest
 
-
-# @pytest.mark.one
-# def test_method_one():
-#     x = 5
-#     y = 10
-#     assert x == y
-#
-#
-# @pytest.mark.two
-# def test_method_two():
-#     a = 15
-#     b = 20
-#     assert a + b == 35
+from app.model import fit
 
 
-# class TestClass:
-#     def test_one(self):
-#         assert 2 == 2
-#
-#     def test_two(self):
-#         assert 2 == 3
+class TestParse:
+    @pytest.mark.parametrize("expression, expected_variables",
+                             [
+                                 ('x', {'x'}),
+                                 ('x+1', {'x'}),
+                                 ('x*t', {'x'}),
+                                 ('x*y', {'x', 'y'}),
+                                 ('x*sin(y*t)', {'x', 'y'}),
+                                 ('jn(0,t*t*x*x*y*y-3)', {'x', 'y'}),  # known function
+                                 ('jklol(x)*3', {'x'}),  # unknown function
+                                 ('exp(I*x)', {'x'}),
+                                 ('I*pi*t', set())
+                             ])
+    def test_parse_valid(self, expression, expected_variables):
+        parsed_variables = fit.parse(expression)
+        assert parsed_variables == expected_variables
 
-# @pytest.fixture
-# def useful_numbers():
-#     return [1, 1, 2, 3, 5]
-#
-#
-# @pytest.fixture
-# def numbers(useful_numbers):
-#     a = 10
-#     b = 20
-#     c = 30
-#     x = [a, b, c]
-#     x.extend(useful_numbers)
-#     return x
-#
-#
-# def test_method_one(numbers):
-#     numbers[1] = 50
-#     assert numbers[5] == 10
-#
-#
-# def test_method_two(numbers):
-#     assert numbers[1] == 20
-#
-#
-# def test_method_three(numbers):
-#     assert numbers[1] == 20
-
-
-@pytest.mark.parametrize("x, y, z", [(1, 2, 3), (4, 5, 6)])
-def test_method_one(x, y, z):
-    assert x == x
-
-
+    @pytest.mark.parametrize("expression, error",
+                             [
+                                 ('jn(x)', fit.InvalidExpressionError),  # jn is a known function that has two args
+                                 ('x=3+y', fit.ImproperlyFormattedExpressionError),
+                                 ('x*', fit.ImproperlyFormattedExpressionError)
+                             ])
+    def test_parse_invalid(self, expression, error):
+        with pytest.raises(error):
+            fit.parse(expression)
