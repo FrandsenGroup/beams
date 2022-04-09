@@ -35,6 +35,7 @@ DAMPED_COSINE = f"a*cos(2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{BETA}*t)"
 INTERNAL_COSINE = f"a*(f*cos(2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{LAMBDA}T*t) + (1 - f)*exp(-{LAMBDA}L*t))"
 BESSEL = f"a*sin(2*{PI}*v*t + {PI}*{PHI}/180)/(2*{PI}*v*t + {PI}*{PHI}/180)"
 INTERNAL_BESSEL = f"a*(f*sin(2*{PI}*v*t + {PI}*{PHI}/180)/(2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{LAMBDA}T*t) + (1-f)*exp(-{LAMBDA}L*t)"
+ALPHA_CORRECTION = f'((1-{ALPHA})+((1+{ALPHA})*({0})))/((1+{ALPHA})+((1-{ALPHA})*({0})))'
 
 EQUATION_DICTIONARY = {
     "Simple Exponential": SIMPLE_EXPONENTIAL,
@@ -66,7 +67,11 @@ DEFAULT_VALUES = {
 
 USER_EQUATION_DICTIONARY = {}
 
-ALPHA_CORRECTION = '((1-\u03B1)+((1+\u03B1)*({0})))/((1+\u03B1)+((1-\u03B1)*({0})))'
+J0 = {'f': 'sin(x)/x', 'var': tuple('x'), 'display': 'f(x) = sin(x) / x'}
+
+FUNCTION_DICTIONARY = {
+    f'j{NAUGHT}': J0
+}
 
 
 class FitParameter:
