@@ -636,7 +636,21 @@ def get_std_unc(result, data, error=None, num_constraints=0):
 
 
 def parse(s):
-    """ Takes in an expression as a string and returns a set of the free variables. """
+    f""" Takes in an expression as a string and returns a set of the free variables. 
+    
+    Note that this means it will not return {INDEPENDENT_VARIABLE} in the set. This method also expects
+    that the expression will NOT be in the form 'a(t) = x*t' but simply 'x*t'. 
+    
+    Parameters
+    ----------
+        s : str
+            The string form of the expression we are to parse.
+            
+    Returns
+    -------
+        symbols : set[str]
+            A set of strings; one for each free variable in the expression.
+    """
     try:
         symbols = {str(v) for v in sp.sympify(s).atoms(sp.Symbol)}
         symbols.discard(INDEPENDENT_VARIABLE)

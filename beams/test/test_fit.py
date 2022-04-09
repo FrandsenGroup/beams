@@ -31,7 +31,7 @@ class TestParse:
             fit.parse(expression)
 
 
-class TestEquations:
+class TestPreDefinedEquations:
     @pytest.mark.parametrize("expression, expected_variables",
                              list((f, set(fit.DEFAULT_VALUES[n].keys())) for n, f in fit.EQUATION_DICTIONARY.items()))
     def test_equation_valid(self, expression, expected_variables):
