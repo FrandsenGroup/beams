@@ -35,7 +35,7 @@ DAMPED_COSINE = f"a*cos(2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{BETA}*t)"
 INTERNAL_COSINE = f"a*(f*cos(2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{LAMBDA}T*t) + (1 - f)*exp(-{LAMBDA}L*t))"
 BESSEL = f"a*jn(0, 2*{PI}*v*t + {PI}*{PHI}/180)"
 INTERNAL_BESSEL = f"a*(f*jn(0,2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{LAMBDA}T*t) + (1-f)*exp(-{LAMBDA}L*t))"
-ALPHA_CORRECTION = f'((1-\u03B1)+((1+\u03B1)*({0})))/((1+\u03B1)+((1-\u03B1)*({0})))'
+ALPHA_CORRECTION = '((1-\u03B1)+((1+\u03B1)*({0})))/((1+\u03B1)+((1-\u03B1)*({0})))'
 
 EQUATION_DICTIONARY = {
     "Simple Exponential": SIMPLE_EXPONENTIAL,
