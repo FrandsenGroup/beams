@@ -29,3 +29,12 @@ class TestParse:
     def test_parse_invalid(self, expression, error):
         with pytest.raises(error):
             fit.parse(expression)
+
+
+class TestEquations:
+    @pytest.mark.parametrize("expression, expected_variables",
+                             list((f, set(fit.DEFAULT_VALUES[n].keys())) for n, f in fit.EQUATION_DICTIONARY.items()))
+    def test_equation_valid(self, expression, expected_variables):
+        parsed_variables = fit.parse(expression)
+        assert parsed_variables == expected_variables
+
