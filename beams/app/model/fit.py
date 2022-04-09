@@ -157,7 +157,7 @@ class FitExpression:
         self.safe = True
 
     def __getstate__(self):
-        return (self.__expression_string, self.__variables, self.__fixed, self.safe)
+        return self.__expression_string, self.__variables, self.__fixed, self.safe
 
     def __setstate__(self, state):
         self.__expression_string = state[0]
@@ -753,11 +753,12 @@ def _replace_unsupported_unicode_characters(expression: str) -> str:
     return expression
 
 
-def alpha_correction(expression):
+def alpha_correction(expression: str) -> str:
+    """ Returns the given expression wrapped in the expression for the alpha correction. """
     return f'((1-{ALPHA})+((1+{ALPHA})*({expression})))/((1+{ALPHA})+((1-{ALPHA})*({expression})))'
 
 
-def lambdify(expression, variables=None):
+def lambdify(expression: str, variables=None):
     """ Takes a string representation of an expression and returns a callable lambda.
 
     PARAMETERS
@@ -778,11 +779,11 @@ def lambdify(expression, variables=None):
     var_names = [INDEPENDENT_VARIABLE] if INDEPENDENT_VARIABLE in expression_string else []
     var_names.extend([_replace_unsupported_unicode_characters(var) for var in variables])
 
-    lambda_expression = sp.lambdify(var_names, sp.sympify(expression_string), ["numpy", "sympy", "scipy"])
+    lambda_expression = sp.lambdify(var_names, sp.sympify(expression_string), ["numpy", "scipy"])
     return lambda_expression
 
 
-def _shortened_run_id(run_id):
+def _shortened_run_id(run_id: str) -> str:
     """Returns the first section of uuid."""
     return "_" + run_id.split('-')[0]
 
