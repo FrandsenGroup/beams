@@ -113,7 +113,7 @@ class FitExpression:
             variables.discard(INDEPENDENT_VARIABLE)
 
         self.__variables = variables
-        self.__expression = lambdify(self.__expression_string, variables, INDEPENDENT_VARIABLE)
+        self.__expression = lambdify(self.__expression_string, variables)
         self.__fixed = {}
         self.safe = True
 
@@ -123,7 +123,7 @@ class FitExpression:
     def __setstate__(self, state):
         self.__expression_string = state[0]
         self.__variables = state[1]
-        self.__expression = lambdify(self.__expression_string, self.__variables, INDEPENDENT_VARIABLE)
+        self.__expression = lambdify(self.__expression_string, self.__variables)
         self.__fixed = state[2]
         self.safe = state[3]
 
@@ -714,20 +714,26 @@ def alpha_correction(expression):
     return f'((1-{ALPHA})+((1+{ALPHA})*({expression})))/((1+{ALPHA})+((1-{ALPHA})*({expression})))'
 
 
-def lambdify(expression, variables, independent_variable):
-    """
+def lambdify(expression, variables):
+    """ Takes a string representation of an expression and returns a callable lambda.
 
+    PARAMETERS
+    ----------
+        expression: str
+            The string representation of the expression
+
+    RETURNS
+    -------
+        lambda_expression: lambda
+            A callable lambda representation of the expression
     """
     expression_string = _replace_unsupported_unicode_characters(expression)
 
-    if independent_variable in variables:
-        variables.pop(independent_variable)
-
-    var_names = [independent_variable]
+    variables = variables if variables is not None else parse(expression)
+    var_names = [INDEPENDENT_VARIABLE]
     var_names.extend([_replace_unsupported_unicode_characters(var) for var in variables])
 
     lambda_expression = sp.lambdify(var_names, sp.sympify(expression_string), ["numpy", "scipy", "sympy"])
-
     return lambda_expression
 
 
