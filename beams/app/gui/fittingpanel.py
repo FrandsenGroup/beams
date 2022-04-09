@@ -1396,7 +1396,6 @@ class FitTabPresenter(PanelPresenter):
             self._view.highlight_input_red(self._view.input_fit_equation, False)
 
             variables = fit.parse(expression)
-            variables.discard(fit.INDEPENDENT_VARIABLE)
             variables.add(fit.ALPHA)
 
             self._view.clear_parameters(variables)
