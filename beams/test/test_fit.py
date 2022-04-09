@@ -50,6 +50,17 @@ class TestHelperMethods:
         # that could always change, right? ;)
         assert fit.is_accepted_expression(expression) == expected
 
+    @pytest.mark.parametrize("expression, expected_expression",
+                             [
+                                 ("x*t/sin(x+3)", "x*t/sin(x+3)"),
+                                 (f"{fit.LAMBDA}*t/sin({fit.BETA}+3)", f"{fit.LAMBDA}*t/sin({fit.BETA}+3)"),
+                                 (f"{fit.PI}*t/sin({fit.BETA}+3)", f"pi*t/sin({fit.BETA}+3)"),
+                                 (f"{fit.PI}lfer*t/sin({fit.BETA}+3)", f"pilfer*t/sin({fit.BETA}+3)"),
+                                 (f"j{fit.NAUGHT}*t/sin({fit.BETA}+3)", f"j0*t/sin({fit.BETA}+3)")
+                             ])
+    def test_replace_unsupported_unicode_characters(self, expression, expected_expression):
+        assert fit._replace_unsupported_unicode_characters(expression) == expected_expression
+
 
 class TestPreDefinedEquations:
     @pytest.mark.parametrize("expression, expected_variables",

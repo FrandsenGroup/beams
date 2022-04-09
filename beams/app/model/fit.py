@@ -140,7 +140,7 @@ class FitExpression:
     def __call__(self, *args, **kwargs):
         # The length of this function is due to the fact I have trust issues.
         if not self.safe:
-            return self.__expression(*args, **{replace_symbols(k): v for k, v in kwargs.items()})
+            return self.__expression(*args, **{_replace_unsupported_unicode_characters(k): v for k, v in kwargs.items()})
 
         # We need to cast it to a complex type in order to avoid errors where we are raising a negative
         # number to a fractional power (which would result in an array of Nan's usually). We do the calculation
@@ -159,10 +159,10 @@ class FitExpression:
                     except ValueError:
                         raise ValueError("Every parameter after the array should be of type FitParameter.")
         for k, v in kwargs.items():
-            pars[replace_symbols(k)] = v
+            pars[_replace_unsupported_unicode_characters(k)] = v
 
         for symbol, value in self.__fixed.items():
-            pars[replace_symbols(symbol)] = value
+            pars[_replace_unsupported_unicode_characters(symbol)] = value
 
         try:
             return self.__expression(time_array, *unnamed_pars, **pars).real
@@ -173,7 +173,7 @@ class FitExpression:
             raise
 
     def set_fixed(self, parameters):
-        self.__fixed = {replace_symbols(symbol): parameter.value for symbol, parameter in parameters}
+        self.__fixed = {_replace_unsupported_unicode_characters(symbol): parameter.value for symbol, parameter in parameters}
 
 
 class FitConfig:
@@ -662,7 +662,7 @@ def parse(s: str) -> set:
         raise InvalidExpressionError(f'Expression invalid due to "{str(e)}".')
 
 
-def is_accepted_expression(expression):
+def is_accepted_expression(expression: str) -> bool:
     """ Checks if the provided expression is properly formatted and valid.
 
     PARAMETERS
@@ -682,52 +682,46 @@ def is_accepted_expression(expression):
         return False
 
 
-def replace_symbols(expression, pretty=False):
-    expression_string = ""
+_UNSUPPORTED_UNICODE_CHARACTER_DICTIONARY = {
+    PI: "pi",
+    NAUGHT: '0'
+}
 
-    if pretty:
-        skip = False
-        for i, c in enumerate(expression):
-            if skip:
-                skip = False
-                continue
 
-            if i + 1 < len(expression):
-                if expression[i:i+2] == "pi":
-                    expression_string += PI
-                    skip = True
-                    continue
-                elif expression[i:i+2] == '**':
-                    expression_string += "^"
-                    skip = True
-                    continue
-
-            if c == "0" and i > 0 and expression[i-1].isalpha():
-                expression_string += NAUGHT
-            else:
-                expression_string += c
-    else:
-        for c in expression:
-            if c == PI:
-                expression_string += "pi"
-            elif c == '^':
-                expression_string += "**"
-            elif c == NAUGHT:
-                expression_string += "0"
-            else:
-                expression_string += c
-
-    return expression_string
+def _replace_unsupported_unicode_characters(expression: str) -> str:
+    f"""Replaces unsupported unicode characters with valid alternates. Meant for internal use only.
+    
+    There are some characters we include in beams for purely visual purposes (the unicode for pi or naught for
+    example) and sometimes these will throw errors in sympy. So we need to replace them with alternate symbols.
+    Note that {PI} would become 'pi' and {PI}2 would become 'pi2'. Currently this method is only applied immediately
+    before and after lambdifying and in the call method of the fit expression so the user never sees an altered
+    expression. That's also why this is a protected method, it shouldn't be called outside this module.
+    
+    PARAMETERS
+    ----------
+        expression : str
+        
+    RETURNS
+    -------
+        expression : str
+            The expression with unsupported characters replaced.
+    """
+    for uc, c in _UNSUPPORTED_UNICODE_CHARACTER_DICTIONARY.items():
+        expression = expression.replace(uc, c)
+    return expression
 
 
 def lambdify(expression, variables, independent_variable):
-    expression_string = replace_symbols(expression)
+    """
+
+    """
+    expression_string = _replace_unsupported_unicode_characters(expression)
 
     if independent_variable in variables:
         variables.pop(independent_variable)
 
     var_names = [independent_variable]
-    var_names.extend([replace_symbols(var) for var in variables])
+    var_names.extend([_replace_unsupported_unicode_characters(var) for var in variables])
 
     lambda_expression = sp.lambdify(var_names, sp.sympify(expression_string), ["numpy", "scipy", "sympy"])
 
