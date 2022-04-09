@@ -88,6 +88,14 @@ class TestHelperMethods:
         else:
             assert abs(float(calculated_result) - result) < 0.000001
 
+    @pytest.mark.parametrize("run_id, shortened",
+                             [
+                                 ('c672b5a4-1f94-4f9d-aa33-440853bcd7e6', '_c672b5a4'),
+                                 ('df23kj23hjk223', '_df23kj23hjk223')
+                             ])
+    def test_shortened_run_id(self, run_id, shortened):
+        assert fit._shortened_run_id(run_id) == shortened
+
 
 class TestPreDefinedEquations:
     @pytest.mark.parametrize("expression, expected_variables",
