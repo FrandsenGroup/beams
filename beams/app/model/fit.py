@@ -67,12 +67,6 @@ DEFAULT_VALUES = {
 
 USER_EQUATION_DICTIONARY = {}
 
-J0 = {'f': 'sin(x)/x', 'var': tuple('x'), 'display': 'f(x) = sin(x) / x'}
-
-FUNCTION_DICTIONARY = {
-    f'j{NAUGHT}': J0
-}
-
 
 class FitParameter:
     def __init__(self, symbol, value, lower, upper, is_global, is_fixed, is_run_specific=False, output=None, uncertainty=None):
