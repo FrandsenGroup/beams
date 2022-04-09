@@ -743,14 +743,8 @@ def lambdify(expression, variables=None):
 
 
 def _shortened_run_id(run_id):
+    """Returns the first section of uuid."""
     return "_" + run_id.split('-')[0]
-
-
-def _residual(lambda_expression):
-    def residual(pars, x, y_data, dy_data):
-        y_calc = lambda_expression(x, *pars)
-        return (y_data - y_calc) / dy_data
-    return residual
 
 
 class ImproperlyFormattedExpressionError(Exception):
