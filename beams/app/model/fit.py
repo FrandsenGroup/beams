@@ -647,8 +647,6 @@ def parse(s):
         symbols = {str(v) for v in sp.sympify(s).atoms(sp.Symbol)}
         symbols.discard(INDEPENDENT_VARIABLE)
         return symbols
-    except TypeError as e:
-        raise InvalidExpressionError(f"The expression is invalid. See inner exception.") from e
     except (SyntaxError, ValueError):
         raise ImproperlyFormattedExpressionError(f"The expression '{s}' is not properly formatted.")
     except Exception as e:
