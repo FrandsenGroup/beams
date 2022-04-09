@@ -635,7 +635,7 @@ def get_std_unc(result, data, error=None, num_constraints=0):
     return p_unc, chi_sq
 
 
-def parse(s):
+def parse(s: str) -> set:
     f""" Takes in an expression as a string and returns a set of the free variables. 
     
     Note that this means it will not return {INDEPENDENT_VARIABLE} in the set. This method also expects
