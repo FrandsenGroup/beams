@@ -70,6 +70,10 @@ class TestPreDefinedEquations:
         assert parsed_variables == expected_variables
 
     def test_alpha_correct(self):
-        parsed_variables = fit.parse(fit.ALPHA_CORRECTION)
-        assert parsed_variables == {fit.ALPHA}
+        parsed_variables = fit.parse(fit.alpha_correction('x'))
+        assert parsed_variables == {fit.ALPHA, 'x'}
+
+    def test_alpha_format_works(self):
+        # If you need to change this test I would be concerned you are doing something wrong. Maybe not though!
+        assert fit.alpha_correction('x+1') == '((1-\u03B1)+((1+\u03B1)*(x+1)))/((1+\u03B1)+((1-\u03B1)*(x+1)))'
 

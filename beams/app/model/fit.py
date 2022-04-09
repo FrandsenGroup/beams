@@ -35,7 +35,6 @@ DAMPED_COSINE = f"a*cos(2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{BETA}*t)"
 INTERNAL_COSINE = f"a*(f*cos(2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{LAMBDA}T*t) + (1 - f)*exp(-{LAMBDA}L*t))"
 BESSEL = f"a*jn(0, 2*{PI}*v*t + {PI}*{PHI}/180)"
 INTERNAL_BESSEL = f"a*(f*jn(0,2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{LAMBDA}T*t) + (1-f)*exp(-{LAMBDA}L*t))"
-ALPHA_CORRECTION = '((1-\u03B1)+((1+\u03B1)*({0})))/((1+\u03B1)+((1-\u03B1)*({0})))'
 
 EQUATION_DICTIONARY = {
     "Simple Exponential": SIMPLE_EXPONENTIAL,
@@ -356,7 +355,7 @@ class FitEngine:
 
         for run_id, (time, asymmetry, uncertainty, meta) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
-            function = ALPHA_CORRECTION.format(config.expression, config.expression)
+            function = alpha_correction(config.expression)
 
             # Replace the symbols with fixed values with their actual values. This way they don't throw off uncertainty.
             fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
@@ -481,7 +480,7 @@ class FitEngine:
 
         for run_id, (time, asymmetry,  uncertainty, meta) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
-            function = ALPHA_CORRECTION.format(config.expression)
+            function = alpha_correction(config.expression)
 
             # Replace the symbols with fixed values with their actual values. This way they don't throw off uncertainty.
             fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
@@ -555,7 +554,7 @@ class FitEngine:
                 they are only fit to that specific section while we use the global parameter throughout.
         """
 
-        function = ALPHA_CORRECTION.format(config.expression, config.expression)
+        function = alpha_correction(config.expression)
 
         lambdas = []
         lengths = []
@@ -709,6 +708,10 @@ def _replace_unsupported_unicode_characters(expression: str) -> str:
     for uc, c in _UNSUPPORTED_UNICODE_CHARACTER_DICTIONARY.items():
         expression = expression.replace(uc, c)
     return expression
+
+
+def alpha_correction(expression):
+    return f'((1-{ALPHA})+((1+{ALPHA})*({expression})))/((1+{ALPHA})+((1-{ALPHA})*({expression})))'
 
 
 def lambdify(expression, variables, independent_variable):
