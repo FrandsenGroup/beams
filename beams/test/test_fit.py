@@ -8,13 +8,13 @@ class TestParse:
                              [
                                  ('x', {'x'}),
                                  ('x+1', {'x'}),
-                                 ('x*t', {'x'}),
+                                 (f'x*{fit.INDEPENDENT_VARIABLE}', {'x'}),
                                  ('x*y', {'x', 'y'}),
-                                 ('x*sin(y*t)', {'x', 'y'}),
-                                 ('jn(0,t*t*x*x*y*y-3)', {'x', 'y'}),  # known function
+                                 (f'x*sin(y*{fit.INDEPENDENT_VARIABLE})', {'x', 'y'}),
+                                 ('jn(0,x*x*y*y-3)', {'x', 'y'}),  # known function
                                  ('jklol(x)*3', {'x'}),  # unknown function
                                  ('exp(I*x)', {'x'}),
-                                 ('I*pi*t', set())
+                                 (f'I*pi*{fit.INDEPENDENT_VARIABLE}', set())
                              ])
     def test_parse_valid(self, expression, expected_variables):
         parsed_variables = fit.parse(expression)
