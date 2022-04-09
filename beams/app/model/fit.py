@@ -24,29 +24,45 @@ PHI = "\u03A6"
 PI = "\u03C0"
 NAUGHT = "\u2080"
 
-SIMPLE_EXPONENTIAL = "exp(-\u03BB*t)"
-STRETCHED_EXPONENTIAL = "exp(-(\u03BB*t)^\u03B2)"
-SIMPLE_GAUSSIAN = "exp(-1/2*(\u03C3*t)^2)"
-GAUSSIAN_KT = "1/3 + 2/3*(1 - (\u03C3*t)^2)*exp(-1/2*(\u03C3*t)^2)"
-LORENTZIAN_KT = "1/3 + 2/3*(1 - \u03BB*t)*exp(-\u03BB*t)"
-COMBINED_KT = "1/3 + 2/3*(1-\u03C3^2*t^2-\u03BB*t)*exp(-\u03C3^2*t^2/2-\u03BB*t)"
-STRETCHED_KT = "1/3 + 2/3*(1-(\u03C3*t)^\u03B2)*exp(-(\u03C3*t)^\u03B2/\u03B2)"
-COSINE = "a*cos(2*\u03C0*v*t + \u03C0*\u03A6/180)*exp(-\u03B2*t)"
-INTERNAL_COSINE = "a*cos(2*\u03C0*v*t + \u03C0*\u03A6/180)*exp(-\u03BB*t) + (1-\u03B12)*exp(-\u03BB*t)"
-BESSEL = "j\u2080*(2*\u03C0*v*t + \u03C0*\u03A6/180)"
-INTERNAL_BESSEL = "\u03B1*j\u2080*(2*\u03C0*v*t + \u03C0*\u03A6/180)*exp(-\u03BB*t) + (1-\u03B1)*exp(-\u03BB*t)"
+SIMPLE_EXPONENTIAL = f"a*exp(-{LAMBDA}*t)"
+STRETCHED_EXPONENTIAL = f"a*exp(-({LAMBDA}*t)^{BETA})"
+SIMPLE_GAUSSIAN = f"a*exp(-1/2*({SIGMA}*t)^2)"
+GAUSSIAN_KT = f"a*(1/3 + 2/3*(1 - ({SIGMA}*t)^2)*exp(-1/2*({SIGMA}*t)^2))"
+LORENTZIAN_KT = f"a*(1/3 + 2/3*(1 - {LAMBDA}*t)*exp(-{LAMBDA}*t))"
+COMBINED_KT = f"a*(1/3 + 2/3*(1-{SIGMA}^2*t^2-{LAMBDA}*t)*exp(-{SIGMA}^2*t^2/2-{LAMBDA}*t))"
+STRETCHED_KT = f"a*(1/3 + 2/3*(1-({SIGMA}*t)^{BETA})*exp(-({SIGMA}*t)^{BETA}/{BETA}))"
+DAMPED_COSINE = f"a*cos(2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{BETA}*t)"
+INTERNAL_COSINE = f"a*(f*cos(2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{LAMBDA}T*t) + (1 - f)*exp(-{LAMBDA}L*t))"
+BESSEL = f"a*sin(2*{PI}*v*t + {PI}*{PHI}/180)/(2*{PI}*v*t + {PI}*{PHI}/180)"
+INTERNAL_BESSEL = f"a*(f*sin(2*{PI}*v*t + {PI}*{PHI}/180)/(2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{LAMBDA}T*t) + (1-f)*exp(-{LAMBDA}L*t)"
 
-EQUATION_DICTIONARY = {"Simple Exponential": SIMPLE_EXPONENTIAL,
-                       "Stretched Exponential": STRETCHED_EXPONENTIAL,
-                       "Simple Gaussian": SIMPLE_GAUSSIAN,
-                       "Gaussian KT": GAUSSIAN_KT,
-                       "Lorentzian KT": LORENTZIAN_KT,
-                       "Combined KT": COMBINED_KT,
-                       "Stretched KT": STRETCHED_KT,
-                       "Cosine": COSINE,
-                       "Internal Cosine": INTERNAL_COSINE,
-                       "Bessel": BESSEL,
-                       "Internal Bessel": INTERNAL_BESSEL}
+EQUATION_DICTIONARY = {
+    "Simple Exponential": SIMPLE_EXPONENTIAL,
+    "Stretched Exponential": STRETCHED_EXPONENTIAL,
+    "Simple Gaussian": SIMPLE_GAUSSIAN,
+    "Gaussian KT": GAUSSIAN_KT,
+    "Lorentzian KT": LORENTZIAN_KT,
+    "Combined KT": COMBINED_KT,
+    "Stretched KT": STRETCHED_KT,
+    "Damped Cosine": DAMPED_COSINE,
+    "Internal Cosine": INTERNAL_COSINE,
+    "Bessel": BESSEL,
+    "Internal Bessel": INTERNAL_BESSEL
+}
+
+DEFAULT_VALUES = {
+    "Simple Exponential": {'a': 0.25, LAMBDA: 0.1},
+    "Stretched Exponential": {'a': 0.25, LAMBDA: 0.1, BETA: 1},
+    "Simple Gaussian": {'a': 0.25, SIGMA: 0.1},
+    "Gaussian KT": {'a': 0.25, SIGMA: 0.1},
+    "Lorentzian KT": {'a': 0.25, LAMBDA: 1},
+    "Combined KT": {'a': 0.25, SIGMA: 1, LAMBDA: 1},
+    "Stretched KT": {'a': 0.25, SIGMA: 1, BETA: 1},
+    "Damped Cosine": {'a': 0.25, PHI: 0, BETA: 1, 'v': 1},
+    "Internal Cosine": {'a': 0.25, 'f': 0.667, 'v': 1, PHI: 0, f'{LAMBDA}T': 1, f'{LAMBDA}L': 0.1},
+    "Bessel": {'a': 0.25, 'v': 1, PHI: 0},
+    "Internal Bessel": {'a': 0.25, 'f': 0.667, 'v': 1, PHI: 0, f'{LAMBDA}T': 1, f'{LAMBDA}L': 0.1}
+}
 
 USER_EQUATION_DICTIONARY = {}
 

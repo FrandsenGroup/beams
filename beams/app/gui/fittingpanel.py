@@ -1407,9 +1407,12 @@ class FitTabPresenter(PanelPresenter):
 
             self._view.clear_parameters(variables)
 
-            self._view.add_parameter(symbol=fit.ALPHA)
+            pre_defined_function_name = self._check_if_pre_defined_function()
             for var in variables:
-                self._view.add_parameter(symbol=var)
+                if pre_defined_function_name is not None and var != fit.ALPHA:
+                    self._view.add_parameter(symbol=var, config_value=fit.DEFAULT_VALUES[pre_defined_function_name][var])
+                else:
+                    self._view.add_parameter(symbol=var)
 
             self.__update_states = True
             self.update_parameter_table_states()
@@ -2211,6 +2214,12 @@ class FitTabPresenter(PanelPresenter):
 
         final_parameters['default'] = default
         return final_parameters
+
+    def _check_if_pre_defined_function(self):
+        for name, function in fit.EQUATION_DICTIONARY.items():
+            if function == self._view.get_expression():
+                return name
+        return None
 
     def update(self):
         runs = []
