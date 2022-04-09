@@ -651,6 +651,8 @@ def parse(s):
         raise InvalidExpressionError(f"The expression is invalid. See inner exception.") from e
     except (SyntaxError, ValueError):
         raise ImproperlyFormattedExpressionError(f"The expression '{s}' is not properly formatted.")
+    except Exception as e:
+        raise InvalidExpressionError(f'Expression invalid due to "{str(e)}".')
 
 
 def is_valid_expression(expression):
