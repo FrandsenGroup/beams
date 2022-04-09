@@ -1,5 +1,7 @@
 import pytest
 
+import numpy as np
+
 from app.model import fit
 
 
@@ -61,6 +63,31 @@ class TestHelperMethods:
     def test_replace_unsupported_unicode_characters(self, expression, expected_expression):
         assert fit._replace_unsupported_unicode_characters(expression) == expected_expression
 
+    def test_alpha_correct_parse(self):
+        parsed_variables = fit.parse(fit.alpha_correction('x'))
+        assert parsed_variables == {fit.ALPHA, 'x'}
+
+    def test_alpha_correct_exact(self):
+        assert fit.alpha_correction('x+1') == '((1-\u03B1)+((1+\u03B1)*(x+1)))/((1+\u03B1)+((1-\u03B1)*(x+1)))'
+
+    @pytest.mark.parametrize("expression, variables, args, kwargs, result",
+                             [
+                                 ("x", ["x"], [1], {}, 1),
+                                 ("sin(pi*y)", None, [1], {}, 0),
+                                 ("jn(0, x)", ['x'], [np.pi], {}, 0),
+                                 ("2*t", [], [np.array([1, 2, 3, 4])], {}, [2, 4, 6, 8]),
+                                 ("x+t*y", None, [np.array([1, 2, 3, 4]), 2, 3], {}, [5, 8, 11, 14]),
+                                 ("x+t*y", None, [np.array([1, 2, 3, 4])], {'x': 2, 'y': 3}, [5, 8, 11, 14]),
+                                 ("x+t*y", ['x', 'y'], [np.array([1, 2, 3, 4])], {'x': 2, 'y': 3}, [5, 8, 11, 14])
+                             ])
+    def test_lambdify(self, expression, variables, args, kwargs, result):
+        calculated_result = fit.lambdify(expression, variables)(*args, **kwargs)
+
+        if isinstance(calculated_result, np.ndarray):
+            assert np.array_equal(calculated_result, result)
+        else:
+            assert abs(float(calculated_result) - result) < 0.000001
+
 
 class TestPreDefinedEquations:
     @pytest.mark.parametrize("expression, expected_variables",
@@ -69,11 +96,5 @@ class TestPreDefinedEquations:
         parsed_variables = fit.parse(expression)
         assert parsed_variables == expected_variables
 
-    def test_alpha_correct(self):
-        parsed_variables = fit.parse(fit.alpha_correction('x'))
-        assert parsed_variables == {fit.ALPHA, 'x'}
 
-    def test_alpha_format_works(self):
-        # If you need to change this test I would be concerned you are doing something wrong. Maybe not though!
-        assert fit.alpha_correction('x+1') == '((1-\u03B1)+((1+\u03B1)*(x+1)))/((1+\u03B1)+((1-\u03B1)*(x+1)))'
 

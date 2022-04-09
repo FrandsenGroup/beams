@@ -110,7 +110,6 @@ class FitExpression:
 
         if variables is None:
             variables = parse(self.__expression_string)
-            variables.discard(INDEPENDENT_VARIABLE)
 
         self.__variables = variables
         self.__expression = lambdify(self.__expression_string, variables)
@@ -634,7 +633,7 @@ def get_std_unc(result, data, error=None, num_constraints=0):
     return p_unc, chi_sq
 
 
-def parse(s: str) -> set:
+def parse(s: str) -> list:
     f""" Takes in an expression as a string and returns a set of the free variables. 
     
     Note that this means it will not return {INDEPENDENT_VARIABLE} in the set. This method also expects
@@ -651,9 +650,13 @@ def parse(s: str) -> set:
             A set of strings; one for each free variable in the expression.
     """
     try:
-        symbols = {str(v) for v in sp.sympify(s).atoms(sp.Symbol)}
-        symbols.discard(INDEPENDENT_VARIABLE)
-        symbols.discard(PI)
+        symbols = sorted([str(v) for v in sp.sympify(s).atoms(sp.Symbol)])
+
+        if INDEPENDENT_VARIABLE in symbols:
+            symbols.remove(INDEPENDENT_VARIABLE)
+        if PI in symbols:
+            symbols.remove(PI)
+
         return symbols
     except (SyntaxError, ValueError):
         raise ImproperlyFormattedExpressionError(f"The expression '{s}' is not properly formatted.")
@@ -714,13 +717,15 @@ def alpha_correction(expression):
     return f'((1-{ALPHA})+((1+{ALPHA})*({expression})))/((1+{ALPHA})+((1-{ALPHA})*({expression})))'
 
 
-def lambdify(expression, variables):
+def lambdify(expression, variables=None):
     """ Takes a string representation of an expression and returns a callable lambda.
 
     PARAMETERS
     ----------
         expression: str
             The string representation of the expression
+        variables: iterable[str]
+            Collection of free variables, if not provided then this will call parse on the expression
 
     RETURNS
     -------
@@ -730,10 +735,10 @@ def lambdify(expression, variables):
     expression_string = _replace_unsupported_unicode_characters(expression)
 
     variables = variables if variables is not None else parse(expression)
-    var_names = [INDEPENDENT_VARIABLE]
+    var_names = [INDEPENDENT_VARIABLE] if INDEPENDENT_VARIABLE in expression_string else []
     var_names.extend([_replace_unsupported_unicode_characters(var) for var in variables])
 
-    lambda_expression = sp.lambdify(var_names, sp.sympify(expression_string), ["numpy", "scipy", "sympy"])
+    lambda_expression = sp.lambdify(var_names, sp.sympify(expression_string), ["numpy", "sympy", "scipy"])
     return lambda_expression
 
 
