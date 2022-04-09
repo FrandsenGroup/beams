@@ -1,6 +1,7 @@
 import pytest
 
 import numpy as np
+import scipy as scp
 
 from app.model import fit
 
@@ -74,7 +75,7 @@ class TestHelperMethods:
                              [
                                  ("x", ["x"], [1], {}, 1),
                                  ("sin(pi*y)", None, [1], {}, 0),
-                                 ("jn(0, x)", ['x'], [np.pi], {}, 0),
+                                 ("spherical_jn(0, x)", ['x'], [np.pi], {}, 0),
                                  ("2*t", [], [np.array([1, 2, 3, 4])], {}, [2, 4, 6, 8]),
                                  ("x+t*y", None, [np.array([1, 2, 3, 4]), 2, 3], {}, [5, 8, 11, 14]),
                                  ("x+t*y", None, [np.array([1, 2, 3, 4])], {'x': 2, 'y': 3}, [5, 8, 11, 14]),
@@ -96,6 +97,10 @@ class TestHelperMethods:
     def test_shortened_run_id(self, run_id, shortened):
         assert fit._shortened_run_id(run_id) == shortened
 
+    @pytest.mark.skip
+    def test_get_std_unc(self):
+        pass
+
 
 class TestPreDefinedEquations:
     @pytest.mark.parametrize("expression, expected_variables",
@@ -103,6 +108,32 @@ class TestPreDefinedEquations:
     def test_equation_valid(self, expression, expected_variables):
         parsed_variables = fit.parse(expression)
         assert set(parsed_variables) == expected_variables
+
+
+class TestFitExpression:
+    @pytest.mark.parametrize("expression, variables, args, kwargs, result",
+                             [
+                                 ("spherical_jn(0, t)", None, [[1*np.pi, 2*np.pi, 3*np.pi, 4*np.pi]], {}, [0, 0, 0, 0]),
+                                 ("2*t", [], [np.array([1, 2, 3, 4])], {}, [2, 4, 6, 8]),
+                                 ("x+t*y", None, [np.array([1, 2, 3, 4]), 2, 3], {}, [5, 8, 11, 14]),
+                                 ("x+t*y", None, [np.array([1, 2, 3, 4])], {'x': 2, 'y': 3}, [5, 8, 11, 14]),
+                                 ("x+t*y", ['x', 'y'], [np.array([1, 2, 3, 4])], {'x': 2, 'y': 3}, [5, 8, 11, 14])
+                             ])
+    def test_call(self, expression, variables, args, kwargs, result):
+        calculated_result = fit.FitExpression(expression, variables)(*args, **kwargs)
+        assert np.allclose(calculated_result, result)
+
+    # @pytest.mark.parametrize()
+    # def test_pickle(self):
+    #     pass
+
+
+class TestFitConfig:
+    pass
+
+
+class TestFitEngine:
+    pass
 
 
 
