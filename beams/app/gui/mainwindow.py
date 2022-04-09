@@ -158,7 +158,7 @@ class MainWindow(QtWidgets.QMainWindow):
         fileMenu.addAction("&Save Session", self._action_save)
         fileMenu.addAction("&Open Session", self._action_open)
         fileMenu.addSeparator()
-        fileMenu.addAction("&Quit BEAMS", self._action_quit)
+        fileMenu.addAction("&Quit", self._action_quit)
 
         viewMenu = self.menuBar().addMenu(self.tr("&View"))
         theme_menu = viewMenu.addMenu(self.tr("&Change application theme"))
