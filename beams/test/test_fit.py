@@ -38,3 +38,7 @@ class TestEquations:
         parsed_variables = fit.parse(expression)
         assert parsed_variables == expected_variables
 
+    def test_alpha_correct(self):
+        parsed_variables = fit.parse(fit.ALPHA_CORRECTION)
+        assert parsed_variables == {fit.ALPHA}
+
