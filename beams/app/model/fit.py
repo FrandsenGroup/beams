@@ -66,6 +66,46 @@ DEFAULT_VALUES = {
 
 USER_EQUATION_DICTIONARY = {}
 
+SCIPY_FUNCTIONS = [
+    ('spherical_jn', '(n, z[, derivative])', 'Spherical Bessel function of the first kind or its derivative.'),
+    ('spherical_yn', '(n, z[, derivative])', 'Spherical Bessel function of the second kind or its derivative.'),
+    ('spherical_in', '(n, z[, derivative])', 'Modified spherical Bessel function of the first kind or its derivative.'),
+    ('spherical_kn', '(n, z[, derivative])', 'Modified spherical Bessel function of the second kind or its derivative.')
+]
+
+NUMPY_FUNCTIONS = [
+    ('sin', '(x, /[, out, where, casting, order, ...])', 'Trigonometric sine, element-wise.'),
+    ('cos', '(x, /[, out, where, casting, order, ...])', 'Cosine element-wise.'),
+    ('tan', '(x, /[, out, where, casting, order, ...])', 'Compute tangent element-wise.'),
+    ('arcsin', '(x, /[, out, where, casting, order, ...])', 'Inverse sine, element-wise.'),
+    ('arccos', '(x, /[, out, where, casting, order, ...])', 'Trigonometric inverse cosine, element-wise.'),
+    ('arctan', '(x, /[, out, where, casting, order, ...])', 'Trigonometric inverse tangent, element-wise.'),
+    ('hypot', '(x1, x2, /[, out, where, casting, ...])', 'Given the "legs" of a right triangle, return its hypotenuse.'),
+    ('arctan2', '(x1, x2, /[, out, where, casting, ...])', 'Element-wise arc tangent of x1/x2 choosing the quadrant correctly.'),
+    ('degrees', '(x, /[, out, where, casting, order, ...])', 'Convert angles from radians to degrees.'),
+    ('radians', '(x, /[, out, where, casting, order, ...])', 'Convert angles from degrees to radians.'),
+    ('unwrap', '(p[, discont, axis, period])', 'Unwrap by taking the complement of large deltas with respect to the period.'),
+    ('deg2rad', '(x, /[, out, where, casting, order, ...])', 'Convert angles from degrees to radians.'),
+    ('rad2deg', '(x, /[, out, where, casting, order, ...])', 'Convert angles from radians to degrees.'),
+    ('sinh', '(x, /[, out, where, casting, order, ...])', 'Hyperbolic sine, element-wise.'),
+    ('cosh', '(x, /[, out, where, casting, order, ...])', 'Hyperbolic cosine, element-wise.'),
+    ('tanh', '(x, /[, out, where, casting, order, ...])', 'Compute hyperbolic tangent element-wise.'),
+    ('arcsinh', '(x, /[, out, where, casting, order, ...])', 'Inverse hyperbolic sine element-wise.'),
+    ('arccosh', '(x, /[, out, where, casting, order, ...])', 'Inverse hyperbolic cosine, element-wise.'),
+    ('arctanh', '(x, /[, out, where, casting, order, ...])', 'Inverse hyperbolic tangent element-wise.'),
+    ('exp', '(x, /[, out, where, casting, order, ...])', 'Calculate the exponential of all elements in the input array.'),
+    ('expm1', '(x, /[, out, where, casting, order, ...])', 'Calculate exp(x) - 1 for all elements in the array.'),
+    ('exp2', '(x, /[, out, where, casting, order, ...])', 'Calculate 2**p for all p in the input array.'),
+    ('log', '(x, /[, out, where, casting, order, ...])', 'Natural logarithm, element-wise.'),
+    ('log10', '(x, /[, out, where, casting, order, ...])', 'Return the base 10 logarithm of the input array, element-wise.'),
+    ('log2', '(x, /[, out, where, casting, order, ...])', 'Base-2 logarithm of x.'),
+    ('log1p', '(x, /[, out, where, casting, order, ...])', 'Return the natural logarithm of one plus the input array, element-wise.'),
+    ('logaddexp', '(x1, x2, /[, out, where, casting, ...])', 'Logarithm of the sum of exponentiations of the inputs.'),
+    ('logaddexp2', '(x1, x2, /[, out, where, casting, ...])', 'Logarithm of the sum of exponentiations of the inputs in base-2.'),
+    ('i0', '(x)', 'Modified Bessel function of the first kind, order 0.'),
+    ('sinc', '(x)', 'Return the normalized sinc function.'),
+]
+
 
 class FitParameter:
     def __init__(self, symbol, value, lower, upper, is_global, is_fixed, is_run_specific=False, output=None, uncertainty=None):
