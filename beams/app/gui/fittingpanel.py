@@ -1211,6 +1211,12 @@ class FittingPanel(Panel):
     def get_expression(self):
         return self.input_fit_equation.text()
 
+    def set_goodness(self, goodness):
+        try:
+            self.parameter_table.goodness_display.setText("{:.4f}".format(goodness))
+        except ValueError:
+            self.parameter_table.goodness_display.setText(str(goodness))
+
     def is_run_dependent(self):
         is_run_dependent = False
 
@@ -1527,7 +1533,7 @@ class FitTabPresenter(PanelPresenter):
         # We will need to get parameters to add to table. Clear old table. Same for expression and variable groups
         self.set_parameter_table_states(new_table_state)
         self._view.input_fit_equation.setText(str(self.__expression))
-        self._view.parameter_table.goodness_display.setText("{:.4f}".format(goodness) if goodness else '')
+        self._view.set_goodness(goodness)
 
         # Set the output and uncertainties in the output table
         for symbol, out_sets in outputs.items():
