@@ -36,17 +36,33 @@ INTERNAL_COSINE = f"a*(f*cos(2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{LAMBDA}T*t) + (1
 BESSEL = f"a*sin(2*{PI}*v*t + {PI}*{PHI}/180)/(2*{PI}*v*t + {PI}*{PHI}/180)"
 INTERNAL_BESSEL = f"a*(f*sin(2*{PI}*v*t + {PI}*{PHI}/180)/(2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{LAMBDA}T*t) + (1-f)*exp(-{LAMBDA}L*t)"
 
-EQUATION_DICTIONARY = {"Simple Exponential": SIMPLE_EXPONENTIAL,
-                       "Stretched Exponential": STRETCHED_EXPONENTIAL,
-                       "Simple Gaussian": SIMPLE_GAUSSIAN,
-                       "Gaussian KT": GAUSSIAN_KT,
-                       "Lorentzian KT": LORENTZIAN_KT,
-                       "Combined KT": COMBINED_KT,
-                       "Stretched KT": STRETCHED_KT,
-                       "Cosine": COSINE,
-                       "Internal Cosine": INTERNAL_COSINE,
-                       "Bessel": BESSEL,
-                       "Internal Bessel": INTERNAL_BESSEL}
+EQUATION_DICTIONARY = {
+    "Simple Exponential": SIMPLE_EXPONENTIAL,
+    "Stretched Exponential": STRETCHED_EXPONENTIAL,
+    "Simple Gaussian": SIMPLE_GAUSSIAN,
+    "Gaussian KT": GAUSSIAN_KT,
+    "Lorentzian KT": LORENTZIAN_KT,
+    "Combined KT": COMBINED_KT,
+    "Stretched KT": STRETCHED_KT,
+    "Damped Cosine": DAMPED_COSINE,
+    "Internal Cosine": INTERNAL_COSINE,
+    "Bessel": BESSEL,
+    "Internal Bessel": INTERNAL_BESSEL
+}
+
+DEFAULT_VALUES = {
+    "Simple Exponential": {'a': 0.25, LAMBDA: 0.1},
+    "Stretched Exponential": {'a': 0.25, LAMBDA: 0.1, BETA: 1},
+    "Simple Gaussian": {'a': 0.25, SIGMA: 0.1},
+    "Gaussian KT": {'a': 0.25, SIGMA: 0.1},
+    "Lorentzian KT": {'a': 0.25, LAMBDA: 1},
+    "Combined KT": {'a': 0.25, SIGMA: 1, LAMBDA: 1},
+    "Stretched KT": {'a': 0.25, SIGMA: 1, BETA: 1},
+    "Damped Cosine": {'a': 0.25, PHI: 0, BETA: 1, 'v': 1},
+    "Internal Cosine": {'a': 0.25, 'f': 0.667, 'v': 1, PHI: 0, f'{LAMBDA}T': 1, f'{LAMBDA}L': 0.1},
+    "Bessel": {'a': 0.25, 'v': 1, PHI: 0},
+    "Internal Bessel": {'a': 0.25, 'f': 0.667, 'v': 1, PHI: 0, f'{LAMBDA}T': 1, f'{LAMBDA}L': 0.1}
+}
 
 USER_EQUATION_DICTIONARY = {}
 
