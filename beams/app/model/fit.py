@@ -33,8 +33,8 @@ COMBINED_KT = f"a*(1/3 + 2/3*(1-{SIGMA}^2*t^2-{LAMBDA}*t)*exp(-{SIGMA}^2*t^2/2-{
 STRETCHED_KT = f"a*(1/3 + 2/3*(1-({SIGMA}*t)^{BETA})*exp(-({SIGMA}*t)^{BETA}/{BETA}))"
 DAMPED_COSINE = f"a*cos(2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{BETA}*t)"
 INTERNAL_COSINE = f"a*(f*cos(2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{LAMBDA}T*t) + (1 - f)*exp(-{LAMBDA}L*t))"
-BESSEL = f"a*jn(0, 2*{PI}*v*t + {PI}*{PHI}/180)"
-INTERNAL_BESSEL = f"a*(f*jn(0,2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{LAMBDA}T*t) + (1-f)*exp(-{LAMBDA}L*t))"
+BESSEL = f"a*spherical_jn(0, 2*{PI}*v*t + {PI}*{PHI}/180)"
+INTERNAL_BESSEL = f"a*(f*spherical_jn(0,2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{LAMBDA}T*t) + (1-f)*exp(-{LAMBDA}L*t))"
 
 EQUATION_DICTIONARY = {
     "Simple Exponential": SIMPLE_EXPONENTIAL,
