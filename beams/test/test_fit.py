@@ -114,7 +114,8 @@ class TestPreDefinedEquations:
 class TestFitExpression:
     @pytest.mark.parametrize("expression, variables, args, kwargs, result",
                              [
-                                 ("spherical_jn(0, t)", None, [[1*np.pi, 2*np.pi, 3*np.pi, 4*np.pi]], {}, [0, 0, 0, 0]),
+                                 ("spherical_jn(0, t)", None, [[1 * np.pi, 2 * np.pi, 3 * np.pi, 4 * np.pi]], {},
+                                  [0, 0, 0, 0]),
                                  ("2*t", [], [np.array([1, 2, 3, 4])], {}, [2, 4, 6, 8]),
                                  ("2*t", [], [], {'t': np.array([1, 2, 3, 4])}, [2, 4, 6, 8]),
                                  ("x+t*y", None, [np.array([1, 2, 3, 4]), 2, 3], {}, [5, 8, 11, 14]),
@@ -146,12 +147,190 @@ class TestFitExpression:
             fit.FitExpression(expression, variables)(*args, **kwargs)
 
 
+@pytest.fixture()
+def valid_config_for_tests() -> fit.FitConfig:
+    config = fit.FitConfig()
+    config.expression = fit.EQUATION_DICTIONARY["Internal Cosine"]
+    config.titles = {"run_id_0": 'title0', "run_id_1": 'title1', "run_id_2": 'title2', "run_id_3": 'title3'}
+    config.set_flags(0)
+    config.batch = False
+    config.parameters = {
+        "run_id_0": {
+            'a': fit.FitParameter(
+                symbol='a', value=0.25, lower=0, upper=2,
+                is_global=True, is_fixed=False, is_run_specific=False
+            ),
+            'f': fit.FitParameter(
+                symbol='f', value=0.667, lower=-np.inf, upper=np.inf,
+                is_global=False, is_fixed=True, is_run_specific=False
+            ),
+            'v': fit.FitParameter(
+                symbol='v', value=1, lower=-np.inf, upper=7,
+                is_global=False, is_fixed=False, is_run_specific=True
+            ),
+            fit.PHI: fit.FitParameter(
+                symbol=fit.PHI, value=0, lower=-np.inf, upper=np.inf,
+                is_global=False, is_fixed=False, is_run_specific=True
+            ),
+            f'{fit.LAMBDA}T': fit.FitParameter(
+                symbol=f'{fit.LAMBDA}T', value=1, lower=-np.inf, upper=np.inf,
+                is_global=False, is_fixed=False, is_run_specific=True
+            ),
+            f'{fit.LAMBDA}L': fit.FitParameter(
+                symbol=f'{fit.LAMBDA}L', value=0.1, lower=-np.inf, upper=np.inf,
+                is_global=False, is_fixed=False, is_run_specific=False
+            ),
+            fit.ALPHA: fit.FitParameter(
+                symbol=fit.ALPHA, value=1, lower=-np.inf, upper=np.inf,
+                is_global=True, is_fixed=False, is_run_specific=False
+            )
+        },
+        "run_id_1": {
+            'a': fit.FitParameter(
+                symbol='a', value=0.25, lower=0, upper=2,
+                is_global=True, is_fixed=False, is_run_specific=False
+            ),
+            'f': fit.FitParameter(
+                symbol='f', value=0.71, lower=-np.inf, upper=np.inf,
+                is_global=False, is_fixed=True, is_run_specific=False
+            ),
+            'v': fit.FitParameter(
+                symbol='v', value=1.2, lower=-np.inf, upper=np.inf,
+                is_global=False, is_fixed=False, is_run_specific=True
+            ),
+            fit.PHI: fit.FitParameter(
+                symbol=fit.PHI, value=0, lower=-1, upper=6,
+                is_global=False, is_fixed=False, is_run_specific=True
+            ),
+            f'{fit.LAMBDA}T': fit.FitParameter(
+                symbol=f'{fit.LAMBDA}T', value=0.25, lower=-np.inf, upper=np.inf,
+                is_global=False, is_fixed=False, is_run_specific=True
+            ),
+            f'{fit.LAMBDA}L': fit.FitParameter(
+                symbol=f'{fit.LAMBDA}L', value=0.1, lower=-np.inf, upper=np.inf,
+                is_global=False, is_fixed=False, is_run_specific=False
+            ),
+            fit.ALPHA: fit.FitParameter(
+                symbol=fit.ALPHA, value=1, lower=-np.inf, upper=np.inf,
+                is_global=True, is_fixed=False, is_run_specific=False
+            )
+        },
+        "run_id_2": {
+            'a': fit.FitParameter(
+                symbol='a', value=0.25, lower=0, upper=2,
+                is_global=True, is_fixed=False, is_run_specific=False
+            ),
+            'f': fit.FitParameter(
+                symbol='f', value=0.8, lower=-np.inf, upper=np.inf,
+                is_global=False, is_fixed=True, is_run_specific=False
+            ),
+            'v': fit.FitParameter(
+                symbol='v', value=12, lower=1, upper=20,
+                is_global=False, is_fixed=False, is_run_specific=True
+            ),
+            fit.PHI: fit.FitParameter(
+                symbol=fit.PHI, value=0, lower=-np.inf, upper=np.inf,
+                is_global=False, is_fixed=False, is_run_specific=True
+            ),
+            f'{fit.LAMBDA}T': fit.FitParameter(
+                symbol=f'{fit.LAMBDA}T', value=0, lower=-np.inf, upper=8,
+                is_global=False, is_fixed=False, is_run_specific=True
+            ),
+            f'{fit.LAMBDA}L': fit.FitParameter(
+                symbol=f'{fit.LAMBDA}L', value=0.1, lower=-np.inf, upper=np.inf,
+                is_global=False, is_fixed=False, is_run_specific=False
+            ),
+            fit.ALPHA: fit.FitParameter(
+                symbol=fit.ALPHA, value=1, lower=-np.inf, upper=np.inf,
+                is_global=True, is_fixed=False, is_run_specific=False
+            )
+        },
+        "run_id_3": {
+            'a': fit.FitParameter(
+                symbol='a', value=0.25, lower=0, upper=2,
+                is_global=True, is_fixed=False, is_run_specific=False
+            ),
+            'f': fit.FitParameter(
+                symbol='f', value=0.9, lower=-np.inf, upper=np.inf,
+                is_global=False, is_fixed=True, is_run_specific=False
+            ),
+            'v': fit.FitParameter(
+                symbol='v', value=2.5, lower=-np.inf, upper=np.inf,
+                is_global=False, is_fixed=False, is_run_specific=True
+            ),
+            fit.PHI: fit.FitParameter(
+                symbol=fit.PHI, value=0, lower=-np.inf, upper=np.inf,
+                is_global=False, is_fixed=False, is_run_specific=True
+            ),
+            f'{fit.LAMBDA}T': fit.FitParameter(
+                symbol=f'{fit.LAMBDA}T', value=0.1, lower=-5, upper=np.inf,
+                is_global=False, is_fixed=False, is_run_specific=True
+            ),
+            f'{fit.LAMBDA}L': fit.FitParameter(
+                symbol=f'{fit.LAMBDA}L', value=0.25, lower=-np.inf, upper=np.inf,
+                is_global=False, is_fixed=False, is_run_specific=False
+            ),
+            fit.ALPHA: fit.FitParameter(
+                symbol=fit.ALPHA, value=1, lower=-np.inf, upper=np.inf,
+                is_global=True, is_fixed=False, is_run_specific=False
+            )
+        }
+    }
+
+    return config
+
+
 class TestFitConfig:
-    pass
+    def test_is_global(self, valid_config_for_tests):
+        assert valid_config_for_tests.is_global()
+
+    def test_is_batch(self, valid_config_for_tests):
+        assert not valid_config_for_tests.is_batch()
+
+    def test_is_plus(self, valid_config_for_tests):
+        assert not valid_config_for_tests.is_plus()
+
+    def test_get_symbols_for_run(self, valid_config_for_tests):
+        assert valid_config_for_tests.get_symbols_for_run("run_id_3") == ["a", "f", "v", fit.PHI, f'{fit.LAMBDA}T', f'{fit.LAMBDA}L', fit.ALPHA]
+        assert valid_config_for_tests.get_symbols_for_run("run_id_3", is_fixed=True) == ["f"]
+        assert valid_config_for_tests.get_symbols_for_run("run_id_3", is_global=True) == ["a", fit.ALPHA]
+
+    def test_get_values_for_run(self, valid_config_for_tests):
+        assert np.array_equal(valid_config_for_tests.get_values_for_run("run_id_0"), [0.25, 0.667, 1, 0, 1, 0.1, 1])
+        assert np.array_equal(valid_config_for_tests.get_values_for_run("run_id_1", is_fixed=True), [0.71])
+        assert np.array_equal(valid_config_for_tests.get_values_for_run("run_id_2", is_global=True), [0.25, 1])
+
+    def test_get_lower_values_for_run(self, valid_config_for_tests):
+        assert np.array_equal(valid_config_for_tests.get_lower_values_for_run("run_id_0"), [0, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf])
+        assert np.array_equal(valid_config_for_tests.get_lower_values_for_run("run_id_1", is_fixed=True), [-np.inf])
+        assert np.array_equal(valid_config_for_tests.get_lower_values_for_run("run_id_2", is_global=True), [0, -np.inf])
+
+    def test_get_upper_values_for_run(self, valid_config_for_tests):
+        assert np.array_equal(valid_config_for_tests.get_upper_values_for_run("run_id_0"), [2, np.inf, 7, np.inf, np.inf, np.inf, np.inf])
+        assert np.array_equal(valid_config_for_tests.get_upper_values_for_run("run_id_1", is_fixed=True), [np.inf])
+        assert np.array_equal(valid_config_for_tests.get_upper_values_for_run("run_id_2", is_global=True), [2, np.inf])
+
+    def test_get_adjusted_global_symbols(self, valid_config_for_tests):
+        assert np.array_equal(valid_config_for_tests.get_adjusted_global_symbols(),
+                              ['a', 'v_run_id_0', 'Φ_run_id_0', 'λT_run_id_0', 'λL_run_id_0', 'α', 'v_run_id_1',
+                               'Φ_run_id_1', 'λT_run_id_1', 'λL_run_id_1', 'v_run_id_2', 'Φ_run_id_2', 'λT_run_id_2',
+                               'λL_run_id_2', 'v_run_id_3', 'Φ_run_id_3', 'λT_run_id_3', 'λL_run_id_3'])
+
+    def test_get_adjusted_global_values(self, valid_config_for_tests):
+        assert np.array_equal(valid_config_for_tests.get_adjusted_global_values(),
+                              [0.25, 1.0, 0.0, 1.0, 0.1, 1.0, 1.2, 0.0, 0.25, 0.1, 12.0, 0.0, 0.0, 0.1, 2.5, 0.0, 0.1,
+                               0.25])
+
+    def test_get_adjusted_global_lowers(self, valid_config_for_tests):
+        assert np.array_equal(valid_config_for_tests.get_adjusted_global_lowers(),
+                              [0.0, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -1.0, -np.inf, -np.inf, 1.0,
+                               -np.inf, -np.inf, -np.inf, -np.inf, -np.inf, -5.0, -np.inf])
+
+    def test_get_adjusted_global_uppers(self, valid_config_for_tests):
+        assert np.array_equal(valid_config_for_tests.get_adjusted_global_uppers(),
+                              [2.0, 7.0, np.inf, np.inf, np.inf, np.inf, np.inf, 6.0, np.inf, np.inf, 20.0, np.inf, 8.0,
+                               np.inf, np.inf, np.inf, np.inf, np.inf])
 
 
 class TestFitEngine:
     pass
-
-
-

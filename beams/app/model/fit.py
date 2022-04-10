@@ -336,13 +336,6 @@ class FitConfig:
 
         return np.array(uppers, dtype=float)
 
-    def get_kwargs(self, run_id):
-        kwargs = {}
-        for symbol, parameter in self.parameters[run_id].items():
-            if symbol != ALPHA:
-                kwargs[symbol] = parameter.get_value()
-        return kwargs
-
     def set_outputs(self, run_id, symbol, output, uncertainty):
         self.parameters[run_id][symbol].value = output
         self.parameters[run_id][symbol].output = output
