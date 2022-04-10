@@ -744,7 +744,7 @@ class FittingPanel(Panel):
 
         self.option_user_fit_equations.setFixedWidth(200)
         self.option_preset_fit_equations.setFixedWidth(200)
-        self.display_functions.setFixedWidth(80)
+        self.display_functions.setFixedWidth(120)
 
         self.group_table_parameters.setMaximumWidth(380)
         self.group_table_runs.setMaximumWidth(380)
