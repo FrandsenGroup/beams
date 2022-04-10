@@ -165,7 +165,7 @@ class FitExpression:
         self.safe = state[2]
 
     def __eq__(self, other):
-        return str(other) == self.__expression_string
+        return str(other) == self.__expression_string and other.__variables == self.__variables
 
     def __str__(self):
         return self.__expression_string
@@ -181,7 +181,13 @@ class FitExpression:
         # We need to cast it to a complex type in order to avoid errors where we are raising a negative
         # number to a fractional power (which would result in an array of Nan's usually). We do the calculation
         # and then take the real component below.
-        time_array = np.array(args[0], dtype=complex)
+        try:
+            if INDEPENDENT_VARIABLE in kwargs:
+                time_array = np.array(kwargs[INDEPENDENT_VARIABLE], dtype=complex)
+            else:
+                time_array = np.array(args[0], dtype=complex)
+        except ValueError:
+            raise InvalidFitArgumentsError("First argument should be an array of numbers or a number.")
 
         pars = {}
         unnamed_pars = []
@@ -193,17 +199,18 @@ class FitExpression:
                     try:
                         unnamed_pars.append(float(arg))
                     except ValueError:
-                        raise ValueError("Every parameter after the array should be of type FitParameter.")
+                        raise InvalidFitArgumentsError("Every parameter after the array should be of type FitParameter or a number.")
         for k, v in kwargs.items():
-            pars[_replace_unsupported_unicode_characters(k)] = v
+            if k != INDEPENDENT_VARIABLE:
+                pars[_replace_unsupported_unicode_characters(k)] = v
 
         try:
             return self.__expression(time_array, *unnamed_pars, **pars).real
-        except TypeError:
+        except TypeError as e:
             if ALPHA in pars.keys():
                 pars.pop(ALPHA)
                 return self.__expression(time_array, *unnamed_pars, **pars).real
-            raise
+            raise InvalidFitArgumentsError("Bad arguments passed to fit expression.") from e
 
 
 class FitConfig:
@@ -795,3 +802,9 @@ class InvalidExpressionError(Exception):
     """
     def __init__(self, *args):
         super(InvalidExpressionError, self).__init__(*args)
+
+
+class InvalidFitArgumentsError(Exception):
+    """Bad arguments passed to fit expression. """
+    def __init__(self, *args):
+        super(InvalidFitArgumentsError, self).__init__(*args)
