@@ -1,4 +1,5 @@
 import pytest
+import pickle
 
 import numpy as np
 import scipy as scp
@@ -115,6 +116,7 @@ class TestFitExpression:
                              [
                                  ("spherical_jn(0, t)", None, [[1*np.pi, 2*np.pi, 3*np.pi, 4*np.pi]], {}, [0, 0, 0, 0]),
                                  ("2*t", [], [np.array([1, 2, 3, 4])], {}, [2, 4, 6, 8]),
+                                 ("2*t", [], [], {'t': np.array([1, 2, 3, 4])}, [2, 4, 6, 8]),
                                  ("x+t*y", None, [np.array([1, 2, 3, 4]), 2, 3], {}, [5, 8, 11, 14]),
                                  ("x+t*y", None, [np.array([1, 2, 3, 4])], {'x': 2, 'y': 3}, [5, 8, 11, 14]),
                                  ("x+t*y", ['x', 'y'], [np.array([1, 2, 3, 4])], {'x': 2, 'y': 3}, [5, 8, 11, 14])
@@ -123,9 +125,25 @@ class TestFitExpression:
         calculated_result = fit.FitExpression(expression, variables)(*args, **kwargs)
         assert np.allclose(calculated_result, result)
 
-    # @pytest.mark.parametrize()
-    # def test_pickle(self):
-    #     pass
+    @pytest.mark.parametrize("expression",
+                             [
+                                 "spherical_jn(0, t)", "2*t", "x+t*y", "x+t*y", "x+t*y"
+                             ])
+    def test_pickle(self, expression):
+        fit_expression = fit.FitExpression(expression)
+        unpickled_fit_expression = pickle.loads(pickle.dumps(fit_expression))
+        assert unpickled_fit_expression == fit_expression
+
+    @pytest.mark.parametrize("expression, variables, args, kwargs",
+                             [
+                                 ("x+sin(y*3*t)", ["x", "y"], [[1, 2, 3, 'a'], 2, 4], {}),
+                                 ("x+sin(y*3*t)", ["x", "y"], [[1, 2, 3, 4], 'a', 4], {}),
+                                 ("x+sin(y*3*t)", ["x", "y"], [[1, 2, 3, 4], 2, 4, 5], {}),
+                                 ("x+sin(y*3*t)", ["x", "y"], [[1, 2, 3, 4], 2, 4], {'c': 5})
+                             ])
+    def test_failure(self, expression, variables, args, kwargs):
+        with pytest.raises(fit.InvalidFitArgumentsError):
+            fit.FitExpression(expression, variables)(*args, **kwargs)
 
 
 class TestFitConfig:
