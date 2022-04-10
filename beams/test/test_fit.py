@@ -2,7 +2,6 @@ import pytest
 import pickle
 
 import numpy as np
-import scipy as scp
 
 from app.model import fit
 
@@ -280,6 +279,8 @@ def valid_config_for_tests() -> fit.FitConfig:
     return config
 
 
+# The main aspect to be tested in the config tests is that the correct values come out of the methods AND,
+# just as importantly, they come out in the correct ORDER.
 class TestFitConfig:
     def test_is_global(self, valid_config_for_tests):
         assert valid_config_for_tests.is_global()
