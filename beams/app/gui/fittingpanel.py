@@ -642,7 +642,6 @@ class FittingPanel(Panel):
         self.option_user_fit_equations = QtWidgets.QComboBox()
         self.option_run_ordering = QtWidgets.QComboBox()
         self.option_ascending = QtWidgets.QComboBox()
-        self.display_functions = QtWidgets.QComboBox()
 
         self.fit_spectrum_settings = FittingPanel.PlotControl()
         self.fit_display = FittingPanel.PlotDisplay(self.fit_spectrum_settings)
@@ -701,7 +700,7 @@ class FittingPanel(Panel):
         self._line_edit_style = self.input_fit_equation.styleSheet()
 
     def _set_tooltips(self):
-        self.display_functions.setToolTip("Hover over a function to see more detailed descriptions.")
+        pass
 
     def _set_widget_attributes(self):
         self.run_list.setSelectionMode(qt_constants.ExtendedSelection)
@@ -723,16 +722,6 @@ class FittingPanel(Panel):
         self.label_ordering.setEnabled(False)
         self.label_use_previous.setEnabled(False)
 
-        for name, parameters, description in fit.NUMPY_FUNCTIONS:
-            self.display_functions.addItem(name)
-            self.display_functions.setItemData(self.display_functions.count() - 1,
-                                               f"{parameters} {description}", qt_constants.ToolTipRole)
-
-        for name, parameters, description in fit.SCIPY_FUNCTIONS:
-            self.display_functions.addItem(name)
-            self.display_functions.setItemData(self.display_functions.count() - 1,
-                                               f"{parameters} {description}", qt_constants.ToolTipRole)
-
     def _set_widget_dimensions(self):
         self.button_fit.setFixedWidth(60)
         self.button_fit.setFixedHeight(60)
@@ -744,7 +733,6 @@ class FittingPanel(Panel):
 
         self.option_user_fit_equations.setFixedWidth(200)
         self.option_preset_fit_equations.setFixedWidth(200)
-        self.display_functions.setFixedWidth(120)
 
         self.group_table_parameters.setMaximumWidth(380)
         self.group_table_runs.setMaximumWidth(380)
@@ -806,10 +794,6 @@ class FittingPanel(Panel):
         row.addWidget(self.insert_phi)
         row.addWidget(self.insert_sigma)
         row.addWidget(self.insert_naught)
-        row.addSpacing(15)
-        row.addWidget(QtWidgets.QLabel("Functions"))
-        row.addSpacing(5)
-        row.addWidget(self.display_functions)
         row.addSpacing(15)
         self.group_function.setLayout(row)
         row = QtWidgets.QHBoxLayout()
@@ -1264,9 +1248,6 @@ class FittingPanel(Panel):
 
         self.input_fit_equation.insert(fit.USER_EQUATION_DICTIONARY[self.option_user_fit_equations.currentText()])
 
-    def copy_callable_function_to_cursor(self):
-        self.input_fit_equation.insert(f'{self.display_functions.currentText()}()')
-
     def copy_character_to_cursor(self, char):
         self.input_fit_equation.insert(char)
 
@@ -1351,7 +1332,6 @@ class FitTabPresenter(PanelPresenter):
         self._view.input_fit_equation.textChanged.connect(self._on_function_input_changed)
         self._view.button_insert_preset_equation.released.connect(self._on_insert_pre_defined_function_clicked)
         self._view.button_insert_user_equation.released.connect(self._on_insert_user_defined_function_clicked)
-        self._view.display_functions.currentTextChanged.connect(self._on_callable_function_clicked)
         self._view.button_save_user_equation.released.connect(self._on_save_user_defined_function_clicked)
         self._view.insert_sigma.released.connect(lambda: self._on_insert_character_clicked(fit.SIGMA))
         self._view.insert_pi.released.connect(lambda: self._on_insert_character_clicked(fit.PI))
@@ -1439,10 +1419,6 @@ class FitTabPresenter(PanelPresenter):
             self.update_parameter_table_states()
             self.__update_if_table_changes = True
             self._view.highlight_input_red(self._view.input_fit_equation, True)
-
-    @QtCore.pyqtSlot()
-    def _on_callable_function_clicked(self):
-        self._view.copy_callable_function_to_cursor()
 
     @QtCore.pyqtSlot()
     def _on_save_user_defined_function_clicked(self):
