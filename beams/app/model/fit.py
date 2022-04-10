@@ -153,18 +153,16 @@ class FitExpression:
 
         self.__variables = variables
         self.__expression = lambdify(self.__expression_string, variables)
-        self.__fixed = {}
         self.safe = True
 
     def __getstate__(self):
-        return self.__expression_string, self.__variables, self.__fixed, self.safe
+        return self.__expression_string, self.__variables, self.safe
 
     def __setstate__(self, state):
         self.__expression_string = state[0]
         self.__variables = state[1]
         self.__expression = lambdify(self.__expression_string, self.__variables)
-        self.__fixed = state[2]
-        self.safe = state[3]
+        self.safe = state[2]
 
     def __eq__(self, other):
         return str(other) == self.__expression_string
@@ -173,7 +171,7 @@ class FitExpression:
         return self.__expression_string
 
     def __repr__(self):
-        return f'FitExpression({self.__expression_string}, {self.__expression}, {self.__fixed}, {self.safe})'
+        return f'FitExpression({self.__expression_string}, {self.__expression}, {self.safe})'
 
     def __call__(self, *args, **kwargs):
         # The length of this function is due to the fact I have trust issues.
@@ -199,9 +197,6 @@ class FitExpression:
         for k, v in kwargs.items():
             pars[_replace_unsupported_unicode_characters(k)] = v
 
-        for symbol, value in self.__fixed.items():
-            pars[_replace_unsupported_unicode_characters(symbol)] = value
-
         try:
             return self.__expression(time_array, *unnamed_pars, **pars).real
         except TypeError:
@@ -209,9 +204,6 @@ class FitExpression:
                 pars.pop(ALPHA)
                 return self.__expression(time_array, *unnamed_pars, **pars).real
             raise
-
-    def set_fixed(self, parameters):
-        self.__fixed = {_replace_unsupported_unicode_characters(symbol): parameter.value for symbol, parameter in parameters}
 
 
 class FitConfig:
