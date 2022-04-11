@@ -633,7 +633,7 @@ class FittingPanel(Panel):
         self.parameter_table = self.ParameterTable()
 
         self.mathematical_font = QtGui.QFont()
-        self.mathematical_font.setFamily("Times New Roman")
+        self.mathematical_font.setFamily("Georgia")
 
         self.input_fit_equation = QtWidgets.QLineEdit()
         self.input_user_equation = QtWidgets.QLineEdit()
