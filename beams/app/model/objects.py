@@ -988,9 +988,9 @@ class Fit(PersistentObject):
             raise Exception("Expression has not been created for fit '{}'".format(self.title))
 
         title_line = "BEAMS{}".format('\n' if self.converged else ' (Failed to Converge)\n')
-        np.savetxt(out_file, np.c_[asymmetry.time, asymmetry, calculated_asymmetry, asymmetry.uncertainty],
+        np.savetxt(out_file, np.c_[asymmetry.time, calculated_asymmetry, asymmetry, asymmetry.uncertainty],
                    fmt='%2.9f, %2.4f, %2.4f, %2.4f',
-                   header=title_line + meta_string + "\nTime, Asymmetry, Calculated, Uncertainty")
+                   header=title_line + meta_string + "\nTime, Calculated, Observed, Uncertainty")
 
 
 class FitDataset(PersistentObject):
@@ -1384,7 +1384,7 @@ class DataBuilder:
             uncertainty = Uncertainty(data["Uncertainty"], bin_size=d.meta[files.BIN_SIZE_KEY])
             times = Time(data["Time"], time_zero_bin=d.meta[files.T0_KEY], bin_size_ns=d.meta[files.BIN_SIZE_KEY])
 
-            asymmetry = Asymmetry(input_array=data["Asymmetry"],
+            asymmetry = Asymmetry(input_array=data["Observed"],
                                   time_zero=d.meta[files.T0_KEY],
                                   bin_size=d.meta[files.BIN_SIZE_KEY],
                                   uncertainty=uncertainty,
