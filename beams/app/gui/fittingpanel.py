@@ -1671,7 +1671,12 @@ class FitTabPresenter(PanelPresenter):
         # Fit to spec
         worker = FitWorker(config)
         worker.signals.result.connect(self._update_fit_changes)
-        worker.signals.error.connect(lambda error_message: WarningMessageDialog.launch([error_message]))
+
+        def handle_error(e):
+            report.report_exception(e)
+            WarningMessageDialog.launch(f"An error occurred during your fit. The message reads \'{str(e)}\'")
+
+        worker.signals.error.connect(lambda error_message: handle_error(error_message))
         self._threadpool.start(worker)
 
         LoadingDialog.launch("Your fit is running!", worker)
@@ -1925,6 +1930,12 @@ class FitTabPresenter(PanelPresenter):
         return sorted(run_ids, key=keys[meta_key], reverse=not ascending)
 
     def _update_fit_changes(self, dataset):
+        # Check if fit did not converge
+        for fit_data in dataset.fits.values():
+            if not fit_data.converged:
+                WarningMessageDialog.launch(["Fit failed to converge."])
+                break
+
         self._fit_service.add_dataset([dataset])
         self._update_alphas(dataset)
         self.__update_if_table_changes = False

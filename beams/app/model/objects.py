@@ -952,6 +952,7 @@ class Fit(PersistentObject):
         self.meta = meta
         self.asymmetry = asymmetry  # Prompt with the plot prompt
         self.goodness = None if goodness is None else float(goodness)
+        self.converged = not any([p.uncertainty == -1 for p in parameters.values()])
 
         from app.model import fit
         self.expression = fit.FitExpression(expression)
@@ -994,9 +995,10 @@ class Fit(PersistentObject):
         else:
             raise Exception("Expression has not been created for fit '{}'".format(self.title))
 
+        title_line = "BEAMS{}".format('\n' if self.converged else ' (Failed to Converge)\n')
         np.savetxt(out_file, np.c_[asymmetry.time, asymmetry, calculated_asymmetry, asymmetry.uncertainty],
                    fmt='%2.9f, %2.4f, %2.4f, %2.4f',
-                   header="BEAMS\n" + meta_string + "\nTime, Asymmetry, Calculated, Uncertainty")
+                   header=title_line + meta_string + "\nTime, Asymmetry, Calculated, Uncertainty")
 
 
 class FitDataset(PersistentObject):
@@ -1046,16 +1048,17 @@ class FitDataset(PersistentObject):
                and self.fits == other.fits and self.flags == other.flags \
                and self.expression == other.expression and self.is_loaded == other.is_loaded
 
-
     def write(self, out_file, order_by_key, parameter=None):
         if parameter:
             fit_parameters_string = self.__write_parameter(order_by_key, parameter)
         else:
             fit_parameters_string = self.__write_summary(order_by_key)
 
+        title_line = "#BEAMS{}".format('\n' if all([f.converged for f in self.fits.values()]) else ' (Failed to Converge)\n')
+
         # Write out our string
         with open(out_file, 'w', encoding="utf-8") as out_file_object:
-            out_file_object.write("#BEAMS\n"
+            out_file_object.write(title_line
                                   + fit_parameters_string
                                   + "# Fitting equation\n\n\t"
                                   + "# A(t) = " + str(self.expression))
