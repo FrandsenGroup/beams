@@ -705,6 +705,21 @@ def _replace_unsupported_unicode_characters(expression: str) -> str:
     return expression
 
 
+_ALIASED_FUNCTIONS = [
+    (r'j0.*?\(', 'spherical_jn(0,')
+]
+
+
+def _replace_aliased_functions(expression: str) -> str:
+    if not is_accepted_expression(expression):
+        raise InvalidExpressionError("Cannot replace aliases in invalid expression.")
+
+    expression_string = expression
+    for alias_regex, actual in _ALIASED_FUNCTIONS:
+        expression_string = re.sub(alias_regex, actual, expression_string)
+    return expression_string
+
+
 def alpha_correction(expression: str) -> str:
     """ Returns the given expression wrapped in the expression for the alpha correction. """
     return f'((1-{ALPHA})+((1+{ALPHA})*({expression})))/((1+{ALPHA})+((1-{ALPHA})*({expression})))'

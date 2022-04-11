@@ -64,6 +64,18 @@ class TestHelperMethods:
     def test_replace_unsupported_unicode_characters(self, expression, expected_expression):
         assert fit._replace_unsupported_unicode_characters(expression) == expected_expression
 
+    @pytest.mark.parametrize("expression, expected_expression",
+                             [
+                                 ("j0(x)", "spherical_jn(0,x)"),
+                                 ("j0(x) + j0(y)", "spherical_jn(0,x) + spherical_jn(0,y)"),
+                                 ("j0(j0(x))", "spherical_jn(0,spherical_jn(0,x))"),
+                                 ("1+j0(x)", "1+spherical_jn(0,x)"),
+                                 ("1+j0(sin(x))", "1+spherical_jn(0,sin(x))"),
+                                 ("j0(1 + (x + sin(y)))", "spherical_jn(0,1 + (x + sin(y)))")
+                             ])
+    def test_replaced_aliased_functions(self, expression, expected_expression):
+        assert fit._replace_aliased_functions(expression) == expected_expression
+
     def test_alpha_correct_parse(self):
         parsed_variables = fit.parse(fit.alpha_correction('x'))
         assert parsed_variables == ['x', fit.ALPHA]
