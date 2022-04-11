@@ -679,13 +679,14 @@ def is_accepted_expression(expression: str) -> bool:
 
 
 _UNSUPPORTED_UNICODE_CHARACTER_DICTIONARY = {
-    PI: "pi",
+    PI: "pi",  # this is the only value that matters, pi will be recognized by sympy. The rest are just filler chars.
     NAUGHT: '0',
     SUB_T: 'T',
     SUB_L: 'L'
 }
 
 
+# fixme, move all this functionality into FitExpression, plus lambdify. Keep all that logic in one cute place.
 def _replace_unsupported_unicode_characters(expression: str) -> str:
     f"""Replaces unsupported unicode characters with valid alternates. Meant for internal use only.
     
