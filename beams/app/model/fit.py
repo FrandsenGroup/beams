@@ -765,6 +765,7 @@ def lambdify(expression: str, variables=None):
             A callable lambda representation of the expression
     """
     expression_string = _replace_unsupported_unicode_characters(expression)
+    expression_string = _replace_aliased_functions(expression_string)
 
     variables = variables if variables is not None else parse(expression)
     var_names = [INDEPENDENT_VARIABLE] if INDEPENDENT_VARIABLE in expression_string else []
