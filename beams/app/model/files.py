@@ -501,7 +501,7 @@ class FitDatasetExpressionFile(ReadableFile):
     HEADER_ROWS = 1
 
     def read_data(self):
-        with open(self.file_path, 'r') as f:
+        with open(self.file_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
             c_line = None
             s_lines = []
