@@ -711,6 +711,30 @@ _ALIASED_FUNCTIONS = [
 
 
 def _replace_aliased_functions(expression: str) -> str:
+    """ Replace aliased functions with the actual expressions recognized by scipy or numpy.
+
+    Replacements are determined by _ALIASED_FUNCTIONS where the first item of the tuple is the regex of alias to find
+    and the second is what we are replacing it with. This is limited as you may be able to see. It would not be able
+    to support the following alias for example:
+
+        j0(x) => spherical_jn(x, 0)
+
+    but easily supports:
+
+        j0(x) => spherical_jn(0, x)
+
+    Further functionality could be added. This is just meant for internal use only so no need to complicate it until we
+    need to.
+
+    PARAMETERS
+    ----------
+        expression : str
+
+    RETURNS
+    -------
+        expression : str
+            string representation of expression with aliases replaced
+    """
     if not is_accepted_expression(expression):
         raise InvalidExpressionError("Cannot replace aliases in invalid expression.")
 
