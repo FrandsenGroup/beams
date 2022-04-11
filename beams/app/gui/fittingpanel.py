@@ -685,6 +685,7 @@ class FittingPanel(Panel):
         self.insert_delta = qt_widgets.StyleTwoButton(fit.DELTA)
         self.insert_beta = qt_widgets.StyleTwoButton(fit.BETA)
         self.insert_pi = qt_widgets.StyleOneButton(fit.PI)
+        self.insert_nu = qt_widgets.StyleOneButton(fit.NU)
 
         self.group_preset_functions = QtWidgets.QGroupBox("Predefined Functions")
         self.group_user_functions = QtWidgets.QGroupBox("User Defined Functions")
@@ -723,6 +724,7 @@ class FittingPanel(Panel):
         self.insert_delta.setFont(self.mathematical_font)
         self.insert_beta.setFont(self.mathematical_font)
         self.insert_pi.setFont(self.mathematical_font)
+        self.insert_nu.setFont(self.mathematical_font)
         self.input_fit_equation.setFont(self.mathematical_font)
         self.label_expression_start.setFont(self.mathematical_font)
         self.input_user_equation.setFont(self.mathematical_font)
@@ -759,6 +761,7 @@ class FittingPanel(Panel):
         self.insert_lambda.setFixedWidth(30)
         self.insert_naught.setFixedWidth(30)
         self.insert_sigma.setFixedWidth(30)
+        self.insert_nu.setFixedWidth(30)
 
     def _set_widget_layout(self):
         main_layout = QtWidgets.QVBoxLayout()
@@ -805,6 +808,7 @@ class FittingPanel(Panel):
         row.addWidget(self.insert_lambda)
         row.addWidget(self.insert_phi)
         row.addWidget(self.insert_sigma)
+        row.addWidget(self.insert_nu)
         row.addWidget(self.insert_naught)
         row.addSpacing(15)
         self.group_function.setLayout(row)
@@ -1359,6 +1363,7 @@ class FitTabPresenter(PanelPresenter):
         self._view.insert_delta.released.connect(lambda: self._on_insert_character_clicked(fit.DELTA))
         self._view.insert_alpha.released.connect(lambda: self._on_insert_character_clicked(fit.ALPHA))
         self._view.insert_beta.released.connect(lambda: self._on_insert_character_clicked(fit.BETA))
+        self._view.insert_nu.released.connect(lambda: self._on_insert_character_clicked(fit.NU))
         self._view.fit_spectrum_settings.input_time_xmax.returnPressed.connect(self._on_spectrum_settings_changed)
         self._view.fit_spectrum_settings.input_time_xmin.returnPressed.connect(self._on_spectrum_settings_changed)
         self._view.fit_spectrum_settings.input_bin.returnPressed.connect(self._on_spectrum_settings_changed)
