@@ -966,10 +966,10 @@ class Fit(PersistentObject):
 
     def write(self, out_file):
         meta_string = files.TITLE_KEY + ":" + str(self.title) + "," \
-                      + files.BIN_SIZE_KEY + ":" + str(self.meta[files.BIN_SIZE_KEY]) + "," \
+                      + files.BIN_SIZE_KEY + ":" + str(self.asymmetry.bin_size) + "," \
                       + files.TEMPERATURE_KEY + ":" + str(self.meta[files.TEMPERATURE_KEY]) + "," \
                       + files.FIELD_KEY + ":" + str(self.meta[files.FIELD_KEY]) + "," \
-                      + files.T0_KEY + ":" + str(self.meta[files.T0_KEY])  # TODO not correct t0, need to fix that.
+                      + files.T0_KEY + ":" + str(self.asymmetry.time_zero)  # TODO not correct t0, need to fix that.
 
         runs = services.RunService().get_runs_by_ids([self.run_id])
 
@@ -1393,7 +1393,8 @@ class DataBuilder:
 
             d.asymmetries[d.FULL_ASYMMETRY] = asymmetry
             d.histograms = None
-            d.isLoaded = True
+            d.is_loaded = True
+
         elif f.DATA_FORMAT != files.Format.FIT_SET_VERBOSE:
             raise files.BeamsFileReadError(f"BEAMS could not recognize format of file {f.file_path}")
 
