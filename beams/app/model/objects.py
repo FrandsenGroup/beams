@@ -952,6 +952,7 @@ class Fit(PersistentObject):
         self.meta = meta
         self.asymmetry = asymmetry  # Prompt with the plot prompt
         self.goodness = None if goodness is None else float(goodness)
+        self.converged = not any([p.uncertainty == -1 for p in parameters.values()])
 
         from app.model import fit
         self.expression = fit.FitExpression(expression)

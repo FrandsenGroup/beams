@@ -1930,6 +1930,12 @@ class FitTabPresenter(PanelPresenter):
         return sorted(run_ids, key=keys[meta_key], reverse=not ascending)
 
     def _update_fit_changes(self, dataset):
+        # Check if fit did not converge
+        for fit_data in dataset.fits.values():
+            if not fit_data.converged:
+                WarningMessageDialog.launch(["Fit failed to converge."])
+                break
+
         self._fit_service.add_dataset([dataset])
         self._update_alphas(dataset)
         self.__update_if_table_changes = False
