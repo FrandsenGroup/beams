@@ -964,9 +964,9 @@ class Fit(PersistentObject):
         return f'Fit({self.id}, {self.parameters}, {self.string_expression}, {self.title} ,{self.run_id}, {self.meta}' \
                f', {self.asymmetry}, {self.goodness}, {repr(self.expression)})'
 
-    def write(self, out_file, bin_size=None, x_min=None, x_max=None):
+    def write(self, out_file):
         meta_string = files.TITLE_KEY + ":" + str(self.title) + "," \
-                      + files.BIN_SIZE_KEY + ":" + str(bin_size if bin_size else self.meta[files.BIN_SIZE_KEY]) + "," \
+                      + files.BIN_SIZE_KEY + ":" + str(self.meta[files.BIN_SIZE_KEY]) + "," \
                       + files.TEMPERATURE_KEY + ":" + str(self.meta[files.TEMPERATURE_KEY]) + "," \
                       + files.FIELD_KEY + ":" + str(self.meta[files.FIELD_KEY]) + "," \
                       + files.T0_KEY + ":" + str(self.meta[files.T0_KEY])  # TODO not correct t0, need to fix that.
@@ -976,18 +976,10 @@ class Fit(PersistentObject):
         if len(runs) == 0:
             raise Exception("Run ID in fit '{}' did not match any in database.".format(self.title))
 
-        run = runs[0]
-
-        asymmetry = run.asymmetries[RunDataset.FULL_ASYMMETRY]
+        asymmetry = self.asymmetry
         for v in self.parameters.values():
             if v.symbol == "\u03B1":
                 asymmetry = asymmetry.correct(v.value)
-
-        if bin_size:
-            asymmetry = asymmetry.bin(bin_size)
-
-        if x_min or x_max:
-            asymmetry = asymmetry.cut(x_min, x_max)
 
         if self.expression:
             calculated_asymmetry = self.expression(asymmetry.time,
