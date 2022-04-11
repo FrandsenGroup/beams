@@ -632,6 +632,9 @@ class FittingPanel(Panel):
 
         self.parameter_table = self.ParameterTable()
 
+        self.mathematical_font = QtGui.QFont()
+        self.mathematical_font.setFamily("Times New Roman")
+
         self.input_fit_equation = QtWidgets.QLineEdit()
         self.input_user_equation = QtWidgets.QLineEdit()
         self.input_user_equation_name = QtWidgets.QLineEdit()
@@ -668,6 +671,7 @@ class FittingPanel(Panel):
         self.label_ordering = QtWidgets.QLabel("Order by")
         self.label_use_previous = QtWidgets.QLabel("Use Previous Run")
         self.label_batch = QtWidgets.QLabel("Batch")
+        self.label_expression_start = QtWidgets.QLabel("A(t) = ")
 
         self.check_batch_fit = QtWidgets.QCheckBox()
         self.check_global_plus = QtWidgets.QCheckBox()
@@ -710,6 +714,18 @@ class FittingPanel(Panel):
         self.input_user_equation_name.setPlaceholderText("Function Name")
         self.input_user_equation.setPlaceholderText("Function (e.g. \"\u03B2 * (t + \u03BB)\")")
         self.input_fit_equation.setPlaceholderText("Fit Equation")
+
+        self.insert_phi.setFont(self.mathematical_font)
+        self.insert_alpha.setFont(self.mathematical_font)
+        self.insert_sigma.setFont(self.mathematical_font)
+        self.insert_naught.setFont(self.mathematical_font)
+        self.insert_lambda.setFont(self.mathematical_font)
+        self.insert_delta.setFont(self.mathematical_font)
+        self.insert_beta.setFont(self.mathematical_font)
+        self.insert_pi.setFont(self.mathematical_font)
+        self.input_fit_equation.setFont(self.mathematical_font)
+        self.label_expression_start.setFont(self.mathematical_font)
+        self.input_user_equation.setFont(self.mathematical_font)
 
         self.option_ascending.setEnabled(False)
         self.check_global_plus.setEnabled(True)
@@ -778,7 +794,7 @@ class FittingPanel(Panel):
         # Create a row for our fit function (the input and special character keys)
         row = QtWidgets.QHBoxLayout()
         row.addSpacing(20)
-        row.addWidget(QtWidgets.QLabel("A(t) = "))
+        row.addWidget(self.label_expression_start)
         row.addSpacing(5)
         row.addWidget(self.input_fit_equation)
         row.addSpacing(20)
