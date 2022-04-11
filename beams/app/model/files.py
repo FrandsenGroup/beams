@@ -566,7 +566,7 @@ class FitFile(ReadableFile):
     def read_data(self):
         try:
             return read_columnated_data(file_path=self.file_path, data_row=self.HEADER_ROWS, d_type=float,
-                                        titles=['Time', 'Asymmetry', 'Calculated', 'Uncertainty'])
+                                        titles=['Time', 'Calculated', 'Observed', 'Uncertainty'])
         except Exception as e:
             raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS") from e
 
