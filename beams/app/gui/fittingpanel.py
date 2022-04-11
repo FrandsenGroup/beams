@@ -1671,7 +1671,12 @@ class FitTabPresenter(PanelPresenter):
         # Fit to spec
         worker = FitWorker(config)
         worker.signals.result.connect(self._update_fit_changes)
-        worker.signals.error.connect(lambda error_message: WarningMessageDialog.launch([error_message]))
+
+        def handle_error(e):
+            report.report_exception(e)
+            WarningMessageDialog.launch(f"An error occurred during your fit. The message reads \'{str(e)}\'")
+
+        worker.signals.error.connect(lambda error_message: handle_error(error_message))
         self._threadpool.start(worker)
 
         LoadingDialog.launch("Your fit is running!", worker)
