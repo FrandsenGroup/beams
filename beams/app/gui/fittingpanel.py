@@ -694,9 +694,13 @@ class FittingPanel(Panel):
         self._set_widget_layout()
         self._set_widget_attributes()
         self._set_widget_dimensions()
+        self._set_tooltips()
 
         self._presenter = FitTabPresenter(self)
         self._line_edit_style = self.input_fit_equation.styleSheet()
+
+    def _set_tooltips(self):
+        pass
 
     def _set_widget_attributes(self):
         self.run_list.setSelectionMode(qt_constants.ExtendedSelection)
@@ -1395,15 +1399,14 @@ class FitTabPresenter(PanelPresenter):
             return
         self.__update_if_table_changes = False
 
-        expression = "A(t) = " + self._view.get_expression()
+        expression = self._view.get_expression()
 
-        if fit.is_valid_expression(expression):
+        if fit.is_accepted_expression(expression):
             self.__update_states = False
             self._view.highlight_input_red(self._view.input_fit_equation, False)
 
-            variables = fit.parse(fit.split_expression(expression)[1])
-            variables.discard(fit.INDEPENDENT_VARIABLE)
-            variables.add(fit.ALPHA)
+            variables = fit.parse(expression)
+            variables.append(fit.ALPHA)
 
             self._view.clear_parameters(variables)
 
@@ -1433,9 +1436,9 @@ class FitTabPresenter(PanelPresenter):
         else:
             self._view.highlight_input_red(self._view.input_user_equation_name, False)
 
-        function = "A(t) = " + self._view.input_user_equation.text()
+        function = self._view.input_user_equation.text()
 
-        if fit.is_valid_expression(function):
+        if fit.is_accepted_expression(function):
             self._view.highlight_input_red(self._view.input_user_equation, False)
         else:
             self._view.highlight_input_red(self._view.input_user_equation, True)
@@ -1582,7 +1585,7 @@ class FitTabPresenter(PanelPresenter):
 
         # Check user input on fit equation and update config
         expression = self._view.get_expression()
-        if not fit.is_valid_expression("A(t) = " + expression):
+        if not fit.is_accepted_expression(expression):
             WarningMessageDialog.launch(["Fit equation is invalid."])
             self._view.highlight_input_red(self._view.input_fit_equation, True)
             self.__update_if_table_changes = True
@@ -1885,7 +1888,7 @@ class FitTabPresenter(PanelPresenter):
                                                           is_fixed=is_fixed, is_global=is_global)
             final_parameters['default'] = run_parameters
 
-        if fit.is_valid_expression("A(t) = " + expression) and greater_than_one:
+        if fit.is_accepted_expression(expression) and greater_than_one:
             lambda_expression = fit.FitExpression(expression)
             return lambda_expression, final_parameters
         else:
