@@ -587,7 +587,7 @@ class FittingPanel(Panel):
             layout = QtWidgets.QVBoxLayout()
             layout.addWidget(self.output_table)
             goodness_row = QtWidgets.QHBoxLayout()
-            goodness_row.addWidget(QtWidgets.QLabel("Goodness-Of-Fit"))
+            goodness_row.addWidget(QtWidgets.QLabel("Reduced \u03C7\u00B2"))
             goodness_row.addWidget(self.goodness_display)
             layout.addLayout(goodness_row)
             output_widget.setLayout(layout)
@@ -667,7 +667,7 @@ class FittingPanel(Panel):
         self.label_global_plus = QtWidgets.QLabel("Global+")
         self.label_ordering = QtWidgets.QLabel("Order by")
         self.label_use_previous = QtWidgets.QLabel("Use Previous Run")
-        self.label_batch = QtWidgets.QLabel("Batch")
+        self.label_batch = QtWidgets.QLabel("Sequential")
 
         self.check_batch_fit = QtWidgets.QCheckBox()
         self.check_global_plus = QtWidgets.QCheckBox()

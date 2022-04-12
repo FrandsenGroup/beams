@@ -15,7 +15,7 @@ class WriteFitDialog(QtWidgets.QDialog):
         self._ignore_radio_button = False
 
         self.radio_summary = QtWidgets.QRadioButton("Summary")
-        self.radio_parameter = QtWidgets.QRadioButton("Parameter")
+        self.radio_parameter = QtWidgets.QRadioButton("Single Parameter")
         self.radio_directory = QtWidgets.QRadioButton("Directory")
         self.radio_zip = QtWidgets.QRadioButton("Zip")
         self.button_save_as = qt_widgets.StyleOneButton("Save")
@@ -102,7 +102,7 @@ class WriteFitDialog(QtWidgets.QDialog):
         single_file_hbox.addWidget(line)
         single_file_hbox.addLayout(parameter_vbox)
 
-        single_file_group = QtWidgets.QGroupBox("Single File")
+        single_file_group = QtWidgets.QGroupBox("Fitting Parameters")
         single_file_group.setLayout(single_file_hbox)
 
         vbox = QtWidgets.QVBoxLayout()
@@ -116,7 +116,7 @@ class WriteFitDialog(QtWidgets.QDialog):
         vbox.addLayout(hbox)
         vbox.addWidget(self.option_prefix)
         vbox.addStretch()
-        individual_group = QtWidgets.QGroupBox("Collection of Files")
+        individual_group = QtWidgets.QGroupBox("Calculated Asymmetries")
         individual_group.setLayout(vbox)
 
         hbox = QtWidgets.QHBoxLayout()
