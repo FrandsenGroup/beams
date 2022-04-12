@@ -952,6 +952,7 @@ class Fit(PersistentObject):
         self.meta = meta
         self.asymmetry = asymmetry  # Prompt with the plot prompt
         self.goodness = None if goodness is None else float(goodness)
+        self.converged = not any([p.uncertainty == -1 for p in parameters.values()])
 
         from app.model import fit
         self.expression = fit.FitExpression(expression)
@@ -963,30 +964,22 @@ class Fit(PersistentObject):
         return f'Fit({self.id}, {self.parameters}, {self.string_expression}, {self.title} ,{self.run_id}, {self.meta}' \
                f', {self.asymmetry}, {self.goodness}, {repr(self.expression)})'
 
-    def write(self, out_file, bin_size=None, x_min=None, x_max=None):
+    def write(self, out_file):
         meta_string = files.TITLE_KEY + ":" + str(self.title) + "," \
-                      + files.BIN_SIZE_KEY + ":" + str(bin_size if bin_size else self.meta[files.BIN_SIZE_KEY]) + "," \
+                      + files.BIN_SIZE_KEY + ":" + str(self.asymmetry.bin_size) + "," \
                       + files.TEMPERATURE_KEY + ":" + str(self.meta[files.TEMPERATURE_KEY]) + "," \
                       + files.FIELD_KEY + ":" + str(self.meta[files.FIELD_KEY]) + "," \
-                      + files.T0_KEY + ":" + str(self.meta[files.T0_KEY])  # TODO not correct t0, need to fix that.
+                      + files.T0_KEY + ":" + str(self.asymmetry.time_zero)  # TODO not correct t0, need to fix that.
 
         runs = services.RunService().get_runs_by_ids([self.run_id])
 
         if len(runs) == 0:
             raise Exception("Run ID in fit '{}' did not match any in database.".format(self.title))
 
-        run = runs[0]
-
-        asymmetry = run.asymmetries[RunDataset.FULL_ASYMMETRY]
+        asymmetry = self.asymmetry
         for v in self.parameters.values():
             if v.symbol == "\u03B1":
                 asymmetry = asymmetry.correct(v.value)
-
-        if bin_size:
-            asymmetry = asymmetry.bin(bin_size)
-
-        if x_min or x_max:
-            asymmetry = asymmetry.cut(x_min, x_max)
 
         if self.expression:
             calculated_asymmetry = self.expression(asymmetry.time,
@@ -994,9 +987,10 @@ class Fit(PersistentObject):
         else:
             raise Exception("Expression has not been created for fit '{}'".format(self.title))
 
-        np.savetxt(out_file, np.c_[asymmetry.time, asymmetry, calculated_asymmetry, asymmetry.uncertainty],
+        title_line = "BEAMS{}".format('\n' if self.converged else ' (Failed to Converge)\n')
+        np.savetxt(out_file, np.c_[asymmetry.time, calculated_asymmetry, asymmetry, asymmetry.uncertainty],
                    fmt='%2.9f, %2.4f, %2.4f, %2.4f',
-                   header="BEAMS\n" + meta_string + "\nTime, Asymmetry, Calculated, Uncertainty")
+                   header=title_line + meta_string + "\nTime, Calculated, Observed, Uncertainty")
 
 
 class FitDataset(PersistentObject):
@@ -1046,16 +1040,17 @@ class FitDataset(PersistentObject):
                and self.fits == other.fits and self.flags == other.flags \
                and self.expression == other.expression and self.is_loaded == other.is_loaded
 
-
     def write(self, out_file, order_by_key, parameter=None):
         if parameter:
             fit_parameters_string = self.__write_parameter(order_by_key, parameter)
         else:
             fit_parameters_string = self.__write_summary(order_by_key)
 
+        title_line = "#BEAMS{}".format('\n' if all([f.converged for f in self.fits.values()]) else ' (Failed to Converge)\n')
+
         # Write out our string
         with open(out_file, 'w', encoding="utf-8") as out_file_object:
-            out_file_object.write("#BEAMS\n"
+            out_file_object.write(title_line
                                   + fit_parameters_string
                                   + "# Fitting equation\n\n\t"
                                   + "# A(t) = " + str(self.expression))
@@ -1389,7 +1384,7 @@ class DataBuilder:
             uncertainty = Uncertainty(data["Uncertainty"], bin_size=d.meta[files.BIN_SIZE_KEY])
             times = Time(data["Time"], time_zero_bin=d.meta[files.T0_KEY], bin_size_ns=d.meta[files.BIN_SIZE_KEY])
 
-            asymmetry = Asymmetry(input_array=data["Asymmetry"],
+            asymmetry = Asymmetry(input_array=data["Observed"],
                                   time_zero=d.meta[files.T0_KEY],
                                   bin_size=d.meta[files.BIN_SIZE_KEY],
                                   uncertainty=uncertainty,
@@ -1398,7 +1393,8 @@ class DataBuilder:
 
             d.asymmetries[d.FULL_ASYMMETRY] = asymmetry
             d.histograms = None
-            d.isLoaded = True
+            d.is_loaded = True
+
         elif f.DATA_FORMAT != files.Format.FIT_SET_VERBOSE:
             raise files.BeamsFileReadError(f"BEAMS could not recognize format of file {f.file_path}")
 
