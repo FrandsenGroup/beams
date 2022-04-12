@@ -367,8 +367,8 @@ class FitEngine:
             try:
                 opt = least_squares(residual, guesses, bounds=[lowers, uppers],
                                     args=(time, asymmetry, uncertainty))
-            except Exception:
-                raise Exception(str(sys.exc_info()))
+            except Exception as e:
+                raise FittingError("An error occurred running the least squares fit.") from e
 
             try:
                 unc, chi_sq = get_std_unc(opt, asymmetry)
@@ -423,8 +423,8 @@ class FitEngine:
         try:
             opt = least_squares(residual, guesses, bounds=[lowers, uppers],
                                 args=(concatenated_time, concatenated_asymmetry, concatenated_uncertainty))
-        except Exception:
-            raise Exception(str(sys.exc_info()))
+        except Exception as e:
+            raise FittingError("An error occurred running the least squares fit.") from e
 
         try:
             unc, chi_sq = get_std_unc(opt, concatenated_asymmetry)
@@ -492,8 +492,8 @@ class FitEngine:
             try:
                 opt = least_squares(residual, guesses, bounds=[lowers, uppers],
                                     args=(time, asymmetry, uncertainty))
-            except Exception:
-                raise Exception(str(sys.exc_info()))
+            except Exception as e:
+                raise FittingError("An error occurred running the least squares fit.") from e
 
             try:
                 unc, chi_sq = get_std_unc(opt, asymmetry)
@@ -582,7 +582,6 @@ class FitEngine:
         def residual(pars, x, y_data, dy_data):
             y_calc = lambda_expression(np.array(x, dtype=complex), *pars).real
             return np.divide(np.subtract(y_data, y_calc), dy_data)
-
         return residual
 
     @staticmethod
@@ -783,8 +782,8 @@ def lambdify(expression: str, variables=None):
 def _shortened_run_id(run_id: str) -> str:
     """Returns the first section of uuid."""
     return "_" + run_id.split('-')[0]
-
-
+  
+  
 class ImproperlyFormattedExpressionError(Exception):
     """
     The expression is not properly formatted (e.g. 'x=3*y' or 'x*')
@@ -806,3 +805,9 @@ class InvalidFitArgumentsError(Exception):
     """Bad arguments passed to fit expression. """
     def __init__(self, *args):
         super(InvalidFitArgumentsError, self).__init__(*args)
+
+
+class FittingError(Exception):
+    def __init__(self, *args):
+        super(FittingError, self).__init__(*args)
+

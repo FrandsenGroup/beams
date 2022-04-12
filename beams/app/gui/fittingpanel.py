@@ -1215,6 +1215,12 @@ class FittingPanel(Panel):
     def get_expression(self):
         return self.input_fit_equation.text()
 
+    def set_goodness(self, goodness):
+        try:
+            self.parameter_table.goodness_display.setText("{:.4f}".format(goodness))
+        except ValueError:
+            self.parameter_table.goodness_display.setText(str(goodness))
+
     def is_run_dependent(self):
         is_run_dependent = False
 
@@ -1533,7 +1539,7 @@ class FitTabPresenter(PanelPresenter):
         # We will need to get parameters to add to table. Clear old table. Same for expression and variable groups
         self.set_parameter_table_states(new_table_state)
         self._view.input_fit_equation.setText(str(self.__expression))
-        self._view.parameter_table.goodness_display.setText("{:.4f}".format(goodness) if goodness else '')
+        self._view.set_goodness(goodness)
 
         # Set the output and uncertainties in the output table
         for symbol, out_sets in outputs.items():
@@ -1668,7 +1674,12 @@ class FitTabPresenter(PanelPresenter):
         # Fit to spec
         worker = FitWorker(config)
         worker.signals.result.connect(self._update_fit_changes)
-        worker.signals.error.connect(lambda error_message: WarningMessageDialog.launch([error_message]))
+
+        def handle_error(e):
+            report.report_exception(e)
+            WarningMessageDialog.launch(f"An error occurred during your fit. The message reads \'{str(e)}\'")
+
+        worker.signals.error.connect(lambda error_message: handle_error(error_message))
         self._threadpool.start(worker)
 
         LoadingDialog.launch("Your fit is running!", worker)
@@ -1922,6 +1933,12 @@ class FitTabPresenter(PanelPresenter):
         return sorted(run_ids, key=keys[meta_key], reverse=not ascending)
 
     def _update_fit_changes(self, dataset):
+        # Check if fit did not converge
+        for fit_data in dataset.fits.values():
+            if not fit_data.converged:
+                WarningMessageDialog.launch(["Fit failed to converge."])
+                break
+
         self._fit_service.add_dataset([dataset])
         self._update_alphas(dataset)
         self.__update_if_table_changes = False
