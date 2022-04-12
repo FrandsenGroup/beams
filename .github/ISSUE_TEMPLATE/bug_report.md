@@ -6,7 +6,7 @@ labels: bug
 assignees: ''
 
 ---
-
+###### Note: Every field here is optional, but the more info you provide, the easier it will be to find and fix your bug.
 **Describe the bug**
 A clear and concise description of what the bug is.
 
