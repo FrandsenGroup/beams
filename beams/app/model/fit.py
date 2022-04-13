@@ -37,7 +37,7 @@ STRETCHED_KT = f"a*(1/3 + 2/3*(1-({SIGMA}*t)^{BETA})*exp(-({SIGMA}*t)^{BETA}/{BE
 DAMPED_COSINE = f"a*cos(2*{PI}*{NU}*t + {PI}*{PHI}/180)*exp(-{BETA}*t)"
 INTERNAL_COSINE = f"a*(f*cos(2*{PI}*{NU}*t + {PI}*{PHI}/180)*exp(-{LAMBDA}{SUB_T}*t) + (1 - f)*exp(-{LAMBDA}{SUB_L}*t))"
 BESSEL = f"a*j{NAUGHT}(2*{PI}*{NU}*t + {PI}*{PHI}/180)"
-INTERNAL_BESSEL = f"a*(f*j{NAUGHT}(2*{PI}*{NU}*t + {PI}*{PHI}/180)*exp(-{LAMBDA}{SUB_T}*t) + (1-f)*exp(-{LAMBDA}{SUB_L}*t)"
+INTERNAL_BESSEL = f"a*(f*j{NAUGHT}(2*{PI}*{NU}*t + {PI}*{PHI}/180)*exp(-{LAMBDA}{SUB_T}*t) + (1-f)*exp(-{LAMBDA}{SUB_L}*t))"
 
 EQUATION_DICTIONARY = {
     "Simple Exponential": SIMPLE_EXPONENTIAL,
