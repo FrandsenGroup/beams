@@ -649,8 +649,9 @@ def check_ext(filename, expected_ext):
     :param expected_ext:
     :return: boolean
     """
-    _, ext = os.path.splitext(filename)
-    return ext == expected_ext
+    expected_ext = expected_ext.lower()
+    _, ext = os.path.splitext(filename.lower())
+    return ext == expected_ext or expected_ext in ext
 
 
 def is_beams(filename):
