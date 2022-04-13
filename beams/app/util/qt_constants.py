@@ -39,6 +39,8 @@ try:
     NoEditTriggers = QtWidgets.QAbstractItemView.NoEditTriggers
     Popup = QtCore.Qt.Popup
     ItemIsEditable = QtCore.Qt.ItemIsEditable
+    ExtendedSelection = QtWidgets.QAbstractItemView.ExtendedSelection
+    ToolTipRole = QtCore.Qt.ToolTipRole
 
 except AttributeError:
     Checked = QtCore.Qt.CheckState.Checked
@@ -73,3 +75,5 @@ except AttributeError:
     NoEditTriggers = QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers
     Popup = QtCore.Qt.WindowType.Popup
     ItemIsEditable = QtCore.Qt.ItemFlag.ItemIsEditable
+    ExtendedSelection = QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection
+    ToolTipRole = QtCore.Qt.ItemDataRole.ToolTipRole

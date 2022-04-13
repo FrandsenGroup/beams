@@ -587,7 +587,7 @@ class FittingPanel(Panel):
             layout = QtWidgets.QVBoxLayout()
             layout.addWidget(self.output_table)
             goodness_row = QtWidgets.QHBoxLayout()
-            goodness_row.addWidget(QtWidgets.QLabel("Goodness-Of-Fit"))
+            goodness_row.addWidget(QtWidgets.QLabel("Reduced \u03C7\u00B2"))
             goodness_row.addWidget(self.goodness_display)
             layout.addLayout(goodness_row)
             output_widget.setLayout(layout)
@@ -632,6 +632,9 @@ class FittingPanel(Panel):
 
         self.parameter_table = self.ParameterTable()
 
+        self.mathematical_font = QtGui.QFont()
+        self.mathematical_font.setFamily("Georgia")
+
         self.input_fit_equation = QtWidgets.QLineEdit()
         self.input_user_equation = QtWidgets.QLineEdit()
         self.input_user_equation_name = QtWidgets.QLineEdit()
@@ -667,7 +670,8 @@ class FittingPanel(Panel):
         self.label_global_plus = QtWidgets.QLabel("Global+")
         self.label_ordering = QtWidgets.QLabel("Order by")
         self.label_use_previous = QtWidgets.QLabel("Use Previous Run")
-        self.label_batch = QtWidgets.QLabel("Batch")
+        self.label_expression_start = QtWidgets.QLabel("A(t) = ")
+        self.label_batch = QtWidgets.QLabel("Sequential")
 
         self.check_batch_fit = QtWidgets.QCheckBox()
         self.check_global_plus = QtWidgets.QCheckBox()
@@ -681,6 +685,7 @@ class FittingPanel(Panel):
         self.insert_delta = qt_widgets.StyleTwoButton(fit.DELTA)
         self.insert_beta = qt_widgets.StyleTwoButton(fit.BETA)
         self.insert_pi = qt_widgets.StyleOneButton(fit.PI)
+        self.insert_nu = qt_widgets.StyleOneButton(fit.NU)
 
         self.group_preset_functions = QtWidgets.QGroupBox("Predefined Functions")
         self.group_user_functions = QtWidgets.QGroupBox("User Defined Functions")
@@ -694,12 +699,16 @@ class FittingPanel(Panel):
         self._set_widget_layout()
         self._set_widget_attributes()
         self._set_widget_dimensions()
+        self._set_tooltips()
 
         self._presenter = FitTabPresenter(self)
         self._line_edit_style = self.input_fit_equation.styleSheet()
 
+    def _set_tooltips(self):
+        pass
+
     def _set_widget_attributes(self):
-        self.run_list.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.run_list.setSelectionMode(qt_constants.ExtendedSelection)
 
         self.option_preset_fit_equations.addItems(list(fit.EQUATION_DICTIONARY.keys()))
         self.option_user_fit_equations.addItems(list(fit.USER_EQUATION_DICTIONARY.keys()))
@@ -710,6 +719,19 @@ class FittingPanel(Panel):
         self.input_user_equation_name.setPlaceholderText("Function Name")
         self.input_user_equation.setPlaceholderText("Function (e.g. \"\u03B2 * (t + \u03BB)\")")
         self.input_fit_equation.setPlaceholderText("Fit Equation")
+
+        self.insert_phi.setFont(self.mathematical_font)
+        self.insert_alpha.setFont(self.mathematical_font)
+        self.insert_sigma.setFont(self.mathematical_font)
+        self.insert_naught.setFont(self.mathematical_font)
+        self.insert_lambda.setFont(self.mathematical_font)
+        self.insert_delta.setFont(self.mathematical_font)
+        self.insert_beta.setFont(self.mathematical_font)
+        self.insert_pi.setFont(self.mathematical_font)
+        self.insert_nu.setFont(self.mathematical_font)
+        self.input_fit_equation.setFont(self.mathematical_font)
+        self.label_expression_start.setFont(self.mathematical_font)
+        self.input_user_equation.setFont(self.mathematical_font)
 
         self.option_ascending.setEnabled(False)
         self.check_global_plus.setEnabled(True)
@@ -743,6 +765,7 @@ class FittingPanel(Panel):
         self.insert_lambda.setFixedWidth(30)
         self.insert_naught.setFixedWidth(30)
         self.insert_sigma.setFixedWidth(30)
+        self.insert_nu.setFixedWidth(30)
 
     def _set_widget_layout(self):
         main_layout = QtWidgets.QVBoxLayout()
@@ -778,7 +801,7 @@ class FittingPanel(Panel):
         # Create a row for our fit function (the input and special character keys)
         row = QtWidgets.QHBoxLayout()
         row.addSpacing(20)
-        row.addWidget(QtWidgets.QLabel("A(t) = "))
+        row.addWidget(self.label_expression_start)
         row.addSpacing(5)
         row.addWidget(self.input_fit_equation)
         row.addSpacing(20)
@@ -789,6 +812,7 @@ class FittingPanel(Panel):
         row.addWidget(self.insert_lambda)
         row.addWidget(self.insert_phi)
         row.addWidget(self.insert_sigma)
+        row.addWidget(self.insert_nu)
         row.addWidget(self.insert_naught)
         row.addSpacing(15)
         self.group_function.setLayout(row)
@@ -1211,6 +1235,12 @@ class FittingPanel(Panel):
     def get_expression(self):
         return self.input_fit_equation.text()
 
+    def set_goodness(self, goodness):
+        try:
+            self.parameter_table.goodness_display.setText("{:.4f}".format(goodness))
+        except ValueError:
+            self.parameter_table.goodness_display.setText(str(goodness))
+
     def is_run_dependent(self):
         is_run_dependent = False
 
@@ -1337,6 +1367,7 @@ class FitTabPresenter(PanelPresenter):
         self._view.insert_delta.released.connect(lambda: self._on_insert_character_clicked(fit.DELTA))
         self._view.insert_alpha.released.connect(lambda: self._on_insert_character_clicked(fit.ALPHA))
         self._view.insert_beta.released.connect(lambda: self._on_insert_character_clicked(fit.BETA))
+        self._view.insert_nu.released.connect(lambda: self._on_insert_character_clicked(fit.NU))
         self._view.fit_spectrum_settings.input_time_xmax.returnPressed.connect(self._on_spectrum_settings_changed)
         self._view.fit_spectrum_settings.input_time_xmin.returnPressed.connect(self._on_spectrum_settings_changed)
         self._view.fit_spectrum_settings.input_bin.returnPressed.connect(self._on_spectrum_settings_changed)
@@ -1389,21 +1420,23 @@ class FitTabPresenter(PanelPresenter):
             return
         self.__update_if_table_changes = False
 
-        expression = "A(t) = " + self._view.get_expression()
+        expression = self._view.get_expression()
 
-        if fit.is_valid_expression(expression):
+        if fit.is_accepted_expression(expression):
             self.__update_states = False
             self._view.highlight_input_red(self._view.input_fit_equation, False)
 
-            variables = fit.parse(fit.split_expression(expression)[1])
-            variables.discard(fit.INDEPENDENT_VARIABLE)
-            variables.add(fit.ALPHA)
+            variables = fit.parse(expression)
+            variables.append(fit.ALPHA)
 
             self._view.clear_parameters(variables)
 
-            self._view.add_parameter(symbol=fit.ALPHA)
+            pre_defined_function_name = self._check_if_pre_defined_function()
             for var in variables:
-                self._view.add_parameter(symbol=var)
+                if pre_defined_function_name is not None and var != fit.ALPHA:
+                    self._view.add_parameter(symbol=var, config_value=fit.DEFAULT_VALUES[pre_defined_function_name][var])
+                else:
+                    self._view.add_parameter(symbol=var)
 
             self.__update_states = True
             self.update_parameter_table_states()
@@ -1424,9 +1457,9 @@ class FitTabPresenter(PanelPresenter):
         else:
             self._view.highlight_input_red(self._view.input_user_equation_name, False)
 
-        function = "A(t) = " + self._view.input_user_equation.text()
+        function = self._view.input_user_equation.text()
 
-        if fit.is_valid_expression(function):
+        if fit.is_accepted_expression(function):
             self._view.highlight_input_red(self._view.input_user_equation, False)
         else:
             self._view.highlight_input_red(self._view.input_user_equation, True)
@@ -1527,7 +1560,7 @@ class FitTabPresenter(PanelPresenter):
         # We will need to get parameters to add to table. Clear old table. Same for expression and variable groups
         self.set_parameter_table_states(new_table_state)
         self._view.input_fit_equation.setText(str(self.__expression))
-        self._view.parameter_table.goodness_display.setText(str(goodness) if goodness else '')
+        self._view.set_goodness(goodness)
 
         # Set the output and uncertainties in the output table
         for symbol, out_sets in outputs.items():
@@ -1573,7 +1606,7 @@ class FitTabPresenter(PanelPresenter):
 
         # Check user input on fit equation and update config
         expression = self._view.get_expression()
-        if not fit.is_valid_expression("A(t) = " + expression):
+        if not fit.is_accepted_expression(expression):
             WarningMessageDialog.launch(["Fit equation is invalid."])
             self._view.highlight_input_red(self._view.input_fit_equation, True)
             self.__update_if_table_changes = True
@@ -1662,7 +1695,12 @@ class FitTabPresenter(PanelPresenter):
         # Fit to spec
         worker = FitWorker(config)
         worker.signals.result.connect(self._update_fit_changes)
-        worker.signals.error.connect(lambda error_message: WarningMessageDialog.launch([error_message]))
+
+        def handle_error(e):
+            report.report_exception(e)
+            WarningMessageDialog.launch(f"An error occurred during your fit. The message reads \'{str(e)}\'")
+
+        worker.signals.error.connect(lambda error_message: handle_error(error_message))
         self._threadpool.start(worker)
 
         LoadingDialog.launch("Your fit is running!", worker)
@@ -1871,7 +1909,7 @@ class FitTabPresenter(PanelPresenter):
                                                           is_fixed=is_fixed, is_global=is_global)
             final_parameters['default'] = run_parameters
 
-        if fit.is_valid_expression("A(t) = " + expression) and greater_than_one:
+        if fit.is_accepted_expression(expression) and greater_than_one:
             lambda_expression = fit.FitExpression(expression)
             return lambda_expression, final_parameters
         else:
@@ -1916,6 +1954,12 @@ class FitTabPresenter(PanelPresenter):
         return sorted(run_ids, key=keys[meta_key], reverse=not ascending)
 
     def _update_fit_changes(self, dataset):
+        # Check if fit did not converge
+        for fit_data in dataset.fits.values():
+            if not fit_data.converged:
+                WarningMessageDialog.launch(["Fit failed to converge."])
+                break
+
         self._fit_service.add_dataset([dataset])
         self._update_alphas(dataset)
         self.__update_if_table_changes = False
@@ -2205,6 +2249,12 @@ class FitTabPresenter(PanelPresenter):
 
         final_parameters['default'] = default
         return final_parameters
+
+    def _check_if_pre_defined_function(self):
+        for name, function in fit.EQUATION_DICTIONARY.items():
+            if function == self._view.get_expression():
+                return name
+        return None
 
     def update(self):
         runs = []

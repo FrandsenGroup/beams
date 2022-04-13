@@ -56,7 +56,7 @@ $ python -m pip install -r python_requirements.txt
 #### Anaconda
 - Run the following command in the anaconda prompt to install requirements.
 ```shell
-$ conda install -c anaconda --file conda_requirements.txt
+$ conda install -c anaconda -c conda-forge --file conda_requirements.txt
 ```
 
 Start BEAMS for either, once you have navigated to the directory with the following
@@ -300,8 +300,8 @@ An example of this file can be found [here](https://github.com/FrandsenGroup/bea
 
 ###### Directory
 This creates a list of files (example of a single file found [here](https://github.com/aPeter1/BEAMS/blob/assets/fit_example.calc))
-in the provided directory. The file contains the full time, asymmetry, uncertainty and calculated asymmetry arrays. It's
-name is determined by the meta value you select in the prompt (this will be used for each fit selected so make sure you
+in the provided directory. The file contains the time, calculated and observed asymmetries, and uncertainty as displayed 
+in the fit tab. It's name is determined by the meta value you select in the prompt (this will be used for each fit selected so make sure you
 choose a unique meta value like RunNumber).
 
 ###### Zip

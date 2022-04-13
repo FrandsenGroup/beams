@@ -7,5 +7,6 @@ matplotlib
 qdarkstyle
 darkdetect
 h5py
-sentry_sdk
+sentry-sdk
 pyinstaller
+pytest

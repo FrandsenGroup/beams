@@ -301,7 +301,7 @@ class WriteDataDialogPresenter(QtCore.QObject):
                 save_path = os.path.splitext(file_path)[0] + '.asy'
 
         bin_size = float(self._view.get_bin_size())
-        run.write(save_path, bin_size)
+        run.write(save_path, bin_size=bin_size)
 
     def _write_full(self, file_path):
         run = None

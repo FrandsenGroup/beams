@@ -163,8 +163,14 @@ class FileDAO:
 
     def maximize(self, data):
         from app.model import objects
-        self.__database.file_table = {file_id: objects.FileDataset.build_from_persistent_data(file)
-                                      for file_id, file in data.items()}
+        file_datasets = {file_id: objects.FileDataset.build_from_persistent_data(file)
+                         for file_id, file in data.items()}
+
+        for _, fd in file_datasets.items():
+            if fd.dataset is not None:
+                fd.dataset = self.__database.run_table[fd.dataset]
+
+        self.__database.file_table = file_datasets
 
 
 class StyleDAO:

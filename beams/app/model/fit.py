@@ -23,34 +23,51 @@ ALPHA = "\u03B1"
 PHI = "\u03A6"
 PI = "\u03C0"
 NAUGHT = "\u2080"
+NU = "\u03BD"
+SUB_T = "\u209C"
+SUB_L = "\u2097"
 
-SIMPLE_EXPONENTIAL = "exp(-\u03BB*t)"
-STRETCHED_EXPONENTIAL = "exp(-(\u03BB*t)^\u03B2)"
-SIMPLE_GAUSSIAN = "exp(-1/2*(\u03C3*t)^2)"
-GAUSSIAN_KT = "1/3 + 2/3*(1 - (\u03C3*t)^2)*exp(-1/2*(\u03C3*t)^2)"
-LORENTZIAN_KT = "1/3 + 2/3*(1 - \u03BB*t)*exp(-\u03BB*t)"
-COMBINED_KT = "1/3 + 2/3*(1-\u03C3^2*t^2-\u03BB*t)*exp(-\u03C3^2*t^2/2-\u03BB*t)"
-STRETCHED_KT = "1/3 + 2/3*(1-(\u03C3*t)^\u03B2)*exp(-(\u03C3*t)^\u03B2/\u03B2)"
-COSINE = "a*cos(2*\u03C0*v*t + \u03C0*\u03A6/180)*exp(-\u03B2*t)"
-INTERNAL_COSINE = "a*cos(2*\u03C0*v*t + \u03C0*\u03A6/180)*exp(-\u03BB*t) + (1-\u03B12)*exp(-\u03BB*t)"
-BESSEL = "j\u2080*(2*\u03C0*v*t + \u03C0*\u03A6/180)"
-INTERNAL_BESSEL = "\u03B1*j\u2080*(2*\u03C0*v*t + \u03C0*\u03A6/180)*exp(-\u03BB*t) + (1-\u03B1)*exp(-\u03BB*t)"
+SIMPLE_EXPONENTIAL = f"a*exp(-{LAMBDA}*t)"
+STRETCHED_EXPONENTIAL = f"a*exp(-({LAMBDA}*t)^{BETA})"
+SIMPLE_GAUSSIAN = f"a*exp(-1/2*({SIGMA}*t)^2)"
+GAUSSIAN_KT = f"a*(1/3 + 2/3*(1 - ({SIGMA}*t)^2)*exp(-1/2*({SIGMA}*t)^2))"
+LORENTZIAN_KT = f"a*(1/3 + 2/3*(1 - {LAMBDA}*t)*exp(-{LAMBDA}*t))"
+COMBINED_KT = f"a*(1/3 + 2/3*(1-{SIGMA}^2*t^2-{LAMBDA}*t)*exp(-{SIGMA}^2*t^2/2-{LAMBDA}*t))"
+STRETCHED_KT = f"a*(1/3 + 2/3*(1-({SIGMA}*t)^{BETA})*exp(-({SIGMA}*t)^{BETA}/{BETA}))"
+DAMPED_COSINE = f"a*cos(2*{PI}*{NU}*t + {PI}*{PHI}/180)*exp(-{BETA}*t)"
+INTERNAL_COSINE = f"a*(f*cos(2*{PI}*{NU}*t + {PI}*{PHI}/180)*exp(-{LAMBDA}{SUB_T}*t) + (1 - f)*exp(-{LAMBDA}{SUB_L}*t))"
+BESSEL = f"a*j{NAUGHT}(2*{PI}*{NU}*t + {PI}*{PHI}/180)"
+INTERNAL_BESSEL = f"a*(f*j{NAUGHT}(2*{PI}*{NU}*t + {PI}*{PHI}/180)*exp(-{LAMBDA}{SUB_T}*t) + (1-f)*exp(-{LAMBDA}{SUB_L}*t))"
 
-EQUATION_DICTIONARY = {"Simple Exponential": SIMPLE_EXPONENTIAL,
-                       "Stretched Exponential": STRETCHED_EXPONENTIAL,
-                       "Simple Gaussian": SIMPLE_GAUSSIAN,
-                       "Gaussian KT": GAUSSIAN_KT,
-                       "Lorentzian KT": LORENTZIAN_KT,
-                       "Combined KT": COMBINED_KT,
-                       "Stretched KT": STRETCHED_KT,
-                       "Cosine": COSINE,
-                       "Internal Cosine": INTERNAL_COSINE,
-                       "Bessel": BESSEL,
-                       "Internal Bessel": INTERNAL_BESSEL}
+EQUATION_DICTIONARY = {
+    "Simple Exponential": SIMPLE_EXPONENTIAL,
+    "Stretched Exponential": STRETCHED_EXPONENTIAL,
+    "Simple Gaussian": SIMPLE_GAUSSIAN,
+    "Gaussian KT": GAUSSIAN_KT,
+    "Lorentzian KT": LORENTZIAN_KT,
+    "Combined KT": COMBINED_KT,
+    "Stretched KT": STRETCHED_KT,
+    "Damped Cosine": DAMPED_COSINE,
+    "Internal Cosine": INTERNAL_COSINE,
+    "Bessel": BESSEL,
+    "Internal Bessel": INTERNAL_BESSEL
+}
+
+DEFAULT_VALUES = {
+    "Simple Exponential": {'a': 0.25, LAMBDA: 0.1},
+    "Stretched Exponential": {'a': 0.25, LAMBDA: 0.1, BETA: 1},
+    "Simple Gaussian": {'a': 0.25, SIGMA: 0.1},
+    "Gaussian KT": {'a': 0.25, SIGMA: 1.0},
+    "Lorentzian KT": {'a': 0.25, LAMBDA: 1},
+    "Combined KT": {'a': 0.25, SIGMA: 1, LAMBDA: 1},
+    "Stretched KT": {'a': 0.25, SIGMA: 1, BETA: 1},
+    "Damped Cosine": {'a': 0.25, PHI: 0, BETA: 1, NU: 1},
+    "Internal Cosine": {'a': 0.25, 'f': 0.667, NU: 1, PHI: 0, f'{LAMBDA}{SUB_T}': 1, f'{LAMBDA}{SUB_L}': 0.1},
+    "Bessel": {'a': 0.25, NU: 1, PHI: 0},
+    "Internal Bessel": {'a': 0.25, 'f': 0.667, NU: 1, PHI: 0, f'{LAMBDA}{SUB_T}': 1, f'{LAMBDA}{SUB_L}': 0.1}
+}
 
 USER_EQUATION_DICTIONARY = {}
-
-ALPHA_CORRECTION = '((1-\u03B1)+((1+\u03B1)*({0})))/((1+\u03B1)+((1-\u03B1)*({0})))'
 
 
 class FitParameter:
@@ -96,41 +113,44 @@ class FitExpression:
 
         if variables is None:
             variables = parse(self.__expression_string)
-            variables.discard(INDEPENDENT_VARIABLE)
 
         self.__variables = variables
-        self.__expression = lambdify(self.__expression_string, variables, INDEPENDENT_VARIABLE)
-        self.__fixed = {}
+        self.__expression = lambdify(self.__expression_string, variables)
         self.safe = True
 
     def __getstate__(self):
-        return (self.__expression_string, self.__variables, self.__fixed, self.safe)
+        return self.__expression_string, self.__variables, self.safe
 
     def __setstate__(self, state):
         self.__expression_string = state[0]
         self.__variables = state[1]
-        self.__expression = lambdify(self.__expression_string, self.__variables, INDEPENDENT_VARIABLE)
-        self.__fixed = state[2]
-        self.safe = state[3]
+        self.__expression = lambdify(self.__expression_string, self.__variables)
+        self.safe = state[2]
 
     def __eq__(self, other):
-        return str(other) == self.__expression_string
+        return str(other) == self.__expression_string and other.__variables == self.__variables
 
     def __str__(self):
         return self.__expression_string
 
     def __repr__(self):
-        return f'FitExpression({self.__expression_string}, {self.__expression}, {self.__fixed}, {self.safe})'
+        return f'FitExpression({self.__expression_string}, {self.__expression}, {self.safe})'
 
     def __call__(self, *args, **kwargs):
         # The length of this function is due to the fact I have trust issues.
         if not self.safe:
-            return self.__expression(*args, **{replace_symbols(k): v for k, v in kwargs.items()})
+            return self.__expression(*args, **{_replace_unsupported_unicode_characters(k): v for k, v in kwargs.items()})
 
         # We need to cast it to a complex type in order to avoid errors where we are raising a negative
         # number to a fractional power (which would result in an array of Nan's usually). We do the calculation
         # and then take the real component below.
-        time_array = np.array(args[0], dtype=complex)
+        try:
+            if INDEPENDENT_VARIABLE in kwargs:
+                time_array = np.array(kwargs[INDEPENDENT_VARIABLE], dtype=complex)
+            else:
+                time_array = np.array(args[0], dtype=complex)
+        except ValueError:
+            raise InvalidFitArgumentsError("First argument should be an array of numbers or a number.")
 
         pars = {}
         unnamed_pars = []
@@ -142,23 +162,18 @@ class FitExpression:
                     try:
                         unnamed_pars.append(float(arg))
                     except ValueError:
-                        raise ValueError("Every parameter after the array should be of type FitParameter.")
+                        raise InvalidFitArgumentsError("Every parameter after the array should be of type FitParameter or a number.")
         for k, v in kwargs.items():
-            pars[replace_symbols(k)] = v
-
-        for symbol, value in self.__fixed.items():
-            pars[replace_symbols(symbol)] = value
+            if k != INDEPENDENT_VARIABLE:
+                pars[_replace_unsupported_unicode_characters(k)] = v
 
         try:
             return self.__expression(time_array, *unnamed_pars, **pars).real
-        except TypeError:
+        except TypeError as e:
             if ALPHA in pars.keys():
                 pars.pop(ALPHA)
                 return self.__expression(time_array, *unnamed_pars, **pars).real
-            raise
-
-    def set_fixed(self, parameters):
-        self.__fixed = {replace_symbols(symbol): parameter.value for symbol, parameter in parameters}
+            raise InvalidFitArgumentsError("Bad arguments passed to fit expression.") from e
 
 
 class FitConfig:
@@ -284,13 +299,6 @@ class FitConfig:
 
         return np.array(uppers, dtype=float)
 
-    def get_kwargs(self, run_id):
-        kwargs = {}
-        for symbol, parameter in self.parameters[run_id].items():
-            if symbol != ALPHA:
-                kwargs[symbol] = parameter.get_value()
-        return kwargs
-
     def set_outputs(self, run_id, symbol, output, uncertainty):
         self.parameters[run_id][symbol].value = output
         self.parameters[run_id][symbol].output = output
@@ -341,7 +349,7 @@ class FitEngine:
 
         for run_id, (time, asymmetry, uncertainty, meta) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
-            function = ALPHA_CORRECTION.format(config.expression, config.expression)
+            function = alpha_correction(config.expression)
 
             # Replace the symbols with fixed values with their actual values. This way they don't throw off uncertainty.
             fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
@@ -360,8 +368,8 @@ class FitEngine:
             try:
                 opt = least_squares(residual, guesses, bounds=[lowers, uppers],
                                     args=(time, asymmetry, uncertainty))
-            except Exception:
-                raise Exception(str(sys.exc_info()))
+            except Exception as e:
+                raise FittingError("An error occurred running the least squares fit.") from e
 
             try:
                 unc, chi_sq = get_std_unc(opt, asymmetry)
@@ -416,8 +424,8 @@ class FitEngine:
         try:
             opt = least_squares(residual, guesses, bounds=[lowers, uppers],
                                 args=(concatenated_time, concatenated_asymmetry, concatenated_uncertainty))
-        except Exception:
-            raise Exception(str(sys.exc_info()))
+        except Exception as e:
+            raise FittingError("An error occurred running the least squares fit.") from e
 
         try:
             unc, chi_sq = get_std_unc(opt, concatenated_asymmetry)
@@ -466,7 +474,7 @@ class FitEngine:
 
         for run_id, (time, asymmetry,  uncertainty, meta) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
-            function = ALPHA_CORRECTION.format(config.expression)
+            function = alpha_correction(config.expression)
 
             # Replace the symbols with fixed values with their actual values. This way they don't throw off uncertainty.
             fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
@@ -485,8 +493,8 @@ class FitEngine:
             try:
                 opt = least_squares(residual, guesses, bounds=[lowers, uppers],
                                     args=(time, asymmetry, uncertainty))
-            except Exception:
-                raise Exception(str(sys.exc_info()))
+            except Exception as e:
+                raise FittingError("An error occurred running the least squares fit.") from e
 
             try:
                 unc, chi_sq = get_std_unc(opt, asymmetry)
@@ -540,7 +548,7 @@ class FitEngine:
                 they are only fit to that specific section while we use the global parameter throughout.
         """
 
-        function = ALPHA_CORRECTION.format(config.expression, config.expression)
+        function = alpha_correction(config.expression)
 
         lambdas = []
         lengths = []
@@ -575,7 +583,6 @@ class FitEngine:
         def residual(pars, x, y_data, dy_data):
             y_calc = lambda_expression(np.array(x, dtype=complex), *pars).real
             return np.divide(np.subtract(y_data, y_calc), dy_data)
-
         return residual
 
     @staticmethod
@@ -620,198 +627,188 @@ def get_std_unc(result, data, error=None, num_constraints=0):
     return p_unc, chi_sq
 
 
-def parse(s):
-    """ Takes in an expression as a string and returns a set of the free variables. """
-
-    # Add to these sets any keywords you want to be recognized as not variables.
-    # Keep keywords lowercase, user input will be cast to lowercase for comparison.
-    operator_set = {'+', '-', '/', '*', '(', ')', '[', ']', '{', '}', '^', '!'}
-    operating_set = {'+', '-', '/', '*', '^'}
-    bad_char_set = {'i'}
-    key_1_char_set = {PI}
-    key_2_char_set = {'pi'}
-    key_3_char_set = {'sin', 'cos', 'tan', 'exp', 'pow'}
-    key_4_char_set = {'sinh', 'cosh', 'tanh'}
-
-    free_set = set()
-    free_variable = []
-    skip_chars = 0
-    last_was_operator = False
-    for i, character in enumerate(s):
-        if skip_chars > 0:
-            skip_chars -= 1
-            continue
-
-        if character.isspace() or character in operator_set:
-            if last_was_operator and character in operating_set and character != '-':
-                raise ValueError('Bad expression')
-            last_was_operator = character in operating_set
-
-            free_variable_joined = "".join(free_variable)
-            free_set.add(free_variable_joined)
-            free_variable = []
-
-        elif character.isalpha():
-            last_was_operator = False
-            if s[i:i + 4].lower() in key_4_char_set:
-                if len(free_variable) > 0:
-                    raise ValueError('Bad expression')
-                skip_chars = 3
-                continue
-            elif s[i:i + 3].lower() in key_3_char_set:
-                if len(free_variable) > 0:
-                    raise ValueError('Bad expression')
-                skip_chars = 2
-                continue
-            elif s[i:i + 2].lower() in key_2_char_set:
-                if len(free_variable) > 0:
-                    raise ValueError('Bad expression')
-                skip_chars = 1
-                continue
-            elif len(free_variable) == 0 and (s[i] in key_1_char_set or s[i].lower() in key_1_char_set) and \
-                    (i == len(s) - 1 or s[i + 1] in operator_set or s[i + 1].isspace()):
-                if len(free_variable) > 0:
-                    raise ValueError('Bad expression')
-                continue
-            else:
-                free_variable.append(character)
-
-        elif character.isdigit():
-            last_was_operator = False
-            if free_variable:
-                free_variable.append(character)
-
-    free_variable_joined = "".join(free_variable)
-    free_set.add(free_variable_joined)
-
+def parse(s: str) -> list:
+    f""" Takes in an expression as a string and returns a set of the free variables. 
+    
+    Note that this means it will not return {INDEPENDENT_VARIABLE} in the set. This method also expects
+    that the expression will NOT be in the form 'a(t) = x*t' but simply 'x*t'. 
+    
+    Parameters
+    ----------
+        s : str
+            The string form of the expression we are to parse.
+            
+    Returns
+    -------
+        symbols : set[str]
+            A set of strings; one for each free variable in the expression.
+    """
     try:
-        free_set.remove('')
-    except KeyError:
-        pass
+        symbols = sorted([str(v) for v in sp.sympify(s).atoms(sp.Symbol)])
 
-    if len(free_set.intersection(bad_char_set)) > 0:
-        raise ValueError('Bad expression')  # Bad because these chars will cause sympify issues
+        if INDEPENDENT_VARIABLE in symbols:
+            symbols.remove(INDEPENDENT_VARIABLE)
+        if PI in symbols:
+            symbols.remove(PI)
 
-    return free_set
+        return symbols
+    except (SyntaxError, ValueError):
+        raise ImproperlyFormattedExpressionError(f"The expression '{s}' is not properly formatted.")
+    except Exception as e:
+        raise InvalidExpressionError(f'Expression invalid due to "{str(e)}".')
 
 
-def is_valid_expression(expression):
+def is_accepted_expression(expression: str) -> bool:
+    """ Checks if the provided expression is properly formatted and valid.
+
+    PARAMETERS
+    ----------
+        expression : str
+            The string form of the expression we are to check.
+
+    RETURNS
+    -------
+        accepted : bool
+            A boolean indicating if the expression is properly formatted and valid
+    """
     try:
-        parse(split_expression(expression)[1])
-    except (ValueError, TypeError):
-        return False
-
-    if "=" not in expression:
-        return False
-
-    independent_variable = ""
-    open_paren = False
-    for i, c in enumerate(expression):
-        if open_paren:
-            if c == "=":
-                return False
-            elif c == ")":
-                if len(independent_variable) == 0:
-                    return False
-                for j, k in enumerate(expression):
-                    if k == "=":
-                        try:
-                            sp.sympify(expression[j+1:])
-                            return True
-                        except Exception:
-                            return False
-            else:
-                independent_variable += c
-
-        if c == "(":
-            open_paren = True
-    else:
+        parse(expression)
+        return True
+    except (ImproperlyFormattedExpressionError, InvalidExpressionError):
         return False
 
 
-def split_expression(expression):
-    independent_variable = ""
-    open_paren = False
-    for i, c in enumerate(expression):
-        if open_paren:
-            if c == "=":
-                return None
-            elif c == ")":
-                if len(independent_variable) == 0:
-                    return None
-                for j, k in enumerate(expression):
-                    if k == "=":
-                        try:
-                            sp.sympify(expression[j + 1:])
-                            return independent_variable, expression[j + 1:]
-                        except Exception:
-                            return None
-            else:
-                independent_variable += c
-        if c == "(":
-            open_paren = True
-    else:
-        return None
+_UNSUPPORTED_UNICODE_CHARACTER_DICTIONARY = {
+    PI: "pi",  # this is the only value that matters, pi will be recognized by sympy. The rest are just filler chars.
+    NAUGHT: '0',
+    SUB_T: 'T',
+    SUB_L: 'L'
+}
 
 
-def replace_symbols(expression, pretty=False):
-    expression_string = ""
+# fixme, move all this functionality into FitExpression, plus lambdify. Keep all that logic in one cute place.
+def _replace_unsupported_unicode_characters(expression: str) -> str:
+    f"""Replaces unsupported unicode characters with valid alternates. Meant for internal use only.
+    
+    There are some characters we include in beams for purely visual purposes (the unicode for pi or naught for
+    example) and sometimes these will throw errors in sympy. So we need to replace them with alternate symbols.
+    Note that {PI} would become 'pi' and {PI}2 would become 'pi2'. Currently this method is only applied immediately
+    before and after lambdifying and in the call method of the fit expression so the user never sees an altered
+    expression. That's also why this is a protected method, it shouldn't be called outside this module.
+    
+    PARAMETERS
+    ----------
+        expression : str
+        
+    RETURNS
+    -------
+        expression : str
+            The expression with unsupported characters replaced.
+    """
+    for uc, c in _UNSUPPORTED_UNICODE_CHARACTER_DICTIONARY.items():
+        expression = expression.replace(uc, c)
+    return expression
 
-    if pretty:
-        skip = False
-        for i, c in enumerate(expression):
-            if skip:
-                skip = False
-                continue
 
-            if i + 1 < len(expression):
-                if expression[i:i+2] == "pi":
-                    expression_string += PI
-                    skip = True
-                    continue
-                elif expression[i:i+2] == '**':
-                    expression_string += "^"
-                    skip = True
-                    continue
+_ALIASED_FUNCTIONS = [
+    (r'j0.*?\(', 'spherical_jn(0,')
+]
 
-            if c == "0" and i > 0 and expression[i-1].isalpha():
-                expression_string += NAUGHT
-            else:
-                expression_string += c
-    else:
-        for c in expression:
-            if c == PI:
-                expression_string += "pi"
-            elif c == '^':
-                expression_string += "**"
-            elif c == NAUGHT:
-                expression_string += "0"
-            else:
-                expression_string += c
 
+def _replace_aliased_functions(expression: str) -> str:
+    """ Replace aliased functions with the actual expressions recognized by scipy or numpy.
+
+    Replacements are determined by _ALIASED_FUNCTIONS where the first item of the tuple is the regex of alias to find
+    and the second is what we are replacing it with. This is limited as you may be able to see. It would not be able
+    to support the following alias for example:
+
+        j0(x) => spherical_jn(x, 0)
+
+    but easily supports:
+
+        j0(x) => spherical_jn(0, x)
+
+    Further functionality could be added. This is just meant for internal use only so no need to complicate it until we
+    need to.
+
+    PARAMETERS
+    ----------
+        expression : str
+
+    RETURNS
+    -------
+        expression : str
+            string representation of expression with aliases replaced
+    """
+    if not is_accepted_expression(expression):
+        raise InvalidExpressionError("Cannot replace aliases in invalid expression.")
+
+    expression_string = expression
+    for alias_regex, actual in _ALIASED_FUNCTIONS:
+        expression_string = re.sub(alias_regex, actual, expression_string)
     return expression_string
 
 
-def lambdify(expression, variables, independent_variable):
-    expression_string = replace_symbols(expression)
+def alpha_correction(expression: str) -> str:
+    """ Returns the given expression wrapped in the expression for the alpha correction. """
+    return f'((1-{ALPHA})+((1+{ALPHA})*({expression})))/((1+{ALPHA})+((1-{ALPHA})*({expression})))'
 
-    if independent_variable in variables:
-        variables.pop(independent_variable)
 
-    var_names = [independent_variable]
-    var_names.extend([replace_symbols(var) for var in variables])
+def lambdify(expression: str, variables=None):
+    """ Takes a string representation of an expression and returns a callable lambda.
 
-    lambda_expression = sp.lambdify(var_names, sp.sympify(expression_string), "numpy")
+    PARAMETERS
+    ----------
+        expression: str
+            The string representation of the expression
+        variables: iterable[str]
+            Collection of free variables, if not provided then this will call parse on the expression
 
+    RETURNS
+    -------
+        lambda_expression: lambda
+            A callable lambda representation of the expression
+    """
+    expression_string = _replace_unsupported_unicode_characters(expression)
+    expression_string = _replace_aliased_functions(expression_string)
+
+    variables = variables if variables is not None else parse(expression)
+    var_names = [INDEPENDENT_VARIABLE] if INDEPENDENT_VARIABLE in expression_string else []
+    var_names.extend([_replace_unsupported_unicode_characters(var) for var in variables])
+
+    lambda_expression = sp.lambdify(var_names, sp.sympify(expression_string), ["numpy", "scipy"])
     return lambda_expression
 
 
-def _shortened_run_id(run_id):
+def _shortened_run_id(run_id: str) -> str:
+    """Returns the first section of uuid."""
     return "_" + run_id.split('-')[0]
+  
+  
+class ImproperlyFormattedExpressionError(Exception):
+    """
+    The expression is not properly formatted (e.g. 'x=3*y' or 'x*')
+    """
+    def __init__(self, *args):
+        super(ImproperlyFormattedExpressionError, self).__init__(*args)
 
 
-def _residual(lambda_expression):
-    def residual(pars, x, y_data, dy_data):
-        y_calc = lambda_expression(x, *pars)
-        return (y_data - y_calc) / dy_data
-    return residual
+class InvalidExpressionError(Exception):
+    """
+    The expression is properly formatted but logically incorrect (e.g. a function that takes
+    two args was only given one).
+    """
+    def __init__(self, *args):
+        super(InvalidExpressionError, self).__init__(*args)
+
+
+class InvalidFitArgumentsError(Exception):
+    """Bad arguments passed to fit expression. """
+    def __init__(self, *args):
+        super(InvalidFitArgumentsError, self).__init__(*args)
+
+
+class FittingError(Exception):
+    def __init__(self, *args):
+        super(FittingError, self).__init__(*args)
+

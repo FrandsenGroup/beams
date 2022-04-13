@@ -1,5 +1,6 @@
 # Standard Library Packages
 import abc
+import gzip
 import os
 import pickle
 import sys
@@ -160,7 +161,7 @@ class BeamsSessionFile(ReadableFile):
     DATA_FORMAT = Format.PICKLED
 
     def read_data(self):
-        with open(self.file_path, 'rb') as session_file_object:
+        with gzip.GzipFile(self.file_path, 'rb') as session_file_object:
             try:
                 return pickle.load(session_file_object)
             except Exception as e:
@@ -501,7 +502,7 @@ class FitDatasetExpressionFile(ReadableFile):
     HEADER_ROWS = 1
 
     def read_data(self):
-        with open(self.file_path, 'r') as f:
+        with open(self.file_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
             c_line = None
             s_lines = []
@@ -566,7 +567,7 @@ class FitFile(ReadableFile):
     def read_data(self):
         try:
             return read_columnated_data(file_path=self.file_path, data_row=self.HEADER_ROWS, d_type=float,
-                                        titles=['Time', 'Asymmetry', 'Calculated', 'Uncertainty'])
+                                        titles=['Time', 'Calculated', 'Observed', 'Uncertainty'])
         except Exception as e:
             raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS") from e
 
