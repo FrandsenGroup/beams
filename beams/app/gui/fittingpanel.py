@@ -1578,7 +1578,7 @@ class FitTabPresenter(PanelPresenter):
         menu = QtWidgets.QMenu()
         clicked_item = self._view.run_list.itemFromIndex(index)
         new_check_state = qt_constants.Checked if clicked_item.checkState() == qt_constants.Unchecked else qt_constants.Unchecked
-        action_name = "Check all" if new_check_state == qt_constants.Checked else "Uncheck all"
+        action_name = "Check selected" if new_check_state == qt_constants.Checked else "Uncheck selected"
         menu.addAction(action_name, lambda: self._action_toggle_all_selected(new_check_state))
 
         menu.exec_(self._view.run_list.mapToGlobal(point))
