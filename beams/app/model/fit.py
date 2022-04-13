@@ -23,6 +23,7 @@ ALPHA = "\u03B1"
 PHI = "\u03A6"
 PI = "\u03C0"
 NAUGHT = "\u2080"
+NU = "\u03BD"
 SUB_T = "\u209C"
 SUB_L = "\u2097"
 
@@ -33,10 +34,10 @@ GAUSSIAN_KT = f"a*(1/3 + 2/3*(1 - ({SIGMA}*t)^2)*exp(-1/2*({SIGMA}*t)^2))"
 LORENTZIAN_KT = f"a*(1/3 + 2/3*(1 - {LAMBDA}*t)*exp(-{LAMBDA}*t))"
 COMBINED_KT = f"a*(1/3 + 2/3*(1-{SIGMA}^2*t^2-{LAMBDA}*t)*exp(-{SIGMA}^2*t^2/2-{LAMBDA}*t))"
 STRETCHED_KT = f"a*(1/3 + 2/3*(1-({SIGMA}*t)^{BETA})*exp(-({SIGMA}*t)^{BETA}/{BETA}))"
-DAMPED_COSINE = f"a*cos(2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{BETA}*t)"
-INTERNAL_COSINE = f"a*(f*cos(2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{LAMBDA}{SUB_T}*t) + (1 - f)*exp(-{LAMBDA}{SUB_L}*t))"
-BESSEL = f"a*j{NAUGHT}(2*{PI}*v*t + {PI}*{PHI}/180)"
-INTERNAL_BESSEL = f"a*(f*j{NAUGHT}(2*{PI}*v*t + {PI}*{PHI}/180)*exp(-{LAMBDA}{SUB_T}*t) + (1-f)*exp(-{LAMBDA}{SUB_L}*t))"
+DAMPED_COSINE = f"a*cos(2*{PI}*{NU}*t + {PI}*{PHI}/180)*exp(-{BETA}*t)"
+INTERNAL_COSINE = f"a*(f*cos(2*{PI}*{NU}*t + {PI}*{PHI}/180)*exp(-{LAMBDA}{SUB_T}*t) + (1 - f)*exp(-{LAMBDA}{SUB_L}*t))"
+BESSEL = f"a*j{NAUGHT}(2*{PI}*{NU}*t + {PI}*{PHI}/180)"
+INTERNAL_BESSEL = f"a*(f*j{NAUGHT}(2*{PI}*{NU}*t + {PI}*{PHI}/180)*exp(-{LAMBDA}{SUB_T}*t) + (1-f)*exp(-{LAMBDA}{SUB_L}*t))"
 
 EQUATION_DICTIONARY = {
     "Simple Exponential": SIMPLE_EXPONENTIAL,
@@ -60,10 +61,10 @@ DEFAULT_VALUES = {
     "Lorentzian KT": {'a': 0.25, LAMBDA: 1},
     "Combined KT": {'a': 0.25, SIGMA: 1, LAMBDA: 1},
     "Stretched KT": {'a': 0.25, SIGMA: 1, BETA: 1},
-    "Damped Cosine": {'a': 0.25, PHI: 0, BETA: 1, 'v': 1},
-    "Internal Cosine": {'a': 0.25, 'f': 0.667, 'v': 1, PHI: 0, f'{LAMBDA}{SUB_T}': 1, f'{LAMBDA}{SUB_L}': 0.1},
-    "Bessel": {'a': 0.25, 'v': 1, PHI: 0},
-    "Internal Bessel": {'a': 0.25, 'f': 0.667, 'v': 1, PHI: 0, f'{LAMBDA}{SUB_T}': 1, f'{LAMBDA}{SUB_L}': 0.1}
+    "Damped Cosine": {'a': 0.25, PHI: 0, BETA: 1, NU: 1},
+    "Internal Cosine": {'a': 0.25, 'f': 0.667, NU: 1, PHI: 0, f'{LAMBDA}{SUB_T}': 1, f'{LAMBDA}{SUB_L}': 0.1},
+    "Bessel": {'a': 0.25, NU: 1, PHI: 0},
+    "Internal Bessel": {'a': 0.25, 'f': 0.667, NU: 1, PHI: 0, f'{LAMBDA}{SUB_T}': 1, f'{LAMBDA}{SUB_L}': 0.1}
 }
 
 USER_EQUATION_DICTIONARY = {}
