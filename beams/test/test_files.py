@@ -4,6 +4,9 @@ from app.model import files
 from app.resources import resources
 
 
+SKIP_EXECUTABLE_TESTS = True
+
+
 class TestHelpers:
     @pytest.mark.parametrize("filename, is_found",
                              [
@@ -54,6 +57,7 @@ class TestHelpers:
 class TestTriumfMuonFile:
     # I would encourage you strongly to add to this test as new .msr files come out and you find them failing to ensure
     # we maintain support across the board for these files.
+    @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason="Fails when run on GitHub. Run locally.")
     @pytest.mark.parametrize("filename, out_file, expected_out_file",
                              [
                                  (resources.resource_path(r"test/examples/triumf_convert_test_1.msr"),
@@ -68,6 +72,7 @@ class TestTriumfMuonFile:
             with open(expected_out_file, 'rb') as expected_of:
                 assert of.read() == expected_of.read()
 
+    @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason="Fails when run on GitHub. Run locally.")
     def test_convert_on_bad_file(self):
         msr_file = files.file(resources.resource_path(r"test/examples/triumf_convert_test_2.msr"))
         with pytest.raises(files.BeamsFileConversionError):
