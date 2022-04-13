@@ -712,6 +712,21 @@ def read_columnated_data(file_path, data_row, d_type, titles=None, title_row=Non
 
 
 def create_meta_string(meta: dict) -> str:
+    """
+    (Deprecated, see fix note below) Generate the meta string we put at the top of files.
+
+    This includes the "BEAMS\n" at the very top.
+
+    PARAMETERS
+    ----------
+        meta: dict
+            The dictionary of meta parameters you want to save.
+
+    RETURNS
+    -------
+        meta_str: str
+            The string of the meta line we put at the top of files.
+    """
     hist_keys = [T0_KEY, BACKGROUND_TWO_KEY, BACKGROUND_ONE_KEY, GOOD_BIN_ONE_KEY, GOOD_BIN_TWO_KEY, HIST_TITLES_KEY]
 
     final_string = 'BEAMS\n'
