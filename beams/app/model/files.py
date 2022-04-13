@@ -666,7 +666,8 @@ def is_beams(filename):
     """
     if is_found(filename):
         with open(filename) as f:
-            return 'BEAMS' in f.readline().rstrip('\n')
+            return 'beams' in f.readline().rstrip('\n').lower()
+    return False
 
 
 def read_columnated_data(file_path, data_row, d_type, titles=None, title_row=None):
