@@ -5,7 +5,7 @@ from app.model import files
 from app.resources import resources
 
 
-SKIP_EXECUTABLE_TESTS = "GITHUB_ACTIONS" in os.environ and os.environ["GITHUB_ACTIONS"]
+SKIP_EXECUTABLE_TESTS = "GITHUB_ACTIONS" in os.environ and os.environ["GITHUB_ACTIONS"] == 'true'
 
 
 class TestHelpers:
