@@ -50,7 +50,29 @@ class TestHelpers:
             for expected_row, read_row in zip(expected_data, data):
                 assert all(expected_row == read_row)
 
-    @pytest.mark.skip
-    def test_create_meta_string(self, meta, expected_string):
-        pass
+
+class TestTriumfMuonFile:
+    # I would encourage you strongly to add to this test as new .msr files come out and you find them failing to ensure
+    # we maintain support across the board for these files.
+    @pytest.mark.parametrize("filename, out_file, expected_out_file",
+                             [
+                                 (resources.resource_path(r"test/examples/triumf_convert_test_1.msr"),
+                                  resources.resource_path(r"test/examples/_triumf_convert_test_1.dat"),
+                                  resources.resource_path(r"test/examples/triumf_convert_test_1.dat"))
+                             ])
+    def test_convert_on_good_file(self, filename, out_file, expected_out_file):
+        msr_file = files.file(filename)
+        msr_file.convert(out_file)
+
+        with open(out_file, 'rb') as of:
+            with open(expected_out_file, 'rb') as expected_of:
+                assert of.read() == expected_of.read()
+
+    def test_convert_on_bad_file(self):
+        msr_file = files.file(resources.resource_path(r"test/examples/triumf_convert_test_2.msr"))
+        with pytest.raises(files.BeamsFileConversionError):
+            msr_file.convert(resources.resource_path(r"test/examples/_triumf_convert_test_2.dat"))
+
+
+
 
