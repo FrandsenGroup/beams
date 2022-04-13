@@ -671,6 +671,30 @@ def is_beams(filename):
 
 
 def read_columnated_data(file_path, data_row, d_type, titles=None, title_row=None):
+    """
+    Reads in columnated data from a file
+
+    If title row is provided and titles are not then it will attempt to retrieve the titles from that row. If titles
+    is provided then it will not make an attempt to retrieve them.
+
+    PARAMETERS
+    ----------
+        file_path: str
+            Absolute or relative path to the file we are reading
+        data_row: int
+            The first line where the data begins (0 indexed)
+        d_type: type
+            The type of the data we are retrieving
+        titles: list[str]
+            List of titles for each column (in proper order)
+        title_row: int
+            The line where the column titles are in the file
+
+    RETURNS
+    -------
+        data: np.ndarray
+
+    """
     try:
         if not titles and title_row:
             with open(file_path, 'r') as f:
