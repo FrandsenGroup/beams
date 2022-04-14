@@ -214,6 +214,34 @@ class PSIMuonFile(ConvertibleFile):
     DATA_FORMAT = Format.BINARY
     DATA_TYPE = DataType.MUON
 
+    def __init__(self, file_path):
+        super().__init__(file_path)
+        self._combine_format = None
+
+    def set_combine_format(self, starts, ends, names):
+        # Check if the values provided are of a valid datatype. Doing this first prevents sneaky bugs.
+        try:
+            starts = [int(s) for s in starts]
+            ends = [int(e) for e in ends]
+            names = [str(n) for n in names]
+        except ValueError as e:
+            raise Exception("Format for combining histograms contains values of invalid types.") from e
+
+        distinct_starts = set(starts)
+        distinct_ends = set(ends)
+        distinct_names = set(names)
+
+        # Check if any values are repeated or if one set of values is larger then another
+        if len(distinct_starts) != len(distinct_ends) or len(distinct_starts) != (len(distinct_names)) \
+                or len(starts) != len(distinct_starts) or len(ends) != len(distinct_ends) \
+                or len(names) != len(distinct_names) or len(distinct_starts) == 0:
+            raise Exception("Invalid format for combining histograms.")
+
+        if max(ends) > self.get_number_of_histograms():
+            raise Exception("Invalid range of histograms to combine.")
+
+        self._combine_format = (starts, ends, names)
+
     def get_number_of_histograms(self):
         x = musr2py.MuSR_td_PSI_bin()
         x.read(self.file_path)
