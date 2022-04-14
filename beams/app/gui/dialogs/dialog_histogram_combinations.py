@@ -9,12 +9,12 @@ from app.gui.dialogs.dialog_misc import WarningMessageDialog
 from app.util import qt_constants, report
 
 
-class IsisHistogramCombinationDialog(QtWidgets.QDialog):
+class HistogramCombinationDialog(QtWidgets.QDialog):
     class Codes:
         Done = 0
         Cancel = 1
 
-    def __init__(self, isis_files: Sequence['objects.FileDataset']):
+    def __init__(self, hist_files: Sequence['objects.FileDataset']):
         super().__init__()
         self.__rows = {}  # id : row_number
 
@@ -26,7 +26,7 @@ class IsisHistogramCombinationDialog(QtWidgets.QDialog):
 
         self.combination_table = QtWidgets.QTableWidget()
 
-        num_histograms_ranges = set([f.file.get_number_of_histograms() for f in isis_files])
+        num_histograms_ranges = set([f.file.get_number_of_histograms() for f in hist_files])
         if len(num_histograms_ranges) != 1:
             WarningMessageDialog.launch(["Selected files with different ranges of histograms."])
             self.done(self.Codes.Done)
@@ -45,7 +45,7 @@ class IsisHistogramCombinationDialog(QtWidgets.QDialog):
         self._set_attributes()
         self._set_layout()
 
-        self._presenter = IsisHistogramCombinationDialogPresenter(isis_files, num_histograms, self)
+        self._presenter = HistogramCombinationDialogPresenter(hist_files, num_histograms, self)
 
     def _set_attributes(self):
         self.cancel_button.released.connect(lambda: self.done(self.Codes.Cancel))
@@ -126,12 +126,12 @@ class IsisHistogramCombinationDialog(QtWidgets.QDialog):
 
     @staticmethod
     def launch(files):
-        dialog = IsisHistogramCombinationDialog(files)
+        dialog = HistogramCombinationDialog(files)
         return dialog.exec()
 
 
-class IsisHistogramCombinationDialogPresenter(QtCore.QObject):
-    def __init__(self, files, num_histograms, view: IsisHistogramCombinationDialog):
+class HistogramCombinationDialogPresenter(QtCore.QObject):
+    def __init__(self, files, num_histograms, view: HistogramCombinationDialog):
         super().__init__()
 
         self._files = files

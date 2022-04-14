@@ -10,7 +10,7 @@ from app.gui.dialogs.dialog_musr_download import MusrDownloadDialog
 from app.gui.dialogs.dialog_psi_download import PSIDownloadDialog
 from app.gui.dialogs.dialog_write_data import WriteDataDialog
 from app.gui.dialogs.dialog_plot_file import PlotFileDialog
-from app.gui.dialogs.dialog_isis_histogram_combinations import IsisHistogramCombinationDialog
+from app.gui.dialogs.dialog_histogram_combinations import HistogramCombinationDialog
 from app.gui.gui import PanelPresenter
 from app.model import files, services, objects
 from app.util import qt_widgets, qt_constants, report
@@ -169,7 +169,8 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 
         def _action_load(self):
             if isinstance(self.model.file, files.BeamsSessionFile):
-                code = PermissionsMessageDialog.launch(["Loading a saved session will remove all current session data, do you wish to continue?"])
+                code = PermissionsMessageDialog.launch(
+                    ["Loading a saved session will remove all current session data, do you wish to continue?"])
                 if code == PermissionsMessageDialog.Codes.OKAY:
                     try:
                         self.__file_service.load_session(self.model.id)
@@ -389,13 +390,13 @@ class MainConsolePanel(QtWidgets.QDockWidget):
 class MainConsolePanelPresenter(PanelPresenter):
     def __init__(self, view: MainConsolePanel):
         super().__init__(view)
-        
+
         self.__file_service = services.FileService()
         self.__system_service = services.SystemService()
         self.__logger = logging.getLogger(__name__)
-        
+
         self._set_callbacks()
-        
+
     def _set_callbacks(self):
         self._view.import_button.released.connect(self._on_add_file_clicked)
         self._view.write_button.released.connect(self._on_write_file_clicked)
@@ -433,7 +434,7 @@ class MainConsolePanelPresenter(PanelPresenter):
 
         fit_file_ids = []
         dialog_message = 'Load fits from the following files?\n'
-        
+
         unloaded_fit_files_present = False
         for f in file_objects:
             if f.file.DATA_FORMAT == files.Format.FIT_SET_VERBOSE and not f.dataset.is_loaded:
@@ -441,7 +442,8 @@ class MainConsolePanelPresenter(PanelPresenter):
                 dialog_message += f"\u2022 {f.title}\n"
                 fit_file_ids.append(f.id)
             elif f.file.DATA_FORMAT == files.Format.PICKLED:
-                code = PermissionsMessageDialog.launch(["Loading a saved session will remove all current session data, do you wish to continue?"])
+                code = PermissionsMessageDialog.launch(
+                    ["Loading a saved session will remove all current session data, do you wish to continue?"])
                 if code == PermissionsMessageDialog.Codes.OKAY:
                     try:
                         self.__file_service.load_session(f.id)
@@ -509,11 +511,13 @@ class MainConsolePanelPresenter(PanelPresenter):
         file_ids = self._view.tree_view.get_file_ids()
         file_objects = self.__file_service.get_files(file_ids)
 
-        isis_files = list(filter(lambda o: o.file.SOURCE == files.Source.ISIS, file_objects))
-        if len(isis_files) != 0:
-            code = IsisHistogramCombinationDialog.launch(isis_files)
+        combination_files = list(filter(lambda o: (o.file.SOURCE == files.Source.ISIS
+                                                   or o.file.SOURCE == files.Source.PSI)
+                                        and o.file.get_number_of_histograms() > 6, file_objects))
+        if len(combination_files) != 0:
+            code = HistogramCombinationDialog.launch(combination_files)
 
-            if code == IsisHistogramCombinationDialog.Codes.Cancel:
+            if code != HistogramCombinationDialog.Codes.Done:
                 return
 
         try:

@@ -265,16 +265,28 @@ class PSIMuonFile(ConvertibleFile):
             field = x.get_field().strip()
             title = x.get_comment().strip()
 
-            # Get list scalars
-            hist_title_list = x.get_histoNames_vector()
-            t0_bin_list = [str(n) for n in x.get_t0_vector()]
-            first_good_bin_list = [str(n) for n in x.get_firstGood_vector()]
-            last_good_bin_list = [str(n) for n in x.get_lastGood_vector()]
-            first_background_list = [str(0) for i in range(num_hists)]  # fixme very very wrong,don't merge without fix.
-            last_background_list = [str(x.get_firstGood_int(i) - 5) for i in range(num_hists)]
-
             # Create full histogram array
-            histograms = [x.get_histo_vector(i, 1) for i in range(num_hists)]
+            data = np.array([x.get_histo_vector(i, 1) for i in range(num_hists)])
+
+            if self._combine_format:
+                starts, ends, hist_title_list = self._combine_format
+                histograms = []
+                for start, end in zip(starts, ends):
+                    if end < start:
+                        histograms.append(sum(data[0:end]) + sum(data[start:]))
+                    else:
+                        histograms.append(sum(data[start:end]))
+            else:
+                hist_title_list = [str(i) if title.isspace() else title for i, title in enumerate(x.get_histoNames_vector())]
+                histograms = data
+
+            # Get list scalars
+            t0_bin_list = [str(n) for n in x.get_t0_vector()][0:len(hist_title_list)]
+            first_good_bin_list = [str(n) for n in x.get_firstGood_vector()][0:len(hist_title_list)]
+            last_good_bin_list = [str(n) for n in x.get_lastGood_vector()][0:len(hist_title_list)]
+            first_background_list = [str(0) for i in range(num_hists)][0:len(hist_title_list)]  # fixme very very wrong,don't merge without fix.
+            last_background_list = [str(x.get_firstGood_int(i) - 5) for i in range(num_hists)][0:len(hist_title_list)]
+
         except Exception as e:
             raise BeamsFileConversionError(f"An error occurred pulling data from the file. "
                                            f"Error occurred with {self.file_path}.") from e

@@ -9,6 +9,25 @@ SKIP_EXECUTABLE_TESTS = "GITHUB_ACTIONS" in os.environ and os.environ["GITHUB_AC
 SKIP_REASON = "Fails when run on GitHub. Run locally."
 
 
+def is_file_content_equal(file_path_1: str, file_path_2: str, buffer_size: int = 1024 * 8) -> bool:
+    # First check sizes
+    s1, s2 = os.path.getsize(file_path_1), os.path.getsize(file_path_2)
+    if s1 != s2:
+        return False
+
+    # If the sizes are the same check the content
+    with open(file_path_1, "rb") as fp1, open(file_path_2, "rb") as fp2:
+        while True:
+            b1 = fp1.read(buffer_size)
+            b2 = fp2.read(buffer_size)
+            if b1 != b2:
+                return False
+
+            # if the content is the same and they are both empty bytes the file is the same
+            if not b1:
+                return True
+
+
 class TestHelpers:
     @pytest.mark.parametrize("filename, is_found",
                              [
@@ -70,9 +89,7 @@ class TestTriumfMuonFile:
         msr_file = files.TRIUMFMuonFile(filename)
         msr_file.convert(out_file)
 
-        with open(out_file, 'rb') as of:
-            with open(expected_out_file, 'rb') as expected_of:
-                assert of.read() == expected_of.read()
+        assert is_file_content_equal(out_file, expected_out_file)
 
         if os.path.exists(out_file):
             os.remove(out_file)
@@ -99,11 +116,7 @@ class TestPsiMuonFile:
         msr_file = files.PSIMuonFile(filename)
         msr_file.convert(out_file)
 
-        with open(out_file, 'rb') as of:
-            with open(expected_out_file, 'rb') as expected_of:
-                written_data = of.read()
-                expected_data = expected_of.read()
-                assert written_data == expected_data
+        assert is_file_content_equal(out_file, expected_out_file)
 
         if os.path.exists(out_file):
             os.remove(out_file)
@@ -119,9 +132,34 @@ class TestPsiMuonFile:
         msr_file = files.PSIMuonFile(filename)
         msr_file.convert(out_file)
 
-        with open(out_file, 'rb') as of:
-            with open(expected_out_file, 'rb') as expected_of:
-                assert of.read() == expected_of.read()
+        assert is_file_content_equal(out_file, expected_out_file)
+
+        if os.path.exists(out_file):
+            os.remove(out_file)
+
+    @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason=SKIP_REASON)
+    @pytest.mark.parametrize("filename, starts, ends, names, out_file, expected_out_file",
+                             [
+                                 (resources.resource_path(r"test/examples/psi_convert_test_bin_2.bin"),
+                                  [0, 8],
+                                  [8, 16],
+                                  ['Forw', 'Back'],
+                                  resources.resource_path(r"test/examples/_psi_convert_test_bin_3.dat"),
+                                  resources.resource_path(r"test/examples/psi_convert_test_bin_3.dat")),
+                                 (resources.resource_path(r"test/examples/psi_convert_test_bin_2.bin"),
+                                  [0, 4, 8, 12],
+                                  [4, 8, 12, 16],
+                                  ['Forw', 'Left', 'Back', 'Right'],
+                                  resources.resource_path(r"test/examples/_psi_convert_test_bin_4.dat"),
+                                  resources.resource_path(r"test/examples/psi_convert_test_bin_4.dat"))
+                             ])
+    def test_convert_on_good_file_with_format(self, filename, starts, ends, names, out_file, expected_out_file):
+        msr_file = files.PSIMuonFile(filename)
+        msr_file.set_combine_format(starts, ends, names)
+
+        msr_file.convert(out_file)
+
+        assert is_file_content_equal(out_file, expected_out_file)
 
         if os.path.exists(out_file):
             os.remove(out_file)
