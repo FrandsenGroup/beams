@@ -74,6 +74,9 @@ class TestTriumfMuonFile:
             with open(expected_out_file, 'rb') as expected_of:
                 assert of.read() == expected_of.read()
 
+        if os.path.exists(out_file):
+            os.remove(out_file)
+
     @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason=SKIP_REASON)
     def test_convert_on_bad_file(self):
         msr_file = files.TRIUMFMuonFile(resources.resource_path(r"test/examples/psi_convert_test_1.mdu"))
@@ -102,6 +105,9 @@ class TestPsiMuonFile:
                 expected_data = expected_of.read()
                 assert written_data == expected_data
 
+        if os.path.exists(out_file):
+            os.remove(out_file)
+
     @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason=SKIP_REASON)
     @pytest.mark.parametrize("filename, out_file, expected_out_file",
                              [
@@ -116,6 +122,9 @@ class TestPsiMuonFile:
         with open(out_file, 'rb') as of:
             with open(expected_out_file, 'rb') as expected_of:
                 assert of.read() == expected_of.read()
+
+        if os.path.exists(out_file):
+            os.remove(out_file)
 
     @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason=SKIP_REASON)
     def test_convert_on_bad_file(self):
