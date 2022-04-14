@@ -27,7 +27,7 @@ class MusrDownloadDialog(QtWidgets.QDialog):
         self.input_runs = QtWidgets.QLineEdit()
         self.input_file = QtWidgets.QLineEdit()
         self.input_expt = QtWidgets.QLineEdit()
-        self.output_list = QtWidgets.QListWidget()
+        self.output_list = qt_widgets.ListWidget()
         self.output_web = QtWidgets.QPlainTextEdit()
         self.title_search = QtWidgets.QLineEdit()
         self.download_selected = qt_widgets.StyleOneButton('Download Selected')

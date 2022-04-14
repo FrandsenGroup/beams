@@ -31,7 +31,7 @@ class ISISDownloadDialog(QtWidgets.QDialog):
         self.input_expt = QtWidgets.QLineEdit()
         self.input_start_date = QtWidgets.QDateTimeEdit(calendarPopup=True)
         self.input_end_date = QtWidgets.QDateTimeEdit(calendarPopup=True)
-        self.output_list = QtWidgets.QListWidget()
+        self.output_list = qt_widgets.ListWidget()
         self.output_web = QtWidgets.QPlainTextEdit()
         self.title_search = QtWidgets.QLineEdit()
         self.download_selected = qt_widgets.StyleOneButton('Download Selected')

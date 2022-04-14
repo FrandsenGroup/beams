@@ -99,7 +99,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self.title = 'Legend'
                 super().__init__(self.title)
 
-                self.legend_list = QtWidgets.QListWidget()
+                self.legend_list = qt_widgets.ListWidget()
                 self.__values = {}
 
                 box_layout = QtWidgets.QHBoxLayout()

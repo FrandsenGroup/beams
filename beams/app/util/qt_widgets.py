@@ -461,3 +461,30 @@ class IdentifiableTableWidgetItem(QtWidgets.QTableWidgetItem):
     def __init__(self, identifier, *pars, **kwargs):
         super().__init__(*pars, **kwargs)
         self.identifier = identifier
+
+
+class ListWidget(QtWidgets.QListWidget):
+    def __init__(self):
+        super().__init__()
+        self.setSelectionMode(qt_constants.ExtendedSelection)
+        self.setContextMenuPolicy(qt_constants.CustomContextMenu)
+        self.customContextMenuRequested.connect(self._launch_menu)
+
+    def _launch_menu(self, point):
+        index = self.indexAt(point)
+
+        if not index.isValid():
+            return
+
+        menu = QtWidgets.QMenu()
+        clicked_item = self.itemFromIndex(index)
+        new_check_state = qt_constants.Checked if clicked_item.checkState() == qt_constants.Unchecked else qt_constants.Unchecked
+        action_name = "Check selected" if new_check_state == qt_constants.Checked else "Uncheck selected"
+        menu.addAction(action_name, lambda: self._action_toggle_all_selected(new_check_state))
+
+        menu.exec_(self.mapToGlobal(point))
+
+    def _action_toggle_all_selected(self, new_check_state):
+        for i in range(self.count()):
+            if self.item(i).isSelected():
+                self.item(i).setCheckState(new_check_state)
