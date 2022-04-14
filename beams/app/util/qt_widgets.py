@@ -488,3 +488,6 @@ class ListWidget(QtWidgets.QListWidget):
         for i in range(self.count()):
             if self.item(i).isSelected():
                 self.item(i).setCheckState(new_check_state)
+
+
+
