@@ -9,7 +9,8 @@ import enum
 
 # Installed Packages
 import numpy as np
-import h5py
+import h5py  # ISIS
+import musr2py  # PSI
 
 from app.resources import resources
 
@@ -77,6 +78,8 @@ COMBINED_RUNS_KEY = 'CombinedRuns'
 FILE_PATH_KEY = 'FilePath'
 LAB_KEY = "Lab"
 AREA_KEY = "Area"
+SAMPLE_KEY = "Sample"
+ORIENTATION_KEY = "Orientation"
 
 
 # TODO Maybe we should have these files inherit from the actual File object
@@ -211,33 +214,68 @@ class PSIMuonFile(ConvertibleFile):
     DATA_FORMAT = Format.BINARY
     DATA_TYPE = DataType.MUON
 
+    def get_number_of_histograms(self):
+        x = musr2py.MuSR_td_PSI_bin()
+        x.read(self.file_path)
+        return x.get_numberHisto_int()
+
     def convert(self, out_file):
-        if is_found(self.file_path) and (
-                check_ext(self.file_path, Extensions.PSI_BIN) or check_ext(self.file_path, Extensions.PSI_MDU)) \
-                and check_ext(out_file, Extensions.HISTOGRAM):
+        if not check_ext(out_file, Extensions.HISTOGRAM):
+            raise Exception("Out file does not have a valid extension (.dat).")
 
-            system_args = {'win32': [resources.PSI_WINDOWS_CONVERSION, self.file_path, out_file],
-                           'linux': ['./' + resources.PSI_LINUX_CONVERSION, self.file_path, out_file],
-                           'darwin': ['./' + resources.PSI_LINUX_CONVERSION, self.file_path, out_file]}
+        try:
+            x = musr2py.MuSR_td_PSI_bin()
+            x.read(self.file_path)
 
-            if sys.platform in system_args.keys():
-                args = system_args[sys.platform]
+            # Get singular scalars
+            num_hists = x.get_numberHisto_int()
+            bin_width = x.get_binWidth_ns()
+            run_number = x.get_runNumber_int()
+            sample_name = x.get_sample().strip()
+            temperature = x.get_temp().strip()
+            orientation = x.get_orient().strip()
+            field = x.get_field().strip()
+            title = x.get_comment().strip()
 
-                if sys.platform == 'win32':
-                    shell = True
-                else:
-                    shell = False
-            else:
-                raise EnvironmentError("Not on a recognized system.")
+            # Get list scalars
+            hist_title_list = x.get_histoNames_vector()
+            t0_bin_list = [str(n) for n in x.get_t0_vector()]
+            first_good_bin_list = [str(n) for n in x.get_firstGood_vector()]
+            last_good_bin_list = [str(n) for n in x.get_lastGood_vector()]
+            first_background_list = [str(0) for i in range(num_hists)]  # fixme very very wrong,don't merge without fix.
+            last_background_list = [str(x.get_firstGood_int(i) - 5) for i in range(num_hists)]
 
-            try:
-                subprocess.check_call(args, shell=shell)
-            except subprocess.CalledProcessError as e:
-                raise BeamsFileConversionError("Error occurred running conversion executable.") from e
-            else:
-                return MuonHistogramFile(out_file)
+            # Create full histogram array
+            histograms = [x.get_histo_vector(i, 1) for i in range(num_hists)]
+        except Exception as e:
+            raise BeamsFileConversionError(f"An error occurred pulling data from the file. "
+                                           f"Error occurred with {self.file_path}.") from e
 
-        raise BeamsFileConversionError("Binary file is in an unknown format. May need to update executables.")
+        # Create our meta string for the top of the file
+        meta_string = f"BEAMS\n" \
+                      f"{BIN_SIZE_KEY}:{bin_width}," \
+                      f"{TEMPERATURE_KEY}:{temperature}," \
+                      f"{FIELD_KEY}:{field}," \
+                      f"{SAMPLE_KEY}:{sample_name}," \
+                      f"{ORIENTATION_KEY}:{orientation}," \
+                      f"{RUN_NUMBER_KEY}:{run_number}," \
+                      f"{TITLE_KEY}:{title}\n"
+
+        meta_string += ','.join([title.strip() if not title.isspace() else str(i)
+                                 for i, title in enumerate(hist_title_list)]) + "\n"
+        meta_string += ','.join(first_background_list) + "\n"
+        meta_string += ','.join(last_background_list) + "\n"
+        meta_string += ','.join(first_good_bin_list) + "\n"
+        meta_string += ','.join(last_good_bin_list) + "\n"
+        meta_string += ','.join(t0_bin_list)
+
+        try:
+            np.savetxt(out_file, np.rot90(histograms, 3), delimiter=',', header=meta_string, comments="", fmt="%-8i")
+        except Exception as e:
+            raise BeamsFileConversionError(f"An error occurred writing the converted data to the out file. "
+                                           f"Error occurred with {self.file_path}.") from e
+
+        return MuonHistogramFile(out_file)
 
 
 class ISISMuonFile(ConvertibleFile):

@@ -671,7 +671,10 @@ class FileService:
         for file_dataset in self.__dao.get_files_by_ids(ids):
             if not file_dataset.is_loaded:
                 is_changed = True
-                objects.DataBuilder.build_full(file_dataset.file, file_dataset.dataset)
+                try:
+                    objects.DataBuilder.build_full(file_dataset.file, file_dataset.dataset)
+                except ValueError as e:
+                    raise files.BeamsFileReadError("File was not correctly formatted.")
                 file_dataset.is_loaded = True
 
         if is_changed:

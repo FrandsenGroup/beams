@@ -6,6 +6,7 @@ from app.resources import resources
 
 
 SKIP_EXECUTABLE_TESTS = "GITHUB_ACTIONS" in os.environ and os.environ["GITHUB_ACTIONS"] == 'true'
+SKIP_REASON = "Fails when run on GitHub. Run locally."
 
 
 class TestHelpers:
@@ -58,7 +59,7 @@ class TestHelpers:
 class TestTriumfMuonFile:
     # I would encourage you strongly to add to this test as new .msr files come out and you find them failing to ensure
     # we maintain support across the board for these files.
-    @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason="Fails when run on GitHub. Run locally.")
+    @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason=SKIP_REASON)
     @pytest.mark.parametrize("filename, out_file, expected_out_file",
                              [
                                  (resources.resource_path(r"test/examples/triumf_convert_test_1.msr"),
@@ -66,74 +67,91 @@ class TestTriumfMuonFile:
                                   resources.resource_path(r"test/examples/triumf_convert_test_1.dat"))
                              ])
     def test_convert_on_good_file(self, filename, out_file, expected_out_file):
-        msr_file = files.file(filename)
+        msr_file = files.TRIUMFMuonFile(filename)
         msr_file.convert(out_file)
 
         with open(out_file, 'rb') as of:
             with open(expected_out_file, 'rb') as expected_of:
                 assert of.read() == expected_of.read()
 
-    @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason="Fails when run on GitHub. Run locally.")
+    @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason=SKIP_REASON)
     def test_convert_on_bad_file(self):
-        msr_file = files.file(resources.resource_path(r"test/examples/triumf_convert_test_2.msr"))
+        msr_file = files.TRIUMFMuonFile(resources.resource_path(r"test/examples/psi_convert_test_1.mdu"))
         with pytest.raises(files.BeamsFileConversionError):
             msr_file.convert(resources.resource_path(r"test/examples/_triumf_convert_test_2.dat"))
 
 
 class TestPsiMuonFile:
-    @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason="Fails when run on GitHub. Run locally.")
+    @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason=SKIP_REASON)
+    @pytest.mark.parametrize("filename, out_file, expected_out_file",
+                             [
+                                 (resources.resource_path(r"test/examples/psi_convert_test_1.bin"),
+                                  resources.resource_path(r"test/examples/_psi_convert_test_bin_1.dat"),
+                                  resources.resource_path(r"test/examples/psi_convert_test_bin_1.dat")),
+                                 (resources.resource_path(r"test/examples/psi_convert_test_bin_2.bin"),
+                                  resources.resource_path(r"test/examples/_psi_convert_test_bin_2.dat"),
+                                  resources.resource_path(r"test/examples/psi_convert_test_bin_2.dat"))
+                             ])
     def test_convert_on_good_bin_file(self, filename, out_file, expected_out_file):
-        msr_file = files.file(filename)
+        msr_file = files.PSIMuonFile(filename)
         msr_file.convert(out_file)
 
         with open(out_file, 'rb') as of:
             with open(expected_out_file, 'rb') as expected_of:
-                assert of.read() == expected_of.read()
+                written_data = of.read()
+                expected_data = expected_of.read()
+                assert written_data == expected_data
 
-    @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason="Fails when run on GitHub. Run locally.")
+    @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason=SKIP_REASON)
+    @pytest.mark.parametrize("filename, out_file, expected_out_file",
+                             [
+                                 (resources.resource_path(r"test/examples/psi_convert_test_1.mdu"),
+                                  resources.resource_path(r"test/examples/_psi_convert_test_mdu_1.dat"),
+                                  resources.resource_path(r"test/examples/psi_convert_test_mdu_1.dat"))
+                             ])
     def test_convert_on_good_mdu_file(self, filename, out_file, expected_out_file):
-        msr_file = files.file(filename)
+        msr_file = files.PSIMuonFile(filename)
         msr_file.convert(out_file)
 
         with open(out_file, 'rb') as of:
             with open(expected_out_file, 'rb') as expected_of:
                 assert of.read() == expected_of.read()
 
-    @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason="Fails when run on GitHub. Run locally.")
+    @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason=SKIP_REASON)
     def test_convert_on_bad_file(self):
-        msr_file = files.file(resources.resource_path(r"test/examples/triumf_convert_test_2.msr"))
+        msr_file = files.PSIMuonFile(resources.resource_path(r"test/examples/triumf_convert_test_2.msr"))
         with pytest.raises(files.BeamsFileConversionError):
-            msr_file.convert(resources.resource_path(r"test/examples/_triumf_convert_test_2.dat"))
+            msr_file.convert(resources.resource_path(r"test/examples/_triumf_convert_test_1.dat"))
 
-
-class TestIsisMuonFile:
-    @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason="Fails when run on GitHub. Run locally.")
-    def test_convert_on_good_nxs_file(self, filename, out_file, expected_out_file):
-        msr_file = files.file(filename)
-        msr_file.convert(out_file)
-
-        with open(out_file, 'rb') as of:
-            with open(expected_out_file, 'rb') as expected_of:
-                assert of.read() == expected_of.read()
-
-    @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason="Fails when run on GitHub. Run locally.")
-    def test_convert_on_good_nxs_v2_file(self, filename, out_file, expected_out_file):
-        msr_file = files.file(filename)
-        msr_file.convert(out_file)
-
-        with open(out_file, 'rb') as of:
-            with open(expected_out_file, 'rb') as expected_of:
-                assert of.read() == expected_of.read()
-
-    @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason="Fails when run on GitHub. Run locally.")
-    def test_convert_on_bad_file(self):
-        msr_file = files.file(resources.resource_path(r"test/examples/triumf_convert_test_2.msr"))
-        with pytest.raises(files.BeamsFileConversionError):
-            msr_file.convert(resources.resource_path(r"test/examples/_triumf_convert_test_2.dat"))
-
-    @pytest.mark.skip
-    def test_get_number_of_histograms(self):
-        pass
+#
+# class TestIsisMuonFile:
+#     @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason="Fails when run on GitHub. Run locally.")
+#     def test_convert_on_good_nxs_file(self, filename, out_file, expected_out_file):
+#         msr_file = files.file(filename)
+#         msr_file.convert(out_file)
+#
+#         with open(out_file, 'rb') as of:
+#             with open(expected_out_file, 'rb') as expected_of:
+#                 assert of.read() == expected_of.read()
+#
+#     @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason="Fails when run on GitHub. Run locally.")
+#     def test_convert_on_good_nxs_v2_file(self, filename, out_file, expected_out_file):
+#         msr_file = files.file(filename)
+#         msr_file.convert(out_file)
+#
+#         with open(out_file, 'rb') as of:
+#             with open(expected_out_file, 'rb') as expected_of:
+#                 assert of.read() == expected_of.read()
+#
+#     @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason="Fails when run on GitHub. Run locally.")
+#     def test_convert_on_bad_file(self):
+#         msr_file = files.file(resources.resource_path(r"test/examples/triumf_convert_test_2.msr"))
+#         with pytest.raises(files.BeamsFileConversionError):
+#             msr_file.convert(resources.resource_path(r"test/examples/_triumf_convert_test_2.dat"))
+#
+#     @pytest.mark.skip
+#     def test_get_number_of_histograms(self):
+#         pass
 
 
 @pytest.mark.skip("Jparc files are not yet supported.")
