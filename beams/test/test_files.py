@@ -82,7 +82,7 @@ class TestTriumfMuonFile:
     @pytest.mark.parametrize("filename, out_file, expected_out_file",
                              [
                                  (resources.resource_path(r"test/examples/triumf_convert_test_1.msr"),
-                                  resources.resource_path(r"test/examples/_triumf_convert_test_1.dat"),
+                                  r"_triumf_convert_test_1.dat",
                                   resources.resource_path(r"test/examples/triumf_convert_test_1.dat"))
                              ])
     def test_convert_on_good_file(self, filename, out_file, expected_out_file):
@@ -98,7 +98,7 @@ class TestTriumfMuonFile:
     def test_convert_on_bad_file(self):
         msr_file = files.TRIUMFMuonFile(resources.resource_path(r"test/examples/psi_convert_test_1.mdu"))
         with pytest.raises(files.BeamsFileConversionError):
-            msr_file.convert(resources.resource_path(r"test/examples/_triumf_convert_test_2.dat"))
+            msr_file.convert(r"_triumf_convert_test_2.dat")
 
 
 class TestPsiMuonFile:
