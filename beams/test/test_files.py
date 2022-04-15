@@ -105,10 +105,10 @@ class TestPsiMuonFile:
     @pytest.mark.parametrize("filename, out_file, expected_out_file",
                              [
                                  (resources.resource_path(r"test/examples/psi_convert_test_1.bin"),
-                                  resources.resource_path(r"test/examples/_psi_convert_test_bin_1.dat"),
+                                  r"_psi_convert_test_bin_1.dat",
                                   resources.resource_path(r"test/examples/psi_convert_test_bin_1.dat")),
                                  (resources.resource_path(r"test/examples/psi_convert_test_bin_2.bin"),
-                                  resources.resource_path(r"test/examples/_psi_convert_test_bin_2.dat"),
+                                  r"_psi_convert_test_bin_2.dat",
                                   resources.resource_path(r"test/examples/psi_convert_test_bin_2.dat"))
                              ])
     def test_convert_on_good_bin_file(self, filename, out_file, expected_out_file):
@@ -123,7 +123,7 @@ class TestPsiMuonFile:
     @pytest.mark.parametrize("filename, out_file, expected_out_file",
                              [
                                  (resources.resource_path(r"test/examples/psi_convert_test_1.mdu"),
-                                  resources.resource_path(r"test/examples/_psi_convert_test_mdu_1.dat"),
+                                  r"_psi_convert_test_mdu_1.dat",
                                   resources.resource_path(r"test/examples/psi_convert_test_mdu_1.dat"))
                              ])
     def test_convert_on_good_mdu_file(self, filename, out_file, expected_out_file):
@@ -141,13 +141,13 @@ class TestPsiMuonFile:
                                   [0, 8],
                                   [8, 16],
                                   ['Forw', 'Back'],
-                                  resources.resource_path(r"test/examples/_psi_convert_test_bin_3.dat"),
+                                  r"_psi_convert_test_bin_3.dat",
                                   resources.resource_path(r"test/examples/psi_convert_test_bin_3.dat")),
                                  (resources.resource_path(r"test/examples/psi_convert_test_bin_2.bin"),
                                   [0, 4, 8, 12],
                                   [4, 8, 12, 16],
                                   ['Forw', 'Left', 'Back', 'Right'],
-                                  resources.resource_path(r"test/examples/_psi_convert_test_bin_4.dat"),
+                                  r"_psi_convert_test_bin_4.dat",
                                   resources.resource_path(r"test/examples/psi_convert_test_bin_4.dat"))
                              ])
     def test_convert_on_good_file_with_format(self, filename, starts, ends, names, out_file, expected_out_file):
@@ -164,7 +164,7 @@ class TestPsiMuonFile:
     def test_convert_on_bad_file(self):
         msr_file = files.PSIMuonFile(resources.resource_path(r"test/examples/triumf_convert_test_1.msr"))
         with pytest.raises(files.BeamsFileConversionError):
-            msr_file.convert(resources.resource_path(r"test/examples/_triumf_convert_test_1.dat"))
+            msr_file.convert(r"_triumf_convert_test_1.dat")
 
     @pytest.mark.parametrize("filename, histograms",
                              [
@@ -180,7 +180,7 @@ class TestIsisMuonFile:
     @pytest.mark.parametrize("filename, out_file, expected_out_file",
                              [
                                  (resources.resource_path(r"test/examples/isis_convert_test_v2_1.nxs_v2"),
-                                  resources.resource_path(r"test/examples/_isis_convert_test_v2_1.dat"),
+                                  r"_isis_convert_test_v2_1.dat",
                                   resources.resource_path(r"test/examples/isis_convert_test_v2_1.dat"))
                              ])
     def test_convert_on_good_nxs_v2_file(self, filename, out_file, expected_out_file):
@@ -198,13 +198,13 @@ class TestIsisMuonFile:
                                   [0, 32],
                                   [32, 64],
                                   ['Forw', 'Back'],
-                                  resources.resource_path(r"test/examples/_isis_convert_test_v2_2.dat"),
+                                  r"_isis_convert_test_v2_2.dat",
                                   resources.resource_path(r"test/examples/isis_convert_test_v2_2.dat")),
                                  (resources.resource_path(r"test/examples/isis_convert_test_v2_1.nxs_v2"),
                                   [0, 16, 32, 48],
                                   [16, 32, 48, 64],
                                   ['Forw', 'Left', 'Back', 'Right'],
-                                  resources.resource_path(r"test/examples/_isis_convert_test_v2_3.dat"),
+                                  r"_isis_convert_test_v2_3.dat",
                                   resources.resource_path(r"test/examples/isis_convert_test_v2_3.dat"))
                              ])
     def test_convert_on_good_file_with_format(self, filename, starts, ends, names, out_file, expected_out_file):
@@ -220,7 +220,7 @@ class TestIsisMuonFile:
     def test_convert_on_bad_file(self):
         msr_file = files.ISISMuonFile(resources.resource_path(r"test/examples/triumf_convert_test_1.msr"))
         with pytest.raises(files.BeamsFileConversionError):
-            msr_file.convert(resources.resource_path(r"test/examples/_triumf_convert_test_2.dat"))
+            msr_file.convert(resources.resource_path(r"_triumf_convert_test_2.dat"))
 
     @pytest.mark.parametrize("filename, histograms",
                              [
