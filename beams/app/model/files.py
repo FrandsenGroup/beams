@@ -485,7 +485,8 @@ class ISISMuonFile(ConvertibleFile):
                                                                                                  str(last_good_bin),
                                                                                                  str(t0_bin)]])
         try:
-            np.savetxt(out_file, np.rot90(histograms, 3), delimiter=',', header=meta_string, comments="", fmt="%-8i")
+            with open(out_file, 'wt') as f:
+                np.savetxt(f, np.rot90(histograms, 3), delimiter=',', header=meta_string, comments="", fmt="%-8i")
         except Exception as e:
             raise BeamsFileConversionError("An exception occurred writing ISIS data to {}".format(out_file)) from e
 
