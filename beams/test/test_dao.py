@@ -52,7 +52,6 @@ def database_with_fits():
     return db
 
 
-@pytest.mark.RunDao
 class TestRunDao:
     def test_get_runs(self, database_with_runs):
         dao = data_access.RunDAO()
@@ -130,7 +129,6 @@ class TestRunDao:
         assert database_with_runs.run_table == original_run_table
 
 
-@pytest.mark.FileDao
 class TestFileDao:
     def test_get_files(self, database_with_files):
         dao = data_access.FileDAO()
@@ -211,7 +209,6 @@ class TestFileDao:
         assert database_with_files.file_table == original_file_table
 
 
-@pytest.mark.FitDao
 class TestFitDao:
     def test_get_fits(self, database_with_fits):
         dao = data_access.FitDAO()
@@ -275,7 +272,6 @@ class TestFitDao:
         assert database_with_fits.fit_table == original_fit_table
 
 
-@pytest.mark.StyleDao
 class TestStyleDao:
     def test_add_style(self, database_with_styles):
         dao = data_access.StyleDAO()
@@ -336,7 +332,6 @@ class TestStyleDao:
         assert database_with_styles.style_table == original_style_table
 
 
-@pytest.mark.SystemDao
 class TestSystemDao:
     def test_set_configuration(self):
         db = data_access.Database()

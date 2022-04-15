@@ -10,7 +10,6 @@ def close_enough(val_one, val_two, tolerance):
     return abs(val_one - val_two) <= tolerance
 
 
-@pytest.mark.Histogram
 class TestHistograms:
     @pytest.mark.parametrize("input_array, t0, good_start, good_end, bkgd_start, bkgd_end, run_id, bin_size, title",
                              [([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
@@ -184,7 +183,6 @@ class TestHistograms:
             objects.Histogram.combine(hists)
 
 
-@pytest.mark.Asymmetry
 class TestAsymmetries:
     @pytest.mark.parametrize("input_array, t0, bin_size, uncertainty, time",
                              [(range(27648), 980, 0.2, range(27648), range(27648))])
@@ -490,7 +488,6 @@ class TestAsymmetries:
             asymmetry.cut(min_time, max_time)
 
 
-@pytest.mark.Uncertainty
 class TestUncertainties:
     @pytest.mark.parametrize("input_array, bin_size",
                              [([1, 2, 3, 4, 5, 6], 0.2)])
@@ -557,7 +554,6 @@ class TestUncertainties:
             uncertainty.bin(packing)
 
 
-@pytest.mark.Time
 class TestTimes:
     @pytest.mark.parametrize("input_array, bin_size, time_zero",
                              [([1, 2, 3, 4, 5, 6], 0.2, 1.0)])
@@ -626,7 +622,6 @@ class TestTimes:
         assert given_time.time_zero == given_time.time_zero
 
 
-@pytest.mark.Fit
 class TestFits:  # Just the object
     @pytest.mark.parametrize("fit",
                              [(objects.Fit({}, "x", "a title", "a run id", None, None))])
@@ -660,7 +655,6 @@ class TestFits:  # Just the object
         assert fit_maximized.asymmetry == fit.asymmetry
 
 
-@pytest.mark.FitDataset
 class TestFitDatasets:
     @pytest.mark.parametrize("dataset",
                              [(objects.FitDataset())])
@@ -696,7 +690,6 @@ class TestFitDatasets:
         assert dataset_maximized == dataset
 
 
-@pytest.mark.RunDataset
 class TestRunDatasets:
     def test_pickling(self):
         dataset = objects.RunDataset()
@@ -761,7 +754,6 @@ class TestRunDatasets:
         assert dataset_maximized.equals(dataset)
         
         
-@pytest.mark.FileDataset
 class TestFileDatasets:
     def test_pickling(self):
         dataset = objects.RunDataset()
