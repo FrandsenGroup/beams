@@ -407,7 +407,10 @@ class ISISMuonFile(ConvertibleFile):
         if not check_ext(out_file, Extensions.HISTOGRAM):
             raise Exception("Out file does not have a valid extension (.dat).")
 
-        f = h5py.File(self.file_path, 'r+')
+        try:
+            f = h5py.File(self.file_path, 'r+')
+        except OSError:
+            raise BeamsFileConversionError("File signature not found. Unable to open this file.")
 
         try:
             title = self.get_value(self.DataPaths.TITLE, f, string=True)

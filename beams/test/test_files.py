@@ -102,7 +102,6 @@ class TestTriumfMuonFile:
 
 
 class TestPsiMuonFile:
-    @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason=SKIP_REASON)
     @pytest.mark.parametrize("filename, out_file, expected_out_file",
                              [
                                  (resources.resource_path(r"test/examples/psi_convert_test_1.bin"),
@@ -121,7 +120,6 @@ class TestPsiMuonFile:
         if os.path.exists(out_file):
             os.remove(out_file)
 
-    @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason=SKIP_REASON)
     @pytest.mark.parametrize("filename, out_file, expected_out_file",
                              [
                                  (resources.resource_path(r"test/examples/psi_convert_test_1.mdu"),
@@ -137,7 +135,6 @@ class TestPsiMuonFile:
         if os.path.exists(out_file):
             os.remove(out_file)
 
-    @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason=SKIP_REASON)
     @pytest.mark.parametrize("filename, starts, ends, names, out_file, expected_out_file",
                              [
                                  (resources.resource_path(r"test/examples/psi_convert_test_bin_2.bin"),
@@ -164,41 +161,74 @@ class TestPsiMuonFile:
         if os.path.exists(out_file):
             os.remove(out_file)
 
-    @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason=SKIP_REASON)
     def test_convert_on_bad_file(self):
-        msr_file = files.PSIMuonFile(resources.resource_path(r"test/examples/triumf_convert_test_2.msr"))
+        msr_file = files.PSIMuonFile(resources.resource_path(r"test/examples/triumf_convert_test_1.msr"))
         with pytest.raises(files.BeamsFileConversionError):
             msr_file.convert(resources.resource_path(r"test/examples/_triumf_convert_test_1.dat"))
 
-#
-# class TestIsisMuonFile:
-#     @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason="Fails when run on GitHub. Run locally.")
-#     def test_convert_on_good_nxs_file(self, filename, out_file, expected_out_file):
-#         msr_file = files.file(filename)
-#         msr_file.convert(out_file)
-#
-#         with open(out_file, 'rb') as of:
-#             with open(expected_out_file, 'rb') as expected_of:
-#                 assert of.read() == expected_of.read()
-#
-#     @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason="Fails when run on GitHub. Run locally.")
-#     def test_convert_on_good_nxs_v2_file(self, filename, out_file, expected_out_file):
-#         msr_file = files.file(filename)
-#         msr_file.convert(out_file)
-#
-#         with open(out_file, 'rb') as of:
-#             with open(expected_out_file, 'rb') as expected_of:
-#                 assert of.read() == expected_of.read()
-#
-#     @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason="Fails when run on GitHub. Run locally.")
-#     def test_convert_on_bad_file(self):
-#         msr_file = files.file(resources.resource_path(r"test/examples/triumf_convert_test_2.msr"))
-#         with pytest.raises(files.BeamsFileConversionError):
-#             msr_file.convert(resources.resource_path(r"test/examples/_triumf_convert_test_2.dat"))
-#
-#     @pytest.mark.skip
-#     def test_get_number_of_histograms(self):
-#         pass
+    @pytest.mark.parametrize("filename, histograms",
+                             [
+                                 (resources.resource_path(r"test/examples/psi_convert_test_bin_2.bin"), 16),
+                                 (resources.resource_path(r"test/examples/psi_convert_test_1.bin"), 5)
+                             ])
+    def test_get_number_of_histograms(self, filename, histograms):
+        psi_file = files.PSIMuonFile(filename)
+        assert psi_file.get_number_of_histograms() == histograms
+
+
+class TestIsisMuonFile:
+    @pytest.mark.parametrize("filename, out_file, expected_out_file",
+                             [
+                                 (resources.resource_path(r"test/examples/isis_convert_test_v2_1.nxs_v2"),
+                                  resources.resource_path(r"test/examples/_isis_convert_test_v2_1.dat"),
+                                  resources.resource_path(r"test/examples/isis_convert_test_v2_1.dat"))
+                             ])
+    def test_convert_on_good_nxs_v2_file(self, filename, out_file, expected_out_file):
+        msr_file = files.ISISMuonFile(filename)
+        msr_file.convert(out_file)
+
+        assert is_file_content_equal(out_file, expected_out_file)
+
+        if os.path.exists(out_file):
+            os.remove(out_file)
+
+    @pytest.mark.parametrize("filename, starts, ends, names, out_file, expected_out_file",
+                             [
+                                 (resources.resource_path(r"test/examples/isis_convert_test_v2_1.nxs_v2"),
+                                  [0, 32],
+                                  [32, 64],
+                                  ['Forw', 'Back'],
+                                  resources.resource_path(r"test/examples/_isis_convert_test_v2_2.dat"),
+                                  resources.resource_path(r"test/examples/isis_convert_test_v2_2.dat")),
+                                 (resources.resource_path(r"test/examples/isis_convert_test_v2_1.nxs_v2"),
+                                  [0, 16, 32, 48],
+                                  [16, 32, 48, 64],
+                                  ['Forw', 'Left', 'Back', 'Right'],
+                                  resources.resource_path(r"test/examples/_isis_convert_test_v2_3.dat"),
+                                  resources.resource_path(r"test/examples/isis_convert_test_v2_3.dat"))
+                             ])
+    def test_convert_on_good_file_with_format(self, filename, starts, ends, names, out_file, expected_out_file):
+        msr_file = files.ISISMuonFile(filename)
+        msr_file.set_combine_format(starts, ends, names)
+        msr_file.convert(out_file)
+
+        assert is_file_content_equal(out_file, expected_out_file)
+
+        if os.path.exists(out_file):
+            os.remove(out_file)
+
+    def test_convert_on_bad_file(self):
+        msr_file = files.ISISMuonFile(resources.resource_path(r"test/examples/triumf_convert_test_1.msr"))
+        with pytest.raises(files.BeamsFileConversionError):
+            msr_file.convert(resources.resource_path(r"test/examples/_triumf_convert_test_2.dat"))
+
+    @pytest.mark.parametrize("filename, histograms",
+                             [
+                                 (resources.resource_path(r"test/examples/isis_convert_test_v2_1.nxs_v2"), 96),
+                             ])
+    def test_get_number_of_histograms(self, filename, histograms):
+        psi_file = files.ISISMuonFile(filename)
+        assert psi_file.get_number_of_histograms() == histograms
 
 
 @pytest.mark.skip("Jparc files are not yet supported.")
