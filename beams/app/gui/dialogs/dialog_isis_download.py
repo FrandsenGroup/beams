@@ -6,6 +6,7 @@ import shutil
 import time
 import zipfile
 from datetime import datetime
+import webbrowser
 
 import requests
 from PyQt5 import QtWidgets, QtCore
@@ -201,9 +202,11 @@ class ISISDownloadDialog(QtWidgets.QDialog):
 
     @staticmethod
     def launch(args=None):
-        dialog = ISISDownloadDialog(args)
-        dialog.title_search.setFocus()
-        return dialog.exec()
+        webbrowser.open(r"https://data.isis.stfc.ac.uk/browse/instrument?sort=%7B%22fullName%22%3A%22asc%22%7D")
+        return 2
+        # dialog = ISISDownloadDialog(args)
+        # dialog.title_search.setFocus()
+        # return dialog.exec()
 
 
 class ISISDownloadDialogPresenter(QtCore.QObject):
