@@ -3,6 +3,7 @@ import abc
 import gzip
 import os
 import pickle
+import re
 import sys
 import subprocess
 import enum
@@ -11,6 +12,7 @@ import enum
 import numpy as np
 import h5py  # ISIS
 import musr2py  # PSI
+import regex  # python re doesn't support variable length look behinds
 
 from app.resources import resources
 
@@ -519,20 +521,15 @@ class MuonHistogramFile(ReadableFile):
         try:
             with open(self.file_path) as f:
                 f.readline()
-                metadata = f.readline().rstrip('\n').rsplit(',')
-                hist_titles = f.readline().rstrip('\n').rsplit(',')
-                background_one = f.readline().rstrip('\n').rsplit(',')
-                background_two = f.readline().rstrip('\n').rsplit(',')
-                good_bins_one = f.readline().rstrip('\n').rsplit(',')
-                good_bins_two = f.readline().rstrip('\n').rsplit(',')
-                initial_time = f.readline().rstrip('\n').rsplit(',')
+                metadata_line = f.readline()
+                hist_titles = f.readline().strip().rsplit(',')
+                background_one = f.readline().strip().rsplit(',')
+                background_two = f.readline().strip().rsplit(',')
+                good_bins_one = f.readline().strip().rsplit(',')
+                good_bins_two = f.readline().strip().rsplit(',')
+                initial_time = f.readline().strip().rsplit(',')
 
-            metadata = [pair.rsplit(':') for pair in metadata]
-            for pair in metadata:
-                if len(pair) < 2:
-                    pair.append('n/a')
-
-            metadata = {pair[0]: pair[1] for pair in metadata}
+            metadata = read_meta_line(metadata_line)
             metadata[HIST_TITLES_KEY] = hist_titles
             metadata[BACKGROUND_ONE_KEY] = {k: v for k, v in zip(hist_titles, background_one)}
             metadata[BACKGROUND_TWO_KEY] = {k: v for k, v in zip(hist_titles, background_two)}
@@ -791,6 +788,53 @@ def read_columnated_data(file_path, data_row, d_type, titles=None, title_row=Non
 
     except Exception as e:
         raise BeamsFileReadError("Error occurred reading in data.") from e
+
+
+def read_meta_line(line: str) -> dict:
+    """
+    Returns the meta data as a dictionary given a single line of metadata.
+
+    Note: KeyNames must NOT include a comma. KeyNames must NOT include colons.
+    All key value pairs MUST be separated by a comma. All keys and values will be strings and
+    whitespace will be stripped from the left and right side of those strings. Test regex below if
+    you are wondering if your meta string will survive.
+    """
+    key_regex = "(?<=^|,)[^,]*?(?=:)"
+    value_regex = "(?<=:)([^:]|{.*})*(?=(,|$))"
+
+    try:
+        # We do it like this so that values can include colons (e.g. if we had a dictionary as a value). Turns out that
+        # that is very hard to express simply with regex so we just iteratively remove key value pairs as we move down
+        # the string, just finding the next match rather then finding all matches at once.
+        meta_line = line
+        meta = {}
+
+        while len(meta_line) > 1:
+            # Get the next key in the line
+            key = regex.search(key_regex, meta_line).group()
+
+            # Find the index the key substring starts at
+            key_index = meta_line.find(key)
+
+            # Set the line to be everything after the key
+            meta_line = meta_line[key_index+len(key):]
+
+            # Now find the next value in the line
+            value = regex.search(value_regex, meta_line).group()
+
+            # Find the index the value substring starts at
+            value_index = meta_line.find(value)
+
+            # Set the line to be everything after the value
+            meta_line = meta_line[value_index + len(value):]
+
+            # Strip the whitespace and add the key-value pair to the dict
+            meta[key.strip()] = value.strip()
+
+        return meta
+
+    except Exception as e:
+        raise BeamsFileReadError("Top line of metadata was in an unexpected format.") from e
 
 
 class UnknownFileSource(Exception):

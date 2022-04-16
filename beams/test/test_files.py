@@ -1,6 +1,8 @@
 import pytest
 import os
 
+import numpy as np
+
 from app.model import files
 from app.resources import resources
 
@@ -73,6 +75,22 @@ class TestHelpers:
         else:
             for expected_row, read_row in zip(expected_data, data):
                 assert all(expected_row == read_row)
+
+    @pytest.mark.parametrize("line, expected_meta",
+                             [
+                                 ('a: 1, b: 2, c: 3', {'a': '1', 'b': '2', 'c': '3'}),
+                                 ('a: 1, b: 2, c: 3\n', {'a': '1', 'b': '2', 'c': '3'}),
+                                 (' a : 1 , b : 2 , c : 3 \n', {'a': '1', 'b': '2', 'c': '3'}),
+                                 ('a: 1, b: 2, 2, c: 3\n', {'a': '1', 'b': '2, 2', 'c': '3'}),
+                                 ('a: 1, b: {2: 2, a:c}, c: 3\n', {'a': '1', 'b': '{2: 2, a:c}', 'c': '3'}),
+                                 ('ALongKey: whole,bunch of commas, Key: 2,-#$%@!()*5 2, c: 3\nJohmy, Herea',
+                                  {'ALongKey': 'whole,bunch of commas', 'Key': '2,-#$%@!()*5 2', 'c': '3\nJohmy, Herea'}),
+                                 ('BinSize:0.39625,Temperature:2.0 K,Field:4.5 G,Sample:Gross,Orientation:n/a,RunNumber:210,Title:First Histogram Test',
+                                  {'BinSize': '0.39625', 'Temperature': '2.0 K', 'Field': '4.5 G', 'Sample': 'Gross',
+                                   'Orientation': 'n/a', 'RunNumber': '210', 'Title': 'First Histogram Test'})
+                             ])
+    def test_read_meta_line(self, line, expected_meta):
+        assert files.read_meta_line(line) == expected_meta
 
 
 class TestTriumfMuonFile:
@@ -237,7 +255,56 @@ class TestJparcMuonFile:
 
 
 class TestMuonHistogramFile:
-    pass
+    @pytest.mark.parametrize("filename, expected_meta",
+                             [
+                                 (resources.resource_path(r"test/examples/histogram_file_test_1.dat"),
+                                  {
+                                      files.BIN_SIZE_KEY: '0.39625', files.TEMPERATURE_KEY: '2.0 K',
+                                      files.FIELD_KEY: '4.5 G', files.SAMPLE_KEY: 'Gross',
+                                      files.ORIENTATION_KEY: 'a, weird, orientation',
+                                      files.RUN_NUMBER_KEY: '210', files.TITLE_KEY: 'First Histogram Test',
+                                      'BkgdOne': {'Back': '0', 'Forw': '0'},
+                                      'BkgdTwo': {'Back': '157', 'Forw': '157'},
+                                      'GoodBinOne': {'Back': '162', 'Forw': '162'},
+                                      'GoodBinTwo': {'Back': '3917', 'Forw': '3917'},
+                                      'T0': {'Back': '162', 'Forw': '162'},
+                                      'HistTitles': ['Forw', 'Back']
+                                  }),
+                                 (resources.resource_path(r"test/examples/histogram_file_test_2.dat"),
+                                  {
+                                      files.BIN_SIZE_KEY: '0.39625', files.TEMPERATURE_KEY: '2.0 K',
+                                      files.FIELD_KEY: '4.5 G', files.SAMPLE_KEY: 'Gross', files.ORIENTATION_KEY: 'n/a',
+                                      files.RUN_NUMBER_KEY: '210', files.TITLE_KEY: 'Second, Histogram, Test',
+                                      'BkgdOne': {'Back': '0', 'Forw': '0'},
+                                      'BkgdTwo': {'Back': '157', 'Forw': '157'},
+                                      'GoodBinOne': {'Back': '162', 'Forw': '162'},
+                                      'GoodBinTwo': {'Back': '3917', 'Forw': '3917'},
+                                      'T0': {'Back': '162', 'Forw': '162'},
+                                      'HistTitles': ['Forw', 'Back']
+                                  })
+                             ])
+    def test_read_meta(self, filename, expected_meta):
+        hist_file = files.MuonHistogramFile(filename)
+
+        assert hist_file.read_meta() == expected_meta
+
+    @pytest.mark.parametrize("filename, expected_data",
+                             [
+                                 (resources.resource_path(r"test/examples/histogram_file_test_1.dat"),
+                                  {'Forw': [174, 168, 191, 189, 188, 176],
+                                   'Back': [186, 175, 194, 195, 195, 180]}),
+                                 (resources.resource_path(r"test/examples/histogram_file_test_3.dat"),
+                                  {'0': [12, 13, 15, 17, 14, 16],
+                                   '1': [37, 29, 38, 29, 30, 19],
+                                   '2': [27, 22, 18, 22, 27, 17],
+                                   '3': [7, 11, 7, 9, 7, 11],
+                                   '4': [9, 20, 19, 16, 11, 15]})
+                             ])
+    def test_read_data(self, filename, expected_data):
+        hist_data = files.MuonHistogramFile(filename).read_data()
+
+        for title, array in expected_data.items():
+            assert np.array_equal(hist_data[title], array)
 
 
 class TestMuonAsymmetryFile:
