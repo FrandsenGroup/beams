@@ -559,13 +559,9 @@ class MuonAsymmetryFile(ReadableFile):
         try:
             with open(self.file_path) as f:
                 f.readline()
-                metadata_line = f.readline().rstrip('\n').rsplit('# ')[1].rsplit(',')
+                metadata_line = f.readline().strip().strip('#')
 
-            metadata = [pair.rsplit(':') for pair in metadata_line]
-            for pair in metadata:
-                if len(pair) < 2:
-                    pair.append('n/a')
-            metadata = {pair[0]: pair[1] for pair in metadata}
+            metadata = read_meta_line(metadata_line)
             metadata[T0_KEY] = 0
 
             return metadata
@@ -653,14 +649,11 @@ class FitFile(ReadableFile):
         try:
             with open(self.file_path) as f:
                 f.readline()
-                metadata_line = f.readline().rstrip('\n').rsplit('# ')[1].rsplit(',')
+                metadata_line = f.readline().strip().strip('#')
 
-            metadata = [pair.rsplit(':') for pair in metadata_line]
-            for pair in metadata:
-                if len(pair) < 2:
-                    pair.append('n/a')
-            metadata = {pair[0]: pair[1] for pair in metadata}
+            metadata = read_meta_line(metadata_line)
             metadata[T0_KEY] = 0
+
             return metadata
         except Exception as e:
             raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS") from e

@@ -308,7 +308,30 @@ class TestMuonHistogramFile:
 
 
 class TestMuonAsymmetryFile:
-    pass
+    @pytest.mark.parametrize("filename, expected_meta",
+                             [
+                                 (resources.resource_path(r"test/examples/asymmetry_file_test_1.asy"),
+                                  {files.TITLE_KEY: 'Cu2IrO3 LF=200G T=2.5K NSR', files.BIN_SIZE_KEY: 'None',
+                                   files.RUN_NUMBER_KEY: '6522', files.TEMPERATURE_KEY: '2.495(0.028)K',
+                                   files.FIELD_KEY: '200.00G', files.T0_KEY: 0})
+                             ])
+    def test_read_meta(self, filename, expected_meta):
+        asy_file = files.MuonAsymmetryFile(filename)
+
+        assert asy_file.read_meta() == expected_meta
+
+    @pytest.mark.parametrize("filename, expected_data",
+                             [
+                                 (resources.resource_path(r"test/examples/asymmetry_file_test_1.asy"),
+                                  {'Time': [17, 20, 21, 11, 21, 21, 19, 10, 12],
+                                   'Asymmetry': [3, 7, 7, 3, 7, 5, 6, 7, 5],
+                                   'Uncertainty': [3, 2, 3, 2, 1, 0, 5, 2, 1]})
+                             ])
+    def test_read_data(self, filename, expected_data):
+        asy_data = files.MuonAsymmetryFile(filename).read_data()
+
+        for title, array in expected_data.items():
+            assert np.array_equal(asy_data[title], array)
 
 
 class TestFitDatasetExpressionFile:
