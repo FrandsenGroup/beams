@@ -3,13 +3,16 @@ import abc
 import gzip
 import os
 import pickle
+import re
 import sys
 import subprocess
 import enum
 
 # Installed Packages
 import numpy as np
-import h5py
+import h5py  # ISIS
+import musr2py  # PSI
+import regex  # python re doesn't support variable length look behinds
 
 from app.resources import resources
 
@@ -77,6 +80,8 @@ COMBINED_RUNS_KEY = 'CombinedRuns'
 FILE_PATH_KEY = 'FilePath'
 LAB_KEY = "Lab"
 AREA_KEY = "Area"
+SAMPLE_KEY = "Sample"
+ORIENTATION_KEY = "Orientation"
 
 
 # TODO Maybe we should have these files inherit from the actual File object
@@ -211,33 +216,108 @@ class PSIMuonFile(ConvertibleFile):
     DATA_FORMAT = Format.BINARY
     DATA_TYPE = DataType.MUON
 
+    def __init__(self, file_path):
+        super().__init__(file_path)
+        self._combine_format = None
+
+    def set_combine_format(self, starts, ends, names):
+        # Check if the values provided are of a valid datatype. Doing this first prevents sneaky bugs.
+        try:
+            starts = [int(s) for s in starts]
+            ends = [int(e) for e in ends]
+            names = [str(n) for n in names]
+        except ValueError as e:
+            raise Exception("Format for combining histograms contains values of invalid types.") from e
+
+        distinct_starts = set(starts)
+        distinct_ends = set(ends)
+        distinct_names = set(names)
+
+        # Check if any values are repeated or if one set of values is larger then another
+        if len(distinct_starts) != len(distinct_ends) or len(distinct_starts) != (len(distinct_names)) \
+                or len(starts) != len(distinct_starts) or len(ends) != len(distinct_ends) \
+                or len(names) != len(distinct_names) or len(distinct_starts) == 0:
+            raise Exception("Invalid format for combining histograms.")
+
+        if max(ends) > self.get_number_of_histograms():
+            raise Exception("Invalid range of histograms to combine.")
+
+        self._combine_format = (starts, ends, names)
+
+    def get_number_of_histograms(self):
+        x = musr2py.MuSR_td_PSI_bin()
+        x.read(self.file_path)
+        return x.get_numberHisto_int()
+
     def convert(self, out_file):
-        if is_found(self.file_path) and (
-                check_ext(self.file_path, Extensions.PSI_BIN) or check_ext(self.file_path, Extensions.PSI_MDU)) \
-                and check_ext(out_file, Extensions.HISTOGRAM):
+        if not check_ext(out_file, Extensions.HISTOGRAM):
+            raise Exception("Out file does not have a valid extension (.dat).")
 
-            system_args = {'win32': [resources.PSI_WINDOWS_CONVERSION, self.file_path, out_file],
-                           'linux': ['./' + resources.PSI_LINUX_CONVERSION, self.file_path, out_file],
-                           'darwin': ['./' + resources.PSI_LINUX_CONVERSION, self.file_path, out_file]}
+        try:
+            x = musr2py.MuSR_td_PSI_bin()
+            x.read(self.file_path)
 
-            if sys.platform in system_args.keys():
-                args = system_args[sys.platform]
+            # Get singular scalars
+            num_hists = x.get_numberHisto_int()
+            bin_width = x.get_binWidth_ns()
+            run_number = x.get_runNumber_int()
+            sample_name = x.get_sample().strip()
+            temperature = x.get_temp().strip()
+            orientation = x.get_orient().strip()
+            field = x.get_field().strip()
+            title = x.get_comment().strip()
 
-                if sys.platform == 'win32':
-                    shell = True
-                else:
-                    shell = False
+            # Create full histogram array
+            data = np.array([x.get_histo_vector(i, 1) for i in range(num_hists)])
+
+            if self._combine_format:
+                starts, ends, hist_title_list = self._combine_format
+                histograms = []
+                for start, end in zip(starts, ends):
+                    if end < start:
+                        histograms.append(sum(data[0:end]) + sum(data[start:]))
+                    else:
+                        histograms.append(sum(data[start:end]))
             else:
-                raise EnvironmentError("Not on a recognized system.")
+                hist_title_list = [str(i) if title.isspace() else title for i, title in enumerate(x.get_histoNames_vector())]
+                histograms = data
 
-            try:
-                subprocess.check_call(args, shell=shell)
-            except subprocess.CalledProcessError as e:
-                raise BeamsFileConversionError("Error occurred running conversion executable.") from e
-            else:
-                return MuonHistogramFile(out_file)
+            # Get list scalars
+            t0_bin_list = [str(n) for n in x.get_t0_vector()][0:len(hist_title_list)]
+            first_good_bin_list = [str(n) for n in x.get_firstGood_vector()][0:len(hist_title_list)]
+            last_good_bin_list = [str(n) for n in x.get_lastGood_vector()][0:len(hist_title_list)]
+            first_background_list = [str(0) for i in range(num_hists)][0:len(hist_title_list)]  # fixme very very wrong,don't merge without fix.
+            last_background_list = [str(x.get_firstGood_int(i) - 5) for i in range(num_hists)][0:len(hist_title_list)]
 
-        raise BeamsFileConversionError("Binary file is in an unknown format. May need to update executables.")
+        except Exception as e:
+            raise BeamsFileConversionError(f"An error occurred pulling data from the file. "
+                                           f"Error occurred with {self.file_path}.") from e
+
+        # Create our meta string for the top of the file
+        meta_string = f"BEAMS\n" \
+                      f"{BIN_SIZE_KEY}:{bin_width}," \
+                      f"{TEMPERATURE_KEY}:{temperature}," \
+                      f"{FIELD_KEY}:{field}," \
+                      f"{SAMPLE_KEY}:{sample_name}," \
+                      f"{ORIENTATION_KEY}:{orientation}," \
+                      f"{RUN_NUMBER_KEY}:{run_number}," \
+                      f"{TITLE_KEY}:{title}\n"
+
+        meta_string += ','.join([title.strip() if not title.isspace() else str(i)
+                                 for i, title in enumerate(hist_title_list)]) + "\n"
+        meta_string += ','.join(first_background_list) + "\n"
+        meta_string += ','.join(last_background_list) + "\n"
+        meta_string += ','.join(first_good_bin_list) + "\n"
+        meta_string += ','.join(last_good_bin_list) + "\n"
+        meta_string += ','.join(t0_bin_list)
+
+        try:
+            np.savetxt(out_file, np.rot90(histograms, 3), delimiter=',', header=meta_string, comments="", fmt="%-8i")
+        except Exception as e:
+            raise BeamsFileConversionError(f"An error occurred writing the converted data to the out file. "
+                                           f"Error occurred with {self.file_path}.") from e
+
+        return MuonHistogramFile(out_file)
 
 
 class ISISMuonFile(ConvertibleFile):
@@ -329,7 +409,10 @@ class ISISMuonFile(ConvertibleFile):
         if not check_ext(out_file, Extensions.HISTOGRAM):
             raise Exception("Out file does not have a valid extension (.dat).")
 
-        f = h5py.File(self.file_path, 'r+')
+        try:
+            f = h5py.File(self.file_path, 'r+')
+        except OSError:
+            raise BeamsFileConversionError("File signature not found. Unable to open this file.")
 
         try:
             title = self.get_value(self.DataPaths.TITLE, f, string=True)
@@ -404,7 +487,8 @@ class ISISMuonFile(ConvertibleFile):
                                                                                                  str(last_good_bin),
                                                                                                  str(t0_bin)]])
         try:
-            np.savetxt(out_file, np.rot90(histograms, 3), delimiter=',', header=meta_string, comments="", fmt="%-8i")
+            with open(out_file, 'wt') as f:
+                np.savetxt(f, np.rot90(histograms, 3), delimiter=',', header=meta_string, comments="", fmt="%-8i")
         except Exception as e:
             raise BeamsFileConversionError("An exception occurred writing ISIS data to {}".format(out_file)) from e
 
@@ -437,20 +521,15 @@ class MuonHistogramFile(ReadableFile):
         try:
             with open(self.file_path) as f:
                 f.readline()
-                metadata = f.readline().rstrip('\n').rsplit(',')
-                hist_titles = f.readline().rstrip('\n').rsplit(',')
-                background_one = f.readline().rstrip('\n').rsplit(',')
-                background_two = f.readline().rstrip('\n').rsplit(',')
-                good_bins_one = f.readline().rstrip('\n').rsplit(',')
-                good_bins_two = f.readline().rstrip('\n').rsplit(',')
-                initial_time = f.readline().rstrip('\n').rsplit(',')
+                metadata_line = f.readline()
+                hist_titles = f.readline().strip().rsplit(',')
+                background_one = f.readline().strip().rsplit(',')
+                background_two = f.readline().strip().rsplit(',')
+                good_bins_one = f.readline().strip().rsplit(',')
+                good_bins_two = f.readline().strip().rsplit(',')
+                initial_time = f.readline().strip().rsplit(',')
 
-            metadata = [pair.rsplit(':') for pair in metadata]
-            for pair in metadata:
-                if len(pair) < 2:
-                    pair.append('n/a')
-
-            metadata = {pair[0]: pair[1] for pair in metadata}
+            metadata = read_meta_line(metadata_line)
             metadata[HIST_TITLES_KEY] = hist_titles
             metadata[BACKGROUND_ONE_KEY] = {k: v for k, v in zip(hist_titles, background_one)}
             metadata[BACKGROUND_TWO_KEY] = {k: v for k, v in zip(hist_titles, background_two)}
@@ -480,13 +559,9 @@ class MuonAsymmetryFile(ReadableFile):
         try:
             with open(self.file_path) as f:
                 f.readline()
-                metadata_line = f.readline().rstrip('\n').rsplit('# ')[1].rsplit(',')
+                metadata_line = f.readline().strip().strip('#')
 
-            metadata = [pair.rsplit(':') for pair in metadata_line]
-            for pair in metadata:
-                if len(pair) < 2:
-                    pair.append('n/a')
-            metadata = {pair[0]: pair[1] for pair in metadata}
+            metadata = read_meta_line(metadata_line)
             metadata[T0_KEY] = 0
 
             return metadata
@@ -574,14 +649,11 @@ class FitFile(ReadableFile):
         try:
             with open(self.file_path) as f:
                 f.readline()
-                metadata_line = f.readline().rstrip('\n').rsplit('# ')[1].rsplit(',')
+                metadata_line = f.readline().strip().strip('#')
 
-            metadata = [pair.rsplit(':') for pair in metadata_line]
-            for pair in metadata:
-                if len(pair) < 2:
-                    pair.append('n/a')
-            metadata = {pair[0]: pair[1] for pair in metadata}
+            metadata = read_meta_line(metadata_line)
             metadata[T0_KEY] = 0
+
             return metadata
         except Exception as e:
             raise BeamsFileReadError("This fit file is not supported by your current version of BEAMS") from e
@@ -649,8 +721,9 @@ def check_ext(filename, expected_ext):
     :param expected_ext:
     :return: boolean
     """
-    _, ext = os.path.splitext(filename)
-    return ext == expected_ext
+    expected_ext = expected_ext.lower()
+    _, ext = os.path.splitext(filename.lower())
+    return ext == expected_ext or expected_ext in ext
 
 
 def is_beams(filename):
@@ -665,10 +738,35 @@ def is_beams(filename):
     """
     if is_found(filename):
         with open(filename) as f:
-            return 'BEAMS' in f.readline().rstrip('\n')
+            return 'beams' in f.readline().rstrip('\n').lower()
+    return False
 
 
 def read_columnated_data(file_path, data_row, d_type, titles=None, title_row=None):
+    """
+    Reads in columnated data from a file
+
+    If title row is provided and titles are not then it will attempt to retrieve the titles from that row. If titles
+    is provided then it will not make an attempt to retrieve them.
+
+    PARAMETERS
+    ----------
+        file_path: str
+            Absolute or relative path to the file we are reading
+        data_row: int
+            The first line where the data begins (0 indexed)
+        d_type: type
+            The type of the data we are retrieving
+        titles: list[str]
+            List of titles for each column (in proper order)
+        title_row: int
+            The line where the column titles are in the file
+
+    RETURNS
+    -------
+        data: np.ndarray
+
+    """
     try:
         if not titles and title_row:
             with open(file_path, 'r') as f:
@@ -685,24 +783,51 @@ def read_columnated_data(file_path, data_row, d_type, titles=None, title_row=Non
         raise BeamsFileReadError("Error occurred reading in data.") from e
 
 
-def create_meta_string(meta: dict) -> str:
-    hist_keys = [T0_KEY, BACKGROUND_TWO_KEY, BACKGROUND_ONE_KEY, GOOD_BIN_ONE_KEY, GOOD_BIN_TWO_KEY, HIST_TITLES_KEY]
+def read_meta_line(line: str) -> dict:
+    """
+    Returns the meta data as a dictionary given a single line of metadata.
 
-    final_string = 'BEAMS\n'
-    for i, (key, value) in enumerate(meta.items()):
-        if key not in hist_keys:
-            final_string += f"{key}:{str(value)}" + "," if i < len(meta) - 1 else ""
-    final_string += "\n"
+    Note: KeyNames must NOT include a comma. KeyNames must NOT include colons.
+    All key value pairs MUST be separated by a comma. All keys and values will be strings and
+    whitespace will be stripped from the left and right side of those strings. Test regex below if
+    you are wondering if your meta string will survive.
+    """
+    key_regex = "(?<=^|,)[^,]*?(?=:)"
+    value_regex = "(?<=:)([^:]|{.*})*(?=(,|$))"
 
-    final_string += '\n'.join([','.join([title if meta_list is None else str(meta_list[title])
-                                         for title in meta[HIST_TITLES_KEY]])
-                               for meta_list in [None,
-                                                 meta[BACKGROUND_ONE_KEY],
-                                                 meta[BACKGROUND_TWO_KEY],
-                                                 meta[GOOD_BIN_ONE_KEY],
-                                                 meta[GOOD_BIN_TWO_KEY],
-                                                 meta[T0_KEY]]])
-    return final_string
+    try:
+        # We do it like this so that values can include colons (e.g. if we had a dictionary as a value). Turns out that
+        # that is very hard to express simply with regex so we just iteratively remove key value pairs as we move down
+        # the string, just finding the next match rather then finding all matches at once.
+        meta_line = line
+        meta = {}
+
+        while len(meta_line) > 1:
+            # Get the next key in the line
+            key = regex.search(key_regex, meta_line).group()
+
+            # Find the index the key substring starts at
+            key_index = meta_line.find(key)
+
+            # Set the line to be everything after the key
+            meta_line = meta_line[key_index+len(key):]
+
+            # Now find the next value in the line
+            value = regex.search(value_regex, meta_line).group()
+
+            # Find the index the value substring starts at
+            value_index = meta_line.find(value)
+
+            # Set the line to be everything after the value
+            meta_line = meta_line[value_index + len(value):]
+
+            # Strip the whitespace and add the key-value pair to the dict
+            meta[key.strip()] = value.strip()
+
+        return meta
+
+    except Exception as e:
+        raise BeamsFileReadError("Top line of metadata was in an unexpected format.") from e
 
 
 class UnknownFileSource(Exception):
