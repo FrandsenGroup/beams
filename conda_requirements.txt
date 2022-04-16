@@ -11,3 +11,4 @@ sentry-sdk
 pyinstaller
 pytest
 musr2py
+regex
