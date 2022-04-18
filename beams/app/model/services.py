@@ -135,20 +135,27 @@ class RunService:
             runs = [(r, int(f)) for r, f in runs]
 
         left_integrations = []
+        left_uncertainties = []
         right_integrations = []
+        right_uncertainties = []
 
         for run, _ in runs:
             if run.asymmetries[run.LEFT_BINNED_ASYMMETRY] is None or \
                     run.asymmetries[run.RIGHT_BINNED_ASYMMETRY] is None:
                 raise Exception("Asymmetries have not been calculated for runs selected to integrate.")
 
-            left_integrations.append(run.asymmetries[run.LEFT_BINNED_ASYMMETRY].integrate())
-            right_integrations.append(run.asymmetries[run.RIGHT_BINNED_ASYMMETRY].integrate())
+            integration, uncertainty = run.asymmetries[run.LEFT_BINNED_ASYMMETRY].integrate()
+            left_integrations.append(integration)
+            left_uncertainties.append(uncertainty)
+
+            integration, uncertainty = run.asymmetries[run.RIGHT_BINNED_ASYMMETRY].integrate()
+            right_integrations.append(integration)
+            right_uncertainties.append(uncertainty)
 
         return {
             independent_variable_key: [i for _, i in runs],
-            objects.RunDataset.LEFT_BINNED_ASYMMETRY: left_integrations,
-            objects.RunDataset.RIGHT_BINNED_ASYMMETRY: right_integrations
+            objects.RunDataset.LEFT_BINNED_ASYMMETRY: (left_integrations, left_uncertainties),
+            objects.RunDataset.RIGHT_BINNED_ASYMMETRY: (right_integrations, right_uncertainties)
         }
 
     def add_runs(self, paths):
