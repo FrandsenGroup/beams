@@ -47,7 +47,7 @@ class IntegrationDialog(QtWidgets.QDialog):
         layout = QtWidgets.QVBoxLayout()
 
         for i, integration in enumerate(integrations):
-            self.canvas.axes[i].plot(x_axis, integration, linestyle='None', marker='o')
+            self.canvas.axes[i].errorbar(x_axis, integration[0], integration[1], linestyle='None', marker='o')
             self.canvas.axes[i].set_xlabel(x_axis_label)
             self.canvas.axes[i].set_title(titles[i])
 
@@ -121,10 +121,9 @@ class IntegrationDialog(QtWidgets.QDialog):
         integration_string += "{:<12}\t\n".format("Uncertainty")
 
         integration = self._integrations[integration_index]
-        for i, integration_tuple in enumerate(integration):
+        for i, integration_tuple in enumerate(zip(*integration)):
             integration_string += "{:<12}\t".format(self._ind_var_array[i])
             integration_string += "{:<21.5f}\t".format(float(integration_tuple[0]))
-            # TODO: Replace with real asymmetry
             integration_string += "{:<12.5f}\t\n".format(float(integration_tuple[1]))
 
         with open(save_path, 'w', encoding="utf-8") as out_file_object:
