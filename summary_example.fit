@@ -1,30 +1,52 @@
 #BEAMS
 
 # Summary
-RunNumber	Temperature 	α       	β       	λ       	a       	
-6520    	1.511(0.020)K	0.73107 	0.39690 	1.14100 	0.08860 	
-6521    	2.001(0.004)K	0.73068 	0.42116 	0.76717 	0.08005 	
+RunNumber	Temperature 	a       	λ       	α       	Reduced χ² 	
+25531   	5.867(0.007)K	0.15449 	10.30829	1.02462 	1.8344     	
+25532   	7.926(0.006)K	0.20762 	6.28911 	1.02803 	1.8573     	
+25533   	9.659(0.006)K	0.18173 	2.43928 	1.01517 	3.4703     	
+25534   	11.787(0.007)K	0.17068 	1.29650 	0.99673 	5.5091     	
 
 # Fit Parameters
 
 # 	Name    Value     Uncertainty Lower   Upper   
 
-C:/Users/Alec/BEAMS/testdata/006520.dat
-# Specific parameters for run 6520 (Cu2IrO3 LF=200G T=1.5K NSR)
+/Users/jaredblack/Documents/FrandsenGroup/2074 data/025534.dat
+# Specific parameters for run 25534 (CoTa2O6 FC LF=4000G T=11.787(0.007)K)
 
-	α       0.73107   0.01636     -inf    inf     
-	β       0.39690   0.17743     -inf    inf     
-	λ       1.14100   0.42329     -inf    inf     
-	a       0.08860   0.03421     -inf    inf     
+	a       0.17068   0.00311     -inf    inf     
+	λ       1.29650   0.05185     -inf    inf     
+	α       0.99673   0.00297     -inf    inf     
 
-C:/Users/Alec/BEAMS/testdata/006521.dat
-# Specific parameters for run 6521 (Cu2IrO3 LF=200G T=2K NSR)
+	Reduced χ²        5.5091  
 
-	α       0.73068   0.01948     -inf    inf     
-	β       0.42116   0.18635     -inf    inf     
-	λ       0.76717   0.28421     -inf    inf     
-	a       0.08005   0.03036     -inf    inf     
+/Users/jaredblack/Documents/FrandsenGroup/2074 data/025533.dat
+# Specific parameters for run 25533 (CoTa2O6 FC LF=4000G T=9.659(0.006)K)
 
-# Expression
+	a       0.18173   0.00348     -inf    inf     
+	λ       2.43928   0.08177     -inf    inf     
+	α       1.01517   0.00183     -inf    inf     
 
-	A(t) = a*exp(-(λ*t)^β)
+	Reduced χ²        3.4703  
+
+/Users/jaredblack/Documents/FrandsenGroup/2074 data/025532.dat
+# Specific parameters for run 25532 (CoTa2O6 FC LF=4000G T=7.926(0.006)K)
+
+	a       0.20762   0.00608     -inf    inf     
+	λ       6.28911   0.23464     -inf    inf     
+	α       1.02803   0.00111     -inf    inf     
+
+	Reduced χ²        1.8573  
+
+/Users/jaredblack/Documents/FrandsenGroup/2074 data/025531.dat
+# Specific parameters for run 25531 (CoTa2O6 FC LF=4000G T=5.867(0.007)K)
+
+	a       0.15449   0.01473     -inf    inf     
+	λ       10.30829  0.95024     -inf    inf     
+	α       1.02462   0.00105     -inf    inf     
+
+	Reduced χ²        1.8344  
+
+# Fitting equation
+
+	# A(t) = a*exp(-λ*t)
