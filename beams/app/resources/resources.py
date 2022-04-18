@@ -7,7 +7,7 @@ import os
 import sys
 
 
-def resource_path(relative_path):
+def resource_path(relative_path) -> str:
     """ Get absolute path to resource, works for dev and for PyInstaller """
     relative_path = str(Path(relative_path))
     try:
@@ -59,8 +59,6 @@ LATO_REGULAR_FONT = resource_path('app/resources/fonts/fonts-Regular.ttf')
 LATO_THIN_FONT = resource_path('app/resources/fonts/fonts-Thin.ttf')
 LATO_THIN_ITALIC_FONT = resource_path('app/resources/fonts/fonts-ThinItalic.ttf')
 
-PSI_LINUX_CONVERSION = resource_path('app/resources/binaries/PSI_LINUX')
-PSI_WINDOWS_CONVERSION = resource_path('app/resources/binaries/PSI_WINDOWS.exe')
 TRIUMF_LINUX_CONVERSION = resource_path('app/resources/binaries/TRIUMF_LINUX')
 TRIUMF_MAC_CONVERSION = resource_path('app/resources/binaries/TRIUMF_MAC')
 TRIUMF_WINDOWS_CONVERSION = resource_path('app/resources/binaries/TRIUMF_WINDOWS.exe')

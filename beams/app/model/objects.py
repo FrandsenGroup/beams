@@ -1234,7 +1234,21 @@ class RunDataset(PersistentObject):
 
     def write(self, out_file, format=None, bin_size=None):
         if format == files.Extensions.HISTOGRAM:
-            meta_string = files.create_meta_string(self.meta)
+            meta_string = 'BEAMS\n'
+            for i, (key, value) in enumerate(self.meta.items()):
+                if key not in [files.T0_KEY, files.BACKGROUND_TWO_KEY, files.BACKGROUND_ONE_KEY,
+                               files.GOOD_BIN_ONE_KEY, files.GOOD_BIN_TWO_KEY, files.HIST_TITLES_KEY]:
+                    meta_string += f"{key}:{str(value)}" + "," if i < len(self.meta) - 1 else ""
+            meta_string += "\n"
+
+            meta_string += '\n'.join([','.join([title if meta_list is None else str(meta_list[title])
+                                                for title in self.meta[files.HIST_TITLES_KEY]])
+                                      for meta_list in [None,
+                                                        self.meta[files.BACKGROUND_ONE_KEY],
+                                                        self.meta[files.BACKGROUND_TWO_KEY],
+                                                        self.meta[files.GOOD_BIN_ONE_KEY],
+                                                        self.meta[files.GOOD_BIN_TWO_KEY],
+                                                        self.meta[files.T0_KEY]]])
 
             histograms = [hist for hist in self.histograms.values()]
             histograms = np.fliplr(np.rot90(histograms, 3))

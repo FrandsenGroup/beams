@@ -70,7 +70,8 @@ $ python beams
 ### Loading Files
 By clicking the [+] button in the top left corner you will launch a prompt with four options of adding files. 
 From disk (your computer), and then three different facilities: Triumf, PSI and ISIS. Clicking the [-] button will remove
-all the the files currently checked.
+all the the files currently checked. ISIS recently changed their API so it will take you straight to there website
+(which is much improved and overall a better experience to work with anyways).
 
 <img src="https://github.com/aPeter1/BEAMS/blob/assets/file_panel_example.png" width="400" />
 
