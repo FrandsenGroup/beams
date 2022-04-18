@@ -1067,6 +1067,7 @@ class FitDataset(PersistentObject):
 
         for name, v in f.parameters.items():  # getting the column headers
             fit_parameters_string += "{:<8}\t".format(name)
+        fit_parameters_string += "{:<11}\t".format("Reduced \u03C7\u00B2")
         fit_parameters_string += "\n"
 
         fit_list = self.__sort_fit_list(list(self.fits.values()), order_by_key)
@@ -1077,7 +1078,7 @@ class FitDataset(PersistentObject):
                 fit_parameters_string += "{:<12}\t".format(f.meta[order_by_key])
             for name, v in f.parameters.items():
                 fit_parameters_string += "{:<8}\t".format("{:.5f}".format(v.value))
-            # run = services.RunService().get_runs_by_ids([f.run_id])[0]
+            fit_parameters_string += "{:<11.4f}\t".format(f.goodness)
             fit_parameters_string += "\n"
 
         # Writing the Verbose Section
@@ -1112,6 +1113,7 @@ class FitDataset(PersistentObject):
                                                                                                      v.uncertainty,
                                                                                                      v.lower,
                                                                                                      v.upper) + "\n"
+            fit_parameters_string += "\n\t{:<18}{:<8.4f}\n".format("Reduced \u03C7\u00B2", f.goodness)
 
             fit_parameters_string += "\n"
         return fit_parameters_string
