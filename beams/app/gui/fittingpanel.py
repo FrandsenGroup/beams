@@ -1746,7 +1746,7 @@ class FitTabPresenter(PanelPresenter):
         colors = {run.id: styles[run.id][self._style_service.Keys.DEFAULT_COLOR] for run in runs if
                   run.id in checked_run_ids}
         self._view.support_panel.tree.set_colors(colors)
-        colors['default'] = '#000000'
+        colors['default'] = '#888888'
 
         alphas = dict()
 
