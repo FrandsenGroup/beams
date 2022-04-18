@@ -678,7 +678,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             except ValueError:
                 WarningMessageDialog.launch(["Invalid asymmetry limits."])
                 return
-            self.axes_time.set_xlim(x_min, x_max)
 
         def set_fft_plot_limits(self, max_fft, max_freq=None):
             with warnings.catch_warnings():
@@ -1155,15 +1154,11 @@ class PlottingPanelPresenter(PanelPresenter):
                 continue
 
             if side == 'left':
-                asymmetry = run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY]
-                if asymmetry is None or asymmetry.bin_size != bin_size or True:
-                    asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(bin_size)
-                    run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY] = asymmetry
+                asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(bin_size).cut(min_time, max_time)
+                run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY] = asymmetry
             else:
-                asymmetry = run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY]
-                if asymmetry is None or asymmetry.bin_size != bin_size or True:
-                    asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(bin_size)
-                    run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY] = asymmetry
+                asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(bin_size).cut(min_time, max_time)
+                run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY] = asymmetry
 
             time = asymmetry.time
             uncertainty = asymmetry.uncertainty
@@ -1183,9 +1178,6 @@ class PlottingPanelPresenter(PanelPresenter):
             max_asymmetry = local_max if local_max > max_asymmetry else max_asymmetry
             local_min = np.min(asymmetry[start_index:end_index])
             min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
-
-            if not fast:
-                pass
 
             display.plot_asymmetry(time, asymmetry, uncertainty, fit,
                                    color=style[self.__style_service.Keys.DEFAULT_COLOR],
