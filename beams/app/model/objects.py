@@ -682,6 +682,29 @@ class Asymmetry(np.ndarray, PersistentObject):
                          alpha=self.alpha,
                          calculated=None if self.calculated is None else self.calculated[start_index: end_index])
 
+    def integrate(self, min_time=None, max_time=None):
+        """ Returns the integration of the current array.
+
+        Currently uses the composite trapezoidal rule as provided by numpy.
+
+        Parameters
+        ----------
+            min_time (float, optional):
+                Lower time bound of asymmetry to integrate
+            max_time (float, optional):
+                Upper time bound of asymmetry to integrate
+
+        Returns
+        -------
+        (integration, uncertainty) : tuple(float, float)
+            The integration of this asymmetry
+            The uncertainty of the integration
+        """
+        if min_time is not None or max_time is not None:
+            return self.cut(min_time, max_time).integrate()
+        else:
+            return float(np.trapz(self, self.time)), float(np.sqrt(np.sum(np.power(self.uncertainty, 2))) * self.bin_size / 1000)
+
     @staticmethod
     def fft(asymmetry, time, f_min, f_max):
         f_step = (f_max - f_min) / 200

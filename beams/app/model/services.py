@@ -3,6 +3,8 @@ import json
 import os
 import logging
 import pickle
+import re
+from collections.abc import Sequence, Iterable
 import gzip
 
 from PyQt5 import QtCore
@@ -93,12 +95,6 @@ class RunService:
                 loaded_runs.append(run)
         return loaded_runs
 
-    def load_runs(self, ids):
-        pass
-
-    def combine_histograms(self, ids, titles):
-        pass
-
     def recalculate_asymmetries(self, ids):
         report.log_debug("Updated Asymmetry for Runs=({})".format(str(ids)))
         for run in self.__dao.get_runs_by_ids(ids):
@@ -117,6 +113,50 @@ class RunService:
                         run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size)
 
         self.signals.changed.emit()
+
+    def integrate_asymmetries(self, ids, independent_variable_key):
+        """ Gets the runs with the given ids and integrates the asymmetries as they are currently binned on the left
+        and right.
+
+        RETURNS
+        -------
+        integrations : dict[str, Sequence[float]]
+            Two arrays of floats, one for the asymmetries binned on the left, on for the ones on the right.
+
+        """
+
+        runs = [(r, float(re.search("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?",
+                                    r.meta[independent_variable_key])[0]))
+                for r in self.get_runs_by_ids(ids)]
+
+        runs.sort(key=lambda r: r[1])
+
+        if independent_variable_key == files.RUN_NUMBER_KEY:
+            runs = [(r, int(f)) for r, f in runs]
+
+        left_integrations = []
+        left_uncertainties = []
+        right_integrations = []
+        right_uncertainties = []
+
+        for run, _ in runs:
+            if run.asymmetries[run.LEFT_BINNED_ASYMMETRY] is None or \
+                    run.asymmetries[run.RIGHT_BINNED_ASYMMETRY] is None:
+                raise Exception("Asymmetries have not been calculated for runs selected to integrate.")
+
+            integration, uncertainty = run.asymmetries[run.LEFT_BINNED_ASYMMETRY].integrate()
+            left_integrations.append(integration)
+            left_uncertainties.append(uncertainty)
+
+            integration, uncertainty = run.asymmetries[run.RIGHT_BINNED_ASYMMETRY].integrate()
+            right_integrations.append(integration)
+            right_uncertainties.append(uncertainty)
+
+        return {
+            independent_variable_key: [i for _, i in runs],
+            objects.RunDataset.LEFT_BINNED_ASYMMETRY: (left_integrations, left_uncertainties),
+            objects.RunDataset.RIGHT_BINNED_ASYMMETRY: (right_integrations, right_uncertainties)
+        }
 
     def add_runs(self, paths):
         builder = objects.DataBuilder()
@@ -138,12 +178,6 @@ class RunService:
 
         if not suppress_signal:
             self.signals.added.emit()
-
-    def update_runs_by_ids(self, ids, asymmetries):
-        report.log_debug(
-            "Updating Asymmetries for Runs=({}) with Asymmetries=({})".format(str(ids), str(asymmetries)))
-        self.__dao.update_runs_by_id(ids, asymmetries)
-        self.signals.changed.emit()
 
     def update_alphas(self, ids, alphas):
         report.log_debug("Updating Alphas for Runs=({}) with Alphas=({})".format(str(ids), str(alphas)))
@@ -182,7 +216,6 @@ class RunService:
         self.__dao.add_runs([run])
         self.signals.added.emit()
         return run
-
 
 class StyleService:
     class Signals(QtCore.QObject):

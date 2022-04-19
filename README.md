@@ -110,6 +110,15 @@ the alpha parameter for the asymmetry.
 
 ![choosing your histograms for asymmetry](https://github.com/aPeter1/BEAMS/blob/assets/plot_interaction.png)
 
+#### Integrating Asymmetries
+After plotting, you can also integrate asymmetries. To do this, select the runs for which you'd like to integrate asymmetries in the list directly under the "Plot" buttons in the right of the window. Then, right click on any of those runs and select "Integrate".
+
+![Selecting the integrate option](https://github.com/FrandsenGroup/beams/blob/assets/integrate-option.png)
+
+This will take you to the integration dialog, where you can interact with the integration in the same way as you can in the [Histogram Panel](#interacting-with-histograms). There are also buttons to export the left and right integrations as [.int](#beams-file-formats) files.
+
+![Integration dialog](https://github.com/FrandsenGroup/beams/blob/assets/integrate-dialog.png)
+
 #### Saving Asymmetry Data
 In beams you can save your asymmetry data as a .asy file (example found [here](https://github.com/aPeter1/BEAMS/blob/assets/asymmetry_example.asy)).
 To save an asymmetry or group of asymmetries, check the box next to the runs in the upper-left hand panel and click 
@@ -329,6 +338,8 @@ Click on the file extension to see an example file (for non-binary file types).
 | [.asy](https://github.com/aPeter1/BEAMS/blob/assets/asymmetry_example.asy)            | Experimental asymmetry, uncertainty and time for a single run.                |
 | [.fit](https://github.com/aPeter1/BEAMS/blob/assets/summary_example.fit)            | A verbose summary of a fit or range of fits. |
 | [.calc](https://github.com/aPeter1/BEAMS/blob/assets/fit_example.calc)         | Experimental and calculated asymmetry, uncertainty and time for a single run.|
+| [.int](https://github.com/FrandsenGroup/beams/blob/assets/int-example.int)                           | Export of an integrated asymmetry containing an independent variable, the integrated asymmetry, and uncertainty.      |
+| [.prm](https://github.com/FrandsenGroup/beams/blob/assets/parameter_example.prm) | A single parameter with its uncertainty exported with an independent variable and its uncertainty as pure numerical data to be read back into other programs for analysis.
 | .beams          | A saved beams session                                                         |
 
 ## Troubleshooting

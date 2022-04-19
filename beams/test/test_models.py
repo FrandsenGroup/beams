@@ -336,6 +336,43 @@ class TestAsymmetries:
         with pytest.raises(ValueError):
             asymmetry.bin(bin_size)
 
+    @pytest.mark.parametrize("asymmetry, min_time, max_time, expected_integration, expected_uncertainty",
+                             [
+                                 (objects.Asymmetry(input_array=np.zeros(10), time_zero=8, bin_size=1,
+                                                    uncertainty=np.zeros(10), time=np.array(range(10))),
+                                  None, None, 0, 0),
+                                 (objects.Asymmetry(input_array=np.ones(10), time_zero=8, bin_size=1,
+                                                    uncertainty=np.ones(10), time=np.array(range(10))),
+                                  None, None, 9, 0.003),
+                                 (objects.Asymmetry(input_array=np.array(range(10)), time_zero=8, bin_size=1,
+                                                    uncertainty=np.ones(10), time=np.array(range(10))),
+                                  None, None, 40.5, 0.003),
+                                 (objects.Asymmetry(input_array=np.array(range(10)), time_zero=8, bin_size=1,
+                                                    uncertainty=np.array(range(10)), time=np.array(range(10))),
+                                  None, None, 40.5, 0.017),
+                                 (objects.Asymmetry(input_array=np.array(range(10)), time_zero=8, bin_size=1,
+                                                    uncertainty=np.ones(10), time=np.array(range(10))),
+                                  0, 1, 0, 0),
+                                 (objects.Asymmetry(input_array=np.array(range(10)), time_zero=8, bin_size=1,
+                                                    uncertainty=np.ones(10), time=np.array(range(10))),
+                                  7, 9, 7.5, 0.001)
+                             ])
+    def test_integrate(self, asymmetry, min_time, max_time, expected_integration, expected_uncertainty):
+        calculated_integration, calculated_uncertainty = asymmetry.integrate(min_time, max_time)
+        assert close_enough(calculated_integration, expected_integration, 0.001)
+        assert close_enough(calculated_uncertainty, expected_uncertainty, 0.001)
+
+    @pytest.mark.parametrize("asymmetry, min_time, max_time",
+                             [
+                                 (objects.Asymmetry(input_array=range(100), time_zero=8, bin_size=1,
+                                                    uncertainty=range(100), time=range(100)), 9, 4),
+                                 (objects.Asymmetry(input_array=range(100), time_zero=8, bin_size=1,
+                                                    uncertainty=range(100), time=range(100)), '1', None)
+                             ])
+    def test_integrate_raises_exception(self, asymmetry, min_time, max_time):
+        with pytest.raises(Exception):
+            asymmetry.integrate(min_time, max_time)
+
     @pytest.mark.parametrize("asymmetry, expected_corrected_asymmetry, alpha",
                              # Correcting to value of 1.0 with a raw asymmetry.
                              [(objects.Asymmetry(input_array=range(100), time_zero=8, bin_size=1,

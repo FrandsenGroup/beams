@@ -29,6 +29,7 @@ class Extensions:
     PSI_MDU = '.mdu'
     ISIS_NXS = '.nxs'
     ISIS_NXS_V2 = '.nxs_v2'
+    INTEGRATION = '.int'
     PARAMETER = '.prm'
 
 

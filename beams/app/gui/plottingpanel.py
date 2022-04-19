@@ -1,17 +1,19 @@
 import threading
 import warnings
 import logging
+import functools
+import re
 
 import darkdetect
 from PyQt5 import QtGui, QtWidgets, QtCore
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT
-from matplotlib.figure import Figure
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 import numpy as np
 
 from app.resources import resources
-from app.gui.dialogs.dialog_misc import WarningMessageDialog
+from app.gui.dialogs.dialog_misc import WarningMessageDialog, PromptWithOptionsDialog
 from app.gui.dialogs.dialog_plot_file import PlotFileDialog
+from app.gui.dialogs.dialog_integrations import IntegrationDialog
 from app.gui.gui import Panel, PanelPresenter
 from app.model import files, objects, services
 from app.util import qt_widgets, qt_constants
@@ -165,12 +167,14 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                     return
 
                 item = self.itemAt(point)
-                menu = item.menu(self.selectedItems())
 
-                new_check_state = qt_constants.Checked if item.checkState(
-                    0) == qt_constants.Unchecked else qt_constants.Unchecked
-                action_name = "Check selected" if new_check_state == qt_constants.Checked else "Uncheck selected"
-                menu.addAction(action_name, lambda: self._action_toggle_all_selected(new_check_state))
+
+                actions = item.get_actions()
+                menu = QtWidgets.QMenu()
+
+                for action in actions:
+                    menu.addAction(action[0], functools.partial(action[1], self.selectedItems(), self))
+
 
                 menu.exec_(self.mapToGlobal(point))
 
@@ -295,9 +299,61 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             def menu(self, items):
                 self.__selected_items = items
                 menu = QtWidgets.QMenu()
-                menu.addAction("Plot", self._action_plot)
-                menu.addAction("Save", self._action_save)
+                # menu.addAction("Plot", self._action_plot)
+                # menu.addAction("Save", self._action_save)
+                menu.addAction("Integrate", self._action_integrate)
                 return menu
+
+            def get_actions(self):
+                actions = [
+                    ("Integrate", self._action_integrate)
+                ]
+
+                return actions
+
+            def _action_integrate(self, items, parent):
+                ids = [i.model.id for i in items]
+
+                if not len(ids):  # This shouldn't happen but may as well check. PyQt5 can have glitches.
+                    WarningMessageDialog.launch(["No runs were selected to integrate."])
+                    return
+                else:
+                    example_meta = items[0].model.meta
+
+                sort_keys = [files.TEMPERATURE_KEY, files.FIELD_KEY, files.RUN_NUMBER_KEY]
+                sort_key_index = PromptWithOptionsDialog.launch(message="Choose the independent variable for the integration",
+                                                                options=sort_keys)
+
+                if 0 > sort_key_index >= len(sort_keys):  # Cancelled the prompt.
+                    return
+                else:
+                    sort_key = sort_keys[sort_key_index]
+
+                    if sort_key != files.RUN_NUMBER_KEY:
+                        try:
+                            unit = re.search(r'[a-zA-Z]+\b', example_meta[sort_key])[0]
+                        except (IndexError, TypeError):
+                            unit = ""
+
+                try:
+                    integrations = services.RunService().integrate_asymmetries(ids, sort_key)
+                except Exception as e:
+                    WarningMessageDialog.launch([str(e)])
+                    return
+                else:
+                    bin_sizes = [
+                        items[0].model.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY].bin_size,
+                        items[0].model.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY].bin_size
+                    ]
+
+                integration_left = integrations[objects.RunDataset.LEFT_BINNED_ASYMMETRY]
+                integration_right = integrations[objects.RunDataset.RIGHT_BINNED_ASYMMETRY]
+                independent_variable = integrations[sort_key]
+
+                IntegrationDialog.launch(x_axis=independent_variable,
+                                         x_axis_label='Run Number' if sort_key == files.RUN_NUMBER_KEY else f'{sort_key} ({unit})',
+                                         integrations=[integration_left, integration_right],
+                                         titles=[f'For Binned Asymmetries ({b}ns)' for b in bin_sizes])
 
             def _action_save(self):
                 pass
@@ -621,14 +677,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self.axes_time.set_ylim(y_min, y_max)
                 self._settings.set_min_asymmetry(y_min)
                 self._settings.set_max_asymmetry(y_max)
-
-            try:
-                x_min = self._settings.get_min_time()
-                x_max = self._settings.get_max_time()
-            except ValueError:
-                WarningMessageDialog.launch(["Invalid asymmetry limits."])
-                return
-            self.axes_time.set_xlim(x_min, x_max)
 
         def set_fft_plot_limits(self, max_fft, max_freq=None):
             with warnings.catch_warnings():
@@ -1105,15 +1153,11 @@ class PlottingPanelPresenter(PanelPresenter):
                 continue
 
             if side == 'left':
-                asymmetry = run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY]
-                if asymmetry is None or asymmetry.bin_size != bin_size or True:
-                    asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(bin_size)
-                    run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY] = asymmetry
+                asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(bin_size).cut(min_time, max_time)
+                run.asymmetries[objects.RunDataset.LEFT_BINNED_ASYMMETRY] = asymmetry
             else:
-                asymmetry = run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY]
-                if asymmetry is None or asymmetry.bin_size != bin_size or True:
-                    asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(bin_size)
-                    run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY] = asymmetry
+                asymmetry = run.asymmetries[objects.RunDataset.FULL_ASYMMETRY].bin(bin_size).cut(min_time, max_time)
+                run.asymmetries[objects.RunDataset.RIGHT_BINNED_ASYMMETRY] = asymmetry
 
             time = asymmetry.time
             uncertainty = asymmetry.uncertainty
@@ -1133,9 +1177,6 @@ class PlottingPanelPresenter(PanelPresenter):
             max_asymmetry = local_max if local_max > max_asymmetry else max_asymmetry
             local_min = np.min(asymmetry[start_index:end_index])
             min_asymmetry = local_min if local_min < min_asymmetry else min_asymmetry
-
-            if not fast:
-                pass
 
             display.plot_asymmetry(time, asymmetry, uncertainty, fit,
                                    color=style[self.__style_service.Keys.DEFAULT_COLOR],
