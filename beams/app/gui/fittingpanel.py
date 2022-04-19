@@ -652,7 +652,7 @@ class FittingPanel(Panel):
         self.special_characters.toggle_button.released.connect(self.special_characters.on_pressed)
 
         self.table_parameters = QtWidgets.QTableWidget()
-        self.run_list = QtWidgets.QListWidget()
+        self.run_list = qt_widgets.ListWidget()
 
         self.button_check_equation = qt_widgets.StyleOneButton("Check")
         self.button_fit = qt_widgets.StyleThreeButton("Fit")
@@ -708,7 +708,8 @@ class FittingPanel(Panel):
         pass
 
     def _set_widget_attributes(self):
-        self.run_list.setSelectionMode(qt_constants.ExtendedSelection)
+        # self.run_list.setSelectionMode(qt_constants.ExtendedSelection)
+        # self.run_list.setContextMenuPolicy(qt_constants.CustomContextMenu)
 
         self.option_preset_fit_equations.addItems(list(fit.EQUATION_DICTIONARY.keys()))
         self.option_user_fit_equations.addItems(list(fit.USER_EQUATION_DICTIONARY.keys()))
@@ -1350,6 +1351,7 @@ class FitTabPresenter(PanelPresenter):
         self._view.parameter_table.config_table.itemChanged.connect(self._on_config_table_changed)
         self._view.run_list.itemChanged.connect(self._on_run_list_changed)
         self._view.run_list.itemSelectionChanged.connect(self._on_run_list_selection_changed)
+        # self._view.run_list.customContextMenuRequested.connect(self._launch_menu)
         self._view.check_batch_fit.stateChanged.connect(self._on_batch_options_changed)
         self._view.check_global_plus.stateChanged.connect(self._on_batch_options_changed)
 
@@ -1407,7 +1409,7 @@ class FitTabPresenter(PanelPresenter):
 
         if len(expressions) > 1:
             WarningMessageDialog.launch(["Can not save collection of fits with more then one fit expression at "
-                                        "the same time."])
+                                         "the same time."])
             return
 
         dataset.expression = expressions.pop()
@@ -1590,6 +1592,25 @@ class FitTabPresenter(PanelPresenter):
     @QtCore.pyqtSlot()
     def _on_run_list_selection_changed(self):
         self._update_parameter_table()
+
+    # def _launch_menu(self, point):
+    #     index = self._view.run_list.indexAt(point)
+    #
+    #     if not index.isValid():
+    #         return
+    #
+    #     menu = QtWidgets.QMenu()
+    #     clicked_item = self._view.run_list.itemFromIndex(index)
+    #     new_check_state = qt_constants.Checked if clicked_item.checkState() == qt_constants.Unchecked else qt_constants.Unchecked
+    #     action_name = "Check selected" if new_check_state == qt_constants.Checked else "Uncheck selected"
+    #     menu.addAction(action_name, lambda: self._action_toggle_all_selected(new_check_state))
+    #
+    #     menu.exec_(self._view.run_list.mapToGlobal(point))
+    #
+    # def _action_toggle_all_selected(self, new_check_state):
+    #     for i in range(self._view.run_list.count()):
+    #         if self._view.run_list.item(i).isSelected():
+    #             self._view.run_list.item(i).setCheckState(new_check_state)
 
     @QtCore.pyqtSlot()
     def _on_batch_options_changed(self):
@@ -2036,16 +2057,16 @@ class FitTabPresenter(PanelPresenter):
 
                 updated_states = {run_id: (symbol,
                                            value if value != '*' and (
-                                                       run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else
+                                                   run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else
                                            self.__parameter_table_states[symbol][run_id][1],
                                            min_value if min_value != '*' and (
-                                                       run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else
+                                                   run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else
                                            self.__parameter_table_states[symbol][run_id][2],
                                            max_value if max_value != '*' and (
-                                                       run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else
+                                                   run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else
                                            self.__parameter_table_states[symbol][run_id][3],
                                            is_fixed if is_fixed != '*' and (
-                                                       run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else
+                                                   run_id in selected_run_ids or not_state_exists) else 1.0 if not_state_exists else
                                            self.__parameter_table_states[symbol][run_id][4])
                                   for run_id, not_state_exists in zip(all_run_ids, [
                         r not in self.__parameter_table_states[symbol].keys() for r in all_run_ids])}

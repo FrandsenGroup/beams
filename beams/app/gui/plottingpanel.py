@@ -99,7 +99,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self.title = 'Legend'
                 super().__init__(self.title)
 
-                self.legend_list = QtWidgets.QListWidget()
+                self.legend_list = qt_widgets.ListWidget()
                 self.__values = {}
 
                 box_layout = QtWidgets.QHBoxLayout()
@@ -166,11 +166,21 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
 
                 item = self.itemAt(point)
                 menu = item.menu(self.selectedItems())
+
+                new_check_state = qt_constants.Checked if item.checkState(
+                    0) == qt_constants.Unchecked else qt_constants.Unchecked
+                action_name = "Check selected" if new_check_state == qt_constants.Checked else "Uncheck selected"
+                menu.addAction(action_name, lambda: self._action_toggle_all_selected(new_check_state))
+
                 menu.exec_(self.mapToGlobal(point))
 
             def set_tree(self, tree):
                 self.clear()
                 self.addTopLevelItems(tree)
+
+            def _action_toggle_all_selected(self, new_check_state):
+                for item in self.selectedItems():
+                    item.setCheckState(0, new_check_state)
 
             def get_run_ids(self):
                 # noinspection PyTypeChecker
