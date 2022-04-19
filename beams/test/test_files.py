@@ -122,7 +122,7 @@ class TestTriumfMuonFile:
 class TestPsiMuonFile:
     @pytest.mark.parametrize("filename, out_file, expected_out_file",
                              [
-                                 (resources.resource_path(r"test/examples/psi_convert_test_1.bin"),
+                                 (resources.resource_path(r"test/examples/psi_convert_test_bin_1.bin"),
                                   r"_psi_convert_test_bin_1.dat",
                                   resources.resource_path(r"test/examples/psi_convert_test_bin_1.dat")),
                                  (resources.resource_path(r"test/examples/psi_convert_test_bin_2.bin"),
@@ -140,7 +140,7 @@ class TestPsiMuonFile:
 
     @pytest.mark.parametrize("filename, out_file, expected_out_file",
                              [
-                                 (resources.resource_path(r"test/examples/psi_convert_test_1.mdu"),
+                                 (resources.resource_path(r"test/examples/psi_convert_test_mdu_1.mdu"),
                                   r"_psi_convert_test_mdu_1.dat",
                                   resources.resource_path(r"test/examples/psi_convert_test_mdu_1.dat"))
                              ])
@@ -176,8 +176,8 @@ class TestPsiMuonFile:
 
         assert is_file_content_equal(out_file, expected_out_file)
 
-        if os.path.exists(out_file):
-            os.remove(out_file)
+        # if os.path.exists(out_file):
+        #     os.remove(out_file)
 
     def test_convert_on_bad_file(self):
         msr_file = files.PSIMuonFile(resources.resource_path(r"test/examples/triumf_convert_test_1.msr"))
@@ -187,7 +187,7 @@ class TestPsiMuonFile:
     @pytest.mark.parametrize("filename, histograms",
                              [
                                  (resources.resource_path(r"test/examples/psi_convert_test_bin_2.bin"), 16),
-                                 (resources.resource_path(r"test/examples/psi_convert_test_1.bin"), 5)
+                                 (resources.resource_path(r"test/examples/psi_convert_test_bin_1.bin"), 5)
                              ])
     def test_get_number_of_histograms(self, filename, histograms):
         psi_file = files.PSIMuonFile(filename)

@@ -1,8 +1,8 @@
 BEAMS
 BinSize:3.3203125931322575,Temperature:298.0 K,Field:49.5 G,Sample:MCP2, Mirr,Orientation:n/a,RunNumber:210,Title:MCP2, Mirror 18.3/295.25, TD 1-cm-coll., L2=11.9, RA=11.3, TD*
 Forw,Back
-0,0
-157,157
+11,11
+155,155
 162,162
 3917,3917
 162,162

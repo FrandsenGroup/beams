@@ -287,8 +287,23 @@ class PSIMuonFile(ConvertibleFile):
             t0_bin_list = [str(n) for n in x.get_t0_vector()][0:len(hist_title_list)]
             first_good_bin_list = [str(n) for n in x.get_firstGood_vector()][0:len(hist_title_list)]
             last_good_bin_list = [str(n) for n in x.get_lastGood_vector()][0:len(hist_title_list)]
-            first_background_list = [str(0) for i in range(num_hists)][0:len(hist_title_list)]  # fixme very very wrong,don't merge without fix.
-            last_background_list = [str(x.get_firstGood_int(i) - 5) for i in range(num_hists)][0:len(hist_title_list)]
+
+            first_background_list = []
+            last_background_list = []
+            for i, histogram in enumerate(histograms):
+                for j, value in enumerate(histogram):
+                    if value != 0:
+                        to_t0 = int((int(t0_bin_list[i]) - j) * 0.05)
+                        first_background = j + to_t0
+                        last_background = int(t0_bin_list[i]) - to_t0
+
+                        if last_background <= first_background:
+                            last_background = first_background + 1
+
+                        first_background_list.append(str(first_background))
+                        last_background_list.append(str(last_background))
+
+                        break
 
         except Exception as e:
             raise BeamsFileConversionError(f"An error occurred pulling data from the file. "
