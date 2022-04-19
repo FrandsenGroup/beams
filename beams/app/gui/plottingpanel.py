@@ -672,13 +672,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self._settings.set_min_asymmetry(y_min)
                 self._settings.set_max_asymmetry(y_max)
 
-            try:
-                x_min = self._settings.get_min_time()
-                x_max = self._settings.get_max_time()
-            except ValueError:
-                WarningMessageDialog.launch(["Invalid asymmetry limits."])
-                return
-
         def set_fft_plot_limits(self, max_fft, max_freq=None):
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore')
