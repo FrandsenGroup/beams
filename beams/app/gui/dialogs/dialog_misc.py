@@ -30,10 +30,10 @@ class AddFileDialog(QtWidgets.QDialog):
         self.psi_button = qt_widgets.StyleOneButton('From PSI')
         self.isis_button = qt_widgets.StyleOneButton('From ISIS')
 
-        self.pos_button.setToolTip("Select files from your computer.")
-        self.neg_button.setToolTip("Download files from TRIUMF.")
-        self.psi_button.setToolTip("Download files from PSI.")
-        self.isis_button.setToolTip("Download files from ISIS.")
+        self.pos_button.setToolTip("Select files from your computer")
+        self.neg_button.setToolTip("Download files from TRIUMF")
+        self.psi_button.setToolTip("Download files from PSI")
+        self.isis_button.setToolTip("Download files from ISIS")
 
         self.setMinimumWidth(300)
         self.setMinimumWidth(80)
@@ -227,6 +227,7 @@ class NotificationDialog(QtWidgets.QDialog):
         dialog = NotificationDialog(message, silence_message, okay_function)
         return dialog.exec()
 
+
 # noinspection PyArgumentList
 class IntegrationDisplayDialog(QtWidgets.QDialog):
     class IntegrationCanvas(FigureCanvas):
@@ -242,11 +243,8 @@ class IntegrationDisplayDialog(QtWidgets.QDialog):
             ('Home', 'Reset original view', 'home', 'home'),
             ('Back', 'Back to previous view', 'back', 'back'),
             ('Forward', 'Forward to next view', 'forward', 'forward'),
-            # (None, None, None, None),
             ('Pan', 'Pan axes with left mouse, zoom with right', 'move', 'pan'),
             ('Zoom', 'Zoom to rectangle', 'zoom_to_rect', 'zoom'),
-            # ('Subplots', 'Configure subplots', 'subplots', 'configure_subplots'),
-            # (None, None, None, None),
             ('Save', 'Save the figure', 'filesave', 'save_figure'),
         )
 
