@@ -374,20 +374,9 @@ class FittingPanel(Panel):
                                     markersize=marker_size, label=label)
 
         def set_asymmetry_plot_limits(self, max_asymmetry, min_asymmetry):
-            if not self._settings.is_asymmetry_auto():
-                try:
-                    y_min = self._settings.get_min_asymmetry()
-                    y_max = self._settings.get_max_asymmetry()
-                except ValueError:
-                    WarningMessageDialog.launch(["Invalid asymmetry limits."])
-                    return
-                self.axes_time.set_ylim(y_min, y_max)
-            else:
-                y_min = min_asymmetry - abs(min_asymmetry * 0.1)
-                y_max = max_asymmetry + abs(max_asymmetry * 0.1)
-                self.axes_time.set_ylim(y_min, y_max)
-                self._settings.set_min_asymmetry(y_min)
-                self._settings.set_max_asymmetry(y_max)
+            y_min = min_asymmetry - abs(min_asymmetry * 0.1)
+            y_max = max_asymmetry + abs(max_asymmetry * 0.1)
+            self.axes_time.set_ylim(y_min, y_max)
 
             try:
                 x_min = self._settings.get_min_time()
@@ -423,16 +412,9 @@ class FittingPanel(Panel):
             self._label_time = QtWidgets.QLabel('Time')
             self._label_time_xmin = QtWidgets.QLabel('XMin')
             self._label_time_xmax = QtWidgets.QLabel('XMax')
-            self._label_time_ymin = QtWidgets.QLabel('YMin')
-            self._label_time_ymax = QtWidgets.QLabel('YMax')
-            self._label_time_yauto = QtWidgets.QLabel('Auto Y')
 
             self.input_time_xmin = QtWidgets.QLineEdit()
             self.input_time_xmax = QtWidgets.QLineEdit()
-
-            self.input_time_ymin = QtWidgets.QLineEdit()
-            self.input_time_ymax = QtWidgets.QLineEdit()
-            self.check_time_yauto = QtWidgets.QCheckBox()
 
             self._set_widget_attributes()
             self._set_widget_tooltips()
@@ -440,15 +422,8 @@ class FittingPanel(Panel):
             self._set_widget_layout()
 
         def _set_widget_attributes(self):
-            self.check_time_yauto.setChecked(True)
-
             self.input_time_xmin.setText("0")
             self.input_time_xmax.setText("8")
-            self.input_time_ymin.setText("-0.3")
-            self.input_time_ymax.setText("-0.5")
-
-            self.input_time_ymin.setEnabled(False)
-            self.input_time_ymax.setEnabled(False)
 
             self.slider_bin.setMinimum(0)
             self.slider_bin.setMaximum(500)
@@ -461,14 +436,15 @@ class FittingPanel(Panel):
             self.slider_bin.sliderMoved.connect(lambda: self._update_bin(True))
 
         def _set_widget_tooltips(self):
-            pass
+            self.input_time_xmin.setToolTip('The minimum time bound of the asymmetry to be used in the fit')
+            self.input_time_xmax.setToolTip('The maximum time bound of the asymmetry to be used in the fit')
+            self.slider_bin.setToolTip('The bin size of the asymmetry you would like to use in the fit')
+            self.input_bin.setToolTip('The bin size of the asymmetry you would like to use in the fit')
 
         def _set_widget_dimensions(self):
             box_size = 80
             self.input_time_xmin.setMaximumWidth(box_size)
             self.input_time_xmax.setMaximumWidth(box_size)
-            self.input_time_ymin.setMaximumWidth(box_size)
-            self.input_time_ymax.setMaximumWidth(box_size)
             self.input_bin.setFixedWidth(50)
 
         def _set_widget_layout(self):
@@ -484,30 +460,6 @@ class FittingPanel(Panel):
             row_1.addWidget(self.slider_bin)
 
             main_layout.addLayout(row_1)
-
-            time_form = QtWidgets.QGroupBox('Time')
-            time_layout = QtWidgets.QFormLayout()
-            time_grid = QtWidgets.QGridLayout()
-
-            time_grid.addWidget(self._label_time_xmin, 0, 2)
-            time_grid.addWidget(self.input_time_xmin, 0, 3)
-            time_grid.addWidget(self._label_time_xmax, 0, 4)
-            time_grid.addWidget(self.input_time_xmax, 0, 5)
-            time_grid.addWidget(self._label_time_yauto, 1, 0)
-            time_grid.addWidget(self.check_time_yauto, 1, 1)
-            time_grid.addWidget(self._label_time_ymin, 1, 2)
-            time_grid.addWidget(self.input_time_ymin, 1, 3)
-            time_grid.addWidget(self._label_time_ymax, 1, 4)
-            time_grid.addWidget(self.input_time_ymax, 1, 5)
-
-            temp_row = QtWidgets.QHBoxLayout()
-            temp_row.addLayout(time_grid)
-            time_layout.addRow(temp_row)
-
-            time_form.setLayout(time_layout)
-
-            editor_layout = QtWidgets.QHBoxLayout()
-            editor_layout.addWidget(time_form)
 
             self.setLayout(main_layout)
 
@@ -526,36 +478,17 @@ class FittingPanel(Panel):
         def get_min_time(self):
             return float(self.input_time_xmin.text())
 
-        def get_max_asymmetry(self):
-            return float(self.input_time_ymax.text())
-
-        def get_min_asymmetry(self):
-            return float(self.input_time_ymin.text())
-
         def get_bin_from_input(self):
             return float(self.input_bin.text())
 
         def get_bin_from_slider(self):
             return float(self.slider_bin.value())
 
-        def is_asymmetry_auto(self):
-            return self.check_time_yauto.isChecked()
-
-        def set_enabled_asymmetry_auto(self, enabled):
-            self.input_time_ymin.setEnabled(enabled)
-            self.input_time_ymax.setEnabled(enabled)
-
         def set_max_time(self, value):
             self.input_time_xmax.setText('{0:.3f}'.format(value))
 
         def set_min_time(self, value):
             self.input_time_xmin.setText('{0:.3f}'.format(value))
-
-        def set_max_asymmetry(self, value):
-            self.input_time_ymax.setText('{0:.3f}'.format(value))
-
-        def set_min_asymmetry(self, value):
-            self.input_time_ymin.setText('{0:.3f}'.format(value))
 
         def set_bin_input(self, value):
             self.input_bin.setText(str(value))
@@ -594,6 +527,7 @@ class FittingPanel(Panel):
             self.addTab(output_widget, "Output")
 
             self._set_attributes()
+            self._set_tooltips()
 
         def _set_attributes(self):
             self.config_table.setColumnCount(4)
@@ -624,6 +558,20 @@ class FittingPanel(Panel):
 
             self.goodness_display.setEnabled(False)
 
+        def _set_tooltips(self):
+            self.config_table.horizontalHeaderItem(0).setToolTip("The starting value of a parameter")
+            self.config_table.horizontalHeaderItem(1).setToolTip("The lower bound for this parameter")
+            self.config_table.horizontalHeaderItem(2).setToolTip("The upper bound for this parameter")
+            self.config_table.horizontalHeaderItem(3).setToolTip("If checked, this parameter will be fixed at the value specified.")
+
+            self.batch_table.horizontalHeaderItem(0).setToolTip("If checked, this parameter will be fit as a single parameter across all datasets")
+            self.batch_table.horizontalHeaderItem(1).setToolTip("If checked, you can independently specify the values in the config table for this parameter for each dataset.")
+
+            self.output_table.horizontalHeaderItem(0).setToolTip("The output of the fit for this parameter. If * then multiple fits with different values are selected.")
+            self.output_table.horizontalHeaderItem(1).setToolTip("The uncertainty of the fit for this parameter. If * then multiple fits with different values are selected.")
+
+            self.goodness_display.setToolTip(f"The reduced {fit.CHI}{fit.SQUARE} value for this fit.")
+
     def __init__(self):
         super(FittingPanel, self).__init__()
         self.__logger = logging.getLogger(__name__)
@@ -638,9 +586,6 @@ class FittingPanel(Panel):
         self.input_fit_equation = QtWidgets.QLineEdit()
         self.input_user_equation = QtWidgets.QLineEdit()
         self.input_user_equation_name = QtWidgets.QLineEdit()
-        self.input_spectrum_min = QtWidgets.QLineEdit()
-        self.input_spectrum_max = QtWidgets.QLineEdit()
-        self.input_packing = QtWidgets.QLineEdit()
         self.option_preset_fit_equations = QtWidgets.QComboBox()
         self.option_user_fit_equations = QtWidgets.QComboBox()
         self.option_run_ordering = QtWidgets.QComboBox()
@@ -654,18 +599,11 @@ class FittingPanel(Panel):
         self.table_parameters = QtWidgets.QTableWidget()
         self.run_list = qt_widgets.ListWidget()
 
-        self.button_check_equation = qt_widgets.StyleOneButton("Check")
         self.button_fit = qt_widgets.StyleThreeButton("Fit")
         self.button_insert_preset_equation = qt_widgets.StyleTwoButton("Insert")
         self.button_insert_user_equation = qt_widgets.StyleTwoButton("Insert")
         self.button_save_user_equation = qt_widgets.StyleTwoButton("Save")
         self.button_plot = qt_widgets.StyleTwoButton("Plot")
-
-        self.button_fit.setToolTip('Run fit')
-        self.button_insert_preset_equation.setToolTip('Insert predefined function')
-        self.button_insert_user_equation.setToolTip('Insert user defined function')
-        self.button_save_user_equation.setToolTip('Save user defined function')
-        self.button_plot.setToolTip('Plot data')
 
         self.label_global_plus = QtWidgets.QLabel("Global+")
         self.label_ordering = QtWidgets.QLabel("Order by")
@@ -674,8 +612,6 @@ class FittingPanel(Panel):
         self.label_batch = QtWidgets.QLabel("Sequential")
 
         self.check_batch_fit = QtWidgets.QCheckBox()
-        self.check_global_plus = QtWidgets.QCheckBox()
-        self.check_use_previous = QtWidgets.QCheckBox()
 
         self.insert_phi = qt_widgets.StyleTwoButton(fit.PHI)
         self.insert_alpha = qt_widgets.StyleTwoButton(fit.ALPHA)
@@ -705,7 +641,34 @@ class FittingPanel(Panel):
         self._line_edit_style = self.input_fit_equation.styleSheet()
 
     def _set_tooltips(self):
-        pass
+        self.button_fit.setToolTip('Run fit')
+        self.button_insert_preset_equation.setToolTip('Insert predefined function')
+        self.button_insert_user_equation.setToolTip('Insert user defined function')
+        self.button_save_user_equation.setToolTip('Save user defined function')
+        self.button_plot.setToolTip('Plot data')
+
+        self.input_fit_equation.setToolTip('Type the equation you would like to use for the fit here')
+        self.input_user_equation.setToolTip('You can save an equation here for future use')
+        self.input_user_equation_name.setToolTip('You must specify a name for your equation')
+        self.option_preset_fit_equations.setToolTip('A list of pre defined equations you can use in your fit equation')
+        self.option_user_fit_equations.setToolTip('A list of equations you have saved')
+        self.option_run_ordering.setToolTip('If you are running the fit sequentially, this will specify the value that will determine the order of the fits')
+        self.option_ascending.setToolTip('If you are running the fit sequentially, you can control whether the fits should be done in ascending or descending order')
+
+        self.run_list.setToolTip('Here you can select the runs to be included in this fit')
+
+        self.check_batch_fit.setToolTip('If checked, the fits will be run sequentially with the output of the previous fit being used as the input for the next')
+        self.label_batch.setToolTip('If checked, the fits will be run sequentially with the output of the previous fit being used as the input for the next')
+
+        self.insert_phi.setToolTip('Phi')
+        self.insert_alpha.setToolTip('Alpha')
+        self.insert_sigma.setToolTip('Sigma')
+        self.insert_naught.setToolTip('Naught')
+        self.insert_lambda.setToolTip('Lambda')
+        self.insert_delta.setToolTip('Delta')
+        self.insert_beta.setToolTip('Beta')
+        self.insert_pi.setToolTip('Pi')
+        self.insert_nu.setToolTip('Nu')
 
     def _set_widget_attributes(self):
         # self.run_list.setSelectionMode(qt_constants.ExtendedSelection)
@@ -735,7 +698,6 @@ class FittingPanel(Panel):
         self.input_user_equation.setFont(self.mathematical_font)
 
         self.option_ascending.setEnabled(False)
-        self.check_global_plus.setEnabled(True)
         self.option_run_ordering.setEnabled(False)
         self.label_global_plus.setEnabled(True)
         self.label_ordering.setEnabled(False)
@@ -744,7 +706,6 @@ class FittingPanel(Panel):
     def _set_widget_dimensions(self):
         self.button_fit.setFixedWidth(60)
         self.button_fit.setFixedHeight(60)
-        self.button_check_equation.setFixedWidth(60)
         self.button_insert_user_equation.setFixedWidth(60)
         self.button_insert_preset_equation.setFixedWidth(60)
         self.button_save_user_equation.setFixedWidth(60)
@@ -1351,9 +1312,7 @@ class FitTabPresenter(PanelPresenter):
         self._view.parameter_table.config_table.itemChanged.connect(self._on_config_table_changed)
         self._view.run_list.itemChanged.connect(self._on_run_list_changed)
         self._view.run_list.itemSelectionChanged.connect(self._on_run_list_selection_changed)
-        # self._view.run_list.customContextMenuRequested.connect(self._launch_menu)
         self._view.check_batch_fit.stateChanged.connect(self._on_batch_options_changed)
-        self._view.check_global_plus.stateChanged.connect(self._on_batch_options_changed)
 
         self._view.support_panel.tree.itemSelectionChanged.connect(self._on_fit_selection_changed)
         self._view.support_panel.save_button.released.connect(self._on_save_clicked)
