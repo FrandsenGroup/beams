@@ -474,11 +474,11 @@ class HistogramPanel(Panel):
         self.support_panel.see_file_button.setAutoDefault(False)
 
     def _set_widget_dimensions(self):
-        self.input_t0.setFixedWidth(30)
-        self.input_bkgd1.setFixedWidth(30)
-        self.input_bkgd2.setFixedWidth(30)
-        self.input_goodbin1.setFixedWidth(30)
-        self.input_goodbin2.setFixedWidth(30)
+        self.input_t0.setFixedWidth(60)
+        self.input_bkgd1.setFixedWidth(60)
+        self.input_bkgd2.setFixedWidth(60)
+        self.input_goodbin1.setFixedWidth(60)
+        self.input_goodbin2.setFixedWidth(60)
 
     def _set_widget_layout(self):
         radio_layout = QtWidgets.QHBoxLayout()
