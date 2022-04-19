@@ -176,8 +176,8 @@ class TestPsiMuonFile:
 
         assert is_file_content_equal(out_file, expected_out_file)
 
-        # if os.path.exists(out_file):
-        #     os.remove(out_file)
+        if os.path.exists(out_file):
+            os.remove(out_file)
 
     def test_convert_on_bad_file(self):
         msr_file = files.PSIMuonFile(resources.resource_path(r"test/examples/triumf_convert_test_1.msr"))
