@@ -1,8 +1,8 @@
 BEAMS
 BinSize:0.6249999860301614,Temperature:39.500K,Field:0.000G,Sample:nano-Mn3O4,Orientation:powder,RunNumber:7387,Title:nano-Mn3O4 zero field
 Forward,Backward,Up,Down,Right
-0,0,0,0,0
-264,256,256,254,256
+80,80,80,79,79
+250,242,242,241,241
 269,261,261,259,261
 16384,16384,16384,16384,16384
 259,251,251,249,249
