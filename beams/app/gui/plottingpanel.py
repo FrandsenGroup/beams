@@ -40,6 +40,8 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 self.errorbar_color_options = QtWidgets.QComboBox()
                 self.errorbar_width_options = QtWidgets.QComboBox()
 
+                self._set_tooltips()
+
                 self.all_color_options.addItems(services.StyleService.color_options_values.keys())
                 self.fit_color_options.addItems(services.StyleService.color_options_extra_values.keys())
                 self.linestyle_options.addItems(services.StyleService.linestyle_options_values.keys())
@@ -84,12 +86,28 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
                 box_layout.addLayout(layout)
                 self.setContentLayout(box_layout)
 
+            def _set_tooltips(self):
+                self.all_color_options.setToolTip("Specify the color for all components of plot for all selected runs")
+                self.linestyle_options.setToolTip("Specify the style of the plot line for all selected runs")
+                self.fit_linestyle_options.setToolTip("Specify the style of the fit line for all selected runs")
+                self.line_color_options.setToolTip("Specify the color of the plot line for all selected runs")
+                self.fit_color_options.setToolTip("Specify the color of the fit line for all selected runs")
+                self.line_width_options.setToolTip("Specify the width of the plot line for all selected runs")
+                self.marker_options.setToolTip("Specify the style of the plot markers for all selected runs")
+                self.marker_color_options.setToolTip("Specify the color of the plot markers for all selected runs")
+                self.marker_size_options.setToolTip("Specify the size of the plot markers for all selected runs")
+                self.fillstyle_options.setToolTip("Specify the fill style of the plot markers for all selected runs")
+                self.errorbar_style_options.setToolTip("Specify the style of the error bars for all selected runs")
+                self.errorbar_color_options.setToolTip("Specify the color of the error bars for all selected runs")
+                self.errorbar_width_options.setToolTip("Specify the width of the error bars for all selected runs")
+
         class AsymmetryParametersBox(qt_widgets.CollapsibleBox):
             def __init__(self) -> None:
                 self.title = 'Asymmetry Parameters'
                 super().__init__(self.title)
 
                 self.alpha_input = QtWidgets.QLineEdit()
+                self.alpha_input.setToolTip("Specify the alpha value for the selected asymmetries to be corrected with")
 
                 layout = QtWidgets.QGridLayout()
                 layout.addWidget(QtWidgets.QLabel("Alpha"), 0, 0)
@@ -370,18 +388,20 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.plot_all_button = qt_widgets.StyleOneButton("Plot All")
             self.clear_all_button = qt_widgets.StyleTwoButton("Clear All")
 
-            self.plot_button.setToolTip('Plot selected files')
-            self.plot_all_button.setToolTip('Plot all files')
-            self.clear_all_button.setToolTip('Clear all files')
-
             self.item_tree = self.Tree()
             self.legend_box = self.LegendBox()
             self.plot_style_box = self.PlotStyleBox()
             self.asymmetry_param_box = self.AsymmetryParametersBox()
 
+            self._set_widget_tooltips()
             self._set_widget_dimensions()
             self._set_widget_attributes()
             self._set_widget_layout()
+
+        def _set_widget_tooltips(self):
+            self.plot_button.setToolTip('Plot selected files')
+            self.plot_all_button.setToolTip('Plot all files')
+            self.clear_all_button.setToolTip('Clear all files')
 
         def _set_widget_dimensions(self):
             pass
@@ -717,8 +737,6 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.slider_bin = QtWidgets.QSlider(qt_constants.Horizontal)
             self.input_bin = QtWidgets.QLineEdit()
 
-            self.slider_bin.setToolTip('Time bins (ns)')
-
             self._label_time = QtWidgets.QLabel('Time')
             self._label_time_xmin = QtWidgets.QLabel('XMin')
             self._label_time_xmax = QtWidgets.QLabel('XMax')
@@ -773,7 +791,26 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.input_bin.setText(str(self.slider_bin.value()))
 
         def _set_widget_tooltips(self):
-            pass
+            self._label_input_bin.setToolTip("Set the size of the bin (in ns) for the asymmetries")
+            self.slider_bin.setToolTip("Set the size of the bin (in ns) for the asymmetries")
+            self.input_bin.setToolTip("Set the size of the bin (in ns) for the asymmetries")
+            self.slider_bin.setToolTip("Set the size of the bin (in ns) for the asymmetries")
+            self._label_time_xmin.setToolTip("Minimum time value of range to be displayed")
+            self._label_time_xmax.setToolTip("Maximum time value of range to be displayed")
+            self._label_time_ymin.setToolTip("Minimum time value of asymmetry to be displayed")
+            self._label_time_ymax.setToolTip("Maximum time value of asymmetry to be displayed")
+            self._label_time_yauto.setToolTip("Automatically determine y-axis limits")
+            self.input_time_xmin.setToolTip("Minimum time value of range to be displayed")
+            self.input_time_xmax.setToolTip("Maximum time value of range to be displayed")
+            self.input_time_ymin.setToolTip("Minimum time value of asymmetry to be displayed")
+            self.input_time_ymax.setToolTip("Maximum time value of asymmetry to be displayed")
+            self.check_time_yauto.setToolTip("Automatically determine y-axis limits")
+            self._label_freq_xmin.setToolTip("Minimum frequency value to be displayed")
+            self._label_freq_xmax.setToolTip("Maximum frequency value to be displayed")
+            self._label_freq_xauto.setToolTip("Automatically determine frequency limits")
+            self.input_freq_xmin.setToolTip("Minimum frequency value to be displayed")
+            self.input_freq_xmax.setToolTip("Maximum frequency value to be displayed")
+            self.check_freq_xauto.setToolTip("Automatically determine frequency limits")
 
         def _set_widget_dimensions(self):
             box_size = 20
