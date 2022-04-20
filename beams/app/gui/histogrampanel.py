@@ -355,7 +355,6 @@ class HistogramPanel(Panel):
         self.input_t0 = QtWidgets.QLineEdit()
         self.input_goodbin1 = QtWidgets.QLineEdit()
         self.input_goodbin2 = QtWidgets.QLineEdit()
-        self.histogram_choices = QtWidgets.QComboBox()
 
         self._extent = None
         self._toolbar = self.HistogramToolbar(self.canvas, self._main)
@@ -372,7 +371,6 @@ class HistogramPanel(Panel):
         self.canvas.set_blank()
 
         self.histogram = None
-        self.histogram_label = None
         self.bkgd1 = None
         self.bkgd2 = None
         self.t0 = None
@@ -460,6 +458,21 @@ class HistogramPanel(Panel):
 
     def _set_widget_tooltips(self):
         self.check_editing.setToolTip("Check to enable bin changes")
+        self.radio_bkgd_one.setToolTip("Select to move the start background bin on the display below")
+        self.radio_bkgd_two.setToolTip("Select to move the last background bin on the display below")
+        self.radio_t0.setToolTip("Select to move the time zero bin on the display below")
+        self.radio_goodbin1.setToolTip("Select to move the first good bin on the display below")
+        self.radio_goodbin2.setToolTip("Select to move the last good bin on the display below")
+        self.label_bkgd1.setToolTip("The first bin of the range used to calculate the background")
+        self.label_bkgd2.setToolTip("The last bin of the range used to calculate the background")
+        self.label_t0.setToolTip("The bin at which time should be zero")
+        self.label_goodbin1.setToolTip("The first bin of the range which can be used to calculate the asymmetry")
+        self.label_goodbin2.setToolTip("The last bin of the range which can be used to calculate the asymmetry")
+        self.input_bkgd1.setToolTip("The first bin of the range used to calculate the background")
+        self.input_bkgd2.setToolTip("The last bin of the range used to calculate the background")
+        self.input_t0.setToolTip("The bin at which time should be zero")
+        self.input_goodbin1.setToolTip("The first bin of the range which can be used to calculate the asymmetry")
+        self.input_goodbin2.setToolTip("The last bin of the range which can be used to calculate the asymmetry")
 
     def _set_widget_attributes(self):
         self.radio_bkgd_one.setChecked(True)
@@ -474,11 +487,11 @@ class HistogramPanel(Panel):
         self.support_panel.see_file_button.setAutoDefault(False)
 
     def _set_widget_dimensions(self):
-        self.input_t0.setFixedWidth(30)
-        self.input_bkgd1.setFixedWidth(30)
-        self.input_bkgd2.setFixedWidth(30)
-        self.input_goodbin1.setFixedWidth(30)
-        self.input_goodbin2.setFixedWidth(30)
+        self.input_t0.setFixedWidth(60)
+        self.input_bkgd1.setFixedWidth(60)
+        self.input_bkgd2.setFixedWidth(60)
+        self.input_goodbin1.setFixedWidth(60)
+        self.input_goodbin2.setFixedWidth(60)
 
     def _set_widget_layout(self):
         radio_layout = QtWidgets.QHBoxLayout()
@@ -528,7 +541,6 @@ class HistogramPanel(Panel):
         self.input_goodbin1.setText(str(goodbin1))
         self.input_goodbin2.setText(str(goodbin2))
 
-        self.histogram_label = self.histogram_choices.currentText()
         self.histogram = histogram
         self.set_new_lines(new_histogram=True)
 
@@ -591,9 +603,6 @@ class HistogramPanel(Panel):
             self.canvas.canvas_axes.set_ylabel("Counts", fontsize=title_font_size)
             self.canvas.set_style()
 
-    def get_histogram_label(self):
-        return self.histogram_choices.currentText()
-
     def get_input_bkgd1(self):
         return int(self.input_bkgd1.text())
 
@@ -641,10 +650,6 @@ class HistogramPanel(Panel):
 
     def is_editing(self):
         return self.check_editing.isChecked()
-
-    def add_histogram_labels(self, labels):
-        self.histogram_choices.clear()
-        self.histogram_choices.addItems(labels)
 
 
 class HistogramPanelPresenter(PanelPresenter):

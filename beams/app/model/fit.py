@@ -26,6 +26,8 @@ NAUGHT = "\u2080"
 NU = "\u03BD"
 SUB_T = "\u209C"
 SUB_L = "\u2097"
+CHI = "\u03C7"
+SQUARE = "\u00B2"
 
 SIMPLE_EXPONENTIAL = f"a*exp(-{LAMBDA}*t)"
 STRETCHED_EXPONENTIAL = f"a*exp(-({LAMBDA}*t)^{BETA})"
