@@ -361,10 +361,10 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         # Set Widget Tooltips
         self.write_button.setToolTip('Write currently plotted data to .asy files')
         self.import_button.setToolTip('Add files')
-        self.remove_button.setToolTip('Remove currently selected files.')
+        self.remove_button.setToolTip('Remove currently selected files')
         self.load_button.setToolTip('Load data for plotting and fitting')
-        self.convert_button.setToolTip('Convert .msr formatted files to .dat ')
-        self.select_all.setToolTip('Select all files.')
+        self.convert_button.setToolTip('Convert .msr formatted files to .dat')
+        self.select_all.setToolTip('Select all files')
 
         # Layout Widgets
         hbox_one = QtWidgets.QHBoxLayout()

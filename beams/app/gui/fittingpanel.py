@@ -562,15 +562,15 @@ class FittingPanel(Panel):
             self.config_table.horizontalHeaderItem(0).setToolTip("The starting value of a parameter")
             self.config_table.horizontalHeaderItem(1).setToolTip("The lower bound for this parameter")
             self.config_table.horizontalHeaderItem(2).setToolTip("The upper bound for this parameter")
-            self.config_table.horizontalHeaderItem(3).setToolTip("If checked, this parameter will be fixed at the value specified.")
+            self.config_table.horizontalHeaderItem(3).setToolTip("If checked, this parameter will be fixed at the value specified")
 
             self.batch_table.horizontalHeaderItem(0).setToolTip("If checked, this parameter will be fit as a single parameter across all datasets")
-            self.batch_table.horizontalHeaderItem(1).setToolTip("If checked, you can independently specify the values in the config table for this parameter for each dataset.")
+            self.batch_table.horizontalHeaderItem(1).setToolTip("If checked, you can independently specify the values in the config table for this parameter for each dataset")
 
-            self.output_table.horizontalHeaderItem(0).setToolTip("The output of the fit for this parameter. If * then multiple fits with different values are selected.")
-            self.output_table.horizontalHeaderItem(1).setToolTip("The uncertainty of the fit for this parameter. If * then multiple fits with different values are selected.")
+            self.output_table.horizontalHeaderItem(0).setToolTip("The output of the fit for this parameter. If * then multiple fits with different values are selected")
+            self.output_table.horizontalHeaderItem(1).setToolTip("The uncertainty of the fit for this parameter. If * then multiple fits with different values are selected")
 
-            self.goodness_display.setToolTip(f"The reduced {fit.CHI}{fit.SQUARE} value for this fit.")
+            self.goodness_display.setToolTip(f"The reduced {fit.CHI}{fit.SQUARE} value for this fit")
 
     def __init__(self):
         super(FittingPanel, self).__init__()

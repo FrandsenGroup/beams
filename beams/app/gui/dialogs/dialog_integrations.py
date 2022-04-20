@@ -60,6 +60,8 @@ class IntegrationDialog(QtWidgets.QDialog):
         layout.addWidget(self._main)
 
         self.export_buttons = [qt_widgets.StyleOneButton(f"Export Integration {i+1}") for i in range(len(integrations))]
+        for button in self.export_buttons:
+            button.setToolTip("Export integration to a .int file")
         hbox = QtWidgets.QHBoxLayout()
         hbox.addSpacing(80)
         for i, button in enumerate(self.export_buttons):

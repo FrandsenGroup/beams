@@ -16,7 +16,7 @@ class PlotFileDialog(QtWidgets.QDialog):
     def __init__(self, args=None):
         super(PlotFileDialog, self).__init__()
 
-        self.t_tip = QtWidgets.QLabel('Specify the two histograms you want to use calculate the asymmetry.')
+        self.t_tip = QtWidgets.QLabel('Specify the two histograms you want to use calculate the asymmetry')
         self.c_title_list = QtWidgets.QComboBox()
         self.c_hist_one = QtWidgets.QComboBox()
         self.c_hist_two = QtWidgets.QComboBox()
@@ -26,13 +26,13 @@ class PlotFileDialog(QtWidgets.QDialog):
         self.b_cancel = qt_widgets.StyleTwoButton('Cancel')
         self.status_bar = QtWidgets.QStatusBar()
 
-        self.c_title_list.setToolTip("List of runs selected to plot.")
-        self.c_hist_one.setToolTip("The first histogram to be included in asymmetry.")
-        self.c_hist_two.setToolTip("The second histogram to be included in asymmetry.")
-        self.b_apply.setToolTip("Apply this format to only the current run.")
-        self.b_apply_all.setToolTip("Apply this format to all selected runs.")
-        self.b_plot.setToolTip("Plot the asymmetries (must choose histograms before plotting).")
-        self.b_cancel.setToolTip("Close prompt.")
+        self.c_title_list.setToolTip("List of runs selected to plot")
+        self.c_hist_one.setToolTip("The first histogram to be included in asymmetry")
+        self.c_hist_two.setToolTip("The second histogram to be included in asymmetry")
+        self.b_apply.setToolTip("Apply this format to only the current run")
+        self.b_apply_all.setToolTip("Apply this format to all selected runs")
+        self.b_plot.setToolTip("Plot the asymmetries (must choose histograms before plotting)")
+        self.b_cancel.setToolTip("Close prompt")
 
         self.b_plot.setEnabled(False)
 
