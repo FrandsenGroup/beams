@@ -467,6 +467,7 @@ class SystemService:
         VERSION = "VERSION"
         LATEST = "LATEST"
         NOTIFY_OF_UPDATE = "NOTIFY_OF_UPDATE"
+        REPORT_ERRORS = 'REPORT_ERRORS'
 
     class Themes:
         DARK = "DARK"
@@ -596,6 +597,15 @@ class SystemService:
     def set_notify_user_of_update(self, notify):
         self.__dao.set_configuration(self.ConfigKeys.NOTIFY_OF_UPDATE, notify)
 
+    def get_report_errors(self):
+        try:
+            return self.__dao.get_configuration(self.ConfigKeys.REPORT_ERRORS)
+        except dao.BeamsRequestedDataNotInDatabaseError:
+            return None
+
+    def set_report_errors(self, report_errors):
+        self.__dao.set_configuration(self.ConfigKeys.REPORT_ERRORS, report_errors)
+
     def _set_default_configuration(self):
         user_data = {
             self.ConfigKeys.LAST_DIRECTORY: os.getcwd(),
@@ -603,7 +613,8 @@ class SystemService:
             self.ConfigKeys.THEME_PREFERENCE: self.Themes.DEFAULT,
             self.ConfigKeys.VERSION: "unknown",
             self.ConfigKeys.LATEST: "unknown",
-            self.ConfigKeys.NOTIFY_OF_UPDATE: True
+            self.ConfigKeys.NOTIFY_OF_UPDATE: True,
+            self.ConfigKeys.REPORT_ERRORS: None
         }
 
         with open(resources.CONFIGURATION_FILE, 'w+') as f:
