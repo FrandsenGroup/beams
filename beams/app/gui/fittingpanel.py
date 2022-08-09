@@ -556,7 +556,7 @@ class FittingPanel(Panel):
                                                                       QtWidgets.QHeaderView.Stretch)
             self.output_table.setEditTriggers(qt_constants.NoEditTriggers)
 
-            self.goodness_display.setEnabled(False)
+            self.goodness_display.setReadOnly(True)
 
         def _set_tooltips(self):
             self.config_table.horizontalHeaderItem(0).setToolTip("The starting value of a parameter")
