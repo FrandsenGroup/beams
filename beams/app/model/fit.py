@@ -584,7 +584,8 @@ class FitEngine:
     def _residual(lambda_expression):
         def residual(pars, x, y_data, dy_data):
             y_calc = lambda_expression(np.array(x, dtype=complex), *pars).real
-            return np.divide(np.subtract(y_data, y_calc), dy_data)
+            return np.divide(np.subtract(y_data, y_calc), dy_data,
+                             out=np.zeros_like(dy_data), where=dy_data != 0)  # Divide by zero will result in 0
         return residual
 
     @staticmethod
