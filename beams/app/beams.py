@@ -13,7 +13,7 @@ from PyQt5 import QtWidgets, QtGui
 
 # BEAMS Modules
 from app.gui import mainwindow
-from app.gui.dialogs.dialog_misc import NotificationDialog
+from app.gui.dialogs.dialog_misc import NotificationDialog, PermissionsMessageDialog
 from app.model import services
 from app.resources import resources
 from app.util import qt_constants, report
@@ -68,8 +68,20 @@ class BEAMS(QtWidgets.QApplication):
         self.main_program_window = mainwindow.MainWindow()
         self.main_program_window.show()
         self.splash.finish(self.main_program_window)
+        self._check_report_status()
         self._check_version()
         sys.exit(self.exec_())
+
+    def _check_report_status(self):
+        if self.__system_service.get_report_errors() is not None:
+            return  # The user has already indicated their preference
+
+        response = PermissionsMessageDialog.launch([
+            "Hi! Would you like to automatically report errors back to our research group so we can continue "
+            "to improve our software?\n"
+        ])
+
+        self.__system_service.set_report_errors(response == PermissionsMessageDialog.Codes.OKAY)
 
     def _check_version(self):
         notify = self.__system_service.get_notify_user_of_update()
