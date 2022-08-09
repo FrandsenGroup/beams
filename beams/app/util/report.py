@@ -5,7 +5,7 @@ import traceback
 
 
 def get_exception_stack(e: Exception):
-    return e if not isinstance(e, Exception) else ''.join(traceback.format_exception(type(e), e, e.__traceback__))
+    return str(e) if not isinstance(e, Exception) else ''.join(traceback.format_exception(type(e), e, e.__traceback__))
 
 
 def init_reporting():
