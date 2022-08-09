@@ -26,7 +26,7 @@ class PersistentObject(abc.ABC):
     def build_from_persistent_data(data: MinimalObject):
         pass
 
-    def _recursive_build(self, **kwargs):  # FIXME make this actually recursive. Then make a builder :evil smile:
+    def _recursive_build(self, **kwargs):
         minimal_dictionary = {}
 
         for constructor_name, attribute in kwargs.items():

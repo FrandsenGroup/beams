@@ -117,8 +117,8 @@ class IntegrationDialog(QtWidgets.QDialog):
             return path
 
     def write_integration(self, save_path, integration_index):
-        integration_string = "# Integration\n\n"
-        integration_string += "{:<12}\t".format(self._ind_var_label)
+        integration_string = "# Integration\n"
+        integration_string += "# {:<12}\t".format(self._ind_var_label)
         integration_string += "{:<21}\t".format("Integrated Asymmetry")
         integration_string += "{:<12}\t\n".format("Uncertainty")
 
@@ -129,9 +129,8 @@ class IntegrationDialog(QtWidgets.QDialog):
             integration_string += "{:<12.5f}\t\n".format(float(integration_tuple[1]))
 
         with open(save_path, 'w', encoding="utf-8") as out_file_object:
-            out_file_object.write("#BEAMS\n"
+            out_file_object.write("# BEAMS\n"
                                   + integration_string)
-
 
     @staticmethod
     def launch(x_axis, x_axis_label, integrations, titles):
