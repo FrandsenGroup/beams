@@ -187,7 +187,7 @@ class TRIUMFMuonFile(ConvertibleFile):
                                                                                                    Extensions.HISTOGRAM):
             system_args = {'win32': [resources.TRIUMF_WINDOWS_CONVERSION, self.file_path, out_file],
                            'linux': ['./' + resources.TRIUMF_LINUX_CONVERSION, self.file_path, out_file],
-                           'darwin': ['./' + resources.TRIUMF_MAC_CONVERSION, self.file_path, out_file]}
+                           'darwin': [resources.TRIUMF_MAC_CONVERSION, self.file_path, out_file]}
 
             if sys.platform in system_args.keys():
                 args = system_args[sys.platform]
