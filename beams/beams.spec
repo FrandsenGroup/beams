@@ -6,7 +6,6 @@ a = Analysis(['__main__.py'],
              datas=[
                 ('app/resources/icons/*', 'app/resources/icons'),
                 ('app/resources/fonts/*', 'app/resources/fonts'),
-                ('app/resources/app.config', 'app/app.config'),
                 ('app/resources/binaries/*', 'app/resources/binaries')
              ],
              hiddenimports=[],
@@ -24,20 +23,19 @@ pyz = PYZ(a.pure, a.zipped_data,
 
 exe = EXE(pyz,
           a.scripts,
-          a.binaries,
-          a.zipfiles,
-          a.datas,
           [],
+          exclude_binaries=True,
           name='beams',
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
-          upx_exclude=[],
-          runtime_tmpdir=None,
-          console=True,
-          uac_admin=True,
-          icon="app/resources/icons/icon.ico")
+          console=False,
+          disable_windowed_traceback=False,
+          target_arch=None,
+          codesign_identity=None,
+          entitlements_file=None)
+
 
 coll = COLLECT(exe,
                 a.binaries,
