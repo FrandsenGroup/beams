@@ -38,14 +38,14 @@ class BEAMS(QtWidgets.QApplication):
         self.processEvents()
 
         if self.__system_service.get_theme_preference() == self.__system_service.Themes.LIGHT:
-            self.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
+            self.setStyleSheet(qdarkstyle.load_stylesheet(qt_api='pyqt5', palette=qdarkstyle.LightPalette))
         elif self.__system_service.get_theme_preference() == self.__system_service.Themes.DARK:
-            self.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette))
+            self.setStyleSheet(qdarkstyle.load_stylesheet(qt_api='pyqt5', palette=qdarkstyle.DarkPalette))
         else:
             if darkdetect.isDark():
-                self.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.DarkPalette))
+                self.setStyleSheet(qdarkstyle.load_stylesheet(qt_api='pyqt5', palette=qdarkstyle.DarkPalette))
             else:
-                self.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
+                self.setStyleSheet(qdarkstyle.load_stylesheet(qt_api='pyqt5', palette=qdarkstyle.LightPalette))
 
         db = QtGui.QFontDatabase()
         db.addApplicationFont(resources.LATO_BLACK_FONT)
