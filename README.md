@@ -226,10 +226,10 @@ The box on the right (User Defined Functions) allows you to create a new functio
 <br>
 
 
-Reserved Symbols | + | - | * | / | ^ | i | e | π | pi
+Common Reserved Symbols | + | - | * | / | ^ | i | e | π | pi
 --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
 
-Functions - f(...) | sin | cos | tan | sinh | cosh | tanh | exp | pow
+Common Functions - f(...) | sin | cos | tan | sinh | cosh | tanh | exp | pow
 --- | --- | --- | --- | --- | --- | --- | --- | ---
 
 
