@@ -42,7 +42,7 @@
 ## Getting Started
 
 ### Prerequisites
-- Python 3.6 or greater
+- Python 3.8 or greater
 
 ### Installation
 - Download or clone this repository.
