@@ -681,7 +681,7 @@ class FittingPanel(Panel):
         self.option_ascending.addItems(['Ascending', 'Descending'])
 
         self.input_user_equation_name.setPlaceholderText("Function Name")
-        self.input_user_equation.setPlaceholderText("Function (e.g. \"\u03B2 * (t + \u03BB)\")")
+        self.input_user_equation.setPlaceholderText("Function (e.g. a*exp(-(\u03BB*t)^\u03B2))")
         self.input_fit_equation.setPlaceholderText("Fit Equation")
 
         self.insert_phi.setFont(self.mathematical_font)
