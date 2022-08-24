@@ -343,7 +343,7 @@ Click on the file extension to see an example file (for non-binary file types).
 | .beams          | A saved beams session                                                         |
 
 ## Troubleshooting
-#### Can't install requirements on Mac (Apple Silicon)
+### Can't install requirements on Mac (Apple Silicon)
 For trouble installing requirements on Apple Silicon see the answer to this [issue](https://github.com/scipy/scipy/issues/13409).
 
 ```shell
@@ -352,23 +352,23 @@ $ pip install cython pybind11 pythran numpy
 $ OPENBLAS=$(brew --prefix openblas) CFLAGS="-falign-functions=8 ${CFLAGS}" pip install --no-use-pep517 scipy
 ```
 
-#### Text in file trees is truncated
+### Text in file trees is truncated
 If the text is truncated or the items on the screen are misaligned slightly you most likely don't have PyQt5 installed (you can confirm this by running `pip freeze` in the terminal and you will probably see QtPy). Simply fix by using pip to install PyQt5.
  
 ```shell
 $ pip install PyQt5
 ```
 
-#### (PyQt5) ImportError: DLL load failed
+### (PyQt5) ImportError: DLL load failed
 Resolved in this [Issue 37](../../issues/37)
 
 Possible solution in the answer to this question on Stack Overflow: https://stackoverflow.com/questions/42863505/dll-load-failed-when-importing-pyqt5
 
-#### (PyQt5) Could not load the Qt platform plugin "xcb" in "" even though it was found
+### (PyQt5) Could not load the Qt platform plugin "xcb" in "" even though it was found
 If you are attempting to install using WSL, this was resolved [here](https://github.com/FrandsenGroup/beams/issues/222) as a recommendation to install using PowerShell or the Command Prompt or possibly WSL2 instead.
 
-#### Histogram navigation toolbar is not loading
+### Histogram navigation toolbar is not loading
 There is an open issue for this ([Issue 97](../../issues/97)). As of right now we do not have a solution. Consider uninstalling and reinstalling the python library 'matplotlib' and 'PyQt5'. 
 
-#### My files from TRIUMF, PSI, or ISIS aren't being converted
+### My files from TRIUMF, PSI, or ISIS aren't being converted
 Please open up an issue if this happens as it means we need to update our program to read the new format.
