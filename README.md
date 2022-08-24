@@ -46,7 +46,9 @@
 
 ### Installation
 - Download a pre-built distribution under "Releases"
+
   __or__
+ 
 - Download or clone this repository.
 - Open a terminal and navigate to the BEAMS folder.
 
