@@ -365,7 +365,7 @@ Resolved in this [Issue 37](../../issues/37)
 Possible solution in the answer to this question on Stack Overflow: https://stackoverflow.com/questions/42863505/dll-load-failed-when-importing-pyqt5
 
 #### (PyQt5) Could not load the Qt platform plugin "xcb" in "" even though it was found
-If you are attempting to install using WSL, this was resolved (here)[https://github.com/FrandsenGroup/beams/issues/222] as a recommendation to install using PowerShell or the Command Prompt or possibly WSL2 instead.
+If you are attempting to install using WSL, this was resolved [here](https://github.com/FrandsenGroup/beams/issues/222) as a recommendation to install using PowerShell or the Command Prompt or possibly WSL2 instead.
 
 #### Histogram navigation toolbar is not loading
 There is an open issue for this ([Issue 97](../../issues/97)). As of right now we do not have a solution. Consider uninstalling and reinstalling the python library 'matplotlib' and 'PyQt5'. 
