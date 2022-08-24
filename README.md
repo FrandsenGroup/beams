@@ -42,9 +42,13 @@
 ## Getting Started
 
 ### Prerequisites
-- Python 3.6 or greater
+- Python 3.8 or greater
 
 ### Installation
+- Download a pre-built distribution under "Releases"
+
+  __or__
+ 
 - Download or clone this repository.
 - Open a terminal and navigate to the BEAMS folder.
 
@@ -70,7 +74,7 @@ $ python beams
 ### Loading Files
 By clicking the [+] button in the top left corner you will launch a prompt with four options of adding files. 
 From disk (your computer), and then three different facilities: Triumf, PSI and ISIS. Clicking the [-] button will remove
-all the the files currently checked. ISIS recently changed their API so it will take you straight to there website
+all the the files currently checked. ISIS recently changed their API so it will take you straight to their website
 (which is much improved and overall a better experience to work with anyways).
 
 <img src="https://github.com/aPeter1/BEAMS/blob/assets/file_panel_example.png" width="400" />
@@ -226,10 +230,10 @@ The box on the right (User Defined Functions) allows you to create a new functio
 <br>
 
 
-Reserved Symbols | + | - | * | / | ^ | i | e | π | pi
+Common Reserved Symbols | + | - | * | / | ^ | i | e | π | pi
 --- | --- | --- | --- | --- | --- | --- | --- | --- | ---
 
-Functions - f(...) | sin | cos | tan | sinh | cosh | tanh | exp | pow
+Common Functions - f(...) | sin | cos | tan | sinh | cosh | tanh | exp | pow
 --- | --- | --- | --- | --- | --- | --- | --- | ---
 
 
@@ -343,7 +347,7 @@ Click on the file extension to see an example file (for non-binary file types).
 | .beams          | A saved beams session                                                         |
 
 ## Troubleshooting
-#### Can't install requirements on Mac (Apple Silicon)
+### Can't install requirements on Mac (Apple Silicon)
 For trouble installing requirements on Apple Silicon see the answer to this [issue](https://github.com/scipy/scipy/issues/13409).
 
 ```shell
@@ -352,20 +356,23 @@ $ pip install cython pybind11 pythran numpy
 $ OPENBLAS=$(brew --prefix openblas) CFLAGS="-falign-functions=8 ${CFLAGS}" pip install --no-use-pep517 scipy
 ```
 
-#### Text in file trees is truncated
+### Text in file trees is truncated
 If the text is truncated or the items on the screen are misaligned slightly you most likely don't have PyQt5 installed (you can confirm this by running `pip freeze` in the terminal and you will probably see QtPy). Simply fix by using pip to install PyQt5.
  
 ```shell
 $ pip install PyQt5
 ```
 
-#### (PyQt5) ImportError: DLL load failed
+### (PyQt5) ImportError: DLL load failed
 Resolved in this [Issue 37](../../issues/37)
 
 Possible solution in the answer to this question on Stack Overflow: https://stackoverflow.com/questions/42863505/dll-load-failed-when-importing-pyqt5
 
-#### Histogram navigation toolbar is not loading
+### (PyQt5) Could not load the Qt platform plugin "xcb" in "" even though it was found
+If you are attempting to install using WSL, this was resolved [here](https://github.com/FrandsenGroup/beams/issues/222) as a recommendation to install using PowerShell or the Command Prompt or possibly WSL2 instead.
+
+### Histogram navigation toolbar is not loading
 There is an open issue for this ([Issue 97](../../issues/97)). As of right now we do not have a solution. Consider uninstalling and reinstalling the python library 'matplotlib' and 'PyQt5'. 
 
-#### My files from TRIUMF, PSI, or ISIS aren't being converted
-Please open up an issue if this happens as it means we need to update the executables.
+### My files from TRIUMF, PSI, or ISIS aren't being converted
+Please [open up an issue](https://github.com/FrandsenGroup/beams/issues/new/choose) if this happens as it means we need to update our program to read the new format.
