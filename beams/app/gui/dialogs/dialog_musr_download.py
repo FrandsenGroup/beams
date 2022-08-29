@@ -49,9 +49,8 @@ class MusrDownloadDialog(QtWidgets.QDialog):
         self.status_bar.showMessage(message)
 
     def _set_widget_dimensions(self):
-        self.input_area.setFixedWidth(70)
-        self.input_expt.setFixedWidth(70)
-        self.input_year.setFixedWidth(70)
+        self.input_area.setFixedWidth(90)
+        self.input_year.setFixedWidth(90)
         self.select_button.setFixedWidth(80)
         self.download_button.setFixedWidth(80)
         self.download_all.setFixedWidth(140)
