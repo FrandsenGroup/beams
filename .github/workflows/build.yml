@@ -93,7 +93,7 @@ jobs:
           - os: ubuntu-latest
             TARGET: ubuntu
             CMD_BUILD: >
-              pyinstaller beams-mac.spec
+              pyinstaller beams-lin.spec
             OUT_FILE_NAME: beams
             ASSET_MIME: application/zip
     steps:
@@ -138,7 +138,7 @@ jobs:
         include:
           - os: windows-latest
             TARGET: windows
-            CMD_BUILD: pyinstaller beams-mac.spec
+            CMD_BUILD: pyinstaller beams-win.spec
             OUT_FILE_NAME: beams.exe
             ASSET_MIME: application/vnd.microsoft.portable-executable
     steps:
