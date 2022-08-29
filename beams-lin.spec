@@ -21,7 +21,7 @@ pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 
 exe = EXE(pyz,
-          a.scripts, 
+          a.scripts,
           [],
           exclude_binaries=True,
           name='beams',
@@ -33,16 +33,12 @@ exe = EXE(pyz,
           disable_windowed_traceback=False,
           target_arch=None,
           codesign_identity=None,
-          entitlements_file=None , icon='beams/app/resources/icons/icon.icns')
+          entitlements_file=None , icon='beams/app/resources/icons/icon.ico')
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,
-               a.datas, 
+               a.datas,
                strip=False,
                upx=True,
                upx_exclude=[],
                name='beams')
-app = BUNDLE(coll,
-             name='beams.app',
-             icon='beams/app/resources/icons/icon.icns',
-             bundle_identifier=None)
