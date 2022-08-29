@@ -2,6 +2,7 @@
 [![Release](https://img.shields.io/github/release/FrandsenGroup/beams.svg?style=plastic&colorB=68B7EB)](https://github.com/FrandsenGroup/beams/releases)
 [![Tests](https://github.com/FrandsenGroup/beams/actions/workflows/ci.yml/badge.svg)](https://github.com/FrandsenGroup/beams/actions/workflows/ci.yml)
 [![Build](https://github.com/FrandsenGroup/beams/actions/workflows/build.yml/badge.svg)](https://github.com/FrandsenGroup/beams/actions/workflows/build.yml)
+[![CodeQL](https://github.com/FrandsenGroup/beams/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/FrandsenGroup/beams/actions/workflows/codeql-analysis.yml)
 
 # BEAMS
 > A simple interface for visualizing and analyzing µSR data.
