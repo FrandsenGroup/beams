@@ -74,6 +74,10 @@ def log_exception(e):
 
 
 def report_info(m):
+    if isinstance(m, Exception):
+        report_exception(m)
+        return
+
     log_info(m)
     try:
         sentry_sdk.capture_message(m)
@@ -82,6 +86,10 @@ def report_info(m):
 
 
 def report_exception(e):
+    if isinstance(e, str):
+        report_info(e)
+        return
+
     log_exception(e)
     try:
         sentry_sdk.capture_exception(e)
