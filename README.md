@@ -2,12 +2,6 @@
 [![Release](https://img.shields.io/github/release/FrandsenGroup/beams.svg?style=plastic&colorB=68B7EB)]()
 [![Tests](https://github.com/FrandsenGroup/beams/actions/workflows/ci.yml/badge.svg)](https://github.com/FrandsenGroup/beams/actions/workflows/ci.yml)
 [![Build](https://github.com/FrandsenGroup/beams/actions/workflows/build.yml/badge.svg)](https://github.com/FrandsenGroup/beams/actions/workflows/build.yml)
-###  Features
-
-- Convert binary data files from multiple µSR facilities.
-- Display and interact with multiple sets of data.
-- Write data to a common file type.
-- Compatible with Linux, Mac and Windows
 
 # BEAMS
 > A simple interface for visualizing and analyzing µSR data.
