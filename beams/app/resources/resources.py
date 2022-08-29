@@ -7,7 +7,7 @@ import os
 import sys
 
 
-def resource_path(relative_path) -> str:
+def resource_path(relative_path, creating=False) -> str:
     """ Get absolute path to resource, works for dev and for PyInstaller """
     relative_path = str(Path(relative_path))
     try:
@@ -18,10 +18,10 @@ def resource_path(relative_path) -> str:
 
     path = os.path.join(base_path, relative_path)
 
-    if not os.path.exists(path):
+    if not creating and not os.path.exists(path):
         path = os.path.join(os.getcwd(), relative_path)
 
-    if not os.path.exists(path):
+    if not creating and not os.path.exists(path):
         path = os.path.join(os.getcwd(), "beams", relative_path)
 
     return str(Path(path))
@@ -67,15 +67,24 @@ DARK_COLOR = '#19232D'
 LIGHT_COLOR = '#FAFAFA'
 
 try:
-    CONFIGURATION_FILE = resource_path('app/resources/app.config')
+    CONFIGURATION_FILE = resource_path('app/resources/app.config', creating=True)
 
     if not os.path.exists(CONFIGURATION_FILE):
         with open(CONFIGURATION_FILE, 'w+') as f:
             pass
 
 except FileNotFoundError:
-    CONFIGURATION_FILE = 'app.config'
+    try:
+        CONFIGURATION_FILE = resource_path('app.config', creating=True)
 
-    if not os.path.exists(CONFIGURATION_FILE):
-        with open(CONFIGURATION_FILE, 'w+') as f:
-            pass
+        if not os.path.exists(CONFIGURATION_FILE):
+            with open(CONFIGURATION_FILE, 'w+') as f:
+                pass
+
+    except FileNotFoundError:
+        CONFIGURATION_FILE = 'app.config'
+
+        if not os.path.exists(CONFIGURATION_FILE):
+            with open(CONFIGURATION_FILE, 'w+') as f:
+                pass
+
