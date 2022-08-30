@@ -142,7 +142,7 @@ jobs:
             TARGET: windows
             CMD_BUILD: pyinstaller beams-win.spec &&
               cd dist/ &&
-              zip -r9 beams-windows-latest beams/
+              compress-archive -literalpath beams -destinationpath beams-windows-latest.zip
             OUT_FILE_NAME: beams-windows-latest.zip
             ASSET_MIME: application/zip
     steps:
@@ -163,7 +163,7 @@ jobs:
           name: release_url
       - name: Get Release File Name & Upload URL
         id: get_release_info
-        shell: bash
+        shell: pwsh
         run: |
           value=`cat release_url/release_url.txt`
           echo ::set-output name=upload_url::$value
