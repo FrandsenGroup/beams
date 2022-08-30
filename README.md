@@ -47,8 +47,8 @@
 
   __or__
  
-- Download or clone this repository.
-- Open a terminal and navigate to the BEAMS folder.
+- Clone this repository with `git clone https://github.com/FrandsenGroup/beams.git`
+- Navigate into the BEAMS folder with `cd beams`
 
 #### Without Anaconda
 - Run the following command to install the package requirements for BEAMS
