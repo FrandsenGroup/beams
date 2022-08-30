@@ -42,11 +42,12 @@
 - Python 3.8 or greater
 
 ### Installation
+##### We recommend cloning the repository (the second option) as this makes updates for you much simpler (simply `git pull`)
 - Download a pre-built distribution under "Releases" 
 
   __or__
  
-- Download or clone this repository. (recommended)
+- Download or clone this repository.
 - Open a terminal and navigate to the BEAMS folder.
 
 #### Without Anaconda
