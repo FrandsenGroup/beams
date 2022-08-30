@@ -69,7 +69,7 @@ jobs:
         id: get_release_info
         shell: pwsh
         run: |
-          $value=`type release_url/release_url.txt`
+          $value=(type release_url/release_url.txt)
           echo ::set-output name=upload_url::$value
       - name: Upload Release Asset
         id: upload-release-asset
