@@ -51,7 +51,7 @@
 - Navigate into the BEAMS folder with `cd beams`
 
 #### Without Anaconda
-- Run the following command to install the package requirements for BEAMS
+- Run the following command to install the package requirements for BEAMS (note that you may need to use `python3` instead of `python`, you can use `python --version` to make sure it is referencing the correct version)
 ```shell
 $ python -m pip install -r python_requirements.txt
 ```
