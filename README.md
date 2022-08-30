@@ -372,5 +372,8 @@ If you are attempting to install using WSL, this was resolved [here](https://git
 ### Histogram navigation toolbar is not loading
 There is an open issue for this ([Issue 97](../../issues/97)). As of right now we do not have a solution. Consider uninstalling and reinstalling the python library 'matplotlib' and 'PyQt5'. 
 
+### The pre-built distribution will not run on my system
+You can open an issue in Github so we can try and debug it, but the easiest course of action is to build from source. You can follow the instructions in the [Getting Started](#getting-started) section
+
 ### My files from TRIUMF, PSI, or ISIS aren't being converted
 Please [open up an issue](https://github.com/FrandsenGroup/beams/issues/new/choose) if this happens as it means we need to update our program to read the new format.
