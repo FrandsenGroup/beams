@@ -558,8 +558,8 @@ class SystemService:
         try:
             return self.__dao.get_configuration(self.ConfigKeys.VERSION)
         except dao.BeamsRequestedDataNotInDatabaseError:
-            self.__dao.set_configuration(self.ConfigKeys.VERSION, "unknown")
-            return "unknown"
+            self.__dao.set_configuration(self.ConfigKeys.VERSION, "v1.0.0")
+            return "v1.0.0"
 
     def get_latest_version(self):
         try:
