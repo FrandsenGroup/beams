@@ -222,9 +222,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 instance.setStyleSheet(qdarkstyle.load_stylesheet(palette=qdarkstyle.LightPalette))
             self.__system_service.set_theme_preference(self.__system_service.Themes.DEFAULT)
 
-
     def _action_quit(self):
         sys.exit()
+
 
 # noinspection PyArgumentList
 class StyleFile:
