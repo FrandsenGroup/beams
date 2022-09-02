@@ -67,6 +67,12 @@ class BEAMS(QtWidgets.QApplication):
 
         self.main_program_window = mainwindow.MainWindow()
         self.main_program_window.show()
+
+        qr = self.main_program_window.frameGeometry()
+        cp = QtWidgets.QDesktopWidget().availableGeometry().center()
+        qr.moveCenter(cp)
+        self.main_program_window.move(qr.topLeft())
+
         self.splash.finish(self.main_program_window)
         self._check_report_status()
         self._check_version()
