@@ -10,6 +10,8 @@ import re
 import logging
 import copy
 
+from sympy import Symbol
+
 from app.model import objects
 from app.util import report
 
@@ -786,6 +788,37 @@ def lambdify(expression: str, variables=None):
 def _shortened_run_id(run_id: str) -> str:
     """Returns the first section of uuid."""
     return "_" + run_id.split('-')[0]
+
+
+def convert_symbols_to_ascii(symbols: list[Symbol]) -> list[str]:
+    ascii_symbols = []
+    for symbol in symbols:
+        sym_as_str = str(symbol)
+        sym_as_ascii = ''
+        for i, char in enumerate(sym_as_str):
+            if i > 0:
+                sym_as_ascii += '_'
+            if char == SIGMA:
+                sym_as_ascii += "sigma"
+            elif char == PI:
+                sym_as_ascii += "pi"
+            elif char == PHI:
+                sym_as_ascii += "phi"
+            elif char == NAUGHT:
+                sym_as_ascii += "naught"
+            elif char == LAMBDA:
+                sym_as_ascii += "lambda"
+            elif char == DELTA:
+                sym_as_ascii += "delta"
+            elif char == ALPHA:
+                sym_as_ascii += "alpha"
+            elif char == BETA:
+                sym_as_ascii += "beta"
+            elif char == NU:
+                sym_as_ascii += "nu"
+        ascii_symbols.append(sym_as_ascii)
+
+    return ascii_symbols
   
   
 class ImproperlyFormattedExpressionError(Exception):

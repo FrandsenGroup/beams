@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 from collections import OrderedDict
 from concurrent import futures
@@ -10,6 +11,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
 
+from app.gui.dialogs.dialog_external_function import ExternalFunctionDialog
 from app.resources import resources
 from app.gui.dialogs.dialog_misc import WarningMessageDialog, LoadingDialog
 from app.gui.dialogs.dialog_write_fit import WriteFitDialog
@@ -576,6 +578,8 @@ class FittingPanel(Panel):
         super(FittingPanel, self).__init__()
         self.__logger = logging.getLogger(__name__)
 
+        self.external_functions_dict = {}
+
         self.support_panel = FittingPanel.SupportPanel()
 
         self.parameter_table = self.ParameterTable()
@@ -603,6 +607,7 @@ class FittingPanel(Panel):
         self.button_insert_preset_equation = qt_widgets.StyleTwoButton("Insert")
         self.button_insert_user_equation = qt_widgets.StyleTwoButton("Insert")
         self.button_save_user_equation = qt_widgets.StyleTwoButton("Save")
+        self.button_import_external_function = qt_widgets.StyleTwoButton("Import")
         self.button_plot = qt_widgets.StyleTwoButton("Plot")
 
         self.label_global_plus = QtWidgets.QLabel("Global+")
@@ -645,6 +650,7 @@ class FittingPanel(Panel):
         self.button_insert_preset_equation.setToolTip('Insert predefined function')
         self.button_insert_user_equation.setToolTip('Insert user defined function')
         self.button_save_user_equation.setToolTip('Save user defined function')
+        self.button_import_external_function.setToolTip('Import user defined function written in Python')
         self.button_plot.setToolTip('Plot data')
 
         self.input_fit_equation.setToolTip('Type the equation you would like to use for the fit here')
@@ -751,7 +757,7 @@ class FittingPanel(Panel):
         row.addWidget(self.input_user_equation_name)
         row.addWidget(self.input_user_equation, 2)
         row.addWidget(self.button_save_user_equation)
-        row.addSpacing(10)
+        row.addWidget(self.button_import_external_function)
         layout = QtWidgets.QFormLayout()
         layout.addRow(row)
         self.group_user_functions.setLayout(layout)
@@ -1233,7 +1239,8 @@ class FittingPanel(Panel):
     def copy_user_function_to_cursor(self):
         if self.option_user_fit_equations.currentText() == 'None':
             return
-
+        if self.option_user_fit_equations.currentText() in self.external_functions_dict.keys():
+            self.input_fit_equation.insert(self.exte)
         self.input_fit_equation.insert(fit.USER_EQUATION_DICTIONARY[self.option_user_fit_equations.currentText()])
 
     def copy_character_to_cursor(self, char):
@@ -1320,6 +1327,7 @@ class FitTabPresenter(PanelPresenter):
         self._view.button_insert_preset_equation.released.connect(self._on_insert_pre_defined_function_clicked)
         self._view.button_insert_user_equation.released.connect(self._on_insert_user_defined_function_clicked)
         self._view.button_save_user_equation.released.connect(self._on_save_user_defined_function_clicked)
+        self._view.button_import_external_function.released.connect(self._on_import_external_function_clicked)
         self._view.insert_sigma.released.connect(lambda: self._on_insert_character_clicked(fit.SIGMA))
         self._view.insert_pi.released.connect(lambda: self._on_insert_character_clicked(fit.PI))
         self._view.insert_phi.released.connect(lambda: self._on_insert_character_clicked(fit.PHI))
@@ -1433,6 +1441,19 @@ class FitTabPresenter(PanelPresenter):
         self._view.option_user_fit_equations.setCurrentText(function_name)
         self._view.input_user_equation_name.clear()
         self._view.input_user_equation.clear()
+
+    @QtCore.pyqtSlot()
+    def _on_import_external_function_clicked(self):
+        ExternalFunctionDialog().exec()
+        # Open a file explorer and let the user select their predefined function file
+        filepaths = self._get_external_function_files_from_system()
+        for file in filepaths:
+            filename = file.split('/')[-1]
+            self._view.external_functions_dict[filename] = file
+            self._view.option_user_fit_equations.addItem(filename)
+
+
+
 
     @QtCore.pyqtSlot()
     def _on_spectrum_settings_changed(self):
@@ -2247,6 +2268,16 @@ class FitTabPresenter(PanelPresenter):
         self._view.update_run_table(runs)
         self.__update_states = True
         self.update_parameter_table_states()
+
+    def _get_external_function_files_from_system(self):
+        filenames = QtWidgets.QFileDialog.getOpenFileNames(self._view, 'Import Python file(s)',
+                                                           self._system_service.get_last_used_directory(),
+                                                           "Python files (*.py)")[0]
+        if len(filenames) > 0:
+            path = os.path.split(filenames[0])
+            self._system_service.set_last_used_directory(path[0])
+
+        return filenames
 
 
 class FitWorker(QtCore.QRunnable):
