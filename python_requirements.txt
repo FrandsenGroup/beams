@@ -5,7 +5,7 @@ sympy==1.8
 scipy==1.6.3
 matplotlib==3.4.2
 pytest==6.2.5
-qdarkstyle==3.0.3
+qdarkstyle==3.1
 darkdetect==0.5.1
 h5py==3.6.0
 sentry-sdk==1.5.4
