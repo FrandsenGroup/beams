@@ -1,4 +1,4 @@
-pyqt5==5.15.4
+pyqt5==5.15.7
 requests==2.28.1
 numpy==1.23.4
 sympy==1.11.1
