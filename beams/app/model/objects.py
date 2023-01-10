@@ -966,7 +966,7 @@ class Fit(PersistentObject):
         return Fit(**data)
 
     def __init__(self, parameters, expression, title, run_id, meta, asymmetry: Asymmetry,
-                 goodness: float = None, fit_id=None):
+                 goodness: float = None, fit_id=None, external_function_dict=None):
         self.id = str(uuid.uuid4()) if fit_id is None else fit_id
         self.parameters = parameters
         self.string_expression = expression
@@ -978,7 +978,7 @@ class Fit(PersistentObject):
         self.converged = not any([p.uncertainty == -1 for p in parameters.values()])
 
         from app.model import fit
-        self.expression = fit.FitExpression(expression)
+        self.expression = fit.FitExpression(expression, external_function_dict=external_function_dict)
 
     def __eq__(self, other):
         return self.parameters == other.parameters and self.string_expression == other.string_expression

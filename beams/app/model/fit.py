@@ -1,3 +1,4 @@
+import importlib.util
 import sys
 import uuid
 
@@ -112,14 +113,16 @@ class FitParameter:
 
 
 class FitExpression:
-    def __init__(self, expression_string, variables=None):
+    def __init__(self, expression_string, variables=None, external_function_dict=None):
         self.__expression_string = expression_string
 
         if variables is None:
             variables = parse(self.__expression_string)
 
         self.__variables = variables
-        self.__expression = lambdify(self.__expression_string, variables)
+        loaded_external_functions = self.__load_external_functions(external_function_dict)
+
+        self.__expression = lambdify(self.__expression_string, variables, loaded_external_functions)
         self.safe = True
 
     def __getstate__(self):
@@ -179,6 +182,16 @@ class FitExpression:
                 return self.__expression(time_array, *unnamed_pars, **pars).real
             raise InvalidFitArgumentsError("Bad arguments passed to fit expression.") from e
 
+    def __load_external_functions(self, external_function_dict):
+        loaded_external_functions = {}
+        for filename, full_file_path in external_function_dict.items():
+            spec = importlib.util.spec_from_file_location(filename, full_file_path)
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[filename] = module
+            spec.loader.exec_module(module)
+            loaded_external_functions[filename] = getattr(module, filename)
+        return loaded_external_functions
+
 
 class FitConfig:
     """
@@ -189,13 +202,14 @@ class FitConfig:
 
     """
 
-    def __init__(self):
+    def __init__(self, external_function_dict):
         self.expression = ''
         self.parameters = {}
         self.titles = {}
         self.data = OrderedDict()  # Important so we can specify order of runs to be fitted for batch fit.
         self.batch = True
         self.flags = 0
+        self.external_function_dict = external_function_dict
 
     def __repr__(self):
         return f"FitConfig({self.expression}, {self.parameters}, {self.titles}, {self.batch}, {self.flags}, {self.data})"
@@ -361,7 +375,8 @@ class FitEngine:
             function = FitEngine._replace_fixed(function, fixed_symbols, fixed_values)
 
             # Create a residual expression for the least squares fit
-            lambda_expression = FitExpression(function, variables=config.get_symbols_for_run(run_id, is_fixed=False))
+            lambda_expression = FitExpression(function, variables=config.get_symbols_for_run(run_id, is_fixed=False),
+                                              external_function_dict=config.external_function_dict)
             residual = FitEngine._residual(lambda_expression)
 
             guesses = config.get_values_for_run(run_id, is_fixed=False)
@@ -486,7 +501,8 @@ class FitEngine:
             function = FitEngine._replace_fixed(function, fixed_symbols, fixed_values)
 
             # Create a residual expression for the least squares fit
-            lambda_expression = FitExpression(function, variables=config.get_symbols_for_run(run_id, is_fixed=False))
+            lambda_expression = FitExpression(function, variables=config.get_symbols_for_run(run_id, is_fixed=False),
+                                              external_function_dict=config.external_function_dict)
             residual = FitEngine._residual(lambda_expression)
 
             guesses = config.get_values_for_run(run_id, is_fixed=False)
@@ -514,7 +530,8 @@ class FitEngine:
                 config.set_outputs(run_id, symbol, value, 0)
 
             # 9) Fill in all values for our new fit object
-            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id, meta, asymmetry, goodness=chi_sq)
+            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id, meta,
+                                  asymmetry, goodness=chi_sq, external_function_dict=config.external_function_dict)
 
             # 10) Add fit to our dataset
             dataset.fits[run_id] = new_fit
@@ -568,7 +585,8 @@ class FitEngine:
             for symbol in config.get_symbols_for_run(run_id, is_fixed=False, is_global=False):
                 new_function = FitEngine._replace_var_with(new_function, symbol, symbol + _shortened_run_id(run_id))
 
-            new_lambda_expression = FitExpression(new_function, variables=config.get_adjusted_global_symbols())
+            new_lambda_expression = FitExpression(new_function, variables=config.get_adjusted_global_symbols(),
+                                                  external_function_dict=config.external_function_dict)
             new_lambda_expression.safe = False  # No type checks, speeds up the fit dramatically.
             lambdas.append(new_lambda_expression)
 
@@ -759,7 +777,7 @@ def alpha_correction(expression: str) -> str:
     return f'((1-{ALPHA})+((1+{ALPHA})*({expression})))/((1+{ALPHA})+((1-{ALPHA})*({expression})))'
 
 
-def lambdify(expression: str, variables=None):
+def lambdify(expression: str, variables=None, external_function_dict=None):
     """ Takes a string representation of an expression and returns a callable lambda.
 
     PARAMETERS
@@ -768,6 +786,7 @@ def lambdify(expression: str, variables=None):
             The string representation of the expression
         variables: iterable[str]
             Collection of free variables, if not provided then this will call parse on the expression
+        external_function_dict: dict[str, function] - function name mapped to the function itself
 
     RETURNS
     -------
@@ -781,7 +800,7 @@ def lambdify(expression: str, variables=None):
     var_names = [INDEPENDENT_VARIABLE] if INDEPENDENT_VARIABLE in expression_string else []
     var_names.extend([_replace_unsupported_unicode_characters(var) for var in variables])
 
-    lambda_expression = sp.lambdify(var_names, sp.sympify(expression_string), ["numpy", "scipy"])
+    lambda_expression = sp.lambdify(var_names, sp.sympify(expression_string, locals=external_function_dict), ["numpy", "scipy"])
     return lambda_expression
 
 
@@ -795,6 +814,10 @@ def convert_symbols_to_ascii(symbols: list[Symbol]) -> list[str]:
     for symbol in symbols:
         sym_as_str = str(symbol)
         sym_as_ascii = ''
+        if sym_as_str[0] not in [SIGMA, PI, PHI, NAUGHT, LAMBDA, DELTA, ALPHA, BETA, NU]:
+            sym_as_ascii += sym_as_str
+            ascii_symbols.append(sym_as_ascii)
+            continue
         for i, char in enumerate(sym_as_str):
             if i > 0:
                 sym_as_ascii += '_'

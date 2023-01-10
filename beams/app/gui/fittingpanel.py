@@ -1,6 +1,8 @@
+import importlib.util
 import logging
 import os
 import re
+import sys
 from collections import OrderedDict
 from concurrent import futures
 import functools
@@ -578,7 +580,10 @@ class FittingPanel(Panel):
         super(FittingPanel, self).__init__()
         self.__logger = logging.getLogger(__name__)
 
+        self.external_function_invocations_dict = {}
         self.external_functions_dict = {}
+        # Stores the ascii names of the symbols that are used in the external function
+        self.external_functions_syms_dict = {}
 
         self.support_panel = FittingPanel.SupportPanel()
 
@@ -1239,9 +1244,10 @@ class FittingPanel(Panel):
     def copy_user_function_to_cursor(self):
         if self.option_user_fit_equations.currentText() == 'None':
             return
-        if self.option_user_fit_equations.currentText() in self.external_functions_dict.keys():
-            self.input_fit_equation.insert(self.exte)
-        self.input_fit_equation.insert(fit.USER_EQUATION_DICTIONARY[self.option_user_fit_equations.currentText()])
+        if self.option_user_fit_equations.currentText() in self.external_function_invocations_dict.keys():
+            self.input_fit_equation.insert(self.option_user_fit_equations.currentText())
+        else:
+            self.input_fit_equation.insert(fit.USER_EQUATION_DICTIONARY[self.option_user_fit_equations.currentText()])
 
     def copy_character_to_cursor(self, char):
         self.input_fit_equation.insert(char)
@@ -1444,14 +1450,20 @@ class FitTabPresenter(PanelPresenter):
 
     @QtCore.pyqtSlot()
     def _on_import_external_function_clicked(self):
-        ExternalFunctionDialog().exec()
         # Open a file explorer and let the user select their predefined function file
         filepaths = self._get_external_function_files_from_system()
         for file in filepaths:
-            filename = file.split('/')[-1]
-            self._view.external_functions_dict[filename] = file
-            self._view.option_user_fit_equations.addItem(filename)
-
+            filename = file.split('/')[-1].split('.')[0]
+            func_invocation_hint = filename + '(t)'
+            func_name_dialog = ExternalFunctionDialog(func_invocation_hint)
+            if func_name_dialog.exec():
+                sym_list = func_name_dialog.ascii_syms
+                invocation = func_name_dialog.function_invocation
+                self._view.external_function_invocations_dict[invocation] = file
+                self._view.option_user_fit_equations.addItem(invocation)
+                # self._load_external_function(file, filename)
+                self._view.external_functions_dict[filename] = file
+                # self._view.external_functions_syms_dict[invocation] = sym_list
 
 
 
@@ -1603,7 +1615,7 @@ class FitTabPresenter(PanelPresenter):
     @QtCore.pyqtSlot()
     def _on_fit_clicked(self):
         self.__update_if_table_changes = False
-        config = fit.FitConfig()
+        config = fit.FitConfig(self._view.external_functions_dict)
 
         # Check user input on fit equation and update config
         expression = self._view.get_expression()
@@ -1911,7 +1923,7 @@ class FitTabPresenter(PanelPresenter):
             final_parameters['default'] = run_parameters
 
         if fit.is_accepted_expression(expression) and greater_than_one:
-            lambda_expression = fit.FitExpression(expression)
+            lambda_expression = fit.FitExpression(expression, None, self._view.external_functions_dict)
             return lambda_expression, final_parameters
         else:
             return None, {}
@@ -2279,6 +2291,13 @@ class FitTabPresenter(PanelPresenter):
 
         return filenames
 
+    def _load_external_function(self, full_file_path, filename):
+        spec = importlib.util.spec_from_file_location(filename, full_file_path)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[filename] = module
+        spec.loader.exec_module(module)
+        self._view.external_functions_dict[filename] = getattr(module, filename)
+
 
 class FitWorker(QtCore.QRunnable):
     def __init__(self, config: fit.FitConfig):
@@ -2302,7 +2321,7 @@ class FitWorker(QtCore.QRunnable):
             dataset = x.done.pop().result()
 
             for run_id, fit_data in dataset.fits.items():
-                fit_data.expression = fit.FitExpression(fit_data.string_expression)
+                fit_data.expression = fit.FitExpression(fit_data.string_expression, None, self.config.external_function_dict)
 
         except Exception as e:
             report.report_exception(e)

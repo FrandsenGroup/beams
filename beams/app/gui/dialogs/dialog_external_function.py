@@ -6,12 +6,12 @@ from app.util import qt_widgets
 import sympy as sp
 
 
-
 class ExternalFunctionDialog(QtWidgets.QDialog):
-    def __init__(self):
+    def __init__(self, default_text = ''):
         super(ExternalFunctionDialog, self).__init__()
         self.display_input = QtWidgets.QLineEdit()
         self.save_button = qt_widgets.StyleOneButton('Save')
+        self.default_text = default_text
 
         self.insert_phi = qt_widgets.StyleTwoButton(fit.PHI)
         self.insert_alpha = qt_widgets.StyleTwoButton(fit.ALPHA)
@@ -22,6 +22,8 @@ class ExternalFunctionDialog(QtWidgets.QDialog):
         self.insert_beta = qt_widgets.StyleTwoButton(fit.BETA)
         self.insert_pi = qt_widgets.StyleOneButton(fit.PI)
         self.insert_nu = qt_widgets.StyleOneButton(fit.NU)
+        self.function_invocation = ''
+        self.ascii_syms = []
 
         self.setMinimumWidth(600)
         self._set_widget_attributes()
@@ -33,6 +35,8 @@ class ExternalFunctionDialog(QtWidgets.QDialog):
         self.display_input.setPlaceholderText("Input function invocation")
         self.save_button.setText("Save")
         self.save_button.setMinimumWidth(60)
+
+        self.display_input.setText(self.default_text)
 
     def _set_widget_layout(self):
         main_layout = QtWidgets.QVBoxLayout()
@@ -89,7 +93,9 @@ class ExternalFunctionDialogPresenter(QtCore.QObject):
         text = self._view.display_input.text()
         try:
             syms = [v for v in sp.sympify(text).atoms(sp.Symbol)]
-            ascii_syms = fit.convert_symbols_to_ascii(syms)
-        except:
+            self._view.ascii_syms = fit.convert_symbols_to_ascii(syms)
+            self._view.function_invocation = text
+            self._view.accept()
+        except Exception as e:
+            print(e)
             WarningMessageDialog.launch(["Function call must be of the form 'func(sym1, sym2, ..., symN)'"])
-        pass
