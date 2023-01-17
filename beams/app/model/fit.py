@@ -113,7 +113,7 @@ class FitParameter:
 
 
 class FitExpression:
-    def __init__(self, expression_string, variables=None, external_function_dict=None):
+    def __init__(self, expression_string, variables=None, external_function_dict=None, alpha_correction=False):
         self.__expression_string = expression_string
 
         if variables is None:
@@ -122,16 +122,21 @@ class FitExpression:
         self.__variables = variables
         loaded_external_functions = self.__load_external_functions(external_function_dict)
 
+        self.__external_function_dict = external_function_dict
         self.__expression = lambdify(self.__expression_string, variables, loaded_external_functions)
+        if alpha_correction:
+            self.__expression = self.__alpha_correction(self.__expression)
         self.safe = True
 
     def __getstate__(self):
-        return self.__expression_string, self.__variables, self.safe
+        return self.__expression_string, self.__variables, self.safe, self.__external_function_dict
 
     def __setstate__(self, state):
         self.__expression_string = state[0]
         self.__variables = state[1]
-        self.__expression = lambdify(self.__expression_string, self.__variables)
+        self.__external_function_dict = state[3]
+        loaded_external_functions = self.__load_external_functions(self.__external_function_dict)
+        self.__expression = lambdify(self.__expression_string, self.__variables, loaded_external_functions)
         self.safe = state[2]
 
     def __eq__(self, other):
@@ -191,6 +196,17 @@ class FitExpression:
             spec.loader.exec_module(module)
             loaded_external_functions[filename] = getattr(module, filename)
         return loaded_external_functions
+
+    def __alpha_correction(self, __expression):
+        def alpha_corrected_expression(time_array, *args, **kwargs):
+            args = list(args)
+            a = args.pop(-1)
+            exp_result = __expression(time_array, *args, **kwargs)
+            alpha_corrected = np.array([((1 - a) + ((1 + a) * point)) / ((1 + a) + ((1 - a) * point)) for point in exp_result])
+            return alpha_corrected
+
+        return alpha_corrected_expression
+
 
 
 class FitConfig:
@@ -367,16 +383,16 @@ class FitEngine:
 
         for run_id, (time, asymmetry, uncertainty, meta) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
-            function = alpha_correction(config.expression)
+            # function = alpha_correction(config.expression)
 
             # Replace the symbols with fixed values with their actual values. This way they don't throw off uncertainty.
             fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
             fixed_values = config.get_values_for_run(run_id, is_fixed=True)
-            function = FitEngine._replace_fixed(function, fixed_symbols, fixed_values)
+            function = FitEngine._replace_fixed(config.expression, fixed_symbols, fixed_values)
 
             # Create a residual expression for the least squares fit
-            lambda_expression = FitExpression(function, variables=config.get_symbols_for_run(run_id, is_fixed=False),
-                                              external_function_dict=config.external_function_dict)
+            lambda_expression = FitExpression(config.expression, variables=config.get_symbols_for_run(run_id, is_fixed=False),
+                                              external_function_dict=config.external_function_dict, alpha_correction=True)
             residual = FitEngine._residual(lambda_expression)
 
             guesses = config.get_values_for_run(run_id, is_fixed=False)
@@ -493,16 +509,16 @@ class FitEngine:
 
         for run_id, (time, asymmetry,  uncertainty, meta) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
-            function = alpha_correction(config.expression)
+            # function = alpha_correction(config.expression)
 
             # Replace the symbols with fixed values with their actual values. This way they don't throw off uncertainty.
             fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
             fixed_values = config.get_values_for_run(run_id, is_fixed=True)
-            function = FitEngine._replace_fixed(function, fixed_symbols, fixed_values)
+            function = FitEngine._replace_fixed(config.expression, fixed_symbols, fixed_values)
 
             # Create a residual expression for the least squares fit
-            lambda_expression = FitExpression(function, variables=config.get_symbols_for_run(run_id, is_fixed=False),
-                                              external_function_dict=config.external_function_dict)
+            lambda_expression = FitExpression(config.expression, variables=config.get_symbols_for_run(run_id, is_fixed=False),
+                                              external_function_dict=config.external_function_dict, alpha_correction=True)
             residual = FitEngine._residual(lambda_expression)
 
             guesses = config.get_values_for_run(run_id, is_fixed=False)
@@ -569,7 +585,7 @@ class FitEngine:
                 they are only fit to that specific section while we use the global parameter throughout.
         """
 
-        function = alpha_correction(config.expression)
+        # function = alpha_correction(config.expression)
 
         lambdas = []
         lengths = []
@@ -580,13 +596,13 @@ class FitEngine:
         for i, (run_id, asymmetry) in enumerate(config.data.items()):
             fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
             fixed_values = config.get_values_for_run(run_id, is_fixed=True)
-            new_function = FitEngine._replace_fixed(function, fixed_symbols, fixed_values)
+            new_function = FitEngine._replace_fixed(config.expression, fixed_symbols, fixed_values)
 
             for symbol in config.get_symbols_for_run(run_id, is_fixed=False, is_global=False):
                 new_function = FitEngine._replace_var_with(new_function, symbol, symbol + _shortened_run_id(run_id))
 
             new_lambda_expression = FitExpression(new_function, variables=config.get_adjusted_global_symbols(),
-                                                  external_function_dict=config.external_function_dict)
+                                                  external_function_dict=config.external_function_dict, alpha_correction=True)
             new_lambda_expression.safe = False  # No type checks, speeds up the fit dramatically.
             lambdas.append(new_lambda_expression)
 
@@ -799,6 +815,9 @@ def lambdify(expression: str, variables=None, external_function_dict=None):
     variables = variables if variables is not None else parse(expression)
     var_names = [INDEPENDENT_VARIABLE] if INDEPENDENT_VARIABLE in expression_string else []
     var_names.extend([_replace_unsupported_unicode_characters(var) for var in variables])
+
+    if expression_string.split('(')[0] in external_function_dict:
+        return external_function_dict[expression_string.split('(')[0]]
 
     lambda_expression = sp.lambdify(var_names, sp.sympify(expression_string, locals=external_function_dict), ["numpy", "scipy"])
     return lambda_expression
