@@ -819,6 +819,10 @@ def lambdify(expression: str, variables=None, external_function_dict=None):
     if expression_string.split('(')[0] in external_function_dict:
         return external_function_dict[expression_string.split('(')[0]]
 
+    # TODO: ask Alec if this is acceptable
+    if ALPHA in var_names:
+        var_names.remove(ALPHA)
+
     lambda_expression = sp.lambdify(var_names, sp.sympify(expression_string, locals=external_function_dict), ["numpy", "scipy"])
     return lambda_expression
 
