@@ -1,4 +1,5 @@
 import importlib.util
+import inspect
 import logging
 import os
 import re
@@ -1454,18 +1455,28 @@ class FitTabPresenter(PanelPresenter):
         filepaths = self._get_external_function_files_from_system()
         for file in filepaths:
             filename = file.split('/')[-1].split('.')[0]
-            func_invocation_hint = filename + '(t)'
-            func_name_dialog = ExternalFunctionDialog(func_invocation_hint)
+            func_invocation = self.get_external_function_invocation(filename, file)
+            if func_invocation is None:
+                return
+            func_name_dialog = ExternalFunctionDialog(func_invocation)
             if func_name_dialog.exec():
-                sym_list = func_name_dialog.ascii_syms
                 invocation = func_name_dialog.function_invocation
                 self._view.external_function_invocations_dict[invocation] = file
                 self._view.option_user_fit_equations.addItem(invocation)
-                # self._load_external_function(file, filename)
                 self._view.external_functions_dict[filename] = file
-                # self._view.external_functions_syms_dict[invocation] = sym_list
 
-
+    def get_external_function_invocation(self, filename, full_file_path):
+        spec = importlib.util.spec_from_file_location(filename, full_file_path)
+        module = importlib.util.module_from_spec(spec)
+        try:
+            sys.modules[filename] = module
+        except KeyError:
+            WarningMessageDialog.launch(["Filename must match the name of a function in the file."])
+            return None
+        spec.loader.exec_module(module)
+        func = getattr(module, filename)
+        sig = inspect.signature(func)
+        return filename + str(sig)
 
     @QtCore.pyqtSlot()
     def _on_spectrum_settings_changed(self):

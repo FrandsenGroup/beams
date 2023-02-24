@@ -199,7 +199,8 @@ class FitExpression:
             module = importlib.util.module_from_spec(spec)
             sys.modules[filename] = module
             spec.loader.exec_module(module)
-            loaded_external_functions[filename] = getattr(module, filename)
+            func = getattr(module, filename)
+            loaded_external_functions[filename] = func
         return loaded_external_functions
 
     def _alpha_correction(self, __expression):
@@ -863,41 +864,6 @@ def lambdify(expression: str, variables=None, external_function_dict=None):
 def _shortened_run_id(run_id: str) -> str:
     """Returns the first section of uuid."""
     return "_" + run_id.split('-')[0]
-
-
-def convert_symbols_to_ascii(symbols: list[Symbol]) -> list[str]:
-    ascii_symbols = []
-    for symbol in symbols:
-        sym_as_str = str(symbol)
-        sym_as_ascii = ''
-        if sym_as_str[0] not in [SIGMA, PI, PHI, NAUGHT, LAMBDA, DELTA, ALPHA, BETA, NU]:
-            sym_as_ascii += sym_as_str
-            ascii_symbols.append(sym_as_ascii)
-            continue
-        for i, char in enumerate(sym_as_str):
-            if i > 0:
-                sym_as_ascii += '_'
-            if char == SIGMA:
-                sym_as_ascii += "sigma"
-            elif char == PI:
-                sym_as_ascii += "pi"
-            elif char == PHI:
-                sym_as_ascii += "phi"
-            elif char == NAUGHT:
-                sym_as_ascii += "naught"
-            elif char == LAMBDA:
-                sym_as_ascii += "lambda"
-            elif char == DELTA:
-                sym_as_ascii += "delta"
-            elif char == ALPHA:
-                sym_as_ascii += "alpha"
-            elif char == BETA:
-                sym_as_ascii += "beta"
-            elif char == NU:
-                sym_as_ascii += "nu"
-        ascii_symbols.append(sym_as_ascii)
-
-    return ascii_symbols
 
 
 class ImproperlyFormattedExpressionError(Exception):
