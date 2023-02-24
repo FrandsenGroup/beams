@@ -624,6 +624,8 @@ class FittingPanel(Panel):
 
         self.check_batch_fit = QtWidgets.QCheckBox()
 
+        self.remove_external_func_button = qt_widgets.StyleOneButton("Remove external function")
+
         self.insert_phi = qt_widgets.StyleTwoButton(fit.PHI)
         self.insert_alpha = qt_widgets.StyleTwoButton(fit.ALPHA)
         self.insert_sigma = qt_widgets.StyleTwoButton(fit.SIGMA)
@@ -695,6 +697,8 @@ class FittingPanel(Panel):
         self.input_user_equation_name.setPlaceholderText("Function Name")
         self.input_user_equation.setPlaceholderText("Function (e.g. a*exp(-(\u03BB*t)^\u03B2))")
         self.input_fit_equation.setPlaceholderText("Fit Equation")
+
+        self.remove_external_func_button.setHidden(True)
 
         self.insert_phi.setFont(self.mathematical_font)
         self.insert_alpha.setFont(self.mathematical_font)
@@ -778,6 +782,7 @@ class FittingPanel(Panel):
         row.addWidget(self.label_expression_start)
         row.addSpacing(5)
         row.addWidget(self.input_fit_equation)
+        row.addWidget(self.remove_external_func_button)
         row.addSpacing(20)
         row.addWidget(self.insert_pi)
         row.addWidget(self.insert_alpha)
@@ -1246,7 +1251,9 @@ class FittingPanel(Panel):
         if self.option_user_fit_equations.currentText() == 'None':
             return
         if self.option_user_fit_equations.currentText() in self.external_function_invocations_dict.keys():
-            self.input_fit_equation.insert(self.option_user_fit_equations.currentText())
+            self.input_fit_equation.setText(self.option_user_fit_equations.currentText())
+            self.input_fit_equation.setDisabled(True)
+            self.remove_external_func_button.setHidden(False)
         else:
             self.input_fit_equation.insert(fit.USER_EQUATION_DICTIONARY[self.option_user_fit_equations.currentText()])
 
@@ -1335,6 +1342,7 @@ class FitTabPresenter(PanelPresenter):
         self._view.button_insert_user_equation.released.connect(self._on_insert_user_defined_function_clicked)
         self._view.button_save_user_equation.released.connect(self._on_save_user_defined_function_clicked)
         self._view.button_import_external_function.released.connect(self._on_import_external_function_clicked)
+        self._view.remove_external_func_button.released.connect(self._on_remove_ext_func_clicked)
         self._view.insert_sigma.released.connect(lambda: self._on_insert_character_clicked(fit.SIGMA))
         self._view.insert_pi.released.connect(lambda: self._on_insert_character_clicked(fit.PI))
         self._view.insert_phi.released.connect(lambda: self._on_insert_character_clicked(fit.PHI))
@@ -1578,6 +1586,12 @@ class FitTabPresenter(PanelPresenter):
         self._update_display()
 
         self.__update_if_table_changes = True
+
+    @QtCore.pyqtSlot()
+    def _on_remove_ext_func_clicked(self):
+        self._view.input_fit_equation.clear()
+        self._view.input_fit_equation.setDisabled(False)
+        self._view.remove_external_func_button.setHidden(True)
 
     @QtCore.pyqtSlot()
     def _on_insert_character_clicked(self, character):
