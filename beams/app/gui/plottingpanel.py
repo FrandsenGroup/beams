@@ -1206,10 +1206,15 @@ class PlottingPanelPresenter(PanelPresenter):
                     self.__style_service.Keys.MARKER_COLOR])
 
             # We have to do this logic because Matplotlib is not good at setting good default plot limits
-            frac_start = float(min_time) / (time[len(time) - 1] - time[0])
-            frac_end = float(max_time) / (time[len(time) - 1] - time[0])
-            start_index = int(np.floor(len(asymmetry) * frac_start))
-            end_index = int(np.floor(len(asymmetry) * frac_end))
+            start_index = 0
+            end_index = len(time)
+            for i, t in enumerate(time):
+                if start_index == 0 and t > min_time:
+                    start_index = i
+                elif t > max_time:
+                    end_index = i - 1
+                    break
+
             local_max = np.max(asymmetry[start_index:end_index])
             max_asymmetry = local_max if local_max > max_asymmetry else max_asymmetry
             local_min = np.min(asymmetry[start_index:end_index])
