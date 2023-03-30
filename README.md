@@ -53,17 +53,18 @@
 #### Without Anaconda
 - Run the following command to install the package requirements for BEAMS (note that you may need to use `python3` instead of `python`, you can use `python --version` to make sure it is referencing the correct version)
 ```shell
-$ python -m pip install -r python_requirements.txt
+python -m pip install -r python_requirements.txt
 ```
 #### Anaconda
 - Run the following command in the anaconda prompt to install requirements.
 ```shell
-$ conda install -c anaconda -c conda-forge --file conda_requirements.txt
+conda install -c anaconda -c conda-forge --file conda_requirements.txt
+python -m pip install musr2py
 ```
 
 Start BEAMS for either, once you have navigated to the directory with the following
 ```shell
-$ python beams
+python beams
 ```
 
 ## User Guide
