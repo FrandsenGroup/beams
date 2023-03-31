@@ -1,6 +1,6 @@
 ![beams logo](beams/app/resources/icons/logo.png)
 [![Release](https://img.shields.io/github/release/FrandsenGroup/beams.svg?style=plastic&colorB=68B7EB)](https://github.com/FrandsenGroup/beams/releases)
-[![Tests](https://github.com/FrandsenGroup/beams/actions/workflows/ci.yml/badge.svg)](https://github.com/FrandsenGroup/beams/actions/workflows/ci.yml)
+[![Tests](https://github.com/FrandsenGroup/beams/actions/workflows/ci.yml/badge.svg)](https://github.com/FrandsenGroup/beams/actions/workflows/ci_main.yml)
 [![Build](https://github.com/FrandsenGroup/beams/actions/workflows/build.yml/badge.svg)](https://github.com/FrandsenGroup/beams/actions/workflows/build.yml)
 [![CodeQL](https://github.com/FrandsenGroup/beams/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/FrandsenGroup/beams/actions/workflows/codeql-analysis.yml)
 
