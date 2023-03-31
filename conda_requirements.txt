@@ -10,5 +10,4 @@ darkdetect
 h5py
 sentry-sdk
 pyinstaller
-pytest
 regex
