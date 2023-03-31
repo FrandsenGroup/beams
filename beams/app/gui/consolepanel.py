@@ -376,7 +376,7 @@ class MainConsolePanel(QtWidgets.QDockWidget):
         hbox_one.addWidget(self.load_button)
         hbox_one.addWidget(self.write_button)
 
-        self.tree_view.setHorizontalScrollBarPolicy(qt_constants.ScrollBarAsNeeded)
+        self.tree_view.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.tree_view.header().setMinimumSectionSize(600)
         self.tree_view.header().setDefaultSectionSize(900)
         self.tree_view.header().setStretchLastSection(False)

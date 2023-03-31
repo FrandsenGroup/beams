@@ -106,7 +106,7 @@ class HistogramPanel(Panel):
                 self.setHeaderHidden(True)
                 self.setContextMenuPolicy(qt_constants.CustomContextMenu)
                 self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
-                self.setHorizontalScrollBarPolicy(qt_constants.ScrollBarAsNeeded)
+                self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
                 self.header().setMinimumSectionSize(600)
                 self.header().setDefaultSectionSize(900)
                 self.header().setStretchLastSection(False)

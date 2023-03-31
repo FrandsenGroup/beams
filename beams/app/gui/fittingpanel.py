@@ -33,7 +33,7 @@ class FittingPanel(Panel):
                 self.setHeaderHidden(True)
                 self.setContextMenuPolicy(qt_constants.CustomContextMenu)
                 self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
-                self.setHorizontalScrollBarPolicy(qt_constants.ScrollBarAsNeeded)
+                self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
                 self.header().setMinimumSectionSize(600)
                 self.header().setDefaultSectionSize(900)
                 self.header().setStretchLastSection(False)
@@ -679,6 +679,7 @@ class FittingPanel(Panel):
         self.option_user_fit_equations.addItem("None")
         self.option_run_ordering.addItems([files.FIELD_KEY, files.TEMPERATURE_KEY, files.RUN_NUMBER_KEY])
         self.option_ascending.addItems(['Ascending', 'Descending'])
+        self.run_list.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         self.input_user_equation_name.setPlaceholderText("Function Name")
         self.input_user_equation.setPlaceholderText("Function (e.g. a*exp(-(\u03BB*t)^\u03B2))")
