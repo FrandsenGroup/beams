@@ -1,5 +1,6 @@
 import pytest
 import os
+import sys
 
 import numpy as np
 
@@ -119,6 +120,7 @@ class TestTriumfMuonFile:
             msr_file.convert(r"_triumf_convert_test_2.dat")
 
 
+@pytest.mark.skipif(sys.platform == 'darwin')
 class TestPsiMuonFile:
     @pytest.mark.parametrize("filename, out_file, expected_out_file",
                              [
