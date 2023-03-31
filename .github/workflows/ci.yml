@@ -49,4 +49,6 @@ jobs:
           conda install -c conda-forge pytest
           python -m pip install musr2py
       - name: Run tests with PyTest
-        run: cd beams && python -m pytest -ra
+        run: |
+          cd beams
+          pytest -ra
