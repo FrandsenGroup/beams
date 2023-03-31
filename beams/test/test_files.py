@@ -120,7 +120,7 @@ class TestTriumfMuonFile:
             msr_file.convert(r"_triumf_convert_test_2.dat")
 
 
-@pytest.mark.skipif(sys.platform == 'darwin')
+@pytest.mark.skipif(sys.platform == 'darwin', reason="PSI file conversion is failing on mac due to a dependency")
 class TestPsiMuonFile:
     @pytest.mark.parametrize("filename, out_file, expected_out_file",
                              [
