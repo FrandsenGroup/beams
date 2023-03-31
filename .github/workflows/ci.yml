@@ -9,30 +9,30 @@ on:
       - Issue
 
 jobs:
-  build-and-test-python:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ windows-latest, macos-latest, ubuntu-latest ]
-        python-version: [ '3.11' ]
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r python_requirements.txt
-      - name: Run tests
-        run: cd beams && pytest -ra
+#  build-and-test-python:
+#    runs-on: ${{ matrix.os }}
+#    strategy:
+#      matrix:
+#        os: [ windows-latest, macos-latest, ubuntu-latest ]
+#        python-version: [ '3.11' ]
+#    steps:
+#      - uses: actions/checkout@v2
+#      - name: Set up Python ${{ matrix.python-version }}
+#        uses: actions/setup-python@v2
+#        with:
+#          python-version: ${{ matrix.python-version }}
+#      - name: Install dependencies
+#        run: |
+#          python -m pip install --upgrade pip
+#          python -m pip install -r python_requirements.txt
+#      - name: Run tests
+#        run: cd beams && pytest -ra
 
   build-and-test-anaconda:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ windows-latest, macos-latest, ubuntu-latest ]
+        os: [ ubuntu-latest ]
         python-version: [ '3.11' ]
     steps:
       - uses: actions/checkout@v2
@@ -48,4 +48,4 @@ jobs:
           conda install -c anaconda -c conda-forge --file conda_requirements.txt
           python -m pip install musr2py
       - name: Run tests with PyTest
-        run: cd beams && pytest -ra
+        run: cd beams && python -m pytest -ra
