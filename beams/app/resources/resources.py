@@ -24,7 +24,14 @@ def resource_path(relative_path, creating=False) -> str:
     if not creating and not os.path.exists(path):
         path = os.path.join(os.getcwd(), "beams", relative_path)
 
-    return str(Path(path))
+    if not os.path.exists(path) and os.getcwd().endswith("test"):
+        path = os.path.join(os.getcwd().removesuffix("test"), relative_path)
+
+    final_path = str(Path(path))
+    if not creating and not os.path.exists(final_path):
+        raise Exception(f"Could not create a valid resource path for {relative_path} (final was {final_path})")
+
+    return final_path
 
 
 # Using Path from pathlib is an easy way to fix the slash direction issue when switch between windows and unix systems.
@@ -48,16 +55,16 @@ MENU_IMAGE = resource_path('app/resources/icons/menu_icon.png')
 LIGHT_LOADING_GIF = resource_path('app/resources/icons/light_loading.gif')
 DARK_LOADING_GIF = resource_path('app/resources/icons/dark_loading.gif')
 
-LATO_BLACK_FONT = resource_path('app/resources/fonts/fonts-Black.ttf')
-LATO_BLACK_ITALIC_FONT = resource_path('app/resources/fonts/fonts-BlackItalic.ttf')
-LATO_BOLD_FONT = resource_path('app/resources/fonts/fonts-Bold.ttf')
-LATO_BOLD_ITALIC_FONT = resource_path('app/resources/fonts/fonts-BoldItalic.ttf')
-LATO_ITALIC_FONT = resource_path('app/resources/fonts/fonts-Italic.ttf')
-LATO_LIGHT_FONT = resource_path('app/resources/fonts/fonts-Light.ttf')
-LATO_LIGHT_ITALIC_FONT = resource_path('app/resources/fonts/fonts-LightItalic.ttf')
-LATO_REGULAR_FONT = resource_path('app/resources/fonts/fonts-Regular.ttf')
-LATO_THIN_FONT = resource_path('app/resources/fonts/fonts-Thin.ttf')
-LATO_THIN_ITALIC_FONT = resource_path('app/resources/fonts/fonts-ThinItalic.ttf')
+LATO_BLACK_FONT = resource_path('app/resources/fonts/Lato-Black.ttf')
+LATO_BLACK_ITALIC_FONT = resource_path('app/resources/fonts/Lato-BlackItalic.ttf')
+LATO_BOLD_FONT = resource_path('app/resources/fonts/Lato-Bold.ttf')
+LATO_BOLD_ITALIC_FONT = resource_path('app/resources/fonts/Lato-BoldItalic.ttf')
+LATO_ITALIC_FONT = resource_path('app/resources/fonts/Lato-Italic.ttf')
+LATO_LIGHT_FONT = resource_path('app/resources/fonts/Lato-Light.ttf')
+LATO_LIGHT_ITALIC_FONT = resource_path('app/resources/fonts/Lato-LightItalic.ttf')
+LATO_REGULAR_FONT = resource_path('app/resources/fonts/Lato-Regular.ttf')
+LATO_THIN_FONT = resource_path('app/resources/fonts/Lato-Thin.ttf')
+LATO_THIN_ITALIC_FONT = resource_path('app/resources/fonts/Lato-ThinItalic.ttf')
 
 TRIUMF_LINUX_CONVERSION = resource_path('app/resources/binaries/TRIUMF_LINUX')
 TRIUMF_MAC_CONVERSION = resource_path('app/resources/binaries/TRIUMF_MAC')

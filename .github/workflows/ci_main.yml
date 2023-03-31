@@ -1,16 +1,15 @@
 name: Tests
 on:
-  pull_request:
+  push:
     branches:
       - master
-      - Issue
 
 jobs:
   build-and-test-python:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-latest ]
+        os: [ windows-latest, macos-latest, ubuntu-latest ]
         python-version: [ '3.11' ]
     steps:
       - uses: actions/checkout@v2
@@ -29,7 +28,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ ubuntu-latest ]
+        os: [ windows-latest, macos-latest, ubuntu-latest ]
         python-version: [ '3.11' ]
     steps:
       - uses: actions/checkout@v2

@@ -1,4 +1,5 @@
 pyqt
+qtpy
 requests
 numpy
 sympy
@@ -9,6 +10,4 @@ darkdetect
 h5py
 sentry-sdk
 pyinstaller
-pytest
-musr2py
 regex

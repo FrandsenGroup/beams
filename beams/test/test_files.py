@@ -1,5 +1,6 @@
 import pytest
 import os
+import sys
 
 import numpy as np
 
@@ -114,11 +115,12 @@ class TestTriumfMuonFile:
 
     @pytest.mark.skipif(SKIP_EXECUTABLE_TESTS, reason=SKIP_REASON)
     def test_convert_on_bad_file(self):
-        msr_file = files.TRIUMFMuonFile(resources.resource_path(r"test/examples/psi_convert_test_1.mdu"))
+        msr_file = files.TRIUMFMuonFile(resources.resource_path(r"test/examples/psi_convert_test_mdu_1.mdu"))
         with pytest.raises(files.BeamsFileConversionError):
             msr_file.convert(r"_triumf_convert_test_2.dat")
 
 
+@pytest.mark.skipif(sys.platform == 'darwin', reason="PSI file conversion is failing on mac due to a dependency")
 class TestPsiMuonFile:
     @pytest.mark.parametrize("filename, out_file, expected_out_file",
                              [
@@ -238,7 +240,7 @@ class TestIsisMuonFile:
     def test_convert_on_bad_file(self):
         msr_file = files.ISISMuonFile(resources.resource_path(r"test/examples/triumf_convert_test_1.msr"))
         with pytest.raises(files.BeamsFileConversionError):
-            msr_file.convert(resources.resource_path(r"_triumf_convert_test_2.dat"))
+            msr_file.convert(r"_triumf_convert_test_1.dat")
 
     @pytest.mark.parametrize("filename, histograms",
                              [
