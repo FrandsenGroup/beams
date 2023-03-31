@@ -41,6 +41,11 @@ jobs:
         with:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
+      - name: Determine shell type
+        run: echo $SHELL
+        id: determine_shell
+      - name: Initialize conda
+        run: conda init ${{ steps.determine_shell.outputs.stdout }}
       - name: Setup environment
         run: |
           conda activate test
