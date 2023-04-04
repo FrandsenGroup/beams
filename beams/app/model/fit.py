@@ -14,6 +14,7 @@ import copy
 from sympy import Symbol
 
 from app.model import objects
+from app.model.external_functions import ExternalModule
 from app.util import report
 
 INDEPENDENT_VARIABLE = "t"
@@ -124,7 +125,7 @@ class FitExpression:
             variables = parse(self.__expression_string)
 
         self.__variables = variables
-        loaded_external_functions = self.__load_external_functions(external_function_dict)
+        loaded_external_functions = ExternalModule.load_external_functions(external_function_dict)
 
         self.__external_function_dict = external_function_dict
         self._expression = lambdify(self.__expression_string, variables, loaded_external_functions)
@@ -139,7 +140,7 @@ class FitExpression:
         self.__expression_string = state[0]
         self.__variables = state[1]
         self.__external_function_dict = state[3]
-        loaded_external_functions = self.__load_external_functions(self.__external_function_dict)
+        loaded_external_functions = ExternalModule.load_external_functions(self.__external_function_dict)
         self._expression = lambdify(self.__expression_string, self.__variables, loaded_external_functions)
         self.safe = state[2]
 
@@ -192,30 +193,24 @@ class FitExpression:
                 return self._expression(time_array, *unnamed_pars, **pars).real
             raise InvalidFitArgumentsError("Bad arguments passed to fit expression.") from e
 
-    def __load_external_functions(self, external_function_dict):
-        loaded_external_functions = {}
-        for filename, full_file_path in external_function_dict.items():
-            spec = importlib.util.spec_from_file_location(filename, full_file_path)
-            module = importlib.util.module_from_spec(spec)
-            sys.modules[filename] = module
-            spec.loader.exec_module(module)
-            func = getattr(module, filename)
-            loaded_external_functions[filename] = func
-        return loaded_external_functions
+
 
     def _alpha_correction(self, __expression):
         def alpha_corrected_expression(time_array, *args, **kwargs):
             args = list(args)
             a = args.pop(-1)
-            exp_result = __expression(time_array, *args, **kwargs)
-            alpha_corrected = np.array(
-                [((1 - a) + ((1 + a) * point)) / ((1 + a) + ((1 - a) * point)) for point in exp_result])
+            exp_result = np.array(__expression(time_array, *args, **kwargs))
+            alpha_corrected = ((1 - a) + ((1 + a) * exp_result)) / ((1 + a) + ((1 - a) * exp_result))
             return alpha_corrected
 
         return alpha_corrected_expression
 
 
 class GlobalFitExpression(FitExpression):
+    """
+    Subclass of FitExpression for global fits. This will take care of giving the lambda expression only the parameters
+    required for the given run (including any global parameters).
+    """
     def __init__(self, expression_string, adjusted_global_symbols, symbols_for_run, run_id,
                  variables=None, external_function_dict=None):
         super().__init__(expression_string, variables, external_function_dict, False)

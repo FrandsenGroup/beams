@@ -15,6 +15,8 @@ from matplotlib.figure import Figure
 import numpy as np
 
 from app.gui.dialogs.dialog_external_function import ExternalFunctionDialog
+from app.model.external_functions import ExternalModule
+from app.model.files import BeamsFileReadError
 from app.resources import resources
 from app.gui.dialogs.dialog_misc import WarningMessageDialog, LoadingDialog
 from app.gui.dialogs.dialog_write_fit import WriteFitDialog
@@ -1463,28 +1465,19 @@ class FitTabPresenter(PanelPresenter):
         filepaths = self._get_external_function_files_from_system()
         for file in filepaths:
             filename = file.split('/')[-1].split('.')[0]
-            func_invocation = self.get_external_function_invocation(filename, file)
-            if func_invocation is None:
-                return
-            func_name_dialog = ExternalFunctionDialog(func_invocation)
-            if func_name_dialog.exec():
-                invocation = func_name_dialog.function_invocation
-                self._view.external_function_invocations_dict[invocation] = file
-                self._view.option_user_fit_equations.addItem(invocation)
-                self._view.external_functions_dict[filename] = file
+            try:
+                func_invocation = ExternalModule.get_external_function_invocation(filename, file)
+                if func_invocation is None:
+                    return
+                func_name_dialog = ExternalFunctionDialog(func_invocation)
+                if func_name_dialog.exec():
+                    invocation = func_name_dialog.function_invocation
+                    self._view.external_function_invocations_dict[invocation] = file
+                    self._view.option_user_fit_equations.addItem(invocation)
+                    self._view.external_functions_dict[filename] = file
+            except BeamsFileReadError as e:
+                WarningMessageDialog.launch([str(e)])
 
-    def get_external_function_invocation(self, filename, full_file_path):
-        spec = importlib.util.spec_from_file_location(filename, full_file_path)
-        module = importlib.util.module_from_spec(spec)
-        try:
-            sys.modules[filename] = module
-        except KeyError:
-            WarningMessageDialog.launch(["Filename must match the name of a function in the file."])
-            return None
-        spec.loader.exec_module(module)
-        func = getattr(module, filename)
-        sig = inspect.signature(func)
-        return filename + str(sig)
 
     @QtCore.pyqtSlot()
     def _on_spectrum_settings_changed(self):
@@ -1609,25 +1602,6 @@ class FitTabPresenter(PanelPresenter):
     @QtCore.pyqtSlot()
     def _on_run_list_selection_changed(self):
         self._update_parameter_table()
-
-    # def _launch_menu(self, point):
-    #     index = self._view.run_list.indexAt(point)
-    #
-    #     if not index.isValid():
-    #         return
-    #
-    #     menu = QtWidgets.QMenu()
-    #     clicked_item = self._view.run_list.itemFromIndex(index)
-    #     new_check_state = qt_constants.Checked if clicked_item.checkState() == qt_constants.Unchecked else qt_constants.Unchecked
-    #     action_name = "Check selected" if new_check_state == qt_constants.Checked else "Uncheck selected"
-    #     menu.addAction(action_name, lambda: self._action_toggle_all_selected(new_check_state))
-    #
-    #     menu.exec_(self._view.run_list.mapToGlobal(point))
-    #
-    # def _action_toggle_all_selected(self, new_check_state):
-    #     for i in range(self._view.run_list.count()):
-    #         if self._view.run_list.item(i).isSelected():
-    #             self._view.run_list.item(i).setCheckState(new_check_state)
 
     @QtCore.pyqtSlot()
     def _on_batch_options_changed(self):
@@ -2317,12 +2291,7 @@ class FitTabPresenter(PanelPresenter):
         return filenames
 
     def _load_external_function(self, full_file_path, filename):
-        spec = importlib.util.spec_from_file_location(filename, full_file_path)
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[filename] = module
-        spec.loader.exec_module(module)
-        self._view.external_functions_dict[filename] = getattr(module, filename)
-
+        self._view.external_functions_dict[filename] = ExternalModule.load_external_function(full_file_path, filename)
 
 class FitWorker(QtCore.QRunnable):
     def __init__(self, config: fit.FitConfig):
