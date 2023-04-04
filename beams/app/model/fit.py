@@ -844,10 +844,9 @@ def lambdify(expression: str, variables=None, external_function_dict=None):
     var_names = [INDEPENDENT_VARIABLE] if INDEPENDENT_VARIABLE in expression_string else []
     var_names.extend([_replace_unsupported_unicode_characters(var) for var in variables])
 
-    if expression_string.split('(')[0] in external_function_dict:
+    if external_function_dict is not None and expression_string.split('(')[0] in external_function_dict:
         return external_function_dict[expression_string.split('(')[0]]
 
-    # TODO: Ask Alec if this is okay
     if ALPHA in var_names:
         var_names.remove(ALPHA)
 
