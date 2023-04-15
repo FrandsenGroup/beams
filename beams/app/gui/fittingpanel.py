@@ -1492,6 +1492,8 @@ class FitTabPresenter(PanelPresenter):
         self.__expression = None
         self.__variable_groups = []
         self._view.clear()
+        self._view.input_fit_equation.setDisabled(False)
+        self._view.remove_external_func_button.setHidden(True)
 
     @QtCore.pyqtSlot()
     def _on_fit_selection_changed(self):
@@ -2011,6 +2013,11 @@ class FitTabPresenter(PanelPresenter):
                     continue
                 for run_id in self.__parameter_table_states[row_values[0]].keys():
                     self.__parameter_table_states[row_values[0]][run_id] = row_values
+
+    def clear_external_function(self):
+        self._view.input_fit_equation.clear()
+        self._view.input_fit_equation.setDisabled(False)
+        self._view.remove_external_func_button.setHidden(True)
 
     def update_parameter_table_states(self):
         """
