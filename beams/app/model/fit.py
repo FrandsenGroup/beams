@@ -193,12 +193,11 @@ class FitExpression:
                 return self._expression(time_array, *unnamed_pars, **pars).real
             raise InvalidFitArgumentsError("Bad arguments passed to fit expression.") from e
 
-
-
     def _alpha_correction(self, __expression):
         def alpha_corrected_expression(time_array, *args, **kwargs):
             args = list(args)
-            a = args.pop(-1)
+            # we are forcing alpha to be at the front of the parameter list
+            a = args.pop(0)
             exp_result = np.array(__expression(time_array, *args, **kwargs))
             alpha_corrected = ((1 - a) + ((1 + a) * exp_result)) / ((1 + a) + ((1 - a) * exp_result))
             return alpha_corrected
@@ -403,7 +402,6 @@ class FitEngine:
 
         for run_id, (time, asymmetry, uncertainty, meta) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
-            # function = alpha_correction(config.expression)
 
             # Replace the symbols with fixed values with their actual values. This way they don't throw off uncertainty.
             fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)

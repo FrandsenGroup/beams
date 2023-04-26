@@ -1413,7 +1413,7 @@ class FitTabPresenter(PanelPresenter):
             self._view.highlight_input_red(self._view.input_fit_equation, False)
 
             variables = fit.parse(expression)
-            variables.append(fit.ALPHA)
+            variables.insert(0, fit.ALPHA)
 
             self._view.clear_parameters(variables)
 
