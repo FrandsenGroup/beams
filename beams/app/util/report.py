@@ -16,7 +16,7 @@ def init_reporting():
         attach_stacktrace=True,
         release="beams@0.1.0",
         environment="development",
-        send_default_pii=True
+        send_default_pii=False
     )
 
     logging.getLogger('matplotlib').setLevel(logging.ERROR)
