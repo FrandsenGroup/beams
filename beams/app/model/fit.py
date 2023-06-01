@@ -117,6 +117,7 @@ class FitParameter:
 
 class FitExpression:
     def __init__(self, expression_string, variables=None, external_function_dict=None, alpha_correction=False):
+        self.fixed_var_dict = None
         if external_function_dict is None:
             external_function_dict = {}
         self.__expression_string = expression_string
@@ -134,7 +135,7 @@ class FitExpression:
         self.safe = True
 
     def __getstate__(self):
-       return self.__expression_string, self.__variables, self.safe, self.__external_function_dict
+        return self.__expression_string, self.__variables, self.safe, self.__external_function_dict
 
     def __setstate__(self, state):
         self.__expression_string = state[0]
@@ -204,28 +205,44 @@ class FitExpression:
 
         return alpha_corrected_expression
 
+    def set_external_with_fixed_vars(self, fixed_var_dict, symbol_list):
+        self.fixed_var_dict = fixed_var_dict
+        orig_expr = self._expression
 
-class GlobalFitExpression(FitExpression):
-    """
-    Subclass of FitExpression for global fits. This will take care of giving the lambda expression only the parameters
-    required for the given run (including any global parameters).
-    """
-    def __init__(self, expression_string, adjusted_global_symbols, symbols_for_run, run_id,
-                 variables=None, external_function_dict=None):
-        super().__init__(expression_string, variables, external_function_dict, False)
-        self._expression = self.create_global_compatible_expression(self._expression, adjusted_global_symbols,
-                                                                    symbols_for_run, run_id)
+        def external_decorator(time_array, *args, **kwargs):
+            args = list(args)
+            for i, var in enumerate(symbol_list):
+                if var in fixed_var_dict:
+                    args.insert(i, fixed_var_dict[var])
+            return orig_expr(time_array, *args, **kwargs)
 
-    def create_global_compatible_expression(self, __expression, adjusted_global_symbols, symbols_for_run, run_id):
+        self._expression = external_decorator
+
+    def create_global_compatible_expression(self, adjusted_global_symbols, symbols_for_run, run_id):
+        orig_expr = self._expression
+
         def global_compatible_expression(time_array, *args, **kwargs):
             filtered_args = []
             for run_symbol in symbols_for_run:
                 for i, symbol in enumerate(adjusted_global_symbols):
                     if symbol == run_symbol or symbol == run_symbol + _shortened_run_id(run_id):
                         filtered_args.append(args[i])
-            return self._alpha_correction(__expression)(time_array, *filtered_args, **kwargs)
+            return orig_expr(time_array, *filtered_args, **kwargs)
 
-        return global_compatible_expression
+        self._expression = global_compatible_expression
+
+class GlobalFitExpression(FitExpression):
+    """
+    Subclass of FitExpression for global fits. This will take care of giving the lambda expression only the parameters
+    required for the given run (including any global parameters).
+    """
+
+    def __init__(self, expression_string, adjusted_global_symbols, symbols_for_run, run_id,
+                 variables=None, external_function_dict=None):
+        super().__init__(expression_string, variables, external_function_dict, False)
+        self._expression = self.create_global_compatible_expression(self._expression, adjusted_global_symbols,
+                                                                    symbols_for_run, run_id)
+
 
 
 class FitConfig:
@@ -409,10 +426,14 @@ class FitEngine:
             function = FitEngine._replace_fixed(config.expression, fixed_symbols, fixed_values)
 
             # Create a residual expression for the least squares fit
-            lambda_expression = FitExpression(config.expression,
+            lambda_expression = FitExpression(function,
                                               variables=config.get_symbols_for_run(run_id, is_fixed=False),
                                               external_function_dict=config.external_function_dict,
                                               alpha_correction=True)
+            if len(fixed_values) > 0 and ExternalModule.is_external_function(function, config.external_function_dict):
+                lambda_expression.set_external_with_fixed_vars({symbol: value for symbol, value in
+                                                                zip(fixed_symbols, fixed_values)},
+                                                               config.get_symbols_for_run(run_id))
             residual = FitEngine._residual(lambda_expression)
 
             guesses = config.get_values_for_run(run_id, is_fixed=False)
@@ -531,7 +552,7 @@ class FitEngine:
 
         for run_id, (time, asymmetry, uncertainty, meta) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
-            # function = alpha_correction(config.expression)
+            function = config.expression
 
             # Replace the symbols with fixed values with their actual values. This way they don't throw off uncertainty.
             fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
@@ -539,10 +560,14 @@ class FitEngine:
             function = FitEngine._replace_fixed(config.expression, fixed_symbols, fixed_values)
 
             # Create a residual expression for the least squares fit
-            lambda_expression = FitExpression(config.expression,
+            lambda_expression = FitExpression(function,
                                               variables=config.get_symbols_for_run(run_id, is_fixed=False),
                                               external_function_dict=config.external_function_dict,
                                               alpha_correction=True)
+            if len(fixed_values) > 0 and ExternalModule.is_external_function(function, config.external_function_dict):
+                lambda_expression.set_external_with_fixed_vars({symbol: value for symbol, value in
+                                                                zip(fixed_symbols, fixed_values)},
+                                                               config.get_symbols_for_run(run_id))
             residual = FitEngine._residual(lambda_expression)
 
             guesses = config.get_values_for_run(run_id, is_fixed=False)
@@ -625,9 +650,20 @@ class FitEngine:
             for symbol in config.get_symbols_for_run(run_id, is_fixed=False, is_global=False):
                 new_function = FitEngine._replace_var_with(new_function, symbol, symbol + _shortened_run_id(run_id))
 
-            new_lambda_expression = GlobalFitExpression(new_function, config.get_adjusted_global_symbols(),
-                                                        config.get_symbols_for_run(run_id), run_id,
-                                                        external_function_dict=config.external_function_dict)
+            new_lambda_expression = FitExpression(new_function,
+                                                  config.get_symbols_for_run(run_id),
+                                                  external_function_dict=config.external_function_dict,
+                                                  alpha_correction=True)
+
+            if len(fixed_values) > 0 and ExternalModule.is_external_function(new_function, config.external_function_dict):
+                new_lambda_expression.set_external_with_fixed_vars({symbol: value for symbol, value in
+                                                                    zip(fixed_symbols, fixed_values)},
+                                                                   config.get_symbols_for_run(run_id))
+
+            new_lambda_expression.create_global_compatible_expression(config.get_adjusted_global_symbols(),
+                                                                      config.get_symbols_for_run(run_id), run_id)
+
+
             new_lambda_expression.safe = False  # No type checks, speeds up the fit dramatically.
             lambdas.append(new_lambda_expression)
 

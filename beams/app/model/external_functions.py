@@ -40,3 +40,7 @@ class ExternalModule:
             func = getattr(module, filename)
             loaded_external_functions[filename] = func
         return loaded_external_functions
+
+    @staticmethod
+    def is_external_function(function, external_function_dict):
+        return function.split('(')[0] in external_function_dict.keys()
