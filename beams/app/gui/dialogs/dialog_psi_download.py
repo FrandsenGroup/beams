@@ -274,17 +274,17 @@ class PSIDownloadDialogPresenter(QtCore.QObject):
         for x in response.text.split('<tr>'):
             y = x.split('<td>')
 
-            if len(y) == 7:
-                title = y[-1].split('</td>')[0]
-                run = y[-3].split('</td>')[0].split('>')[1].split('<')[0]
-                year = y[-4].split('</td>')[0]
+            if len(y) == 10:
+                title = y[8].split('</td>')[0]
+                run = y[4].split('</td>')[0].split('>')[1].split('<')[0]
+                year = y[3].split('</td>')[0]
 
                 if run != 'RUN':
                     if i:
                         self._view.set_if_empty(year_new=year)
                         i = False
-                    check = y[-6].split('</td>')[0].split('name="')[1].split('"')[0]
-                    uri = y[-6].split('</td>')[0].split('value="')[1].split('"')[0]
+                    check = y[1].split('</td>')[0].split('name="')[1].split('"')[0]
+                    uri = y[1].split('</td>')[0].split('value="')[1].split('"')[0]
 
                     identifier = '{} Title: {}, Year: {}, Area: {}'.format(run, title, year, form_data['AREA'])
                     self._current_identifier_uris[identifier] = {'TITLE': title, 'RUN': run, 'YEAR': year,
