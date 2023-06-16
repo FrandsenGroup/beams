@@ -378,3 +378,6 @@ You can open an issue in Github so we can try and debug it, but the easiest cour
 
 ### My files from TRIUMF, PSI, or ISIS aren't being converted
 Please [open up an issue](https://github.com/FrandsenGroup/beams/issues/new/choose) if this happens as it means we need to update our program to read the new format.
+
+### I can't search/download files using the built-in dialogs
+The website we are pulling from likely changed its API; please open an issue in GitHub or contact us.

@@ -271,27 +271,44 @@ class PSIDownloadDialogPresenter(QtCore.QObject):
             self._view.log_message("No results.\n")
             return
 
-        for x in response.text.split('<tr>'):
+        response_split = response.text.split('<tr>')
+
+        title_index = 0
+        run_index = 0
+        year_index = 0
+        check_index = 0
+
+        for i, v in enumerate(response_split[3].split('<td>')):
+            val = v.lower()
+            if "checkbox" in val:
+                check_index = i
+            elif "year" in val:
+                year_index = i
+            elif "run" in val:
+                run_index = i
+            elif "title" in val:
+                title_index = i
+
+        for x in response_split[4:]:
             y = x.split('<td>')
 
-            if len(y) == 10:
-                title = y[8].split('</td>')[0]
-                run = y[4].split('</td>')[0].split('>')[1].split('<')[0]
-                year = y[3].split('</td>')[0]
+            title = y[title_index].split('</td>')[0]
+            run = y[run_index].split('</td>')[0].split('>')[1].split('<')[0]
+            year = y[year_index].split('</td>')[0]
 
-                if run != 'RUN':
-                    if i:
-                        self._view.set_if_empty(year_new=year)
-                        i = False
-                    check = y[1].split('</td>')[0].split('name="')[1].split('"')[0]
-                    uri = y[1].split('</td>')[0].split('value="')[1].split('"')[0]
+            if run != 'RUN':
+                if i:
+                    self._view.set_if_empty(year_new=year)
+                    i = False
+                check = y[check_index].split('</td>')[0].split('name="')[1].split('"')[0]
+                uri = y[check_index].split('</td>')[0].split('value="')[1].split('"')[0].split(',')[0]
 
-                    identifier = '{} Title: {}, Year: {}, Area: {}'.format(run, title, year, form_data['AREA'])
-                    self._current_identifier_uris[identifier] = {'TITLE': title, 'RUN': run, 'YEAR': year,
-                                                                 'CHECK': check, 'URI': uri, 'AREA': form_data['AREA']}
+                identifier = '{} Title: {}, Year: {}, Area: {}'.format(run, title, year, form_data['AREA'])
+                self._current_identifier_uris[identifier] = {'TITLE': title, 'RUN': run, 'YEAR': year,
+                                                             'CHECK': check, 'URI': uri, 'AREA': form_data['AREA']}
 
-                    identifiers.append(identifier)
-                    printed_response = True
+                identifiers.append(identifier)
+                printed_response = True
 
         self._view.fill_list(identifiers)
         if not printed_response:
@@ -414,6 +431,13 @@ class PSIDownloadDialogPresenter(QtCore.QObject):
         form_data = {'go': 'TAR', 'Counter': self._counter,
                      'AREA': self._current_identifier_uris[identifiers[0]]['AREA'], 'FORMAT': 'PSI-BIN',
                      'HGROUP': '-h 0, 20'}
+
+        low_area = form_data["AREA"].lower()
+        if low_area == "lem":
+            form_data["REBIN"] = "10"
+        if low_area == 'hal':
+            form_data["FORMAT"] = 'PSI-MDU'
+
         for identifier in identifiers:
             form_data[self._current_identifier_uris[identifier]['CHECK']] = \
                 self._current_identifier_uris[identifier]['URI']
