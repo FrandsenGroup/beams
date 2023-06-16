@@ -490,7 +490,7 @@ class ISISMuonFile(ConvertibleFile):
         meta_string += "{}:{}\n".format("Sample", sample)
 
         if self._combine_format:
-            is_exacts, starts_or_exacts, ends, hist_title_list = self._combine_format
+            is_exacts, starts_or_exacts, ends, names = self._combine_format
             histograms = []
             for is_exact, start_or_exact, end in zip(is_exacts, starts_or_exacts, ends):
                 if is_exact:
