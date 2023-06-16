@@ -155,24 +155,54 @@ class TestPsiMuonFile:
         if os.path.exists(out_file):
             os.remove(out_file)
 
-    @pytest.mark.parametrize("filename, starts, ends, names, out_file, expected_out_file",
+    @pytest.mark.parametrize("filename, is_exacts, starts, ends, names, out_file, expected_out_file",
                              [
                                  (resources.resource_path(r"test/examples/psi_convert_test_bin_2.bin"),
+                                  [False, False],
                                   [0, 8],
                                   [8, 16],
                                   ['Forw', 'Back'],
                                   r"_psi_convert_test_bin_3.dat",
                                   resources.resource_path(r"test/examples/psi_convert_test_bin_3.dat")),
                                  (resources.resource_path(r"test/examples/psi_convert_test_bin_2.bin"),
+                                  [False, False, False, False],
                                   [0, 4, 8, 12],
                                   [4, 8, 12, 16],
                                   ['Forw', 'Left', 'Back', 'Right'],
                                   r"_psi_convert_test_bin_4.dat",
+                                  resources.resource_path(r"test/examples/psi_convert_test_bin_4.dat")),
+                                 (resources.resource_path(r"test/examples/psi_convert_test_bin_2.bin"),
+                                  [True, True],
+                                  [[0, 1, 2, 3, 4, 5, 6, 7], [8, 9, 10, 11, 12, 13, 14, 15]],
+                                  [None, None],
+                                  ['Forw', 'Back'],
+                                  r"_psi_convert_test_bin_3.dat",
+                                  resources.resource_path(r"test/examples/psi_convert_test_bin_3.dat")),
+                                 (resources.resource_path(r"test/examples/psi_convert_test_bin_2.bin"),
+                                  [True, True, True, True],
+                                  [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15]],
+                                  [None, None, None, None],
+                                  ['Forw', 'Left', 'Back', 'Right'],
+                                  r"_psi_convert_test_bin_4.dat",
+                                  resources.resource_path(r"test/examples/psi_convert_test_bin_4.dat")),
+                                 (resources.resource_path(r"test/examples/psi_convert_test_bin_2.bin"),
+                                  [False, True],
+                                  [0, [8, 9, 10, 11, 12, 13, 14, 15]],
+                                  [8, None],
+                                  ['Forw', 'Back'],
+                                  r"_psi_convert_test_bin_3.dat",
+                                  resources.resource_path(r"test/examples/psi_convert_test_bin_3.dat")),
+                                 (resources.resource_path(r"test/examples/psi_convert_test_bin_2.bin"),
+                                  [True, False, True, False],
+                                  [[0, 1, 2, 3], 4, [8, 9, 10, 11], 12],
+                                  [None, 8, None, 16],
+                                  ['Forw', 'Left', 'Back', 'Right'],
+                                  r"_psi_convert_test_bin_4.dat",
                                   resources.resource_path(r"test/examples/psi_convert_test_bin_4.dat"))
                              ])
-    def test_convert_on_good_file_with_format(self, filename, starts, ends, names, out_file, expected_out_file):
+    def test_convert_on_good_file_with_format(self, filename, is_exacts, starts, ends, names, out_file, expected_out_file):
         msr_file = files.PSIMuonFile(filename)
-        msr_file.set_combine_format(starts, ends, names)
+        msr_file.set_combine_format(is_exacts, starts, ends, names)
 
         msr_file.convert(out_file)
 
@@ -212,24 +242,54 @@ class TestIsisMuonFile:
         if os.path.exists(out_file):
             os.remove(out_file)
 
-    @pytest.mark.parametrize("filename, starts, ends, names, out_file, expected_out_file",
+    @pytest.mark.parametrize("filename, is_exacts, starts, ends, names, out_file, expected_out_file",
                              [
                                  (resources.resource_path(r"test/examples/isis_convert_test_v2_1.nxs_v2"),
+                                  [False, False],
                                   [0, 32],
                                   [32, 64],
                                   ['Forw', 'Back'],
                                   r"_isis_convert_test_v2_2.dat",
                                   resources.resource_path(r"test/examples/isis_convert_test_v2_2.dat")),
                                  (resources.resource_path(r"test/examples/isis_convert_test_v2_1.nxs_v2"),
+                                  [False, False, False, False],
                                   [0, 16, 32, 48],
                                   [16, 32, 48, 64],
                                   ['Forw', 'Left', 'Back', 'Right'],
                                   r"_isis_convert_test_v2_3.dat",
+                                  resources.resource_path(r"test/examples/isis_convert_test_v2_3.dat")),
+                                 (resources.resource_path(r"test/examples/isis_convert_test_v2_1.nxs_v2"),
+                                  [True, True],
+                                  [list(range(32)), list(range(32, 64))],
+                                  [None, None],
+                                  ['Forw', 'Back'],
+                                  r"_isis_convert_test_v2_2.dat",
+                                  resources.resource_path(r"test/examples/isis_convert_test_v2_2.dat")),
+                                 (resources.resource_path(r"test/examples/isis_convert_test_v2_1.nxs_v2"),
+                                  [True, True, True, True],
+                                  [list(range(16)), list(range(16, 32)), list(range(32, 48)), list(range(48, 64))],
+                                  [None, None, None, None],
+                                  ['Forw', 'Left', 'Back', 'Right'],
+                                  r"_isis_convert_test_v2_3.dat",
+                                  resources.resource_path(r"test/examples/isis_convert_test_v2_3.dat")),
+                                 (resources.resource_path(r"test/examples/isis_convert_test_v2_1.nxs_v2"),
+                                  [False, True],
+                                  [0, list(range(32, 64))],
+                                  [32, None],
+                                  ['Forw', 'Back'],
+                                  r"_isis_convert_test_v2_2.dat",
+                                  resources.resource_path(r"test/examples/isis_convert_test_v2_2.dat")),
+                                 (resources.resource_path(r"test/examples/isis_convert_test_v2_1.nxs_v2"),
+                                  [False, True, False, True],
+                                  [0, list(range(16, 32)), 32, list(range(48, 64))],
+                                  [16, None, 48, None],
+                                  ['Forw', 'Left', 'Back', 'Right'],
+                                  r"_isis_convert_test_v2_3.dat",
                                   resources.resource_path(r"test/examples/isis_convert_test_v2_3.dat"))
                              ])
-    def test_convert_on_good_file_with_format(self, filename, starts, ends, names, out_file, expected_out_file):
+    def test_convert_on_good_file_with_format(self, filename, is_exacts, starts, ends, names, out_file, expected_out_file):
         msr_file = files.ISISMuonFile(filename)
-        msr_file.set_combine_format(starts, ends, names)
+        msr_file.set_combine_format(is_exacts, starts, ends, names)
         msr_file.convert(out_file)
 
         assert is_file_content_equal(out_file, expected_out_file)

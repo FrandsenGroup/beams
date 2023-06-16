@@ -221,29 +221,30 @@ class PSIMuonFile(ConvertibleFile):
         super().__init__(file_path)
         self._combine_format = None
 
-    def set_combine_format(self, starts, ends, names):
+    def set_combine_format(self, is_exacts, starts_or_exacts, ends, names):
         # Check if the values provided are of a valid datatype. Doing this first prevents sneaky bugs.
-        try:
-            starts = [int(s) for s in starts]
-            ends = [int(e) for e in ends]
-            names = [str(n) for n in names]
-        except ValueError as e:
-            raise Exception("Format for combining histograms contains values of invalid types.") from e
+        if len(is_exacts) != len(starts_or_exacts) or len(starts_or_exacts) != len(ends) or len(ends) != len(names):
+            raise Exception("Need to provide all fields for each format")
 
-        distinct_starts = set(starts)
-        distinct_ends = set(ends)
-        distinct_names = set(names)
+        for ie, soe, e, n in zip(is_exacts, starts_or_exacts, ends, names):
+            try:
+                if ie:
+                    [int(s) for s in soe]
+                else:
+                    int(soe)
+                    int(e)
+            except ValueError:
+                raise Exception("Format for combining histograms contains values of invalid types.") from e
+
+        distinct_starts = set([s for i, s in zip(is_exacts, starts_or_exacts) if not i])
+        distinct_ends = set([s for i, s in zip(is_exacts, ends) if not i])
+        distinct_names = set([s for i, s in zip(is_exacts, names) if not i])
 
         # Check if any values are repeated or if one set of values is larger then another
-        if len(distinct_starts) != len(distinct_ends) or len(distinct_starts) != (len(distinct_names)) \
-                or len(starts) != len(distinct_starts) or len(ends) != len(distinct_ends) \
-                or len(names) != len(distinct_names) or len(distinct_starts) == 0:
+        if len(distinct_starts) != len(distinct_ends) or len(distinct_starts) != (len(distinct_names)):
             raise Exception("Invalid format for combining histograms.")
 
-        if max(ends) > self.get_number_of_histograms():
-            raise Exception("Invalid range of histograms to combine.")
-
-        self._combine_format = (starts, ends, names)
+        self._combine_format = (is_exacts, starts_or_exacts, ends, names)
 
     def get_number_of_histograms(self):
         x = musr2py.MuSR_td_PSI_bin()
@@ -272,13 +273,16 @@ class PSIMuonFile(ConvertibleFile):
             data = np.array([x.get_histo_vector(i, 1) for i in range(num_hists)])
 
             if self._combine_format:
-                starts, ends, hist_title_list = self._combine_format
+                is_exacts, starts_or_exacts, ends, hist_title_list = self._combine_format
                 histograms = []
-                for start, end in zip(starts, ends):
-                    if end < start:
-                        histograms.append(sum(data[0:end]) + sum(data[start:]))
+                for is_exact, start_or_exact, end in zip(is_exacts, starts_or_exacts, ends):
+                    if is_exact:
+                        histograms.append(sum(data[start_or_exact]))
                     else:
-                        histograms.append(sum(data[start:end]))
+                        if end < start_or_exact:
+                            histograms.append(sum(data[0:end]) + sum(data[start_or_exact:]))
+                        else:
+                            histograms.append(sum(data[start_or_exact:end]))
             else:
                 hist_title_list = [str(i) if title.isspace() else title for i, title in enumerate(x.get_histoNames_vector())]
                 histograms = data
@@ -364,29 +368,30 @@ class ISISMuonFile(ConvertibleFile):
         super().__init__(file_path)
         self._combine_format = None
 
-    def set_combine_format(self, starts, ends, names):
+    def set_combine_format(self, is_exacts, starts_or_exacts, ends, names):
         # Check if the values provided are of a valid datatype. Doing this first prevents sneaky bugs.
-        try:
-            starts = [int(s) for s in starts]
-            ends = [int(e) for e in ends]
-            names = [str(n) for n in names]
-        except ValueError as e:
-            raise Exception("Format for combining histograms contains values of invalid types.") from e
+        if len(is_exacts) != len(starts_or_exacts) or len(starts_or_exacts) != len(ends) or len(ends) != len(names):
+            raise Exception("Need to provide all fields for each format")
 
-        distinct_starts = set(starts)
-        distinct_ends = set(ends)
-        distinct_names = set(names)
+        for ie, soe, e, n in zip(is_exacts, starts_or_exacts, ends, names):
+            try:
+                if ie:
+                    [int(s) for s in soe]
+                else:
+                    int(soe)
+                    int(e)
+            except ValueError:
+                raise Exception("Format for combining histograms contains values of invalid types.") from e
+
+        distinct_starts = set([s for i, s in zip(is_exacts, starts_or_exacts) if not i])
+        distinct_ends = set([s for i, s in zip(is_exacts, ends) if not i])
+        distinct_names = set([s for i, s in zip(is_exacts, names) if not i])
 
         # Check if any values are repeated or if one set of values is larger then another
-        if len(distinct_starts) != len(distinct_ends) or len(distinct_starts) != (len(distinct_names)) \
-                or len(starts) != len(distinct_starts) or len(ends) != len(distinct_ends) \
-                or len(names) != len(distinct_names) or len(distinct_starts) == 0:
+        if len(distinct_starts) != len(distinct_ends) or len(distinct_starts) != (len(distinct_names)):
             raise Exception("Invalid format for combining histograms.")
 
-        if max(ends) > self.get_number_of_histograms():
-            raise Exception("Invalid range of histograms to combine.")
-
-        self._combine_format = (starts, ends, names)
+        self._combine_format = (is_exacts, starts_or_exacts, ends, names)
 
     @staticmethod
     def get_value(data_paths, hdf_file_object, full=None, string=False):
@@ -485,13 +490,16 @@ class ISISMuonFile(ConvertibleFile):
         meta_string += "{}:{}\n".format("Sample", sample)
 
         if self._combine_format:
-            starts, ends, names = self._combine_format
+            is_exacts, starts_or_exacts, ends, names = self._combine_format
             histograms = []
-            for start, end in zip(starts, ends):
-                if end < start:
-                    histograms.append(sum(data[0][0:end]) + sum(data[0][start:]))
+            for is_exact, start_or_exact, end in zip(is_exacts, starts_or_exacts, ends):
+                if is_exact:
+                    histograms.append(sum([data[0][i] for i in start_or_exact]))
                 else:
-                    histograms.append(sum(data[0][start:end]))
+                    if end < start_or_exact:
+                        histograms.append(sum(data[0][0:end]) + sum(data[0][start_or_exact:]))
+                    else:
+                        histograms.append(sum(data[0][start_or_exact:end]))
         else:
             names = [str(n) for n in range(self.get_number_of_histograms())]
             histograms = data[0]
