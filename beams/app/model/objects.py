@@ -293,12 +293,18 @@ class Histogram(np.ndarray, PersistentObject):
             raise ValueError("At least 2 histograms must be provided to be combined.")
 
         h1 = histograms[0]
+
+        titles = set([h.title for h in histograms])
+        ids = set([h.id for h in histograms])
+        different_runs = len(ids) > 1
+        different_hists = len(titles) > 1
+
         for i in range(1, len(histograms)):
             h = histograms[i]
             if h1.bin_size != h.bin_size:
                 raise ValueError("Bin sizes must be the same on all histograms to be combined")
-            if h1.id != h.id:
-                raise ValueError("Histogram run ids must match to be combined")
+            if different_runs and different_hists:
+                raise ValueError("Histograms can not be combined")
 
         time_zeroes = [h.time_zero for h in histograms]
         time_zero_furthest = max(time_zeroes)
@@ -332,8 +338,13 @@ class Histogram(np.ndarray, PersistentObject):
         new_bkgd_end = min(background_bins_end)
 
         new_bin_size = histograms[0].bin_size
+
+        if different_runs:
+            new_id = ', '.join(ids)
+        else:
+            new_id = histograms[0].id
+
         new_title = histograms[0].title
-        new_id = histograms[0].id
 
         new_histogram = Histogram(final_hist, new_t0, new_good_bin_start, new_good_bin_end,
                                   new_bkgd_start, new_bkgd_end, new_title, new_id, new_bin_size)

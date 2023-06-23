@@ -143,14 +143,14 @@ class TestHistograms:
                                                   1000, 680, 25000, 600, 1000, "Front", "3412", 0.2),
                                 objects.Histogram(range(27648),
                                                   980, 1030, 27648, 500, 900, "Front", "3413", 0.2)),
-                               (objects.Histogram(range(20, 55276, 2),
-                                                  980, 1030, 24980, 580, 900, "Front", "3412, 3413", 0.2))),
+                               (objects.Histogram(list(range(0, 20)) + list(range(20, 55276, 2)),
+                                                  1000, 1030, 25000, 600, 900, "Front", "3413, 3412", 0.2))),
                               ((objects.Histogram(range(30000),
                                                   600, 1000, 23400, 120, 480, "Back", "1612", 0.2),
                                 objects.Histogram(range(30000),
                                                   568, 1200, 26000, 122, 464, "Back", "1613", 0.2)),
-                               (objects.Histogram(range(32, 59968, 2),
-                                                  568, 1200, 23368, 122, 448, "Back", "1612, 1613", 0.2))),
+                               (objects.Histogram(list(range(0, 32)) + list(range(32, 59968, 2)),
+                                                  600, 1200, 23400, 122, 464, "Back", "1612, 1613", 0.2))),
                               ((objects.Histogram(range(21000),
                                                   500, 550, 20000, 65, 420, "Forw", "19232", 0.3),
                                 objects.Histogram(range(21000),
@@ -158,12 +158,13 @@ class TestHistograms:
                                 objects.Histogram(range(21000),
                                                   300, 334, 19670, 66, 120, "Forw", "19234", 0.3)
                                 ),
-                               (objects.Histogram(range(500, 62600, 3),
-                                                  300, 350, 19670, 66, 120, "Forw", "doesn't matter", 0.3)))
+                               (objects.Histogram(list(range(0, 100)) + list(range(100, 500, 2)) + list(range(500, 62600, 3)),
+                                                  600, 613, 19670, 66, 120, "Forw", "19233, 19232, 19234", 0.3)))
 
                               ])
     def test_combine(self, hists, correct_combined_hist):
         combined = objects.Histogram.combine(hists)
+        print(combined)
         assert combined == correct_combined_hist
 
     @pytest.mark.parametrize("hists",
