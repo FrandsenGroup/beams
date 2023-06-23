@@ -310,6 +310,7 @@ class HistogramPanel(Panel):
                 combined_histogram.title = result.value
 
                 self.__run_service.add_histogram_to_run(combined_histogram, combined_histogram.id)
+                self.__run_service.recalculate_asymmetries([combined_histogram.id])
 
             def _action_asymmetry(self):
                 pass
