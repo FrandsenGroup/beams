@@ -297,11 +297,10 @@ class Histogram(np.ndarray, PersistentObject):
             h = histograms[i]
             if h1.bin_size != h.bin_size:
                 raise ValueError("Bin sizes must be the same on all histograms to be combined")
-            if h1.title != h.title:
-                raise ValueError("Histogram titles must match to be combined")
+            if h1.id != h.id:
+                raise ValueError("Histogram run ids must match to be combined")
 
         time_zeroes = [h.time_zero for h in histograms]
-        time_zero_shortest = min(time_zeroes)
         time_zero_furthest = max(time_zeroes)
 
         final_hist = None
@@ -312,22 +311,21 @@ class Histogram(np.ndarray, PersistentObject):
 
         for histogram in histograms:
             our_time_zero = histogram.time_zero
-            time_zero_difference_front = our_time_zero - time_zero_shortest
-            time_zero_difference_back = our_time_zero - time_zero_furthest
+            time_zero_delta = time_zero_furthest - our_time_zero
+            rolled_histogram = np.roll(histogram, time_zero_delta)
+            rolled_histogram[:time_zero_delta] = 0
 
             if final_hist is None:
-                final_hist = np.array(histogram[time_zero_difference_front:time_zero_difference_back]) if \
-                    time_zero_difference_back else histogram[time_zero_difference_front:]
+                final_hist = rolled_histogram
             else:
-                final_hist += histogram[time_zero_difference_front:time_zero_difference_back] if \
-                    time_zero_difference_back else histogram[time_zero_difference_front:]
+                final_hist += rolled_histogram
 
-            good_bins_start.append(histogram.good_bin_start - time_zero_difference_front)
-            good_bins_end.append(histogram.good_bin_end - time_zero_difference_front)
-            background_bins_start.append(histogram.background_start - time_zero_difference_front)
-            background_bins_end.append(histogram.background_end - time_zero_difference_front)
+            good_bins_start.append(histogram.good_bin_start)
+            good_bins_end.append(histogram.good_bin_end)
+            background_bins_start.append(histogram.background_start)
+            background_bins_end.append(histogram.background_end)
 
-        new_t0 = time_zero_shortest
+        new_t0 = time_zero_furthest
         new_good_bin_start = max(good_bins_start)
         new_good_bin_end = min(good_bins_end)
         new_bkgd_start = max(background_bins_start)
@@ -335,9 +333,10 @@ class Histogram(np.ndarray, PersistentObject):
 
         new_bin_size = histograms[0].bin_size
         new_title = histograms[0].title
+        new_id = histograms[0].id
 
         new_histogram = Histogram(final_hist, new_t0, new_good_bin_start, new_good_bin_end,
-                                  new_bkgd_start, new_bkgd_end, new_title, "none", new_bin_size)
+                                  new_bkgd_start, new_bkgd_end, new_title, new_id, new_bin_size)
         return new_histogram
 
 

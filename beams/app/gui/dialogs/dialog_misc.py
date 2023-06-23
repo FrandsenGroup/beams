@@ -151,6 +151,46 @@ class PromptWithOptionsDialog(QtWidgets.QDialog):
 
 
 # noinspection PyArgumentList
+class PromptWithInputDialog(QtWidgets.QDialog):
+    class Result:
+        def __init__(self):
+            self.value = ""
+
+    def __init__(self, message, result):
+        super().__init__()
+
+        self.setWindowTitle('Please provide input')
+        message = QtWidgets.QLabel(message)
+        pos_button = qt_widgets.StyleOneButton('Okay')
+        line_edit = QtWidgets.QLineEdit()
+
+        self.setMinimumWidth(300)
+        self.setMinimumHeight(80)
+        pos_button.setFixedWidth(80)
+
+        def finish():
+            result.value = line_edit.text()
+            self.done(0)
+
+        pos_button.released.connect(finish)
+
+        col = QtWidgets.QVBoxLayout()
+
+        col.addWidget(message)
+        col.addWidget(line_edit)
+        col.addWidget(pos_button)
+        col.setAlignment(line_edit, qt_constants.AlignCenter)
+        col.setAlignment(message, qt_constants.AlignCenter)
+        col.setAlignment(pos_button, qt_constants.AlignCenter)
+        self.setLayout(col)
+
+    @staticmethod
+    def launch(message, result):
+        dialog = PromptWithInputDialog(message, result)
+        return dialog.exec()
+
+
+# noinspection PyArgumentList
 class PermissionsMessageDialog(QtWidgets.QDialog):
     class Codes(enum.IntEnum):
         OKAY = 0

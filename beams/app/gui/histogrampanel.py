@@ -8,7 +8,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 from app.resources import resources
-from app.gui.dialogs.dialog_misc import FileDisplayDialog, WarningMessageDialog
+from app.gui.dialogs.dialog_misc import FileDisplayDialog, WarningMessageDialog, PromptWithInputDialog
 from app.gui.gui import Panel, PanelPresenter
 from app.model import files, services, objects
 from app.util import qt_widgets, qt_constants
@@ -218,7 +218,7 @@ class HistogramPanel(Panel):
 
             def _action_combine(self):
                 if len(self.__selected_items) == 1:
-                    WarningMessageDialog.launch(["Must select 2 or more histograms to be combined"])
+                    WarningMessageDialog.launch(["Must select 2 or more runs to be combined"])
                     return
 
                 histograms_to_combine = {}
@@ -279,20 +279,37 @@ class HistogramPanel(Panel):
                     return path
 
         class HistogramNode(QtWidgets.QTreeWidgetItem):
-            def __init__(self, histogram):
+            def __init__(self, histogram: objects.Histogram):
                 super(HistogramPanel.SupportPanel.HistogramNode, self).__init__([histogram.title])
                 self.model = histogram
+                self.__run_service = services.RunService()
                 self.__selected_items = None
 
             def menu(self, items):
                 self.__selected_items = items
                 menu = QtWidgets.QMenu()
-                menu.addAction("Edit", self._action_edit)
+                # menu.addAction("Edit", self._action_edit)
                 menu.addAction("Combine", self._action_combine)
                 return menu
 
             def _action_combine(self):
-                pass
+                if len(self.__selected_items) == 1:
+                    WarningMessageDialog.launch(["Must select 2 or more histograms to be combined"])
+                    return
+
+                histograms_to_combine = [h.model for h in self.__selected_items]
+                combined_histogram = objects.Histogram.combine(histograms_to_combine)
+
+                result = PromptWithInputDialog.Result()
+                PromptWithInputDialog.launch("Name of combined histogram", result)
+
+                if result.value is None:
+                    WarningMessageDialog.launch(["Need to provide a name for histogram"])
+                    return
+
+                combined_histogram.title = result.value
+
+                self.__run_service.add_histogram_to_run(combined_histogram, combined_histogram.id)
 
             def _action_asymmetry(self):
                 pass

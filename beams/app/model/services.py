@@ -158,6 +158,21 @@ class RunService:
             objects.RunDataset.RIGHT_BINNED_ASYMMETRY: (right_integrations, right_uncertainties)
         }
 
+    def add_histogram_to_run(self, histogram, run_id):
+        runs = self.__dao.get_runs_by_ids([run_id])
+
+        if len(runs) == 0:
+            raise ValueError("Run id does not exist")
+
+        run = runs[0]
+
+        if histogram.title in run.histograms:
+            raise ValueError("Histogram title already exists")
+
+        run.histograms[histogram.title] = histogram
+
+        self.signals.changed.emit()
+
     def add_runs(self, paths):
         builder = objects.DataBuilder()
         for path in paths:
