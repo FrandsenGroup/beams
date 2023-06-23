@@ -607,6 +607,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_time.tick_params(axis='x', colors=tick_color)
             self.axes_time.tick_params(axis='y', colors=tick_color)
 
+            self.axes_freq.xaxis.grid(False)
             self.axes_freq.spines['right'].set_visible(False)
             self.axes_freq.spines['top'].set_visible(False)
             self.axes_freq.spines['left'].set_visible(False)
@@ -641,6 +642,7 @@ class PlottingPanel(Panel, QtWidgets.QWidget):
             self.axes_time.xaxis.label.set_color(tick_color)
             self.axes_time.yaxis.label.set_color(tick_color)
 
+            self.axes_freq.xaxis.grid(True)
             self.axes_freq.spines['right'].set_visible(False)
             self.axes_freq.spines['top'].set_visible(False)
             self.axes_freq.spines['left'].set_visible(True)
