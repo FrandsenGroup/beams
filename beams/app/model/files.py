@@ -351,9 +351,11 @@ class PSIMuonFile(ConvertibleFile):
             for i, histogram in enumerate(histograms):
                 for j, value in enumerate(histogram):
                     if value != 0:
-                        to_t0 = int((int(histograms_t0[i]) - j) * 0.05)
-                        first_background = j + to_t0
-                        last_background = int(histograms_t0[i]) - to_t0
+                        to_t0 = int(histograms_t0[i])
+
+                        bins_to_t0 = to_t0 - j
+                        first_background = j + int(bins_to_t0 * 0.1)
+                        last_background = to_t0 - int(bins_to_t0 * 0.4)
 
                         if last_background <= first_background:
                             last_background = first_background + 1
