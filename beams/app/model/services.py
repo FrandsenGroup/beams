@@ -166,8 +166,9 @@ class RunService:
 
         run = runs[0]
 
-        if histogram.title in run.histograms:
-            raise ValueError("Histogram title already exists")
+        # On second thought, I think we are fine with overwriting
+        # if histogram.title in run.histograms:
+        #     raise ValueError("Histogram title already exists")
 
         run.histograms[histogram.title] = histogram
 
