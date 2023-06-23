@@ -35,7 +35,7 @@ class HistogramCombinationDialog(QtWidgets.QDialog):
 
         self.dialog_description = QtWidgets.QLabel("Indicate using the tables below the histograms to combine. "
                                                    "The files you selected each have {} histograms. An example range "
-                                                   "would be 1-32 and 33-64 for a file with 64 histograms if you wanted"
+                                                   "would be 0-32 and 32-64 for a file with 64 histograms if you wanted"
                                                    "two resulting histograms. Ranges can also wrap around (i.e. 48-16)."
                                                    "Alternatively, you can specify EXACTLY which histograms to combine"
                                                    "using the third column 'Exact #'s'."
@@ -194,7 +194,7 @@ class HistogramCombinationDialogPresenter(QtCore.QObject):
 
             if exact_text != '':
                 try:
-                    exact_histograms = [int(h.strip()) - 1 for h in exact_text.split(',')]
+                    exact_histograms = [int(h.strip()) for h in exact_text.split(',')]
                 except ValueError:
                     WarningMessageDialog.launch([f"The exact histograms specified in row {i+1} are invalid."])
                     return
@@ -203,7 +203,7 @@ class HistogramCombinationDialogPresenter(QtCore.QObject):
             else:
                 # Ensure start and end are both integers
                 try:
-                    start = int(start_text) - 1
+                    start = int(start_text)
                 except ValueError:
                     WarningMessageDialog.launch(["Start value ('{}') in row {} is invalid.".format(start_text, i+1)])
                     return

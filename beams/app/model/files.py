@@ -271,35 +271,89 @@ class PSIMuonFile(ConvertibleFile):
 
             # Create full histogram array
             data = np.array([x.get_histo_vector(i, 1) for i in range(num_hists)])
+            t0_data = x.get_t0_vector()
+            first_good_data = x.get_firstGood_vector()
+            last_good_data = x.get_lastGood_vector()
 
+            histograms = []
+            histograms_t0 = []
+            histograms_first_good_bin = []
+            histograms_last_good_bin = []
             if self._combine_format:
                 is_exacts, starts_or_exacts, ends, hist_title_list = self._combine_format
-                histograms = []
                 for is_exact, start_or_exact, end in zip(is_exacts, starts_or_exacts, ends):
                     if is_exact:
-                        histograms.append(sum(data[start_or_exact]))
+                        histograms_first_good_bin.append(str(max([first_good_data[h] for h in start_or_exact])))
+                        histograms_last_good_bin.append(str(max([last_good_data[h] for h in start_or_exact])))
+                        max_t0 = max([t0_data[h] for h in start_or_exact])
+                        min_t0 = min([t0_data[h] for h in start_or_exact])
+                        hist = np.array([])
+                        for hi in start_or_exact:
+                            hi_t0 = t0_data[hi]
+                            hist_to_add = np.roll(data[hi], max_t0 - hi_t0)
+                            hist_to_add[:max_t0-min_t0] = 0
+                            if len(hist) == 0:
+                                hist = hist_to_add
+                            else:
+                                hist += hist_to_add
+                        histograms_t0.append(str(max_t0))
+                        histograms.append(hist)
                     else:
                         if end < start_or_exact:
-                            histograms.append(sum(data[0:end]) + sum(data[start_or_exact:]))
+                            histograms_first_good_bin.append(str(max(first_good_data[0:end] + first_good_data[start_or_exact:])))
+                            histograms_last_good_bin.append(str(max(last_good_data[0:end] + last_good_data[start_or_exact:])))
+                            max_t0 = max(t0_data[0:end] + t0_data[start_or_exact:])
+                            min_t0 = min(t0_data[0:end] + t0_data[start_or_exact:])
+                            hist = np.array([])
+                            for hi in range(0, end):
+                                hi_t0 = t0_data[hi]
+                                hist_to_add = np.roll(data[hi], max_t0 - hi_t0)
+                                hist_to_add[:max_t0 - min_t0] = 0
+                                if len(hist) == 0:
+                                    hist = hist_to_add
+                                else:
+                                    hist += hist_to_add
+                            for hi in range(start_or_exact, len(data)):
+                                hi_t0 = t0_data[hi]
+                                hist_to_add = np.roll(data[hi], max_t0 - hi_t0)
+                                hist_to_add[:max_t0 - min_t0] = 0
+                                if len(hist) == 0:
+                                    hist = hist_to_add
+                                else:
+                                    hist += hist_to_add
+                            histograms_t0.append(str(max_t0))
+                            histograms.append(hist)
                         else:
-                            histograms.append(sum(data[start_or_exact:end]))
+                            histograms_first_good_bin.append(str(max(first_good_data[start_or_exact:end])))
+                            histograms_last_good_bin.append(str(max(last_good_data[start_or_exact:end])))
+                            max_t0 = max(t0_data[start_or_exact:end])
+                            min_t0 = min(t0_data[start_or_exact:end])
+                            hist = np.array([])
+                            for hi in range(start_or_exact, end):
+                                hi_t0 = t0_data[hi]
+                                hist_to_add = np.roll(data[hi], max_t0 - hi_t0)
+                                hist_to_add[:max_t0 - min_t0] = 0
+                                if len(hist) == 0:
+                                    hist = hist_to_add
+                                else:
+                                    hist += hist_to_add
+                            histograms_t0.append(str(max_t0))
+                            histograms.append(hist)
             else:
                 hist_title_list = [str(i) if title.isspace() else title for i, title in enumerate(x.get_histoNames_vector())]
                 histograms = data
-
-            # Get list scalars
-            t0_bin_list = [str(n) for n in x.get_t0_vector()][0:len(hist_title_list)]
-            first_good_bin_list = [str(n) for n in x.get_firstGood_vector()][0:len(hist_title_list)]
-            last_good_bin_list = [str(n) for n in x.get_lastGood_vector()][0:len(hist_title_list)]
+                histograms_t0 = [str(t) for t in t0_data]
+                histograms_first_good_bin = [str(f) for f in first_good_data]
+                histograms_last_good_bin = [str(l) for l in last_good_data]
 
             first_background_list = []
             last_background_list = []
             for i, histogram in enumerate(histograms):
                 for j, value in enumerate(histogram):
                     if value != 0:
-                        to_t0 = int((int(t0_bin_list[i]) - j) * 0.05)
+                        to_t0 = int((int(histograms_t0[i]) - j) * 0.05)
                         first_background = j + to_t0
-                        last_background = int(t0_bin_list[i]) - to_t0
+                        last_background = int(histograms_t0[i]) - to_t0
 
                         if last_background <= first_background:
                             last_background = first_background + 1
@@ -327,9 +381,9 @@ class PSIMuonFile(ConvertibleFile):
                                  for i, title in enumerate(hist_title_list)]) + "\n"
         meta_string += ','.join(first_background_list) + "\n"
         meta_string += ','.join(last_background_list) + "\n"
-        meta_string += ','.join(first_good_bin_list) + "\n"
-        meta_string += ','.join(last_good_bin_list) + "\n"
-        meta_string += ','.join(t0_bin_list)
+        meta_string += ','.join(histograms_first_good_bin) + "\n"
+        meta_string += ','.join(histograms_last_good_bin) + "\n"
+        meta_string += ','.join(histograms_t0)
 
         try:
             np.savetxt(out_file, np.rot90(histograms, 3), delimiter=',', header=meta_string, comments="", fmt="%-8i")
