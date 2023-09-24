@@ -1,3 +1,4 @@
+import importlib.util
 import sys
 import uuid
 
@@ -10,7 +11,10 @@ import re
 import logging
 import copy
 
+from sympy import Symbol
+
 from app.model import objects
+from app.model.external_functions import ExternalModule
 from app.util import report
 
 INDEPENDENT_VARIABLE = "t"
@@ -73,7 +77,8 @@ USER_EQUATION_DICTIONARY = {}
 
 
 class FitParameter:
-    def __init__(self, symbol, value, lower, upper, is_global, is_fixed, is_run_specific=False, output=None, uncertainty=None):
+    def __init__(self, symbol, value, lower, upper, is_global, is_fixed, is_run_specific=False, output=None,
+                 uncertainty=None):
         self.uncertainty = uncertainty
         self.output = output
         self.upper = upper
@@ -85,7 +90,8 @@ class FitParameter:
         self.is_global = is_global
 
     def __copy__(self):
-        return FitParameter(self.symbol, self.value, self.lower, self.upper, self.is_global, self.is_fixed, self.is_run_specific, self.output, self.uncertainty)
+        return FitParameter(self.symbol, self.value, self.lower, self.upper, self.is_global, self.is_fixed,
+                            self.is_run_specific, self.output, self.uncertainty)
 
     def __eq__(self, other):
         return other.symbol == self.symbol \
@@ -110,23 +116,33 @@ class FitParameter:
 
 
 class FitExpression:
-    def __init__(self, expression_string, variables=None):
+    def __init__(self, expression_string, variables=None, external_function_dict=None, alpha_correction=False):
+        self.fixed_var_dict = None
+        if external_function_dict is None:
+            external_function_dict = {}
         self.__expression_string = expression_string
 
         if variables is None:
             variables = parse(self.__expression_string)
 
         self.__variables = variables
-        self.__expression = lambdify(self.__expression_string, variables)
+        loaded_external_functions = ExternalModule.load_external_functions(external_function_dict)
+
+        self.__external_function_dict = external_function_dict
+        self._expression = lambdify(self.__expression_string, variables, loaded_external_functions)
+        if alpha_correction:
+            self._expression = self._alpha_correction(self._expression)
         self.safe = True
 
     def __getstate__(self):
-        return self.__expression_string, self.__variables, self.safe
+        return self.__expression_string, self.__variables, self.safe, self.__external_function_dict
 
     def __setstate__(self, state):
         self.__expression_string = state[0]
         self.__variables = state[1]
-        self.__expression = lambdify(self.__expression_string, self.__variables)
+        self.__external_function_dict = state[3]
+        loaded_external_functions = ExternalModule.load_external_functions(self.__external_function_dict)
+        self._expression = lambdify(self.__expression_string, self.__variables, loaded_external_functions)
         self.safe = state[2]
 
     def __eq__(self, other):
@@ -136,12 +152,12 @@ class FitExpression:
         return self.__expression_string
 
     def __repr__(self):
-        return f'FitExpression({self.__expression_string}, {self.__expression}, {self.safe})'
+        return f'FitExpression({self.__expression_string}, {self._expression}, {self.safe})'
 
     def __call__(self, *args, **kwargs):
         # The length of this function is due to the fact I have trust issues.
         if not self.safe:
-            return self.__expression(*args, **{_replace_unsupported_unicode_characters(k): v for k, v in kwargs.items()})
+            return self._expression(*args, **{_replace_unsupported_unicode_characters(k): v for k, v in kwargs.items()})
 
         # We need to cast it to a complex type in order to avoid errors where we are raising a negative
         # number to a fractional power (which would result in an array of Nan's usually). We do the calculation
@@ -164,18 +180,69 @@ class FitExpression:
                     try:
                         unnamed_pars.append(float(arg))
                     except ValueError:
-                        raise InvalidFitArgumentsError("Every parameter after the array should be of type FitParameter or a number.")
+                        raise InvalidFitArgumentsError(
+                            "Every parameter after the array should be of type FitParameter or a number.")
         for k, v in kwargs.items():
             if k != INDEPENDENT_VARIABLE:
                 pars[_replace_unsupported_unicode_characters(k)] = v
 
         try:
-            return self.__expression(time_array, *unnamed_pars, **pars).real
+            return self._expression(time_array, *unnamed_pars, **pars).real
         except TypeError as e:
             if ALPHA in pars.keys():
                 pars.pop(ALPHA)
-                return self.__expression(time_array, *unnamed_pars, **pars).real
+                return self._expression(time_array, *unnamed_pars, **pars).real
             raise InvalidFitArgumentsError("Bad arguments passed to fit expression.") from e
+
+    def _alpha_correction(self, __expression):
+        def alpha_corrected_expression(time_array, *args, **kwargs):
+            args = list(args)
+            # we are forcing alpha to be at the front of the parameter list
+            a = args.pop(0)
+            exp_result = np.array(__expression(time_array, *args, **kwargs))
+            alpha_corrected = ((1 - a) + ((1 + a) * exp_result)) / ((1 + a) + ((1 - a) * exp_result))
+            return alpha_corrected
+
+        return alpha_corrected_expression
+
+    def set_external_with_fixed_vars(self, fixed_var_dict, symbol_list):
+        self.fixed_var_dict = fixed_var_dict
+        orig_expr = self._expression
+
+        def external_decorator(time_array, *args, **kwargs):
+            args = list(args)
+            for i, var in enumerate(symbol_list):
+                if var in fixed_var_dict:
+                    args.insert(i, fixed_var_dict[var])
+            return orig_expr(time_array, *args, **kwargs)
+
+        self._expression = external_decorator
+
+    def create_global_compatible_expression(self, adjusted_global_symbols, symbols_for_run, run_id):
+        orig_expr = self._expression
+
+        def global_compatible_expression(time_array, *args, **kwargs):
+            filtered_args = []
+            for run_symbol in symbols_for_run:
+                for i, symbol in enumerate(adjusted_global_symbols):
+                    if symbol == run_symbol or symbol == run_symbol + _shortened_run_id(run_id):
+                        filtered_args.append(args[i])
+            return orig_expr(time_array, *filtered_args, **kwargs)
+
+        self._expression = global_compatible_expression
+
+class GlobalFitExpression(FitExpression):
+    """
+    Subclass of FitExpression for global fits. This will take care of giving the lambda expression only the parameters
+    required for the given run (including any global parameters).
+    """
+
+    def __init__(self, expression_string, adjusted_global_symbols, symbols_for_run, run_id,
+                 variables=None, external_function_dict=None):
+        super().__init__(expression_string, variables, external_function_dict, False)
+        self._expression = self.create_global_compatible_expression(self._expression, adjusted_global_symbols,
+                                                                    symbols_for_run, run_id)
+
 
 
 class FitConfig:
@@ -187,13 +254,14 @@ class FitConfig:
 
     """
 
-    def __init__(self):
+    def __init__(self, external_function_dict):
         self.expression = ''
         self.parameters = {}
         self.titles = {}
         self.data = OrderedDict()  # Important so we can specify order of runs to be fitted for batch fit.
         self.batch = True
         self.flags = 0
+        self.external_function_dict = external_function_dict
 
     def __repr__(self):
         return f"FitConfig({self.expression}, {self.parameters}, {self.titles}, {self.batch}, {self.flags}, {self.data})"
@@ -351,15 +419,21 @@ class FitEngine:
 
         for run_id, (time, asymmetry, uncertainty, meta) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
-            function = alpha_correction(config.expression)
 
             # Replace the symbols with fixed values with their actual values. This way they don't throw off uncertainty.
             fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
             fixed_values = config.get_values_for_run(run_id, is_fixed=True)
-            function = FitEngine._replace_fixed(function, fixed_symbols, fixed_values)
+            function = FitEngine._replace_fixed(config.expression, fixed_symbols, fixed_values)
 
             # Create a residual expression for the least squares fit
-            lambda_expression = FitExpression(function, variables=config.get_symbols_for_run(run_id, is_fixed=False))
+            lambda_expression = FitExpression(function,
+                                              variables=config.get_symbols_for_run(run_id, is_fixed=False),
+                                              external_function_dict=config.external_function_dict,
+                                              alpha_correction=True)
+            if len(fixed_values) > 0 and ExternalModule.is_external_function(function, config.external_function_dict):
+                lambda_expression.set_external_with_fixed_vars({symbol: value for symbol, value in
+                                                                zip(fixed_symbols, fixed_values)},
+                                                               config.get_symbols_for_run(run_id))
             residual = FitEngine._residual(lambda_expression)
 
             guesses = config.get_values_for_run(run_id, is_fixed=False)
@@ -389,7 +463,8 @@ class FitEngine:
                     config.set_outputs(o_run_id, symbol, value, 0)
 
             # 9) Fill in all values for our new fit object
-            new_fit = objects.Fit(copy.deepcopy(config.parameters[run_id]), config.expression, config.titles[run_id], run_id, meta, asymmetry, goodness=chi_sq)
+            new_fit = objects.Fit(copy.deepcopy(config.parameters[run_id]), config.expression, config.titles[run_id],
+                                  run_id, meta, asymmetry, goodness=chi_sq)
 
             # 10) Add fit to our dataset
             dataset.fits[run_id] = new_fit
@@ -463,7 +538,8 @@ class FitEngine:
             for symbol, value in zip(fixed_symbols, fixed_values):
                 config.set_outputs(run_id, symbol, value, 0)
 
-            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id, meta, asymmetry, goodness=chi_sq)
+            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id, meta,
+                                  asymmetry, goodness=chi_sq)
 
             dataset.fits[run_id] = new_fit
 
@@ -474,17 +550,24 @@ class FitEngine:
     def _fit_non_global(self, config) -> objects.FitDataset:
         dataset = objects.FitDataset()
 
-        for run_id, (time, asymmetry,  uncertainty, meta) in config.data.items():
+        for run_id, (time, asymmetry, uncertainty, meta) in config.data.items():
             # We create a separate lambda expression for each run in case they set separate run dependant fixed values.
-            function = alpha_correction(config.expression)
+            function = config.expression
 
             # Replace the symbols with fixed values with their actual values. This way they don't throw off uncertainty.
             fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
             fixed_values = config.get_values_for_run(run_id, is_fixed=True)
-            function = FitEngine._replace_fixed(function, fixed_symbols, fixed_values)
+            function = FitEngine._replace_fixed(config.expression, fixed_symbols, fixed_values)
 
             # Create a residual expression for the least squares fit
-            lambda_expression = FitExpression(function, variables=config.get_symbols_for_run(run_id, is_fixed=False))
+            lambda_expression = FitExpression(function,
+                                              variables=config.get_symbols_for_run(run_id, is_fixed=False),
+                                              external_function_dict=config.external_function_dict,
+                                              alpha_correction=True)
+            if len(fixed_values) > 0 and ExternalModule.is_external_function(function, config.external_function_dict):
+                lambda_expression.set_external_with_fixed_vars({symbol: value for symbol, value in
+                                                                zip(fixed_symbols, fixed_values)},
+                                                               config.get_symbols_for_run(run_id))
             residual = FitEngine._residual(lambda_expression)
 
             guesses = config.get_values_for_run(run_id, is_fixed=False)
@@ -512,7 +595,8 @@ class FitEngine:
                 config.set_outputs(run_id, symbol, value, 0)
 
             # 9) Fill in all values for our new fit object
-            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id, meta, asymmetry, goodness=chi_sq)
+            new_fit = objects.Fit(config.parameters[run_id], config.expression, config.titles[run_id], run_id, meta,
+                                  asymmetry, goodness=chi_sq, external_function_dict=config.external_function_dict)
 
             # 10) Add fit to our dataset
             dataset.fits[run_id] = new_fit
@@ -550,7 +634,7 @@ class FitEngine:
                 they are only fit to that specific section while we use the global parameter throughout.
         """
 
-        function = alpha_correction(config.expression)
+        # function = alpha_correction(config.expression)
 
         lambdas = []
         lengths = []
@@ -561,12 +645,25 @@ class FitEngine:
         for i, (run_id, asymmetry) in enumerate(config.data.items()):
             fixed_symbols = config.get_symbols_for_run(run_id, is_fixed=True)
             fixed_values = config.get_values_for_run(run_id, is_fixed=True)
-            new_function = FitEngine._replace_fixed(function, fixed_symbols, fixed_values)
+            new_function = FitEngine._replace_fixed(config.expression, fixed_symbols, fixed_values)
 
             for symbol in config.get_symbols_for_run(run_id, is_fixed=False, is_global=False):
                 new_function = FitEngine._replace_var_with(new_function, symbol, symbol + _shortened_run_id(run_id))
 
-            new_lambda_expression = FitExpression(new_function, variables=config.get_adjusted_global_symbols())
+            new_lambda_expression = FitExpression(new_function,
+                                                  config.get_symbols_for_run(run_id),
+                                                  external_function_dict=config.external_function_dict,
+                                                  alpha_correction=True)
+
+            if len(fixed_values) > 0 and ExternalModule.is_external_function(new_function, config.external_function_dict):
+                new_lambda_expression.set_external_with_fixed_vars({symbol: value for symbol, value in
+                                                                    zip(fixed_symbols, fixed_values)},
+                                                                   config.get_symbols_for_run(run_id))
+
+            new_lambda_expression.create_global_compatible_expression(config.get_adjusted_global_symbols(),
+                                                                      config.get_symbols_for_run(run_id), run_id)
+
+
             new_lambda_expression.safe = False  # No type checks, speeds up the fit dramatically.
             lambdas.append(new_lambda_expression)
 
@@ -586,6 +683,7 @@ class FitEngine:
             y_calc = lambda_expression(np.array(x, dtype=complex), *pars).real
             return np.divide(np.subtract(y_data, y_calc), dy_data,
                              out=np.zeros_like(dy_data), where=dy_data != 0)  # Divide by zero will result in 0
+
         return residual
 
     @staticmethod
@@ -757,7 +855,7 @@ def alpha_correction(expression: str) -> str:
     return f'((1-{ALPHA})+((1+{ALPHA})*({expression})))/((1+{ALPHA})+((1-{ALPHA})*({expression})))'
 
 
-def lambdify(expression: str, variables=None):
+def lambdify(expression: str, variables=None, external_function_dict=None):
     """ Takes a string representation of an expression and returns a callable lambda.
 
     PARAMETERS
@@ -766,6 +864,7 @@ def lambdify(expression: str, variables=None):
             The string representation of the expression
         variables: iterable[str]
             Collection of free variables, if not provided then this will call parse on the expression
+        external_function_dict: dict[str, function] - function name mapped to the function itself
 
     RETURNS
     -------
@@ -779,19 +878,27 @@ def lambdify(expression: str, variables=None):
     var_names = [INDEPENDENT_VARIABLE] if INDEPENDENT_VARIABLE in expression_string else []
     var_names.extend([_replace_unsupported_unicode_characters(var) for var in variables])
 
-    lambda_expression = sp.lambdify(var_names, sp.sympify(expression_string), ["numpy", "scipy"])
+    if external_function_dict is not None and expression_string.split('(')[0] in external_function_dict:
+        return external_function_dict[expression_string.split('(')[0]]
+
+    if ALPHA in var_names:
+        var_names.remove(ALPHA)
+
+    lambda_expression = sp.lambdify(var_names, sp.sympify(expression_string, locals=external_function_dict),
+                                    ["numpy", "scipy"])
     return lambda_expression
 
 
 def _shortened_run_id(run_id: str) -> str:
     """Returns the first section of uuid."""
     return "_" + run_id.split('-')[0]
-  
-  
+
+
 class ImproperlyFormattedExpressionError(Exception):
     """
     The expression is not properly formatted (e.g. 'x=3*y' or 'x*')
     """
+
     def __init__(self, *args):
         super(ImproperlyFormattedExpressionError, self).__init__(*args)
 
@@ -801,12 +908,14 @@ class InvalidExpressionError(Exception):
     The expression is properly formatted but logically incorrect (e.g. a function that takes
     two args was only given one).
     """
+
     def __init__(self, *args):
         super(InvalidExpressionError, self).__init__(*args)
 
 
 class InvalidFitArgumentsError(Exception):
     """Bad arguments passed to fit expression. """
+
     def __init__(self, *args):
         super(InvalidFitArgumentsError, self).__init__(*args)
 
@@ -814,4 +923,3 @@ class InvalidFitArgumentsError(Exception):
 class FittingError(Exception):
     def __init__(self, *args):
         super(FittingError, self).__init__(*args)
-

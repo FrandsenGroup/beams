@@ -1,5 +1,9 @@
+import importlib.util
+import inspect
 import logging
+import os
 import re
+import sys
 from collections import OrderedDict
 from concurrent import futures
 import functools
@@ -10,6 +14,9 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import numpy as np
 
+from app.gui.dialogs.dialog_external_function import ExternalFunctionDialog
+from app.model.external_functions import ExternalModule
+from app.model.files import BeamsFileReadError
 from app.resources import resources
 from app.gui.dialogs.dialog_misc import WarningMessageDialog, LoadingDialog
 from app.gui.dialogs.dialog_write_fit import WriteFitDialog
@@ -576,6 +583,11 @@ class FittingPanel(Panel):
         super(FittingPanel, self).__init__()
         self.__logger = logging.getLogger(__name__)
 
+        self.external_function_invocations_dict = {}
+        self.external_functions_dict = {}
+        # Stores the ascii names of the symbols that are used in the external function
+        self.external_functions_syms_dict = {}
+
         self.support_panel = FittingPanel.SupportPanel()
 
         self.parameter_table = self.ParameterTable()
@@ -603,6 +615,7 @@ class FittingPanel(Panel):
         self.button_insert_preset_equation = qt_widgets.StyleTwoButton("Insert")
         self.button_insert_user_equation = qt_widgets.StyleTwoButton("Insert")
         self.button_save_user_equation = qt_widgets.StyleTwoButton("Save")
+        self.button_import_external_function = qt_widgets.StyleTwoButton("Import")
         self.button_plot = qt_widgets.StyleTwoButton("Plot")
 
         self.label_global_plus = QtWidgets.QLabel("Global+")
@@ -612,6 +625,8 @@ class FittingPanel(Panel):
         self.label_batch = QtWidgets.QLabel("Sequential")
 
         self.check_batch_fit = QtWidgets.QCheckBox()
+
+        self.remove_external_func_button = qt_widgets.StyleOneButton("Remove external function")
 
         self.insert_phi = qt_widgets.StyleTwoButton(fit.PHI)
         self.insert_alpha = qt_widgets.StyleTwoButton(fit.ALPHA)
@@ -645,6 +660,7 @@ class FittingPanel(Panel):
         self.button_insert_preset_equation.setToolTip('Insert predefined function')
         self.button_insert_user_equation.setToolTip('Insert user defined function')
         self.button_save_user_equation.setToolTip('Save user defined function')
+        self.button_import_external_function.setToolTip('Import user defined function written in Python')
         self.button_plot.setToolTip('Plot data')
 
         self.input_fit_equation.setToolTip('Type the equation you would like to use for the fit here')
@@ -684,6 +700,8 @@ class FittingPanel(Panel):
         self.input_user_equation_name.setPlaceholderText("Function Name")
         self.input_user_equation.setPlaceholderText("Function (e.g. a*exp(-(\u03BB*t)^\u03B2))")
         self.input_fit_equation.setPlaceholderText("Fit Equation")
+
+        self.remove_external_func_button.setHidden(True)
 
         self.insert_phi.setFont(self.mathematical_font)
         self.insert_alpha.setFont(self.mathematical_font)
@@ -752,7 +770,7 @@ class FittingPanel(Panel):
         row.addWidget(self.input_user_equation_name)
         row.addWidget(self.input_user_equation, 2)
         row.addWidget(self.button_save_user_equation)
-        row.addSpacing(10)
+        row.addWidget(self.button_import_external_function)
         layout = QtWidgets.QFormLayout()
         layout.addRow(row)
         self.group_user_functions.setLayout(layout)
@@ -767,6 +785,7 @@ class FittingPanel(Panel):
         row.addWidget(self.label_expression_start)
         row.addSpacing(5)
         row.addWidget(self.input_fit_equation)
+        row.addWidget(self.remove_external_func_button)
         row.addSpacing(20)
         row.addWidget(self.insert_pi)
         row.addWidget(self.insert_alpha)
@@ -1234,8 +1253,12 @@ class FittingPanel(Panel):
     def copy_user_function_to_cursor(self):
         if self.option_user_fit_equations.currentText() == 'None':
             return
-
-        self.input_fit_equation.insert(fit.USER_EQUATION_DICTIONARY[self.option_user_fit_equations.currentText()])
+        if self.option_user_fit_equations.currentText() in self.external_function_invocations_dict.keys():
+            self.input_fit_equation.setText(self.option_user_fit_equations.currentText())
+            self.input_fit_equation.setDisabled(True)
+            self.remove_external_func_button.setHidden(False)
+        else:
+            self.input_fit_equation.insert(fit.USER_EQUATION_DICTIONARY[self.option_user_fit_equations.currentText()])
 
     def copy_character_to_cursor(self, char):
         self.input_fit_equation.insert(char)
@@ -1321,6 +1344,8 @@ class FitTabPresenter(PanelPresenter):
         self._view.button_insert_preset_equation.released.connect(self._on_insert_pre_defined_function_clicked)
         self._view.button_insert_user_equation.released.connect(self._on_insert_user_defined_function_clicked)
         self._view.button_save_user_equation.released.connect(self._on_save_user_defined_function_clicked)
+        self._view.button_import_external_function.released.connect(self._on_import_external_function_clicked)
+        self._view.remove_external_func_button.released.connect(self._on_remove_ext_func_clicked)
         self._view.insert_sigma.released.connect(lambda: self._on_insert_character_clicked(fit.SIGMA))
         self._view.insert_pi.released.connect(lambda: self._on_insert_character_clicked(fit.PI))
         self._view.insert_phi.released.connect(lambda: self._on_insert_character_clicked(fit.PHI))
@@ -1389,7 +1414,7 @@ class FitTabPresenter(PanelPresenter):
             self._view.highlight_input_red(self._view.input_fit_equation, False)
 
             variables = fit.parse(expression)
-            variables.append(fit.ALPHA)
+            variables.insert(0, fit.ALPHA)
 
             self._view.clear_parameters(variables)
 
@@ -1436,6 +1461,26 @@ class FitTabPresenter(PanelPresenter):
         self._view.input_user_equation.clear()
 
     @QtCore.pyqtSlot()
+    def _on_import_external_function_clicked(self):
+        # Open a file explorer and let the user select their predefined function file
+        filepaths = self._get_external_function_files_from_system()
+        for file in filepaths:
+            filename = file.split('/')[-1].split('.')[0]
+            try:
+                func_invocation = ExternalModule.get_external_function_invocation(filename, file)
+                if func_invocation is None:
+                    return
+                func_name_dialog = ExternalFunctionDialog(func_invocation)
+                if func_name_dialog.exec():
+                    invocation = func_name_dialog.function_invocation
+                    self._view.external_function_invocations_dict[invocation] = file
+                    self._view.option_user_fit_equations.addItem(invocation)
+                    self._view.external_functions_dict[filename] = file
+            except BeamsFileReadError as e:
+                WarningMessageDialog.launch([str(e)])
+
+
+    @QtCore.pyqtSlot()
     def _on_spectrum_settings_changed(self):
         self._update_display()
 
@@ -1448,6 +1493,8 @@ class FitTabPresenter(PanelPresenter):
         self.__expression = None
         self.__variable_groups = []
         self._view.clear()
+        self._view.input_fit_equation.setDisabled(False)
+        self._view.remove_external_func_button.setHidden(True)
 
     @QtCore.pyqtSlot()
     def _on_fit_selection_changed(self):
@@ -1537,6 +1584,12 @@ class FitTabPresenter(PanelPresenter):
         self.__update_if_table_changes = True
 
     @QtCore.pyqtSlot()
+    def _on_remove_ext_func_clicked(self):
+        self._view.input_fit_equation.clear()
+        self._view.input_fit_equation.setDisabled(False)
+        self._view.remove_external_func_button.setHidden(True)
+
+    @QtCore.pyqtSlot()
     def _on_insert_character_clicked(self, character):
         self._view.copy_character_to_cursor(character)
 
@@ -1553,25 +1606,6 @@ class FitTabPresenter(PanelPresenter):
     def _on_run_list_selection_changed(self):
         self._update_parameter_table()
 
-    # def _launch_menu(self, point):
-    #     index = self._view.run_list.indexAt(point)
-    #
-    #     if not index.isValid():
-    #         return
-    #
-    #     menu = QtWidgets.QMenu()
-    #     clicked_item = self._view.run_list.itemFromIndex(index)
-    #     new_check_state = qt_constants.Checked if clicked_item.checkState() == qt_constants.Unchecked else qt_constants.Unchecked
-    #     action_name = "Check selected" if new_check_state == qt_constants.Checked else "Uncheck selected"
-    #     menu.addAction(action_name, lambda: self._action_toggle_all_selected(new_check_state))
-    #
-    #     menu.exec_(self._view.run_list.mapToGlobal(point))
-    #
-    # def _action_toggle_all_selected(self, new_check_state):
-    #     for i in range(self._view.run_list.count()):
-    #         if self._view.run_list.item(i).isSelected():
-    #             self._view.run_list.item(i).setCheckState(new_check_state)
-
     @QtCore.pyqtSlot()
     def _on_batch_options_changed(self):
         self._update_batch_options()
@@ -1583,7 +1617,7 @@ class FitTabPresenter(PanelPresenter):
     @QtCore.pyqtSlot()
     def _on_fit_clicked(self):
         self.__update_if_table_changes = False
-        config = fit.FitConfig()
+        config = fit.FitConfig(self._view.external_functions_dict)
 
         # Check user input on fit equation and update config
         expression = self._view.get_expression()
@@ -1891,7 +1925,7 @@ class FitTabPresenter(PanelPresenter):
             final_parameters['default'] = run_parameters
 
         if fit.is_accepted_expression(expression) and greater_than_one:
-            lambda_expression = fit.FitExpression(expression)
+            lambda_expression = fit.FitExpression(expression, None, self._view.external_functions_dict)
             return lambda_expression, final_parameters
         else:
             return None, {}
@@ -1980,6 +2014,11 @@ class FitTabPresenter(PanelPresenter):
                     continue
                 for run_id in self.__parameter_table_states[row_values[0]].keys():
                     self.__parameter_table_states[row_values[0]][run_id] = row_values
+
+    def clear_external_function(self):
+        self._view.input_fit_equation.clear()
+        self._view.input_fit_equation.setDisabled(False)
+        self._view.remove_external_func_button.setHidden(True)
 
     def update_parameter_table_states(self):
         """
@@ -2249,6 +2288,18 @@ class FitTabPresenter(PanelPresenter):
         self.__update_states = True
         self.update_parameter_table_states()
 
+    def _get_external_function_files_from_system(self):
+        filenames = QtWidgets.QFileDialog.getOpenFileNames(self._view, 'Import Python file(s)',
+                                                           self._system_service.get_last_used_directory(),
+                                                           "Python files (*.py)")[0]
+        if len(filenames) > 0:
+            path = os.path.split(filenames[0])
+            self._system_service.set_last_used_directory(path[0])
+
+        return filenames
+
+    def _load_external_function(self, full_file_path, filename):
+        self._view.external_functions_dict[filename] = ExternalModule.load_external_function(full_file_path, filename)
 
 class FitWorker(QtCore.QRunnable):
     def __init__(self, config: fit.FitConfig):
@@ -2272,7 +2323,7 @@ class FitWorker(QtCore.QRunnable):
             dataset = x.done.pop().result()
 
             for run_id, fit_data in dataset.fits.items():
-                fit_data.expression = fit.FitExpression(fit_data.string_expression)
+                fit_data.expression = fit.FitExpression(fit_data.string_expression, None, self.config.external_function_dict)
 
         except Exception as e:
             report.report_exception(e)

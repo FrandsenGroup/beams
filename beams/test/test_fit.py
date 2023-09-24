@@ -160,7 +160,7 @@ class TestFitExpression:
 
 @pytest.fixture()
 def valid_config_for_tests() -> fit.FitConfig:
-    config = fit.FitConfig()
+    config = fit.FitConfig({})
     config.expression = fit.EQUATION_DICTIONARY["Internal Cosine"]
     config.titles = {"run_id_0": 'title0', "run_id_1": 'title1', "run_id_2": 'title2', "run_id_3": 'title3'}
     config.set_flags(0)
