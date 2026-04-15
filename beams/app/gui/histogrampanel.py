@@ -81,12 +81,15 @@ class HistogramPanel(Panel):
             self.canvas_axes.figure.canvas.draw()
 
     class HistogramToolbar(NavigationToolbar2QT):
-        def _init_toolbar(self):
-            pass
-
         def __init__(self, canvas, parent):
-            self.locLabel = QtWidgets.QLabel("")
             super().__init__(canvas, parent)
+            if not hasattr(self, 'locLabel'):
+                self.locLabel = QtWidgets.QLabel("")
+                self.addWidget(self.locLabel)
+
+        def set_message(self, s):
+            if hasattr(self, 'locLabel'):
+                self.locLabel.setText(s)
 
         # only display the buttons we need
         NavigationToolbar2QT.toolitems = (
